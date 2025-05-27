@@ -10,12 +10,13 @@ enum AttendanceStatus { beforeWork, working, late, offWork }
 class AttendanceProvider extends ChangeNotifier {
   final String userId;
   final String userName;
- /* // 회사 위치
+  // 회사 위치
   static const double companyLat = 35.844541;  //hansl 위도
   static const double companyLng = 128.506440;  //hansl 경도
-  */
-    static const double companyLat = 35.804306;  //갈밭로12길 11 위도
+  /*
+  static const double companyLat = 35.804306;  //갈밭로12길 11 위도
   static const double companyLng = 128.529245;  //갈밭로12길 11 경도
+  */
   static const double allowedDistance = 100.0; // meters
 
   AttendanceStatus status = AttendanceStatus.beforeWork;
