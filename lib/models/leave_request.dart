@@ -1,0 +1,123 @@
+enum LeaveType { annual, halfAm, halfPm, official, biztrip, adjust }
+
+extension LeaveTypeExtension on LeaveType {
+  String get label {
+    switch (this) {
+      case LeaveType.annual:
+        return '연차';
+      case LeaveType.halfAm:
+        return '오전반차';
+      case LeaveType.halfPm:
+        return '오후반차';
+      case LeaveType.official:
+        return '공가';
+      case LeaveType.biztrip:
+        return '출장';
+      case LeaveType.adjust:
+        return '수동조정';
+    }
+  }
+
+  double get days {
+    switch (this) {
+      case LeaveType.annual:
+        return 1.0;
+      case LeaveType.halfAm:
+      case LeaveType.halfPm:
+        return 0.5;
+      case LeaveType.official:
+      case LeaveType.biztrip:
+        return 0.0;
+      case LeaveType.adjust:
+        return 0.0; // 실제 조정값은 reason 등에서 별도 처리
+    }
+  }
+
+  static LeaveType fromString(String value) {
+    switch (value) {
+      case 'annual':
+        return LeaveType.annual;
+      case 'half_am':
+        return LeaveType.halfAm;
+      case 'half_pm':
+        return LeaveType.halfPm;
+      case 'official':
+        return LeaveType.official;
+      case 'biztrip':
+        return LeaveType.biztrip;
+      case 'adjust':
+        return LeaveType.adjust;
+      default:
+        throw Exception('Unknown leave type: $value');
+    }
+  }
+
+  String get dbValue {
+    switch (this) {
+      case LeaveType.annual:
+        return 'annual';
+      case LeaveType.halfAm:
+        return 'half_am';
+      case LeaveType.halfPm:
+        return 'half_pm';
+      case LeaveType.official:
+        return 'official';
+      case LeaveType.biztrip:
+        return 'biztrip';
+      case LeaveType.adjust:
+        return 'adjust';
+    }
+  }
+}
+
+class LeaveRequest {
+  final int id;
+  final String userEmail;
+  final LeaveType type;
+  final DateTime startDate;
+  final DateTime endDate;
+  final String? reason;
+  final String status; // pending, approved, rejected
+  final DateTime createdAt;
+  final String? name; // 직원 이름 (join 결과)
+
+  LeaveRequest({
+    required this.id,
+    required this.userEmail,
+    required this.type,
+    required this.startDate,
+    required this.endDate,
+    this.reason,
+    required this.status,
+    required this.createdAt,
+    this.name,
+  });
+
+  factory LeaveRequest.fromMap(Map<String, dynamic> map) {
+    return LeaveRequest(
+      id: map['id'] as int,
+      userEmail: map['user_email'] as String,
+      type: LeaveType.values.firstWhere((e) => e.toString().split('.').last == (map['type'] as String).replaceAll('_', '')),
+      startDate: DateTime.parse(map['start_date'] as String),
+      endDate: DateTime.parse(map['end_date'] as String),
+      reason: map['reason'] as String?,
+      status: map['status'] as String,
+      createdAt: DateTime.parse(map['created_at'] as String),
+      name: map['name'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'user_email': userEmail,
+      'type': type.dbValue,
+      'start_date': startDate.toIso8601String(),
+      'end_date': endDate.toIso8601String(),
+      'reason': reason,
+      'status': status,
+      'created_at': createdAt.toIso8601String(),
+      // name은 insert/update에 사용하지 않음
+    };
+  }
+} 
