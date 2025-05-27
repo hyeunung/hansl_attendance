@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../services/supabase_service.dart';
 import '../../providers/user_provider.dart';
 import '../../theme/app_colors.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -63,7 +64,18 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     if (autoLogin) {
       final email = prefs.getString('autoLoginEmail');
       if (email != null && email.isNotEmpty) {
-        Provider.of<UserProvider>(context, listen: false).setEmail(email);
+        final employee = await Supabase.instance.client
+            .from('employees')
+            .select()
+            .eq('email', email)
+            .maybeSingle();
+        if (employee != null) {
+          Provider.of<UserProvider>(context, listen: false).setUser(
+            id: employee['id'],
+            name: employee['name'],
+            email: employee['email'],
+          );
+        }
       }
       // Splash 애니메이션 끝나면 MainTab으로 이동하도록 위에서 처리
     }

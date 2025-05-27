@@ -85,11 +85,21 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text,
       );
       if (response.user != null) {
-        // 직원 이름 조회 및 저장
+        // 직원 정보 employees 테이블에서 조회
         final email = response.user!.email;
-        if (email != null) {
-          Provider.of<UserProvider>(context, listen: false).setEmail(email);
-        }
+        if (email == null) throw Exception('이메일 정보가 없습니다.');
+        final employee = await Supabase.instance.client
+            .from('employees')
+            .select()
+            .eq('email', email)
+            .maybeSingle();
+        if (employee == null) throw Exception('사내 직원 정보가 없습니다.');
+        Provider.of<UserProvider>(context, listen: false).setUser(
+          id: employee['id'],
+          name: employee['name'],
+          email: employee['email'],
+        );
+        print('로그인 후 UserProvider id: [32m[1m[4m[7m${Provider.of<UserProvider>(context, listen: false).id}[0m');
         if (_autoLogin) {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setBool('autoLogin', true);

@@ -10,9 +10,12 @@ enum AttendanceStatus { beforeWork, working, late, offWork }
 class AttendanceProvider extends ChangeNotifier {
   final String userId;
   final String userName;
-  // 회사 위치
-  static const double companyLat = 35.844541;
-  static const double companyLng = 128.506440;
+ /* // 회사 위치
+  static const double companyLat = 35.844541;  //hansl 위도
+  static const double companyLng = 128.506440;  //hansl 경도
+  */
+    static const double companyLat = 35.804306;  //갈밭로12길 11 위도
+  static const double companyLng = 128.529245;  //갈밭로12길 11 경도
   static const double allowedDistance = 100.0; // meters
 
   AttendanceStatus status = AttendanceStatus.beforeWork;
@@ -23,6 +26,8 @@ class AttendanceProvider extends ChangeNotifier {
   List<AttendanceRecord> history = [];
 
   final AttendanceService _attendanceService = AttendanceService();
+
+  bool isLoading = true;
 
   Color get statusColor {
     switch (status) {
@@ -56,20 +61,29 @@ class AttendanceProvider extends ChangeNotifier {
   bool get canClockOut => status == AttendanceStatus.working || status == AttendanceStatus.late;
 
   AttendanceProvider({required this.userId, required this.userName}) {
-    _initToday();
+    _initToday().then((_) => fetchRecentHistory());
     _startMidnightResetTimer();
     _startAutoClockOutTimer();
   }
 
-  void _initToday() {
-    // 자정에 초기화, 오늘 기록 불러오기(여기선 가짜 데이터)
+  Future<void> _initToday() async {
+    isLoading = true;
+    notifyListeners();
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final todayRecord = history.where((r) => _isSameDay(r.date, today)).toList();
-    if (todayRecord.isNotEmpty) {
-      clockInTime = todayRecord.first.clockIn;
-      clockOutTime = todayRecord.first.clockOut;
-      isLate = todayRecord.first.isLate;
+    final todayStr = "${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+    // DB에서 오늘 출근 기록 조회
+    final record = await Supabase.instance.client
+        .from('attendance_records')
+        .select()
+        .eq('employee_id', userId)
+        .eq('date', todayStr)
+        .maybeSingle();
+
+    if (record != null && record['clock_in'] != null) {
+      // 이미 출근함
+      clockInTime = DateTime.parse('${todayStr}T${record['clock_in']}');
+      clockOutTime = record['clock_out'] != null ? DateTime.tryParse('${todayStr}T${record['clock_out']}') : null;
+      isLate = record['status'] == '지각';
       if (clockInTime != null && clockOutTime == null) {
         status = isLate ? AttendanceStatus.late : AttendanceStatus.working;
       } else if (clockInTime != null && clockOutTime != null) {
@@ -77,16 +91,47 @@ class AttendanceProvider extends ChangeNotifier {
       } else {
         status = AttendanceStatus.beforeWork;
       }
+      canClockIn = false;
     } else {
       status = AttendanceStatus.beforeWork;
       clockInTime = null;
       clockOutTime = null;
       isLate = false;
+      canClockIn = true;
     }
+    isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> fetchRecentHistory() async {
+    final records = await Supabase.instance.client
+        .from('attendance_records')
+        .select()
+        .eq('employee_id', userId)
+        .order('date', ascending: false)
+        .limit(5);
+
+    history = records.map<AttendanceRecord>((r) {
+      final date = DateTime.parse(r['date']);
+      final clockIn = r['clock_in'] != null ? DateTime.parse('${r['date']}T${r['clock_in']}') : null;
+      final clockOut = r['clock_out'] != null ? DateTime.parse('${r['date']}T${r['clock_out']}') : null;
+      return AttendanceRecord(
+        date: date,
+        employeeId: userId,
+        employeeName: userName,
+        status: r['status'],
+        clockIn: clockIn,
+        clockOut: clockOut,
+        isLate: r['status'] == '지각',
+      );
+    }).toList();
     notifyListeners();
   }
 
   Future<void> tryClockIn() async {
+    if (isLoading) return;
+    isLoading = true;
+    notifyListeners();
     errorMessage = null;
     // 위치 권한 및 거리 체크
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -122,36 +167,93 @@ class AttendanceProvider extends ChangeNotifier {
     final now = DateTime.now();
     final lateTime = DateTime(now.year, now.month, now.day, 8, 30);
     isLate = now.isAfter(lateTime);
+    final todayStr = "${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+    // 오늘 내 row 찾기
+    final record = await Supabase.instance.client
+        .from('attendance_records')
+        .select()
+        .eq('employee_id', userId)
+        .eq('date', todayStr)
+        .maybeSingle();
+    if (record != null) {
+      await Supabase.instance.client
+          .from('attendance_records')
+          .update({
+            'clock_in': now.toIso8601String().substring(11, 19),
+            'status': isLate ? '지각' : '정상 출근',
+          })
+          .eq('id', record['id']);
+    } else {
+      errorMessage = '오늘자 출근 row가 없습니다. 관리자에게 문의하세요.';
+      isLoading = false;
+      notifyListeners();
+      return;
+    }
     clockInTime = now;
     status = isLate ? AttendanceStatus.late : AttendanceStatus.working;
-    // 기록 추가
+    canClockIn = false;
+    // history 갱신
     final today = DateTime(now.year, now.month, now.day);
-    history.insert(0, AttendanceRecord(
+    final idx = history.indexWhere((r) => _isSameDay(r.date, today));
+    final recordObj = AttendanceRecord(
       date: today,
       employeeId: userId,
       employeeName: userName,
       status: isLate ? '지각' : '정상 출근',
       clockIn: now,
+      clockOut: null,
       isLate: isLate,
-    ));
-    notifyListeners();
-
-    await _attendanceService.recordClockIn(
-      employeeId: userId,
-      employeeName: userName,
     );
+    if (idx != -1) {
+      history[idx] = recordObj;
+    } else {
+      history.insert(0, recordObj);
+      if (history.length > 5) {
+        history = history.take(5).toList();
+      }
+    }
+    isLoading = false;
+    notifyListeners();
   }
 
   Future<void> tryClockOut() async {
-    if (clockInTime == null) return;
+    if (isLoading) return;
+    isLoading = true;
+    notifyListeners();
+    if (clockInTime == null) {
+      isLoading = false;
+      notifyListeners();
+      return;
+    }
     final now = DateTime.now();
+    final todayStr = "${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+    // 오늘 내 row 찾기
+    final record = await Supabase.instance.client
+        .from('attendance_records')
+        .select()
+        .eq('employee_id', userId)
+        .eq('date', todayStr)
+        .maybeSingle();
+    if (record != null) {
+      await Supabase.instance.client
+          .from('attendance_records')
+          .update({
+            'clock_out': now.toIso8601String().substring(11, 19),
+            'status': '퇴근',
+          })
+          .eq('id', record['id']);
+    } else {
+      errorMessage = '오늘자 출근 row가 없습니다. 관리자에게 문의하세요.';
+      isLoading = false;
+      notifyListeners();
+      return;
+    }
     clockOutTime = now;
     status = AttendanceStatus.offWork;
+    // history 갱신
     final today = DateTime(now.year, now.month, now.day);
-    // 기존 오늘 기록 삭제
-    history.removeWhere((r) => _isSameDay(r.date, today));
-    // 오늘 기록을 맨 앞에 추가
-    history.insert(0, AttendanceRecord(
+    final idx = history.indexWhere((r) => _isSameDay(r.date, today));
+    final recordObj = AttendanceRecord(
       date: today,
       employeeId: userId,
       employeeName: userName,
@@ -159,12 +261,17 @@ class AttendanceProvider extends ChangeNotifier {
       clockIn: clockInTime,
       clockOut: now,
       isLate: isLate,
-    ));
-    notifyListeners();
-
-    await _attendanceService.recordClockOut(
-      employeeId: userId,
     );
+    if (idx != -1) {
+      history[idx] = recordObj;
+    } else {
+      history.insert(0, recordObj);
+      if (history.length > 5) {
+        history = history.take(5).toList();
+      }
+    }
+    isLoading = false;
+    notifyListeners();
   }
 
   void _startMidnightResetTimer() {
@@ -174,6 +281,7 @@ class AttendanceProvider extends ChangeNotifier {
     final duration = tomorrow.difference(now);
     Timer(duration, () {
       _initToday();
+      fetchRecentHistory(); // 자정에 history도 새로고침
       _startMidnightResetTimer();
     });
   }

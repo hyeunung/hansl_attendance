@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 
 class UserProvider extends ChangeNotifier {
+  String? _id;
+  String? get id => _id;
+
   String? _name;
   String? get name => _name;
 
   String? _email;
   String? get email => _email;
+
+  void setId(String? id) {
+    _id = id;
+    notifyListeners();
+  }
 
   void setName(String? name) {
     _name = name;
@@ -13,6 +21,13 @@ class UserProvider extends ChangeNotifier {
   }
 
   void setEmail(String? email) {
+    _email = email;
+    notifyListeners();
+  }
+
+  void setUser({required String id, required String name, required String email}) {
+    _id = id;
+    _name = name;
     _email = email;
     notifyListeners();
   }

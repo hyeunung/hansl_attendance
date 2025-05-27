@@ -14,10 +14,17 @@ class AttendanceScreen extends StatelessWidget {
     return Consumer<UserProvider>(
       builder: (context, userProvider, _) {
         return ChangeNotifierProvider(
-          create: (_) => AttendanceProvider(
-            userId: userProvider.id ?? '',
-            userName: userProvider.name ?? '',
-          ),
+          create: (_) {
+            final userId = userProvider.id;
+            final userName = userProvider.name;
+            if (userId == null || userId.isEmpty) {
+              throw Exception('UserProvider의 id가 null이거나 빈 문자열입니다. 로그인 로직을 확인하세요.');
+            }
+            return AttendanceProvider(
+              userId: userId,
+              userName: userName ?? '',
+            );
+          },
           child: _AttendanceScreenBody(),
         );
       },
@@ -178,7 +185,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
               _buildBanner(),
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -190,9 +197,9 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
+                              color: Colors.black.withOpacity(0.15),
                               blurRadius: 30,
-                              offset: const Offset(0, 8),
+                              offset: const Offset(0, 12),
                             ),
                           ],
                           border: Border.all(color: const Color(0xFFE9ECEF)),
@@ -205,7 +212,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                               style: TextStyle(
                                 fontFamily: 'NotoSans',
                                 fontWeight: FontWeight.w600,
-                                fontSize: 20,
+                                fontSize: 24,
                                 color: Color(0xFF343A40),
                               ),
                             ),
@@ -228,7 +235,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                                 style: const TextStyle(
                                   fontFamily: 'NotoSans',
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 16,
+                                  fontSize: 17,
                                   color: Colors.white,
                                 ),
                               ),
@@ -240,21 +247,21 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                                   : '${provider.clockInStr} 부터',
                               style: const TextStyle(
                                 fontFamily: 'NotoSans',
-                                fontWeight: FontWeight.w500,
-                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
                                 color: Color(0xFF6C757D),
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 30),
-                      // 출근/퇴근 버튼
+                      SizedBox(height: 25),
+                      // 출근/퇴근 버튼 (흰카드 없이 Row만)
                       Row(
                         children: [
                           Expanded(
                             child: SizedBox(
-                              height: 56,
+                              height: 65,
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: provider.status == AttendanceStatus.beforeWork
@@ -266,7 +273,8 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(14),
                                   ),
-                                  elevation: 0,
+                                  elevation: 8,
+                                  shadowColor: AppColors.primary.withOpacity(0.3),
                                 ),
                                 onPressed: provider.status == AttendanceStatus.beforeWork
                                     ? () async {
@@ -291,7 +299,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                           const SizedBox(width: 15),
                           Expanded(
                             child: SizedBox(
-                              height: 56,
+                              height: 65,
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: provider.canClockOut
@@ -303,7 +311,8 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(14),
                                   ),
-                                  elevation: 0,
+                                  elevation: 8,
+                                  shadowColor: AppColors.primary.withOpacity(0.3),
                                 ),
                                 onPressed: provider.canClockOut
                                     ? () async {
@@ -323,19 +332,18 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 30),
+                      SizedBox(height: 25),
                       // 오늘의 근무 요약 카드
                       Container(
                         padding: const EdgeInsets.all(25),
-                        margin: const EdgeInsets.only(bottom: 20),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
+                              color: Colors.black.withOpacity(0.15),
                               blurRadius: 30,
-                              offset: const Offset(0, 8),
+                              offset: const Offset(0, 12),
                             ),
                           ],
                           border: Border.all(color: const Color(0xFFE9ECEF)),
@@ -358,7 +366,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                                   style: TextStyle(
                                     fontFamily: 'NotoSans',
                                     fontWeight: FontWeight.w700,
-                                    fontSize: 18,
+                                    fontSize: 22,
                                     color: Color(0xFF343A40),
                                   ),
                                 ),
@@ -366,10 +374,11 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                             ),
                             const SizedBox(height: 20),
                             _buildSummaryItem('출근 시간', provider.clockInStr),
-                            _buildSummaryItem('현재 근무', provider.todayWorkDuration, isLast: true),
+                            _buildSummaryItem('근무 시간', provider.todayWorkDuration, isLast: true),
                           ],
                         ),
                       ),
+                      SizedBox(height: 25),
                       // 최근 기록 카드
                       Container(
                         padding: const EdgeInsets.all(25),
@@ -378,9 +387,9 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
+                              color: Colors.black.withOpacity(0.15),
                               blurRadius: 30,
-                              offset: const Offset(0, 8),
+                              offset: const Offset(0, 12),
                             ),
                           ],
                           border: Border.all(color: const Color(0xFFE9ECEF)),
@@ -403,7 +412,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                                   style: TextStyle(
                                     fontFamily: 'NotoSans',
                                     fontWeight: FontWeight.w700,
-                                    fontSize: 18,
+                                    fontSize: 22,
                                     color: Color(0xFF343A40),
                                   ),
                                 ),
@@ -453,17 +462,17 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
               label,
               style: const TextStyle(
                 fontFamily: 'NotoSans',
-                fontSize: 15,
+                fontSize: 17,
                 color: Color(0xFF6C757D),
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w700,
               ),
             ),
             Text(
               value,
               style: const TextStyle(
                 fontFamily: 'NotoSans',
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
                 color: Color(0xFF343A40),
               ),
             ),
@@ -495,8 +504,8 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
             '${record.date.year}-${record.date.month.toString().padLeft(2, '0')}-${record.date.day.toString().padLeft(2, '0')}',
             style: const TextStyle(
               fontFamily: 'NotoSans',
-              fontWeight: FontWeight.w500,
-              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              fontSize: 17,
               color: Color(0xFF444444),
             ),
           ),
@@ -504,8 +513,8 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
             '출근: ${record.clockIn == null ? '-' : _formatTime(record.clockIn!)}',
             style: const TextStyle(
               fontFamily: 'NotoSans',
-              fontWeight: FontWeight.w400,
-              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              fontSize: 17,
               color: Color(0xFF444444),
             ),
           ),

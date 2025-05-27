@@ -27,13 +27,23 @@ class HanslApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => LeaveProvider()),
-        ChangeNotifierProvider(create: (_) => AttendanceProvider()),
       ],
-      child: MaterialApp(
-        title: 'HANSL',
-        theme: AppTheme.lightTheme,
-        home: const SplashScreen(),
-        debugShowCheckedModeBanner: false,
+      child: Builder(
+        builder: (context) {
+          final userProvider = Provider.of<UserProvider>(context, listen: false);
+          return ChangeNotifierProvider(
+            create: (_) => AttendanceProvider(
+              userId: userProvider.id ?? '',
+              userName: userProvider.name ?? '',
+            ),
+            child: MaterialApp(
+              title: 'HANSL',
+              theme: AppTheme.lightTheme,
+              home: const SplashScreen(),
+              debugShowCheckedModeBanner: false,
+            ),
+          );
+        },
       ),
     );
   }
