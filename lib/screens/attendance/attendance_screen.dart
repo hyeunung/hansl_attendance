@@ -5,6 +5,7 @@ import '../../providers/attendance_provider.dart';
 import '../../providers/user_provider.dart';
 import 'dart:async';
 import '../../models/attendance.dart';
+import '../../theme/app_shadows.dart';
 
 class AttendanceScreen extends StatelessWidget {
   const AttendanceScreen({super.key});
@@ -195,13 +196,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
-                              blurRadius: 30,
-                              offset: const Offset(0, 12),
-                            ),
-                          ],
+                          boxShadow: [AppShadows.card],
                           border: Border.all(color: const Color(0xFFE9ECEF)),
                         ),
                         child: Column(
@@ -339,13 +334,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
-                              blurRadius: 30,
-                              offset: const Offset(0, 12),
-                            ),
-                          ],
+                          boxShadow: [AppShadows.card],
                           border: Border.all(color: const Color(0xFFE9ECEF)),
                         ),
                         child: Column(
@@ -385,13 +374,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
-                              blurRadius: 30,
-                              offset: const Offset(0, 12),
-                            ),
-                          ],
+                          boxShadow: [AppShadows.card],
                           border: Border.all(color: const Color(0xFFE9ECEF)),
                         ),
                         child: Column(

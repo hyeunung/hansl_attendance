@@ -6,25 +6,15 @@ class LeaveProvider extends ChangeNotifier {
   final LeaveService _service = LeaveService();
   List<Map<String, dynamic>> myLeaves = [];
   List<Map<String, dynamic>> todayLeaves = [];
+  List<Map<String, dynamic>> allLeaves = [];
   bool isLoading = false;
   String? error;
 
-  // 잔여 연차 계산 (예시: type == 'annual'/'halfAm'/'halfPm', status == 'approved'만 차감)
-  int get remainAnnual {
-    // 지급 연차는 예시로 15개(실제는 입사일 등으로 계산 필요)
-    const int totalAnnual = 15;
-    double used = 0;
-    for (final l in myLeaves) {
-      if (l['status'] == 'approved') {
-        if (l['type'] == 'annual') {
-          used += ((DateTime.parse(l['end_date']).difference(DateTime.parse(l['start_date'])).inDays) + 1) * 1.0;
-        } else if (l['type'] == 'halfAm' || l['type'] == 'halfPm') {
-          used += 0.5;
-        }
-      }
-    }
-    return (totalAnnual - used).clamp(0, totalAnnual).toInt();
-  }
+  int _remainAnnual = 0;
+  int get remainAnnual => _remainAnnual;
+
+  int _currentGrantedAnnual = 0;
+  int get currentGrantedAnnual => _currentGrantedAnnual;
 
   // 대기 중 신청 개수
   int get pendingCount => myLeaves.where((l) => l['status'] == 'pending').length;
@@ -47,12 +37,22 @@ class LeaveProvider extends ChangeNotifier {
     return sorted.take(5).toList();
   }
 
+  Map<String, dynamic>? _employee;
+  Map<String, dynamic>? get employee => _employee;
+
+  void setEmployee(Map<String, dynamic>? employee) {
+    _employee = employee;
+    notifyListeners();
+  }
+
   Future<void> fetchMyLeaves(String userEmail) async {
     isLoading = true;
     error = null;
     notifyListeners();
     try {
       myLeaves = await _service.fetchMyLeavesRaw(userEmail);
+      _remainAnnual = await calculateRemainAnnual(userEmail);
+      _currentGrantedAnnual = await calculateGrantedAnnual(userEmail);
     } catch (e) {
       error = e.toString();
     } finally {
@@ -73,6 +73,107 @@ class LeaveProvider extends ChangeNotifier {
       isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> fetchAllLeaves() async {
+    isLoading = true;
+    error = null;
+    notifyListeners();
+    try {
+      allLeaves = await _service.fetchAllLeavesRaw();
+    } catch (e) {
+      error = e.toString();
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // 법정 연차 지급 공식 반영 (1년차 월차, 2년차 15+미사용, 3년차~ 2년마다 1개 추가)
+  Future<int> calculateRemainAnnual(String userEmail) async {
+    final supabaseService = SupabaseService();
+    final employee = await supabaseService.getEmployeeByEmail(userEmail);
+    if (employee == null || employee['hire_date'] == null) return 0;
+    final DateTime hireDate = DateTime.parse(employee['hire_date']);
+    final now = DateTime.now();
+    final int yearsOfService = (now.year - hireDate.year) + 1;
+    int totalAnnual = 0;
+    if (yearsOfService == 1) {
+      // 1년차: 월차(최대 11개)
+      int months = (now.year - hireDate.year) * 12 + (now.month - hireDate.month);
+      if (now.day < hireDate.day) months--;
+      totalAnnual = months.clamp(0, 11);
+    } else {
+      // 2년차: 15 + 1년차 미사용 월차, 3년차~: 15 + ((근속년수-2)~/2)
+      int add = ((yearsOfService - 2) ~/ 2); // 3년차부터 2년마다 1개 추가
+      totalAnnual = 15 + add;
+      // 2년차에만 1년차 미사용 월차 이월
+      if (yearsOfService == 2) {
+        int months = 11;
+        double usedInFirstYear = 0;
+        for (final l in myLeaves) {
+          final leaveDate = DateTime.parse(l['start_date']);
+          if (l['status'] == 'approved' && leaveDate.isAfter(hireDate) && leaveDate.isBefore(hireDate.add(Duration(days: 365)))) {
+            if (l['type'] == 'annual') {
+              usedInFirstYear += ((DateTime.parse(l['end_date']).difference(DateTime.parse(l['start_date'])).inDays) + 1) * 1.0;
+            } else if (l['type'] == 'halfAm' || l['type'] == 'halfPm') {
+              usedInFirstYear += 0.5;
+            }
+          }
+        }
+        int unusedFirstYear = months - usedInFirstYear.round();
+        if (unusedFirstYear > 0) totalAnnual += unusedFirstYear;
+      }
+    }
+
+    // 전체 사용 연차 차감
+    double used = 0;
+    for (final l in myLeaves) {
+      if (l['status'] == 'approved') {
+        if (l['type'] == 'annual') {
+          used += ((DateTime.parse(l['end_date']).difference(DateTime.parse(l['start_date'])).inDays) + 1) * 1.0;
+        } else if (l['type'] == 'halfAm' || l['type'] == 'halfPm') {
+          used += 0.5;
+        }
+      }
+    }
+    return (totalAnnual - used).clamp(0, totalAnnual).toInt();
+  }
+
+  // 현재 지급 연차(법정 지급 공식, 사용 차감 전)
+  Future<int> calculateGrantedAnnual(String userEmail) async {
+    final supabaseService = SupabaseService();
+    final employee = await supabaseService.getEmployeeByEmail(userEmail);
+    if (employee == null || employee['hire_date'] == null) return 0;
+    final DateTime hireDate = DateTime.parse(employee['hire_date']);
+    final now = DateTime.now();
+    final int yearsOfService = (now.year - hireDate.year) + 1;
+    int totalAnnual = 0;
+    if (yearsOfService == 1) {
+      int months = (now.year - hireDate.year) * 12 + (now.month - hireDate.month);
+      if (now.day < hireDate.day) months--;
+      totalAnnual = months.clamp(0, 11);
+    } else {
+      int add = ((yearsOfService - 2) ~/ 2);
+      totalAnnual = 15 + add;
+      if (yearsOfService == 2) {
+        int months = 11;
+        double usedInFirstYear = 0;
+        for (final l in myLeaves) {
+          final leaveDate = DateTime.parse(l['start_date']);
+          if (l['status'] == 'approved' && leaveDate.isAfter(hireDate) && leaveDate.isBefore(hireDate.add(Duration(days: 365)))) {
+            if (l['type'] == 'annual') {
+              usedInFirstYear += ((DateTime.parse(l['end_date']).difference(DateTime.parse(l['start_date'])).inDays) + 1) * 1.0;
+            } else if (l['type'] == 'halfAm' || l['type'] == 'halfPm') {
+              usedInFirstYear += 0.5;
+            }
+          }
+        }
+        int unusedFirstYear = months - usedInFirstYear.round();
+        if (unusedFirstYear > 0) totalAnnual += unusedFirstYear;
+      }
+    }
+    return totalAnnual;
   }
 
   // 연차/출장 신청
@@ -107,5 +208,24 @@ class LeaveProvider extends ChangeNotifier {
       isLoading = false;
       notifyListeners();
     }
+  }
+
+  // 특정 연도 지급연차 계산 (법정 공식)
+  int getGrantedAnnualForYear(int year) {
+    final employeeData = _employee;
+    if (employeeData == null || employeeData['hire_date'] == null) return 0;
+    final hireDate = DateTime.parse(employeeData['hire_date']);
+    if (year == hireDate.year) {
+      int months = (year - hireDate.year) * 12 + (1 - hireDate.month);
+      return months.clamp(0, 11);
+    } else {
+      final yearsOfService = (year - hireDate.year) + 1;
+      return 15 + ((yearsOfService - 2) ~/ 2);
+    }
+  }
+
+  Future<void> updateLeaveStatus(int id, String status) async {
+    await _service.updateLeaveStatus(id, status);
+    await fetchAllLeaves();
   }
 } 

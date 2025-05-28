@@ -6,6 +6,7 @@ import '../../models/leave_request.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_shadows.dart';
 
 class AnnualLeaveRequestScreen extends StatefulWidget {
   const AnnualLeaveRequestScreen({super.key});
@@ -188,9 +189,20 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
         final thisYear = now.year;
         final nextYear = now.year + 1;
         final remainAnnual = leaveProvider.remainAnnual;
-        final thisYearAnnual = thisYear == 2024 ? 1 : 0;
-        final nextYearAnnual = nextYear == 2025 ? 15 : 0;
+        final grantedAnnual = leaveProvider.currentGrantedAnnual;
         final myLeaves = leaveProvider.myLeaves;
+        final employee = userProvider.employee; // employee 정보(입사일 등)
+        int hireYear = 0;
+        int yearsOfService = 0;
+        String yearLabel = '';
+        if (employee != null && employee['hire_date'] != null) {
+          hireYear = DateTime.parse(employee['hire_date']).year;
+          yearsOfService = (thisYear - hireYear) + 1;
+          yearLabel = '${yearsOfService}년차';
+        }
+
+        final thisYearGranted = leaveProvider.getGrantedAnnualForYear(thisYear);
+        final nextYearGranted = leaveProvider.getGrantedAnnualForYear(nextYear);
         return Scaffold(
           appBar: AppBar(
             backgroundColor: Colors.white,
@@ -230,13 +242,7 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.03),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
+                              boxShadow: [AppShadows.card],
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -294,12 +300,18 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const SizedBox(),
-                              Text('$remainAnnual일', style: const TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold)),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text('$remainAnnual일', style: const TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold)),
+                                  Text('/ $grantedAnnual', style: const TextStyle(color: Colors.white70, fontSize: 16, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
                             ],
                           ),
                           const SizedBox(height: 8),
-                          Text('• $thisYear.01.01 ~ $thisYear.12.31    ${thisYearAnnual}일   >', style: const TextStyle(color: Colors.white, fontSize: 15)),
-                          Text('• $nextYear.01.01 ~ $nextYear.12.31   ${nextYearAnnual}일   >', style: const TextStyle(color: Colors.white, fontSize: 15)),
+                          Text('• $thisYear.01.01 ~ $thisYear.12.31   ${thisYearGranted}일   >', style: const TextStyle(color: Colors.white, fontSize: 15)),
+                          Text('• $nextYear.01.01 ~ $nextYear.12.31   ${nextYearGranted}일   >', style: const TextStyle(color: Colors.white, fontSize: 15)),
                         ],
                       ),
                     ),
@@ -309,13 +321,7 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 12,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
+                        boxShadow: [AppShadows.card],
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       child: Column(
@@ -430,13 +436,7 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 12,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
+                        boxShadow: [AppShadows.card],
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       child: Column(
@@ -481,8 +481,8 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           elevation: 6,
-                          backgroundColor: Colors.white,
-                          foregroundColor: AppColors.primary,
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -500,13 +500,26 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
                                 }
                                 bool hasError = false;
                                 for (final type in _leaveTypes) {
-                                  for (final d in _selectedDatesMap[type]!) {
+                                  final selectedDates = _selectedDatesMap[type]!.toList()..sort();
+                                  if (selectedDates.isEmpty) continue;
+                                  // 연속 구간별로 묶기
+                                  List<List<DateTime>> ranges = [];
+                                  for (final d in selectedDates) {
+                                    if (ranges.isEmpty || d.difference(ranges.last.last).inDays > 1) {
+                                      ranges.add([d]);
+                                    } else {
+                                      ranges.last.add(d);
+                                    }
+                                  }
+                                  for (final range in ranges) {
+                                    final start = range.first;
+                                    final end = range.last;
                                     try {
                                       await leaveProvider.requestLeave(
                                         userEmail: userEmail,
                                         type: type.dbValue,
-                                        startDate: d,
-                                        endDate: d,
+                                        startDate: start,
+                                        endDate: end,
                                         reason: _memoController.text.trim(),
                                       );
                                     } catch (e) {
@@ -533,9 +546,6 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: (_usedDaysSum > 0 && _memoController.text.trim().isNotEmpty)
-                                ? AppColors.primary
-                                : Colors.grey,
                           ),
                         ),
                       ),

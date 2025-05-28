@@ -59,12 +59,12 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (provider.error != null) {
-            return Center(child: Text('에러: [${provider.error}'));
+            return Center(child: Text('에러: ${provider.error}'));
           }
           return ListView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
             children: [
-              // 1. 내 연차 현황 (Column 구조)
+              // 1. 내 연차 현황 - 애플 스타일
               Container(
                 padding: const EdgeInsets.all(28),
                 decoration: BoxDecoration(
@@ -74,59 +74,66 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
                   border: Border.all(color: Color(0xFFE9ECEF)),
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // 제목
-                    const Text(
-                      '내 연차 현황',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontFamily: 'NotoSans',
-                        fontWeight: FontWeight.w700,
-                        fontSize: 22,
-                        color: Color(0xFF2C3E50),
-                        letterSpacing: -0.3,
-                      ),
+                    // 제목 - 아이콘과 함께
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF007AFF).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.calendar_today_rounded,
+                            color: Color(0xFF007AFF),
+                            size: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          '내 연차 현황',
+                          style: TextStyle(
+                            fontFamily: 'NotoSans',
+                            fontWeight: FontWeight.w600,
+                            fontSize: 18,
+                            color: Color(0xFF1D1D1F),
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 28),
-                    // 잔여 연차 박스
+                    const SizedBox(height: 24),
+                    
+                    // 메인 잔여 연차
                     Container(
-                      height: 90,
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 20),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppColors.primary.withOpacity(0.08),
-                            AppColors.primary.withOpacity(0.03),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: AppColors.primary.withOpacity(0.15),
-                          width: 1.2,
-                        ),
+                        color: const Color(0xFFF2F2F7),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
                             provider.remainAnnual.toString(),
                             style: const TextStyle(
                               fontFamily: 'NotoSans',
-                              fontWeight: FontWeight.w800,
-                              fontSize: 32,
-                              color: Color(0xFF357AE8),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 36,
+                              color: Color(0xFF007AFF),
                               height: 1.0,
+                              letterSpacing: -1.0,
                             ),
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 4),
                           const Text(
                             '잔여 연차',
                             style: TextStyle(
                               fontFamily: 'NotoSans',
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
                               color: Color(0xFF5A6C7D),
                               letterSpacing: 0.1,
                             ),
@@ -134,91 +141,77 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
                         ],
                       ),
                     ),
+                    
                     const SizedBox(height: 16),
-                    // 대기 중/출장 일수 Row
+                    
+                    // 서브 정보들
                     Row(
                       children: [
-                        // 대기 중
                         Expanded(
                           child: Container(
-                            height: 38,
+                            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFFF8E1),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: const Color(0xFFFFCC80).withOpacity(0.4),
-                                width: 1,
-                              ),
+                              color: const Color(0xFFFFF2E6),
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Padding(
-                                  padding: EdgeInsets.only(left: 16),
-                                  child: Text(
-                                    '대기 중',
-                                    style: TextStyle(
-                                      fontFamily: 'NotoSans',
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 13,
-                                      color: Color(0xFF8D6E63),
-                                    ),
+                                Text(
+                                  provider.pendingCount.toString(),
+                                  style: const TextStyle(
+                                    fontFamily: 'NotoSans',
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 22,
+                                    color: Color(0xFFFF9500),
+                                    height: 1.0,
                                   ),
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 16),
-                                  child: Text(
-                                    provider.pendingCount.toString(),
-                                    style: const TextStyle(
-                                      fontFamily: 'NotoSans',
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 18,
-                                      color: Color(0xFFFF8F00),
-                                    ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '대기 중',
+                                  style: TextStyle(
+                                    fontFamily: 'NotoSans',
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 15,
+                                    color: Color(0xFF8D6E63),
                                   ),
                                 ),
                               ],
                             ),
                           ),
                         ),
+                        
                         const SizedBox(width: 12),
-                        // 출장 일수
+                        
                         Expanded(
                           child: Container(
-                            height: 38,
+                            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFE8F5E8),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: const Color(0xFF81C784).withOpacity(0.4),
-                                width: 1,
-                              ),
+                              color: const Color(0xFFE6F7E6),
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Padding(
-                                  padding: EdgeInsets.only(left: 16),
-                                  child: Text(
-                                    '출장 일수',
-                                    style: TextStyle(
-                                      fontFamily: 'NotoSans',
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 13,
-                                      color: Color(0xFF2E7D32),
-                                    ),
+                                Text(
+                                  provider.biztripDays.toString(),
+                                  style: const TextStyle(
+                                    fontFamily: 'NotoSans',
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 22,
+                                    color: Color(0xFF34C759),
+                                    height: 1.0,
                                   ),
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 16),
-                                  child: Text(
-                                    provider.biztripDays.toString(),
-                                    style: const TextStyle(
-                                      fontFamily: 'NotoSans',
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 18,
-                                      color: Color(0xFF388E3C),
-                                    ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '출장 일수',
+                                  style: TextStyle(
+                                    fontFamily: 'NotoSans',
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 15,
+                                    color: Color(0xFF2E7D32),
                                   ),
                                 ),
                               ],
@@ -235,7 +228,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
               Consumer<UserProvider>(
                 builder: (context, userProvider, _) {
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 25),
+                    padding: const EdgeInsets.only(bottom: 0),
                     child: Row(
                       children: [
                         Expanded(
@@ -256,19 +249,13 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
                   );
                 },
               ),
-              const SizedBox(height: 22),
+              const SizedBox(height: 25),
               // 3. 최근 신청
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(rValue),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 12,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
+                  boxShadow: [AppShadows.card],
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 18),
                 child: Column(
@@ -289,13 +276,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(rValue),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 12,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
+                  boxShadow: [AppShadows.card],
                 ),
                 padding: const EdgeInsets.all(18),
                 child: Column(
@@ -310,11 +291,11 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
                           style: const TextStyle(
                             fontFamily: 'NotoSans',
                             fontWeight: FontWeight.w400,
-                            fontSize: 17,
+                            fontSize: 13,
                             color: Color(0xFF888888),
                             letterSpacing: 0.1,
                           ),
-                        )
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -343,15 +324,32 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
                               ...provider.todayLeaves.map((l) => Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 6),
                                 child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Icon(l['type'] == 'biztrip' ? Icons.flight_takeoff : Icons.beach_access, size: 20, color: l['type'] == 'biztrip' ? AppColors.primary : Color(0xFFFFA726)),
                                     const SizedBox(width: 10),
-                                    Text(l['name'] ?? l['user_email'] ?? '-', style: _listTitleStyle),
-                                    const SizedBox(width: 8),
-                                    Text('(${l['type']})', style: _listSubStyle),
-                                    const Spacer(),
-                                    Text('${l['start_date']}~${l['end_date']}', style: _listSubStyle),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(l['name'] ?? l['user_email'] ?? '-', style: _listTitleStyle),
+                                              const SizedBox(width: 8),
+                                              _leaveTypeChip(l['type']),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            '${l['start_date']}~${l['end_date']}',
+                                            style: _listSubStyle,
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 1,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ],
                                 ),
                               )),
@@ -364,6 +362,43 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _statusBox(String label, String value) {
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF6F7FA),
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [AppShadows.card],
+      ),
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              fontFamily: 'NotoSans',
+              fontWeight: FontWeight.w600,
+              fontSize: 17,
+              color: Color(0xFF357AE8),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              fontFamily: 'NotoSans',
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+              color: Color(0xFF6C757D),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -393,6 +428,36 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
         child: Text(label, style: _mainButtonTextStyle),
       ),
     );
+  }
+
+  Color _typeColor(String type) {
+    switch (type) {
+      case 'annual':
+        return AppColors.primary; // 연파랑 배경엔 진한 파랑
+      case 'half_am':
+        return const Color(0xFFFFE0B2); // 연주황
+      case 'half_pm':
+        return const Color(0xFFC8E6C9); // 연초록
+      case 'official':
+        return const Color(0xFFE0E0E0); // 연회색
+      default:
+        return Colors.black12;
+    }
+  }
+
+  Color _chipTextColor(String type) {
+    switch (type) {
+      case 'annual':
+        return AppColors.primary; // 연파랑 배경엔 진한 파랑
+      case 'half_am':
+        return const Color(0xFFFF9800); // 연주황 배경엔 진한 주황
+      case 'half_pm':
+        return const Color(0xFF388E3C); // 연초록 배경엔 진한 초록
+      case 'official':
+        return const Color(0xFF757575); // 연회색 배경엔 진한 회색
+      default:
+        return Colors.black87;
+    }
   }
 
   Widget _recentLeaveTile(Map<String, dynamic> l) {
@@ -447,7 +512,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
                               typeDetail,
                               style: TextStyle(
                                 color: _chipTextColor(l['type']).withOpacity(0.8),
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w700,
                                 fontSize: 15,
                                 letterSpacing: 0.1,
                               ),
@@ -496,6 +561,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
             ],
           ),
         ),
+        // Divider는 항목 사이에 직접 넣지 않음(타입이 바뀌는 곳만)
       ],
     );
   }
@@ -509,34 +575,64 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
     return widgets;
   }
 
-  Color _typeColor(String type) {
-    switch (type) {
-      case 'annual':
-        return AppColors.primary; // 연파랑 배경엔 진한 파랑
-      case 'half_am':
-        return const Color(0xFFFFE0B2); // 연주황
-      case 'half_pm':
-        return const Color(0xFFC8E6C9); // 연초록
-      case 'official':
-        return const Color(0xFFE0E0E0); // 연회색
-      default:
-        return Colors.black12;
-    }
+  String _todayStr() {
+    final now = DateTime.now();
+    return '${now.month}/${now.day}';
   }
 
-  Color _chipTextColor(String type) {
+  Widget _leaveTypeChip(String type) {
+    String label;
+    Color bgColor;
+    Color textColor;
     switch (type) {
       case 'annual':
-        return AppColors.primary; // 연파랑 배경엔 진한 파랑
+        label = '연차';
+        bgColor = const Color(0xFFE3F2FD);
+        textColor = const Color(0xFF1976D2);
+        break;
+      case 'halfAm':
       case 'half_am':
-        return const Color(0xFFFF9800); // 연주황 배경엔 진한 주황
+        label = '오전반차';
+        bgColor = const Color(0xFFFFF3E0);
+        textColor = const Color(0xFFFF9800);
+        break;
+      case 'halfPm':
       case 'half_pm':
-        return const Color(0xFF388E3C); // 연초록 배경엔 진한 초록
+        label = '오후반차';
+        bgColor = const Color(0xFFE8F5E9);
+        textColor = const Color(0xFF388E3C);
+        break;
       case 'official':
-        return const Color(0xFF757575); // 연회색 배경엔 진한 회색
+        label = '공가';
+        bgColor = const Color(0xFFF5F5F5);
+        textColor = const Color(0xFF757575);
+        break;
+      case 'biztrip':
+        label = '출장';
+        bgColor = const Color(0xFFF3E5F5);
+        textColor = const Color(0xFF7B1FA2);
+        break;
       default:
-        return Colors.black87;
+        label = type;
+        bgColor = const Color(0xFFE3F2FD);
+        textColor = const Color(0xFF1976D2);
     }
+    return Container(
+      margin: const EdgeInsets.only(left: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: textColor,
+          fontWeight: FontWeight.bold,
+          fontSize: 15,
+        ),
+      ),
+    );
   }
 }
 
@@ -556,10 +652,33 @@ const _sectionTitleStyle = TextStyle(
   letterSpacing: 0.1,
   height: 1.25,
 );
+const _statusLabelStyle = TextStyle(
+  fontFamily: 'NotoSans',
+  fontWeight: FontWeight.w800,
+  fontSize: 19,
+  color: Color(0xFF555A65),
+  letterSpacing: 0.1,
+  height: 1.25,
+);
+const _statusValueStyle = TextStyle(
+  fontFamily: 'NotoSans',
+  fontWeight: FontWeight.w800,
+  fontSize: 32,
+  color: Color(0xFF357AE8),
+  letterSpacing: 0.1,
+  height: 1.15,
+);
 const _mainButtonTextStyle = TextStyle(
   fontFamily: 'NotoSans',
   fontWeight: FontWeight.w700,
   fontSize: 21,
+  letterSpacing: 0.1,
+  height: 1.2,
+);
+const _badgeTextStyle = TextStyle(
+  fontFamily: 'NotoSans',
+  fontWeight: FontWeight.bold,
+  fontSize: 15,
   letterSpacing: 0.1,
   height: 1.2,
 );

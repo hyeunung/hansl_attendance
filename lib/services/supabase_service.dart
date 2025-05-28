@@ -24,4 +24,16 @@ class SupabaseService {
     }
     return [];
   }
+
+  Future<Map<String, dynamic>?> getEmployeeByEmail(String email) async {
+    final response = await Supabase.instance.client
+        .from('employees')
+        .select('*')
+        .eq('email', email)
+        .single();
+    if (response != null && response['email'] != null) {
+      return response as Map<String, dynamic>;
+    }
+    return null;
+  }
 } 

@@ -10,6 +10,9 @@ class UserProvider extends ChangeNotifier {
   String? _email;
   String? get email => _email;
 
+  Map<String, dynamic>? _employee;
+  Map<String, dynamic>? get employee => _employee;
+
   void setId(String? id) {
     _id = id;
     notifyListeners();
@@ -29,6 +32,11 @@ class UserProvider extends ChangeNotifier {
     _id = id;
     _name = name;
     _email = email;
+    notifyListeners();
+  }
+
+  void setEmployee(Map<String, dynamic>? employee) {
+    _employee = employee;
     notifyListeners();
   }
 

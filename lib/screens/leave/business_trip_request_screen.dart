@@ -8,6 +8,7 @@ import '../../services/supabase_service.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import '../../theme/app_colors.dart';
 import '../approval/approval_screen.dart';
+import '../../theme/app_shadows.dart';
 
 class BusinessTripRequestScreen extends StatefulWidget {
   const BusinessTripRequestScreen({super.key});
@@ -481,13 +482,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 12,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
+                        boxShadow: [AppShadows.card],
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: Column(
@@ -519,7 +514,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                                 color: const Color(0xFFF4F5F7),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                               child: _isLoadingEmployees
                                   ? const SizedBox(height: 40, child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
                                   : Row(
@@ -537,7 +532,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                                     ),
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 4),
                           if (_selectedCompanions.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(top: 8),
@@ -560,13 +555,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 12,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
+                        boxShadow: [AppShadows.card],
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: Column(
@@ -639,13 +628,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 12,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
+                        boxShadow: [AppShadows.card],
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: Column(
@@ -687,13 +670,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 12,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
+                        boxShadow: [AppShadows.card],
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: Column(
@@ -738,13 +715,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 12,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
+                        boxShadow: [AppShadows.card],
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: Column(
