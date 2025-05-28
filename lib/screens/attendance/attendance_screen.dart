@@ -274,7 +274,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                                     borderRadius: BorderRadius.circular(14),
                                   ),
                                   elevation: 8,
-                                  shadowColor: AppColors.primary.withOpacity(0.3),
+                                  shadowColor: Colors.black.withOpacity(0.15),
                                 ),
                                 onPressed: provider.status == AttendanceStatus.beforeWork
                                     ? () async {
@@ -312,7 +312,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                                     borderRadius: BorderRadius.circular(14),
                                   ),
                                   elevation: 8,
-                                  shadowColor: AppColors.primary.withOpacity(0.3),
+                                  shadowColor: Colors.black.withOpacity(0.15),
                                 ),
                                 onPressed: provider.canClockOut
                                     ? () async {
