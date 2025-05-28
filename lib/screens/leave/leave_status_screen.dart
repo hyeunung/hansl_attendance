@@ -6,6 +6,7 @@ import 'business_trip_request_screen.dart';
 import 'package:intl/intl.dart';
 import '../../providers/user_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_shadows.dart';
 
 class LeaveStatusScreen extends StatefulWidget {
   const LeaveStatusScreen({super.key});
@@ -58,64 +59,198 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (provider.error != null) {
-            return Center(child: Text('에러: ${provider.error}'));
+            return Center(child: Text('에러: [${provider.error}'));
           }
           return ListView(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
             children: [
-              // 1. 내 연차 현황
+              // 1. 내 연차 현황 (Column 구조)
               Container(
+                padding: const EdgeInsets.all(28),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(rValue),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 12,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [AppShadows.card],
+                  border: Border.all(color: Color(0xFFE9ECEF)),
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 22),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text('내 연차 현황', style: _titleStyle),
-                    const SizedBox(height: 18),
+                    // 제목
+                    const Text(
+                      '내 연차 현황',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'NotoSans',
+                        fontWeight: FontWeight.w700,
+                        fontSize: 22,
+                        color: Color(0xFF2C3E50),
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                    // 잔여 연차 박스
+                    Container(
+                      height: 90,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            AppColors.primary.withOpacity(0.08),
+                            AppColors.primary.withOpacity(0.03),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: AppColors.primary.withOpacity(0.15),
+                          width: 1.2,
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            provider.remainAnnual.toString(),
+                            style: const TextStyle(
+                              fontFamily: 'NotoSans',
+                              fontWeight: FontWeight.w800,
+                              fontSize: 32,
+                              color: Color(0xFF357AE8),
+                              height: 1.0,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            '잔여 연차',
+                            style: TextStyle(
+                              fontFamily: 'NotoSans',
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: Color(0xFF5A6C7D),
+                              letterSpacing: 0.1,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // 대기 중/출장 일수 Row
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _statusBox('잔여 연차', provider.remainAnnual.toString(), rValue),
-                        _statusBox('대기 중', provider.pendingCount.toString(), rValue),
-                        _statusBox('출장 일수', provider.biztripDays.toString(), rValue),
+                        // 대기 중
+                        Expanded(
+                          child: Container(
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF8E1),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: const Color(0xFFFFCC80).withOpacity(0.4),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Padding(
+                                  padding: EdgeInsets.only(left: 16),
+                                  child: Text(
+                                    '대기 중',
+                                    style: TextStyle(
+                                      fontFamily: 'NotoSans',
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                      color: Color(0xFF8D6E63),
+                                    ),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 16),
+                                  child: Text(
+                                    provider.pendingCount.toString(),
+                                    style: const TextStyle(
+                                      fontFamily: 'NotoSans',
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 18,
+                                      color: Color(0xFFFF8F00),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // 출장 일수
+                        Expanded(
+                          child: Container(
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE8F5E8),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: const Color(0xFF81C784).withOpacity(0.4),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Padding(
+                                  padding: EdgeInsets.only(left: 16),
+                                  child: Text(
+                                    '출장 일수',
+                                    style: TextStyle(
+                                      fontFamily: 'NotoSans',
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                      color: Color(0xFF2E7D32),
+                                    ),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 16),
+                                  child: Text(
+                                    provider.biztripDays.toString(),
+                                    style: const TextStyle(
+                                      fontFamily: 'NotoSans',
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 18,
+                                      color: Color(0xFF388E3C),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 25),
               // 2. 연차/출장 신청 버튼 (흰색 박스 안에 좌우로)
               Consumer<UserProvider>(
                 builder: (context, userProvider, _) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(rValue),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 12,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 22),
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 25),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Expanded(child: _mainTabButton('연차 신청', 0, rValue)),
-                        const SizedBox(width: 12),
-                        Expanded(child: _mainTabButton('출장 신청', 1, rValue)),
+                        Expanded(
+                          child: SizedBox(
+                            height: 65,
+                            child: _mainTabButton('연차 신청', 0, rValue),
+                          ),
+                        ),
+                        const SizedBox(width: 15),
+                        Expanded(
+                          child: SizedBox(
+                            height: 65,
+                            child: _mainTabButton('출장 신청', 1, rValue),
+                          ),
+                        ),
                       ],
                     ),
                   );
@@ -175,11 +310,11 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
                           style: const TextStyle(
                             fontFamily: 'NotoSans',
                             fontWeight: FontWeight.w400,
-                            fontSize: 13,
+                            fontSize: 17,
                             color: Color(0xFF888888),
                             letterSpacing: 0.1,
                           ),
-                        ),
+                        )
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -233,24 +368,6 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
     );
   }
 
-  Widget _statusBox(String label, String value, double r) {
-    return Container(
-      width: 100,
-      padding: const EdgeInsets.symmetric(vertical: 22),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF6F7FA),
-        borderRadius: BorderRadius.circular(r),
-      ),
-      child: Column(
-        children: [
-          Text(value, style: _statusValueStyle),
-          const SizedBox(height: 6),
-          Text(label, style: _statusLabelStyle),
-        ],
-      ),
-    );
-  }
-
   Widget _mainTabButton(String label, int idx, double r) {
     final selected = _selectedTab == idx;
     return SizedBox(
@@ -276,36 +393,6 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
         child: Text(label, style: _mainButtonTextStyle),
       ),
     );
-  }
-
-  Color _typeColor(String type) {
-    switch (type) {
-      case 'annual':
-        return AppColors.primary; // 연파랑 배경엔 진한 파랑
-      case 'half_am':
-        return const Color(0xFFFFE0B2); // 연주황
-      case 'half_pm':
-        return const Color(0xFFC8E6C9); // 연초록
-      case 'official':
-        return const Color(0xFFE0E0E0); // 연회색
-      default:
-        return Colors.black12;
-    }
-  }
-
-  Color _chipTextColor(String type) {
-    switch (type) {
-      case 'annual':
-        return AppColors.primary; // 연파랑 배경엔 진한 파랑
-      case 'half_am':
-        return const Color(0xFFFF9800); // 연주황 배경엔 진한 주황
-      case 'half_pm':
-        return const Color(0xFF388E3C); // 연초록 배경엔 진한 초록
-      case 'official':
-        return const Color(0xFF757575); // 연회색 배경엔 진한 회색
-      default:
-        return Colors.black87;
-    }
   }
 
   Widget _recentLeaveTile(Map<String, dynamic> l) {
@@ -360,7 +447,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
                               typeDetail,
                               style: TextStyle(
                                 color: _chipTextColor(l['type']).withOpacity(0.8),
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w600,
                                 fontSize: 15,
                                 letterSpacing: 0.1,
                               ),
@@ -409,7 +496,6 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
             ],
           ),
         ),
-        // Divider는 항목 사이에 직접 넣지 않음(타입이 바뀌는 곳만)
       ],
     );
   }
@@ -423,9 +509,34 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
     return widgets;
   }
 
-  String _todayStr() {
-    final now = DateTime.now();
-    return '${now.month}/${now.day}';
+  Color _typeColor(String type) {
+    switch (type) {
+      case 'annual':
+        return AppColors.primary; // 연파랑 배경엔 진한 파랑
+      case 'half_am':
+        return const Color(0xFFFFE0B2); // 연주황
+      case 'half_pm':
+        return const Color(0xFFC8E6C9); // 연초록
+      case 'official':
+        return const Color(0xFFE0E0E0); // 연회색
+      default:
+        return Colors.black12;
+    }
+  }
+
+  Color _chipTextColor(String type) {
+    switch (type) {
+      case 'annual':
+        return AppColors.primary; // 연파랑 배경엔 진한 파랑
+      case 'half_am':
+        return const Color(0xFFFF9800); // 연주황 배경엔 진한 주황
+      case 'half_pm':
+        return const Color(0xFF388E3C); // 연초록 배경엔 진한 초록
+      case 'official':
+        return const Color(0xFF757575); // 연회색 배경엔 진한 회색
+      default:
+        return Colors.black87;
+    }
   }
 }
 
@@ -445,33 +556,10 @@ const _sectionTitleStyle = TextStyle(
   letterSpacing: 0.1,
   height: 1.25,
 );
-const _statusLabelStyle = TextStyle(
-  fontFamily: 'NotoSans',
-  fontWeight: FontWeight.w800,
-  fontSize: 19,
-  color: Color(0xFF555A65),
-  letterSpacing: 0.1,
-  height: 1.25,
-);
-const _statusValueStyle = TextStyle(
-  fontFamily: 'NotoSans',
-  fontWeight: FontWeight.w800,
-  fontSize: 32,
-  color: Color(0xFF357AE8),
-  letterSpacing: 0.1,
-  height: 1.15,
-);
 const _mainButtonTextStyle = TextStyle(
   fontFamily: 'NotoSans',
   fontWeight: FontWeight.w700,
   fontSize: 21,
-  letterSpacing: 0.1,
-  height: 1.2,
-);
-const _badgeTextStyle = TextStyle(
-  fontFamily: 'NotoSans',
-  fontWeight: FontWeight.bold,
-  fontSize: 15,
   letterSpacing: 0.1,
   height: 1.2,
 );
@@ -498,4 +586,4 @@ const _listDescStyle = TextStyle(
   color: Color(0xFFAAAAAA),
   letterSpacing: 0.1,
   height: 1.2,
-); 
+);

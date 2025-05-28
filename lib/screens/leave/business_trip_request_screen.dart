@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../services/supabase_service.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import '../../theme/app_colors.dart';
+import '../approval/approval_screen.dart';
 
 class BusinessTripRequestScreen extends StatefulWidget {
   const BusinessTripRequestScreen({super.key});
@@ -829,7 +830,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(content: Text('신청이 완료되었습니다.'), backgroundColor: AppColors.primary),
                                     );
-                                    Navigator.pop(context);
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ApprovalScreen()));
                                   }
                                 } else {
                                   if (mounted) {

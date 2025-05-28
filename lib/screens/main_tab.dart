@@ -15,6 +15,7 @@ class MainTab extends StatefulWidget {
 
 class _MainTabState extends State<MainTab> {
   int _currentIndex = 0;
+  final PageController _pageController = PageController();
   final List<Widget> _screens = const [
     AttendanceScreen(),
     LeaveStatusScreen(),
@@ -23,13 +24,31 @@ class _MainTabState extends State<MainTab> {
     SettingsScreen(),
   ];
 
+  void _onTabTapped(int index) {
+    setState(() => _currentIndex = index);
+    _pageController.animateToPage(index, duration: Duration(milliseconds: 200), curve: Curves.ease);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_currentIndex],
+      body: PageView(
+        controller: _pageController,
+        children: _screens,
+        onPageChanged: (index) {
+          setState(() => _currentIndex = index);
+        },
+        physics: const BouncingScrollPhysics(),
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
+        onTap: _onTabTapped,
         type: BottomNavigationBarType.fixed,
         selectedItemColor: AppColors.primary, // 메인 컬러(파랑)
         unselectedItemColor: Colors.grey,     // 비선택 탭(회색)
