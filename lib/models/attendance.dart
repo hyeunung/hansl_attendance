@@ -1,6 +1,6 @@
 class Attendance {
   // 출퇴근 정보 필드 및 생성자 작성 예정
-}
+} 
 
 class AttendanceRecord {
   final int? id;

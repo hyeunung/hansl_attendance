@@ -36,11 +36,11 @@ class HanslApp extends StatelessWidget {
               userId: userProvider.id ?? '',
               userName: userProvider.name ?? '',
             ),
-            child: MaterialApp(
-              title: 'HANSL',
-              theme: AppTheme.lightTheme,
-              home: const SplashScreen(),
-              debugShowCheckedModeBanner: false,
+      child: MaterialApp(
+        title: 'HANSL',
+        theme: AppTheme.lightTheme,
+        home: const SplashScreen(),
+        debugShowCheckedModeBanner: false,
             ),
           );
         },
