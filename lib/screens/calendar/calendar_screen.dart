@@ -102,7 +102,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('${_focusedMonth.year}년 ${_focusedMonth.month}월', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: Color(0xFF1C1C1E))),
+                        Text('${_focusedMonth.year}년 ${_focusedMonth.month}월', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 22, color: Color(0xFF1C1C1E))),
                         IconButton(
                           icon: const Icon(Icons.today, color: Color(0xFF1E90FF)),
                           onPressed: () {

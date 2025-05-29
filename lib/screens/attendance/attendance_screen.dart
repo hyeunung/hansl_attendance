@@ -268,8 +268,8 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(14),
                                   ),
-                                  elevation: 8,
-                                  shadowColor: Colors.black.withOpacity(0.15),
+                                  elevation: provider.status == AttendanceStatus.beforeWork ? 6 : 0,
+                                  shadowColor: Colors.black,
                                 ),
                                 onPressed: provider.status == AttendanceStatus.beforeWork
                                     ? () async {
@@ -306,8 +306,8 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(14),
                                   ),
-                                  elevation: 8,
-                                  shadowColor: Colors.black.withOpacity(0.15),
+                                  elevation: provider.canClockOut ? 6 : 0,
+                                  shadowColor: Colors.black,
                                 ),
                                 onPressed: provider.canClockOut
                                     ? () async {
