@@ -451,6 +451,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
 
                       const SizedBox(height: 20),
+
+                      // 로그아웃 버튼 하단 중앙 배치 (복구)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 32, top: 8),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 180,
+                              height: 48,
+                              child: TextButton.icon(
+                                icon: const Icon(Icons.logout, color: Color(0xFFFF3B30)),
+                                label: const Text('로그아웃', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFFF3B30), fontSize: 17)),
+                                style: TextButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  elevation: 0,
+                                  shape: null,
+                                  padding: EdgeInsets.zero,
+                                ),
+                                onPressed: () async {
+                                  final prefs = await SharedPreferences.getInstance();
+                                  await prefs.setBool('autoLogin', false);
+                                  await prefs.remove('autoLoginEmail');
+                                  await prefs.remove('autoLoginPassword');
+                                  if (!mounted) return;
+                                  Navigator.of(context).pushAndRemoveUntil(
+                                    MaterialPageRoute(builder: (context) => LoginScreen()),
+                                    (route) => false,
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            const Text('앱 버전 1.0.0', style: TextStyle(color: Color(0xFFB0B0B0), fontSize: 18)),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
