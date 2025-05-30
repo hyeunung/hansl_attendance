@@ -323,32 +323,13 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
                               ...provider.todayLeaves.map((l) => Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 6),
                                 child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Icon(l['type'] == 'biztrip' ? Icons.flight_takeoff : Icons.beach_access, size: 20, color: l['type'] == 'biztrip' ? AppColors.primary : Color(0xFFFFA726)),
                                     const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(l['name'] ?? l['user_email'] ?? '-', style: _listTitleStyle),
-                                              const SizedBox(width: 8),
-                                              _leaveTypeChip(l['type']),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            '${l['start_date']}~${l['end_date']}',
-                                            style: _listSubStyle,
-                                            overflow: TextOverflow.ellipsis,
-                                            maxLines: 1,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                                    Text(l['name'] ?? l['user_email'] ?? '-', style: _listTitleStyle),
+                                    const SizedBox(width: 8),
+                                    _leaveTypeChip(l['type']),
                                   ],
                                 ),
                               )),
@@ -484,7 +465,6 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
     DateTime start = DateTime.parse(l['start_date']);
     DateTime end = DateTime.parse(l['end_date']);
     int days = end.difference(start).inDays + 1;
-    // 오전/오후반차는 0.5일로 표시
     double displayDays = 1.0 * days;
     if (l['type'] == 'halfAm' || l['type'] == 'half_am' || l['type'] == 'halfPm' || l['type'] == 'half_pm') {
       displayDays = 0.5;
@@ -499,7 +479,6 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
     String? reason = l['reason'];
     String statusLabel = status == 'approved' ? '승인됨' : status == 'pending' ? '대기중' : '반려';
     Color statusColor = status == 'approved' ? Color(0xFF4CAF50) : status == 'pending' ? Color(0xFFFFA726) : Color(0xFFE57373);
-    // 신청자 이름(leave DB의 name, 출장신청만 표시)
     final String name = l['type'] == 'biztrip' ? (l['name'] ?? '-') : '';
     return Column(
       children: [
@@ -508,75 +487,34 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(typeLabel, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Color(0xFF222222))),
-                        if (typeDetail.isNotEmpty)
-                          Container(
-                            margin: const EdgeInsets.only(left: 8),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: _typeColor(l['type']).withOpacity(0.32),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              typeDetail,
-                              style: TextStyle(
-                                color: _chipTextColor(l['type']).withOpacity(0.8),
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15,
-                                letterSpacing: 0.1,
-                              ),
-                            ),
-                          ),
-                        // 신청자 이름(출장신청만, Chip 스타일)
-                        if (name.isNotEmpty && name != '-')
-                          Container(
-                            margin: const EdgeInsets.only(left: 8),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFB3D8FF).withOpacity(0.22),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              name,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                color: Color.fromRGBO(53, 122, 232, 0.6),
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.1,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Text(period, style: const TextStyle(fontSize: 15, color: Color(0xFF666666))),
-                        if (companions != null && companions.isNotEmpty)
-                          Text(' ($companions 동행)', style: const TextStyle(fontSize: 15, color: Color(0xFF666666))),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+              Icon(l['type'] == 'biztrip' ? Icons.flight_takeoff : Icons.beach_access, size: 20, color: l['type'] == 'biztrip' ? AppColors.primary : Color(0xFFFFA726)),
+              const SizedBox(width: 10),
+              Text(l['name'] ?? l['user_email'] ?? '-', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Color(0xFF222222))),
+              const SizedBox(width: 8),
+              _leaveTypeChip(l['type']),
+              Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
                 decoration: BoxDecoration(
                   color: statusColor.withOpacity(0.13),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(statusLabel, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 15)),
+                child: Text(
+                  statusLabel,
+                  style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 15),
+                ),
               ),
             ],
           ),
         ),
-        // Divider는 항목 사이에 직접 넣지 않음(타입이 바뀌는 곳만)
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            Text(period, style: const TextStyle(fontSize: 15, color: Color(0xFF666666))),
+            if (companions != null && companions.isNotEmpty)
+              Text(' ($companions 동행)', style: const TextStyle(fontSize: 15, color: Color(0xFF666666))),
+          ],
+        ),
       ],
     );
   }
@@ -599,20 +537,19 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
     String label;
     Color bgColor;
     Color textColor;
-    switch (type) {
+    final normalizedType = type.toLowerCase().replaceAll('_', '');
+    switch (normalizedType) {
       case 'annual':
         label = '연차';
         bgColor = const Color(0xFFE3F2FD);
         textColor = const Color(0xFF1976D2);
         break;
-      case 'halfAm':
-      case 'half_am':
+      case 'halfam':
         label = '오전반차';
         bgColor = const Color(0xFFFFF3E0);
         textColor = const Color(0xFFFF9800);
         break;
-      case 'halfPm':
-      case 'half_pm':
+      case 'halfpm':
         label = '오후반차';
         bgColor = const Color(0xFFE8F5E9);
         textColor = const Color(0xFF388E3C);
@@ -624,8 +561,8 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
         break;
       case 'biztrip':
         label = '출장';
-        bgColor = const Color(0xFFF3E5F5);
-        textColor = const Color(0xFF7B1FA2);
+        bgColor = const Color(0xFFF3E5F5); // 보라색 배경
+        textColor = const Color(0xFF7B1FA2); // 보라색 글자
         break;
       default:
         label = type;
@@ -633,18 +570,19 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
         textColor = const Color(0xFF1976D2);
     }
     return Container(
-      margin: const EdgeInsets.only(left: 2),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      margin: const EdgeInsets.only(left: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         label,
         style: TextStyle(
-          color: textColor,
-          fontWeight: FontWeight.bold,
+          color: textColor.withOpacity(0.8),
+          fontWeight: FontWeight.w700,
           fontSize: 15,
+          letterSpacing: 0.1,
         ),
       ),
     );

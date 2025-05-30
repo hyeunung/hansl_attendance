@@ -46,21 +46,77 @@ class _MainTabState extends State<MainTab> {
         },
         physics: const BouncingScrollPhysics(),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: _onTabTapped,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primary, // 메인 컬러(파랑)
-        unselectedItemColor: Colors.grey,     // 비선택 탭(회색)
-        selectedFontSize: 12,
-        unselectedFontSize: 12,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.access_time), label: '출퇴근'),
-          BottomNavigationBarItem(icon: Icon(Icons.beach_access), label: '연차/출장'),
-          BottomNavigationBarItem(icon: Icon(Icons.check_circle), label: '승인'),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: '달력'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: '설정'),
-        ],
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          border: Border(
+            top: BorderSide(color: Color(0xFFE0E0E0), width: 1.5),
+          ),
+          color: Colors.white, // 완전 흰색
+        ),
+        child: BottomNavigationBar(
+          backgroundColor: Colors.white, // 내부 배경도 완전 흰색
+          currentIndex: _currentIndex,
+          onTap: _onTabTapped,
+          type: BottomNavigationBarType.fixed,
+          selectedFontSize: 14,
+          unselectedFontSize: 14,
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+          selectedIconTheme: const IconThemeData(size: 32),
+          unselectedIconTheme: const IconThemeData(size: 32),
+          items: [
+            BottomNavigationBarItem(
+              icon: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Icon(
+                  Icons.access_time,
+                  color: _currentIndex == 0 ? const Color(0xFFFF9500) : Colors.grey,
+                ),
+              ),
+              label: '',
+            ),
+            BottomNavigationBarItem(
+              icon: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Icon(
+                  Icons.beach_access,
+                  color: _currentIndex == 1 ? AppColors.primary : Colors.grey,
+                ),
+              ),
+              label: '',
+            ),
+            BottomNavigationBarItem(
+              icon: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Icon(
+                  Icons.check_circle,
+                  color: _currentIndex == 2 ? const Color(0xFF34C759) : Colors.grey,
+                ),
+              ),
+              label: '',
+            ),
+            BottomNavigationBarItem(
+              icon: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Icon(
+                  Icons.calendar_today,
+                  color: _currentIndex == 3 ? const Color(0xFFFF3B30) : Colors.grey,
+                ),
+              ),
+              label: '',
+            ),
+            BottomNavigationBarItem(
+              icon: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Icon(
+                  Icons.settings,
+                  color: _currentIndex == 4 ? const Color(0xFF8E8E93) : Colors.grey,
+                ),
+              ),
+              label: '',
+            ),
+          ],
+        ),
       ),
     );
   }
