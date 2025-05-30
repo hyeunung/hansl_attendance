@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_text_theme.dart';
+import 'package:keyboard_actions/keyboard_actions.dart';
 
 class AnnualLeaveRequestScreen extends StatefulWidget {
   const AnnualLeaveRequestScreen({super.key});
@@ -18,6 +19,7 @@ class AnnualLeaveRequestScreen extends StatefulWidget {
 
 class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
   final TextEditingController _memoController = TextEditingController();
+  final FocusNode _memoFocusNode = FocusNode();
   LeaveType _selectedType = LeaveType.annual;
   bool _dropdownOpen = false;
   final List<LeaveType> _leaveTypes = [
@@ -39,6 +41,7 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
   @override
   void dispose() {
     _memoController.dispose();
+    _memoFocusNode.dispose();
     super.dispose();
   }
 
@@ -184,6 +187,7 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final barHeight = 48.0; // KeyboardActions bar 예상 높이 (사용 안함)
     return Consumer2<LeaveProvider, UserProvider>(
       builder: (context, leaveProvider, userProvider, _) {
         final now = DateTime.now();
@@ -224,345 +228,360 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
             ),
           ),
           backgroundColor: const Color(0xFFF6F7FA),
-          body: Column(
+          body: ListView(
+            padding: const EdgeInsets.all(16),
             children: [
               _buildBanner(),
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.all(16),
+              // 드롭다운: 연차 유형 선택
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  GestureDetector(
+                    onTap: () => setState(() => _dropdownOpen = !_dropdownOpen),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [AppShadows.card],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(_selectedType.label, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                          Icon(_dropdownOpen ? Icons.expand_less : Icons.expand_more, color: AppColors.primary),
+                        ],
+                      ),
+                    ),
+                  ),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    height: _dropdownOpen ? (_leaveTypes.length * 48.0) : 0,
+                    curve: Curves.easeInOut,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: ListView(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: _leaveTypes.map((type) {
+                          return Material(
+                            color: Colors.white,
+                            child: InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _selectedType = type;
+                                  _dropdownOpen = false;
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                                child: Text(type.label, style: const TextStyle(fontSize: 18)),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              // 파란 카드
+              Container(
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 드롭다운: 연차 유형 선택
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const Text('신청 가능', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        GestureDetector(
-                          onTap: () => setState(() => _dropdownOpen = !_dropdownOpen),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [AppShadows.card],
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(_selectedType.label, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                                Icon(_dropdownOpen ? Icons.expand_less : Icons.expand_more, color: AppColors.primary),
-                              ],
-                            ),
-                          ),
-                        ),
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          height: _dropdownOpen ? (_leaveTypes.length * 48.0) : 0,
-                          curve: Curves.easeInOut,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(14),
-                            child: ListView(
-                              children: _leaveTypes.map((type) {
-                                return Material(
-                                  color: Colors.white,
-                                  child: InkWell(
-                                    onTap: () {
-                                      setState(() {
-                                        _selectedType = type;
-                                        _dropdownOpen = false;
-                                      });
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                                      child: Text(type.label, style: const TextStyle(fontSize: 18)),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ),
+                        const SizedBox(),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text('$remainAnnual일', style: const TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold)),
+                            Text('/ $grantedAnnual', style: const TextStyle(color: Colors.white70, fontSize: 16, fontWeight: FontWeight.bold)),
+                          ],
                         ),
                       ],
                     ),
-                    const SizedBox(height: 18),
-                    // 파란 카드
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: AppColors.primaryGradient,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('신청 가능', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const SizedBox(),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text('$remainAnnual일', style: const TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold)),
-                                  Text('/ $grantedAnnual', style: const TextStyle(color: Colors.white70, fontSize: 16, fontWeight: FontWeight.bold)),
-                                ],
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text('• $thisYear.01.01 ~ $thisYear.12.31   ${thisYearGranted}일   >', style: const TextStyle(color: Colors.white, fontSize: 15)),
-                          Text('• $nextYear.01.01 ~ $nextYear.12.31   ${nextYearGranted}일   >', style: const TextStyle(color: Colors.white, fontSize: 15)),
-                        ],
-                      ),
+                    const SizedBox(height: 8),
+                    Text('• $thisYear.01.01 ~ $thisYear.12.31   ${thisYearGranted}일   >', style: const TextStyle(color: Colors.white, fontSize: 15)),
+                    Text('• $nextYear.01.01 ~ $nextYear.12.31   ${nextYearGranted}일   >', style: const TextStyle(color: Colors.white, fontSize: 15)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              // 날짜 입력 및 달력
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [AppShadows.card],
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text('날짜', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+                        const Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
+                        const SizedBox(width: 12),
+                        Text('사용연차 : ${_usedDaysSum % 1 == 0 ? _usedDaysSum.toInt() : _usedDaysSum}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+                      ],
                     ),
-                    const SizedBox(height: 20),
-                    // 날짜 입력 및 달력
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [AppShadows.card],
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Text('날짜', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-                              const Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
-                              const SizedBox(width: 12),
-                              Text('사용연차 : ${_usedDaysSum % 1 == 0 ? _usedDaysSum.toInt() : _usedDaysSum}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          TableCalendar(
-                            firstDay: DateTime(now.year, 1, 1),
-                            lastDay: DateTime(now.year + 1, 12, 31),
-                            focusedDay: DateTime.now(),
-                            selectedDayPredicate: (day) {
-                              for (final type in _leaveTypes) {
-                                if (_selectedDatesMap[type]!.any((d) => isSameDay(d, day))) return true;
-                              }
-                              return false;
-                            },
-                            onDaySelected: (selectedDay, _) => _onDayTapped(selectedDay, myLeaves),
-                            calendarStyle: CalendarStyle(
-                              isTodayHighlighted: true,
-                              selectedDecoration: const BoxDecoration(),
-                              todayDecoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.2),
-                                shape: BoxShape.circle,
-                              ),
-                              disabledTextStyle: TextStyle(color: Colors.grey.shade400),
-                            ),
-                            enabledDayPredicate: (day) {
-                              final Set<DateTime> disabledDates = myLeaves.map((l) {
-                                final start = DateTime.parse(l['start_date']);
-                                final end = DateTime.parse(l['end_date']);
-                                return List.generate(end.difference(start).inDays + 1, (i) => DateTime(start.year, start.month, start.day + i));
-                              }).expand((x) => x).toSet();
-                              if (disabledDates.any((d) => isSameDay(d, day))) return false;
-                              for (final type in _leaveTypes) {
-                                if (type != _selectedType && _selectedDatesMap[type]!.any((d) => isSameDay(d, day))) return false;
-                              }
-                              return true;
-                            },
-                            headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true),
-                            calendarFormat: CalendarFormat.month,
-                            calendarBuilders: CalendarBuilders(
-                              defaultBuilder: (context, day, focusedDay) {
-                                LeaveType? type;
-                                for (final t in _leaveTypes) {
-                                  if (_selectedDatesMap[t]!.any((d) => isSameDay(d, day))) {
-                                    type = t;
-                                    break;
-                                  }
-                                }
-                                return type != null ? _buildDayMarker(day, type!) : null;
-                              },
-                              selectedBuilder: (context, day, focusedDay) {
-                                LeaveType? type;
-                                for (final t in _leaveTypes) {
-                                  if (_selectedDatesMap[t]!.any((d) => isSameDay(d, day))) {
-                                    type = t;
-                                    break;
-                                  }
-                                }
-                                return type != null ? _buildDayMarker(day, type!) : null;
-                              },
-                              todayBuilder: (context, day, focusedDay) {
-                                LeaveType? type;
-                                for (final t in _leaveTypes) {
-                                  if (_selectedDatesMap[t]!.any((d) => isSameDay(d, day))) {
-                                    type = t;
-                                    break;
-                                  }
-                                }
-                                if (type != null) {
-                                  return _buildDayMarker(day, type);
-                                }
-                                return Container(
-                                  width: 36,
-                                  height: 36,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary.withOpacity(0.2),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text('${day.day}', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (_leaveTypes.any((type) => _selectedDatesMap[type]!.isNotEmpty))
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: Wrap(
-                          spacing: 8,
-                          children: [
-                            for (final type in _leaveTypes)
-                              for (final d in (_selectedDatesMap[type]!.toList()..sort((a, b) => a.compareTo(b))))
-                                _buildDateChip(d, type),
-                          ],
+                    const SizedBox(height: 8),
+                    TableCalendar(
+                      firstDay: DateTime(now.year, 1, 1),
+                      lastDay: DateTime(now.year + 1, 12, 31),
+                      focusedDay: DateTime.now(),
+                      selectedDayPredicate: (day) {
+                        for (final type in _leaveTypes) {
+                          if (_selectedDatesMap[type]!.any((d) => isSameDay(d, day))) return true;
+                        }
+                        return false;
+                      },
+                      onDaySelected: (selectedDay, _) => _onDayTapped(selectedDay, myLeaves),
+                      calendarStyle: CalendarStyle(
+                        isTodayHighlighted: true,
+                        selectedDecoration: const BoxDecoration(),
+                        todayDecoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.2),
+                          shape: BoxShape.circle,
                         ),
+                        disabledTextStyle: TextStyle(color: Colors.grey.shade400),
                       ),
-                    const SizedBox(height: 16),
-                    // 메모 입력
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [AppShadows.card],
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: const [
-                              Text('메모', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-                              Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
+                      enabledDayPredicate: (day) {
+                        final Set<DateTime> disabledDates = myLeaves.map((l) {
+                          final start = DateTime.parse(l['start_date']);
+                          final end = DateTime.parse(l['end_date']);
+                          return List.generate(end.difference(start).inDays + 1, (i) => DateTime(start.year, start.month, start.day + i));
+                        }).expand((x) => x).toSet();
+                        if (disabledDates.any((d) => isSameDay(d, day))) return false;
+                        for (final type in _leaveTypes) {
+                          if (type != _selectedType && _selectedDatesMap[type]!.any((d) => isSameDay(d, day))) return false;
+                        }
+                        return true;
+                      },
+                      headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true),
+                      calendarFormat: CalendarFormat.month,
+                      calendarBuilders: CalendarBuilders(
+                        defaultBuilder: (context, day, focusedDay) {
+                          LeaveType? type;
+                          for (final t in _leaveTypes) {
+                            if (_selectedDatesMap[t]!.any((d) => isSameDay(d, day))) {
+                              type = t;
+                              break;
+                            }
+                          }
+                          return type != null ? _buildDayMarker(day, type!) : null;
+                        },
+                        selectedBuilder: (context, day, focusedDay) {
+                          LeaveType? type;
+                          for (final t in _leaveTypes) {
+                            if (_selectedDatesMap[t]!.any((d) => isSameDay(d, day))) {
+                              type = t;
+                              break;
+                            }
+                          }
+                          return type != null ? _buildDayMarker(day, type!) : null;
+                        },
+                        todayBuilder: (context, day, focusedDay) {
+                          LeaveType? type;
+                          for (final t in _leaveTypes) {
+                            if (_selectedDatesMap[t]!.any((d) => isSameDay(d, day))) {
+                              type = t;
+                              break;
+                            }
+                          }
+                          if (type != null) {
+                            return _buildDayMarker(day, type);
+                          }
+                          return Container(
+                            width: 36,
+                            height: 36,
                             decoration: BoxDecoration(
-                              color: Color(0xFFF6F7FA),
-                              borderRadius: BorderRadius.circular(10),
+                              color: AppColors.primary.withOpacity(0.2),
+                              shape: BoxShape.circle,
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            child: TextField(
-                              controller: _memoController,
-                              decoration: const InputDecoration(
-                                hintText: '메모를 입력하세요',
-                                border: InputBorder.none,
-                                isCollapsed: true,
-                              ),
-                              maxLines: 3,
-                              onChanged: (_) => setState(() {}),
-                            ),
-                          ),
-                          if (_memoController.text.trim().isEmpty)
-                            const Padding(
-                              padding: EdgeInsets.only(top: 4.0, left: 4.0),
-                              child: Text('메모는 필수 입력 항목입니다.', style: TextStyle(color: Colors.red, fontSize: 13)),
-                            ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 54,
-                      child: GestureDetector(
-                        onTap: (_usedDaysSum > 0 && _memoController.text.trim().isNotEmpty)
-                            ? () async {
-                                final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
-                                final userProvider = Provider.of<UserProvider>(context, listen: false);
-                                final userEmail = userProvider.email;
-                                if (userEmail == null || userEmail.isEmpty) {
-                                  if (mounted) {
-                                    _showBanner('로그인 정보가 없습니다. 다시 로그인 해주세요.', error: true);
-                                  }
-                                  return;
-                                }
-                                bool hasError = false;
-                                for (final type in _leaveTypes) {
-                                  final selectedDates = _selectedDatesMap[type]!.toList()..sort();
-                                  if (selectedDates.isEmpty) continue;
-                                  // 연속 구간별로 묶기
-                                  List<List<DateTime>> ranges = [];
-                                  for (final d in selectedDates) {
-                                    if (ranges.isEmpty || d.difference(ranges.last.last).inDays > 1) {
-                                      ranges.add([d]);
-                                    } else {
-                                      ranges.last.add(d);
-                                    }
-                                  }
-                                  for (final range in ranges) {
-                                    final start = range.first;
-                                    final end = range.last;
-                                    try {
-                                      await leaveProvider.requestLeave(
-                                        userEmail: userEmail,
-                                        type: type.dbValue,
-                                        startDate: start,
-                                        endDate: end,
-                                        reason: _memoController.text.trim(),
-                                      );
-                                    } catch (e) {
-                                      hasError = true;
-                                    }
-                                  }
-                                }
-                                if (!hasError) {
-                                  if (mounted) {
-                                    _showBanner('신청이 완료되었습니다.');
-                                    Future.delayed(const Duration(seconds: 2), () {
-                                      if (mounted) Navigator.pop(context);
-                                    });
-                                  }
-                                } else {
-                                  if (mounted) {
-                                    _showBanner('신청 중 오류가 발생했습니다.', error: true);
-                                  }
-                                }
-                              }
-                            : null,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: (_usedDaysSum > 0 && _memoController.text.trim().isNotEmpty)
-                                ? AppColors.primaryGradient
-                                : null,
-                            color: (_usedDaysSum > 0 && _memoController.text.trim().isNotEmpty)
-                                ? null
-                                : const Color(0xFFE0E0E0),
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              if (_usedDaysSum > 0 && _memoController.text.trim().isNotEmpty)
-                                AppShadows.button,
-                            ],
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            '신청하기',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: (_usedDaysSum > 0 && _memoController.text.trim().isNotEmpty)
-                                  ? Colors.white
-                                  : const Color(0xFFB0B0B0),
-                            ),
-                          ),
-                        ),
+                            alignment: Alignment.center,
+                            child: Text('${day.day}', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                          );
+                        },
                       ),
                     ),
                   ],
                 ),
               ),
+              if (_leaveTypes.any((type) => _selectedDatesMap[type]!.isNotEmpty))
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Wrap(
+                    spacing: 8,
+                    children: [
+                      for (final type in _leaveTypes)
+                        for (final d in (_selectedDatesMap[type]!.toList()..sort((a, b) => a.compareTo(b))))
+                          _buildDateChip(d, type),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 16),
+              // 메모 입력
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [AppShadows.card],
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: const [
+                        Text('메모', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+                        Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Color(0xFFF6F7FA),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      child: TextField(
+                        controller: _memoController,
+                        focusNode: _memoFocusNode,
+                        decoration: const InputDecoration(
+                          hintText: '메모를 입력하세요',
+                          border: InputBorder.none,
+                        ),
+                        maxLines: 3,
+                        onChanged: (_) => setState(() {}),
+                      ),
+                    ),
+                    if (_memoController.text.trim().isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 4.0, left: 4.0),
+                        child: Text('메모는 필수 입력 항목입니다.', style: TextStyle(color: Colors.red, fontSize: 13)),
+                      ),
+                  ],
+                ),
+              ),
             ],
+          ),
+          bottomNavigationBar: AnimatedPadding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            child: Container(
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+              child: Row(
+                children: [
+                  if (MediaQuery.of(context).viewInsets.bottom > 0)
+                    SizedBox(width: 48), // 왼쪽 공간(키보드 올라왔을 때만)
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: (_usedDaysSum > 0 && _memoController.text.trim().isNotEmpty)
+                          ? () async {
+                              final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
+                              final userProvider = Provider.of<UserProvider>(context, listen: false);
+                              final userEmail = userProvider.email;
+                              if (userEmail == null || userEmail.isEmpty) {
+                                if (mounted) {
+                                  _showBanner('로그인 정보가 없습니다. 다시 로그인 해주세요.', error: true);
+                                }
+                                return;
+                              }
+                              bool hasError = false;
+                              for (final type in _leaveTypes) {
+                                final selectedDates = _selectedDatesMap[type]!.toList()..sort();
+                                if (selectedDates.isEmpty) continue;
+                                // 연속 구간별로 묶기
+                                List<List<DateTime>> ranges = [];
+                                for (final d in selectedDates) {
+                                  if (ranges.isEmpty || d.difference(ranges.last.last).inDays > 1) {
+                                    ranges.add([d]);
+                                  } else {
+                                    ranges.last.add(d);
+                                  }
+                                }
+                                for (final range in ranges) {
+                                  final start = range.first;
+                                  final end = range.last;
+                                  try {
+                                    await leaveProvider.requestLeave(
+                                      userEmail: userEmail,
+                                      type: type.dbValue,
+                                      startDate: start,
+                                      endDate: end,
+                                      reason: _memoController.text.trim(),
+                                    );
+                                  } catch (e) {
+                                    hasError = true;
+                                  }
+                                }
+                              }
+                              if (!hasError) {
+                                if (mounted) {
+                                  _showBanner('신청이 완료되었습니다.');
+                                  Future.delayed(const Duration(seconds: 2), () {
+                                    if (mounted) Navigator.pop(context);
+                                  });
+                                }
+                              } else {
+                                if (mounted) {
+                                  _showBanner('신청 중 오류가 발생했습니다.', error: true);
+                                }
+                              }
+                            }
+                          : null,
+                      child: Container(
+                        height: 54,
+                        decoration: BoxDecoration(
+                          gradient: (_usedDaysSum > 0 && _memoController.text.trim().isNotEmpty)
+                              ? AppColors.primaryGradient
+                              : null,
+                          color: (_usedDaysSum > 0 && _memoController.text.trim().isNotEmpty)
+                              ? null
+                              : const Color(0xFFE0E0E0),
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            if (_usedDaysSum > 0 && _memoController.text.trim().isNotEmpty)
+                              AppShadows.button,
+                          ],
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '신청하기',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: (_usedDaysSum > 0 && _memoController.text.trim().isNotEmpty)
+                                ? Colors.white
+                                : const Color(0xFFB0B0B0),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  if (MediaQuery.of(context).viewInsets.bottom > 0)
+                    IconButton(
+                      icon: const Icon(Icons.keyboard_arrow_down),
+                      onPressed: () => FocusScope.of(context).unfocus(), // 키보드 내리기
+                    ),
+                ],
+              ),
+            ),
           ),
         );
       },
