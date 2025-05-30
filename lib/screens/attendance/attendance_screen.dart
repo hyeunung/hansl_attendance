@@ -6,6 +6,7 @@ import '../../providers/user_provider.dart';
 import 'dart:async';
 import '../../models/attendance.dart';
 import '../../theme/app_shadows.dart';
+import '../../theme/app_text_theme.dart';
 
 class AttendanceScreen extends StatelessWidget {
   const AttendanceScreen({super.key});
@@ -135,29 +136,12 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
             elevation: 0,
             flexibleSpace: Container(
               decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF2196F3), Color(0xFF1976D2)],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0x332196F3),
-                    blurRadius: 20,
-                    offset: Offset(0, 4),
-                  ),
-                ],
+                gradient: AppColors.primaryGradient,
               ),
             ),
             title: const Text(
               'HANSL 근무 기록',
-              style: TextStyle(
-                fontFamily: 'NotoSans',
-                fontWeight: FontWeight.w700,
-                fontSize: 24,
-                color: Colors.white,
-                letterSpacing: 1,
-              ),
+              style: AppTextStyles.appBarTitle,
             ),
             actions: [
               Padding(
@@ -257,21 +241,8 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                           Expanded(
                             child: SizedBox(
                               height: 65,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: provider.status == AttendanceStatus.beforeWork
-                                      ? AppColors.primary
-                                      : const Color(0xFFE9ECEF),
-                                  foregroundColor: provider.status == AttendanceStatus.beforeWork
-                                      ? Colors.white
-                                      : const Color(0xFFB0B0B0),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  elevation: provider.status == AttendanceStatus.beforeWork ? 6 : 0,
-                                  shadowColor: Colors.black,
-                                ),
-                                onPressed: provider.status == AttendanceStatus.beforeWork
+                              child: GestureDetector(
+                                onTap: provider.status == AttendanceStatus.beforeWork
                                     ? () async {
                                         await provider.tryClockIn();
                                         if (provider.errorMessage != null) {
@@ -280,12 +251,29 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                                         }
                                       }
                                     : null,
-                                child: Text(
-                                  '출근하기',
-                                  style: const TextStyle(
-                                    fontFamily: 'NotoSans',
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 20,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: provider.status == AttendanceStatus.beforeWork ? AppColors.primaryGradient : null,
+                                    color: provider.status == AttendanceStatus.beforeWork ? null : const Color(0xFFE9ECEF),
+                                    borderRadius: BorderRadius.circular(14),
+                                    boxShadow: [
+                                      if (provider.status == AttendanceStatus.beforeWork)
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.32),
+                                          blurRadius: 7,
+                                          offset: Offset(0, 2),
+                                        ),
+                                    ],
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    '출근하기',
+                                    style: TextStyle(
+                                      fontFamily: 'NotoSans',
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 21,
+                                      color: provider.status == AttendanceStatus.beforeWork ? Colors.white : const Color(0xFFB0B0B0),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -295,31 +283,35 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                           Expanded(
                             child: SizedBox(
                               height: 65,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: provider.canClockOut
-                                      ? AppColors.primary
-                                      : const Color(0xFFE9ECEF),
-                                  foregroundColor: provider.canClockOut
-                                      ? Colors.white
-                                      : const Color(0xFFB0B0B0),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  elevation: provider.canClockOut ? 6 : 0,
-                                  shadowColor: Colors.black,
-                                ),
-                                onPressed: provider.canClockOut
+                              child: GestureDetector(
+                                onTap: provider.canClockOut
                                     ? () async {
                                         await provider.tryClockOut();
                                       }
                                     : null,
-                                child: Text(
-                                  '퇴근하기',
-                                  style: const TextStyle(
-                                    fontFamily: 'NotoSans',
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 20,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: provider.canClockOut ? AppColors.primaryGradient : null,
+                                    color: provider.canClockOut ? null : const Color(0xFFE9ECEF),
+                                    borderRadius: BorderRadius.circular(14),
+                                    boxShadow: [
+                                      if (provider.canClockOut)
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.32),
+                                          blurRadius: 7,
+                                          offset: Offset(0, 2),
+                                        ),
+                                    ],
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    '퇴근하기',
+                                    style: TextStyle(
+                                      fontFamily: 'NotoSans',
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 21,
+                                      color: provider.canClockOut ? Colors.white : const Color(0xFFB0B0B0),
+                                    ),
                                   ),
                                 ),
                               ),

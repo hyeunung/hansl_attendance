@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../providers/leave_provider.dart';
 import 'package:intl/intl.dart';
 import '../../theme/app_shadows.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_text_theme.dart';
 
 class ApprovalScreen extends StatefulWidget {
   const ApprovalScreen({super.key});
@@ -34,16 +36,17 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
       appBar: AppBar(
         title: const Text(
           '승인 관리',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-          ),
+          style: AppTextStyles.appBarTitle,
         ),
         centerTitle: true,
-        backgroundColor: const Color(0xFF1E90FF),
+        backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: AppColors.primaryGradient,
+          ),
+        ),
       ),
       body: Consumer<LeaveProvider>(
         builder: (context, provider, _) {
@@ -78,7 +81,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
                   labelColor: Colors.white,
                   unselectedLabelColor: const Color(0xFF8E8E93),
                   indicator: BoxDecoration(
-                    color: const Color(0xFF1E90FF),
+                    gradient: AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   indicatorSize: TabBarIndicatorSize.tab,
@@ -356,68 +359,78 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF3B30),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      elevation: 0,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      boxShadow: [AppShadows.button],
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    onPressed: () async {
-                      // Show confirmation dialog
-                      final confirmed = await _showConfirmationDialog(
-                        context,
-                        '반려 확인',
-                        '$name님의 $typeLabel 신청을 반려하시겠습니까?',
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF3B30),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: () async {
+                        // Show confirmation dialog
+                        final confirmed = await _showConfirmationDialog(
+                          context,
+                          '반려 확인',
+                          '$name님의 $typeLabel 신청을 반려하시겠습니까?',
+                          '반려',
+                          const Color(0xFFFF3B30),
+                        );
+                        if (confirmed == true) {
+                          await provider.updateLeaveStatus(l['id'], 'rejected');
+                        }
+                      },
+                      child: const Text(
                         '반려',
-                        const Color(0xFFFF3B30),
-                      );
-                      if (confirmed == true) {
-                        await provider.updateLeaveStatus(l['id'], 'rejected');
-                      }
-                    },
-                    child: const Text(
-                      '반려',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 18,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 18,
+                        ),
                       ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF34C759),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      elevation: 0,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      boxShadow: [AppShadows.button],
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    onPressed: () async {
-                      // Show confirmation dialog
-                      final confirmed = await _showConfirmationDialog(
-                        context,
-                        '승인 확인',
-                        '$name님의 $typeLabel 신청을 승인하시겠습니까?',
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF34C759),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: () async {
+                        // Show confirmation dialog
+                        final confirmed = await _showConfirmationDialog(
+                          context,
+                          '승인 확인',
+                          '$name님의 $typeLabel 신청을 승인하시겠습니까?',
+                          '승인',
+                          const Color(0xFF34C759),
+                        );
+                        if (confirmed == true) {
+                          await provider.updateLeaveStatus(l['id'], 'approved');
+                        }
+                      },
+                      child: const Text(
                         '승인',
-                        const Color(0xFF34C759),
-                      );
-                      if (confirmed == true) {
-                        await provider.updateLeaveStatus(l['id'], 'approved');
-                      }
-                    },
-                    child: const Text(
-                      '승인',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 18,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 18,
+                        ),
                       ),
                     ),
                   ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/leave_provider.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_text_theme.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -55,29 +57,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
         final today = DateTime.now();
         return Scaffold(
           appBar: AppBar(
-            title: const Text('달력', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 18)),
-            backgroundColor: const Color(0xFF1E90FF),
+            title: const Text('달력', style: AppTextStyles.appBarTitle),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            flexibleSpace: Container(
+              decoration: const BoxDecoration(
+                gradient: AppColors.primaryGradient,
+              ),
+            ),
             centerTitle: true,
             iconTheme: const IconThemeData(color: Colors.white),
-            elevation: 0,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.chevron_left),
-                onPressed: () {
-                  setState(() {
-                    _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month - 1);
-                  });
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.chevron_right),
-                onPressed: () {
-                  setState(() {
-                    _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1);
-                  });
-                },
-              ),
-            ],
           ),
           backgroundColor: const Color(0xFFF8F9FA),
           body: ListView(
@@ -100,15 +89,27 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 child: Column(
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text('${_focusedMonth.year}년 ${_focusedMonth.month}월', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 22, color: Color(0xFF1C1C1E))),
                         IconButton(
-                          icon: const Icon(Icons.today, color: Color(0xFF1E90FF)),
+                          icon: const Icon(Icons.chevron_left, size: 28, color: Color(0xFF1C1C1E)),
                           onPressed: () {
                             setState(() {
-                              _focusedMonth = DateTime(today.year, today.month);
-                              _selectedDay = DateTime(today.year, today.month, today.day);
+                              _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month - 1);
+                            });
+                          },
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '📅  ${_focusedMonth.year}년 ${_focusedMonth.month}월',
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 22, color: Color(0xFF1C1C1E)),
+                        ),
+                        const SizedBox(width: 4),
+                        IconButton(
+                          icon: const Icon(Icons.chevron_right, size: 28, color: Color(0xFF1C1C1E)),
+                          onPressed: () {
+                            setState(() {
+                              _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1);
                             });
                           },
                         ),

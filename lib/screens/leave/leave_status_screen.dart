@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../providers/user_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
+import '../../theme/app_text_theme.dart';
 
 class LeaveStatusScreen extends StatefulWidget {
   const LeaveStatusScreen({super.key});
@@ -25,7 +26,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
     final provider = Provider.of<LeaveProvider>(context, listen: false);
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     if (userProvider.email != null && userProvider.email!.isNotEmpty) {
-      provider.fetchMyLeaves(userProvider.email!);
+      provider.fetchMyLeaves(email: userProvider.email!);
     }
     provider.fetchTodayLeaves(DateTime.now());
   }
@@ -37,19 +38,17 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7FA),
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: AppColors.primaryGradient,
+          ),
+        ),
         centerTitle: true,
         title: const Text(
           '연차/출장 대시보드',
-          style: TextStyle(
-            fontFamily: 'NotoSans',
-            fontWeight: FontWeight.w800,
-            fontSize: 23,
-            color: Colors.white,
-            letterSpacing: 0.1,
-            height: 1.25,
-          ),
+          style: AppTextStyles.appBarTitle,
         ),
       ),
       body: Consumer<LeaveProvider>(
@@ -404,20 +403,11 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
   }
 
   Widget _mainTabButton(String label, int idx, double r) {
-    final selected = _selectedTab == idx;
+    final isAnnual = idx == 0;
     return SizedBox(
       height: 54,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: selected ? AppColors.primary : Colors.white,
-          foregroundColor: selected ? Colors.white : AppColors.primary,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(r)),
-          elevation: 6,
-          textStyle: _mainButtonTextStyle,
-          side: BorderSide(color: selected ? AppColors.primary : const Color(0xFFE0E0E0), width: 1),
-          padding: const EdgeInsets.symmetric(vertical: 8),
-        ),
-        onPressed: () {
+      child: GestureDetector(
+        onTap: () {
           setState(() => _selectedTab = idx);
           if (idx == 0) {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const AnnualLeaveRequestScreen()));
@@ -425,7 +415,27 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const BusinessTripRequestScreen()));
           }
         },
-        child: Text(label, style: _mainButtonTextStyle),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: isAnnual ? AppColors.primaryGradient : null,
+            color: isAnnual ? null : Colors.white,
+            borderRadius: BorderRadius.circular(r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.36),
+                blurRadius: 6,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: _mainButtonTextStyle.copyWith(
+              color: isAnnual ? Colors.white : AppColors.primary,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -474,11 +484,16 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
     DateTime start = DateTime.parse(l['start_date']);
     DateTime end = DateTime.parse(l['end_date']);
     int days = end.difference(start).inDays + 1;
+    // 오전/오후반차는 0.5일로 표시
+    double displayDays = 1.0 * days;
+    if (l['type'] == 'halfAm' || l['type'] == 'half_am' || l['type'] == 'halfPm' || l['type'] == 'half_pm') {
+      displayDays = 0.5;
+    }
     String period = '';
     if (start.month == end.month) {
-      period = '${start.month}월 ${start.day}일 - ${end.day}일 ($days일)';
+      period = '${start.month}월 ${start.day}일 - ${end.day}일 (${displayDays % 1 == 0 ? displayDays.toInt() : displayDays}일)';
     } else {
-      period = '${start.month}월 ${start.day}일 - ${end.month}월 ${end.day}일 ($days일)';
+      period = '${start.month}월 ${start.day}일 - ${end.month}월 ${end.day}일 (${displayDays % 1 == 0 ? displayDays.toInt() : displayDays}일)';
     }
     String? companions = l['companions'];
     String? reason = l['reason'];

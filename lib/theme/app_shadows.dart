@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 class AppShadows {
   static const BoxShadow card = BoxShadow(
     color: Color(0x1A000000), // 검정, 10% opacity
-    blurRadius: 16,
+    blurRadius: 12,
     offset: Offset(0, 4),
   );
 
-  static const BoxShadow button = BoxShadow(
-    color: Color(0x14000000), // 검정, 8% opacity
-    blurRadius: 10,
+  static BoxShadow get button => BoxShadow(
+    color: Colors.black.withOpacity(0.36),
+    blurRadius: 6,
     offset: Offset(0, 2),
   );
 
@@ -26,8 +26,8 @@ class AppShadows {
   );
 
   // 여러 그림자 조합이 필요할 때 리스트로도 제공
-  static const List<BoxShadow> cardShadow = [card];
-  static const List<BoxShadow> buttonShadow = [button];
-  static const List<BoxShadow> lightShadow = [light];
-  static const List<BoxShadow> strongShadow = [strong];
+  static List<BoxShadow> cardShadow = [card];
+  static List<BoxShadow> buttonShadow = [button];
+  static List<BoxShadow> lightShadow = [light];
+  static List<BoxShadow> strongShadow = [strong];
 } 

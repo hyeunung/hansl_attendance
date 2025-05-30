@@ -6,6 +6,10 @@ import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
 import '../../providers/leave_provider.dart';
 import '../../services/supabase_service.dart';
+import '../../theme/app_text_theme.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../auth/login_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -16,7 +20,6 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _approvalNoti = true;
-  bool _darkMode = false;
   String _fontSize = '보통';
 
   @override
@@ -27,41 +30,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
       final email = userProvider.email;
       if (email != null && email.isNotEmpty) {
-        await leaveProvider.fetchMyLeaves(email);
-        if (userProvider.employee == null) {
-          final supabaseService = SupabaseService();
-          final emp = await supabaseService.getEmployeeByEmail(email);
-          if (emp != null) userProvider.setEmployee(emp);
+        final supabaseService = SupabaseService();
+        final emp = await supabaseService.getEmployeeByEmail(email);
+        if (emp != null) {
+          userProvider.setEmployee(emp);
         }
+        await leaveProvider.fetchMyLeaves(email: email);
       }
     });
   }
 
   void _showInquiryDialog() {
     final TextEditingController _controller = TextEditingController();
-    showDialog(
+    showCupertinoDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        return CupertinoAlertDialog(
           title: const Text('문의하기', style: TextStyle(fontWeight: FontWeight.bold)),
-          content: SizedBox(
-            width: 320,
-            child: TextField(
+          content: Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: CupertinoTextField(
               controller: _controller,
               maxLines: 5,
-              decoration: const InputDecoration(
-                hintText: '문의 내용을 입력하세요',
-                border: OutlineInputBorder(),
+              placeholder: '문의 내용을 입력하세요',
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+              decoration: BoxDecoration(
+                color: CupertinoColors.systemGrey6,
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
+            CupertinoDialogAction(
               child: const Text('취소'),
+              onPressed: () => Navigator.pop(context),
             ),
-            ElevatedButton(
+            CupertinoDialogAction(
+              isDefaultAction: true,
+              child: const Text('보내기'),
               onPressed: () {
                 // 문의 내용 전송 로직 (추후 구현)
                 Navigator.pop(context);
@@ -69,7 +75,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SnackBar(content: Text('문의가 접수되었습니다.')),
                 );
               },
-              child: const Text('보내기'),
             ),
           ],
         );
@@ -88,7 +93,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final totalAnnual = leaveProvider.currentGrantedAnnual;
         final remainAnnual = leaveProvider.remainAnnual;
         final usedAnnual = (totalAnnual - remainAnnual).clamp(0, totalAnnual);
-        final isLoading = leaveProvider.isLoading || employee == null;
+        final isLoading = leaveProvider.isLoading;
         final email = userProvider.email;
         if (email == null || email.isEmpty) {
           return const Scaffold(
@@ -101,218 +106,356 @@ class _SettingsScreenState extends State<SettingsScreen> {
           );
         }
         return Scaffold(
-          backgroundColor: const Color(0xFFF6F7FA),
+          backgroundColor: const Color(0xFFF8F9FA),
           appBar: AppBar(
-            backgroundColor: AppColors.primary,
+            backgroundColor: Colors.transparent,
             elevation: 0,
+            flexibleSpace: Container(
+              decoration: const BoxDecoration(
+                gradient: AppColors.primaryGradient,
+              ),
+            ),
             centerTitle: true,
-            title: const Text('설정', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.white)),
+            title: const Text(
+              '설정',
+              style: AppTextStyles.appBarTitle,
+            ),
+            iconTheme: const IconThemeData(color: Colors.white),
           ),
           body: isLoading
               ? const Center(child: CupertinoActivityIndicator())
-              : Column(
-                  children: [
-                    Expanded(
-                      child: ListView(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                        children: [
-                          // 프로필 카드
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(18),
-                              boxShadow: [AppShadows.card],
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      // 프로필 카드
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 3,
+                              offset: const Offset(0, 1),
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 60,
-                                  height: 60,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFF2196F3),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    name.isNotEmpty ? name[0] : '-',
-                                    style: const TextStyle(fontSize: 28, color: Colors.white, fontWeight: FontWeight.bold),
+                          ],
+                        ),
+                        padding: const EdgeInsets.all(20),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF1E90FF), Color(0xFF00BFFF)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  name.isNotEmpty ? name[0] : '-',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                const SizedBox(width: 18),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-                                      const SizedBox(height: 4),
-                                      Text('$department · $position', style: const TextStyle(color: Color(0xFF888888), fontSize: 15)),
-                                    ],
-                                  ),
-                                ),
-                                const Icon(Icons.chevron_right, color: Color(0xFFB0B0B0)),
-                              ],
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 18),
-                          // 연차 현황 카드
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(18),
-                              boxShadow: [AppShadows.card],
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.calendar_month, size: 36, color: Color(0xFFB0B0B0)),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      _annualStatBox(totalAnnual.toString(), '총 연차'),
-                                      _annualStatBox(usedAnnual.toString(), '사용'),
-                                      _annualStatBox(remainAnnual.toString(), '잔여'),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 18),
-                          // 알림 설정
-                          const Text('알림 설정', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Color(0xFF888888))),
-                          const SizedBox(height: 8),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(18),
-                              boxShadow: [AppShadows.card],
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.notifications, color: Color(0xFFFFC107), size: 22),
-                                const SizedBox(width: 10),
-                                const Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('승인/반려 알림', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                                      SizedBox(height: 2),
-                                      Text('신청한 연차/출장의 승인 결과를 알려드려요', style: TextStyle(color: Color(0xFF888888), fontSize: 12)),
-                                    ],
-                                  ),
-                                ),
-                                Transform.scale(
-                                  scale: 0.8,
-                                  child: CupertinoSwitch(
-                                    value: _approvalNoti,
-                                    onChanged: (v) => setState(() => _approvalNoti = v),
-                                    activeColor: AppColors.primary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 18),
-                          // 앱 설정
-                          const Text('앱 설정', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Color(0xFF888888))),
-                          const SizedBox(height: 8),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(18),
-                              boxShadow: [AppShadows.card],
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-                            child: Column(
-                              children: [
-                                ListTile(
-                                  leading: const Icon(Icons.nightlight_round, color: Color(0xFFFBC02D)),
-                                  title: const Text('다크모드', style: TextStyle(fontWeight: FontWeight.bold)),
-                                  trailing: Transform.scale(
-                                    scale: 0.8,
-                                    child: CupertinoSwitch(
-                                      value: _darkMode,
-                                      onChanged: (v) => setState(() => _darkMode = v),
-                                      activeColor: AppColors.primary,
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    name,
+                                    style: const TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1C1C1E),
                                     ),
                                   ),
-                                  contentPadding: EdgeInsets.zero,
-                                ),
-                                ListTile(
-                                  leading: const Icon(Icons.abc, color: Color(0xFFB0B0B0)),
-                                  title: const Text('글꼴 크기', style: TextStyle(fontWeight: FontWeight.bold)),
-                                  trailing: DropdownButton<String>(
-                                    value: _fontSize,
-                                    items: const [
-                                      DropdownMenuItem(value: '작게', child: Text('작게')),
-                                      DropdownMenuItem(value: '보통', child: Text('보통')),
-                                      DropdownMenuItem(value: '크게', child: Text('크게')),
-                                    ],
-                                    onChanged: (v) => setState(() => _fontSize = v!),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${(department?.isNotEmpty ?? false) ? department : '-'} • ${(position?.isNotEmpty ?? false) ? position : '-'}',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: Color(0xFF8E8E93),
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                  contentPadding: EdgeInsets.zero,
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 20),
+
+                      // 연차 현황
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 3,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Expanded(
+                                  child: Text(
+                                    '📅 연차 현황',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFF1C1C1E),
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
-                          ),
-                          const SizedBox(height: 18),
-                          // 문의하기
-                          ListTile(
-                            leading: const Icon(Icons.chat_bubble_outline, color: Color(0xFF888888)),
-                            title: const Text('문의하기', style: TextStyle(fontWeight: FontWeight.bold)),
-                            trailing: const Icon(Icons.chevron_right, color: Color(0xFFB0B0B0)),
-                            onTap: _showInquiryDialog,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                            tileColor: Colors.white,
-                          ),
-                        ],
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF8F9FA),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: const Color(0xFFF2F2F7)),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Text(
+                                          '$totalAnnual',
+                                          style: const TextStyle(
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF1E90FF),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        const Text(
+                                          '총 연차',
+                                          style: TextStyle(
+                                            fontSize: 19,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF8E8E93),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF8F9FA),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: const Color(0xFFF2F2F7)),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Text(
+                                          '$usedAnnual',
+                                          style: const TextStyle(
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF1E90FF),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        const Text(
+                                          '소모 연차',
+                                          style: TextStyle(
+                                            fontSize: 19,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF8E8E93),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF8F9FA),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: const Color(0xFFF2F2F7)),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Text(
+                                          '$remainAnnual',
+                                          style: const TextStyle(
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF1E90FF),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        const Text(
+                                          '잔여',
+                                          style: TextStyle(
+                                            fontSize: 19,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF8E8E93),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    // 로그아웃 버튼 하단 중앙 배치
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 32, top: 8),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(
-                            width: 180,
-                            height: 48,
-                            child: TextButton.icon(
-                              icon: const Icon(Icons.logout, color: Color(0xFFFF3B30)),
-                              label: const Text('로그아웃', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFFF3B30), fontSize: 17)),
-                              style: TextButton.styleFrom(
-                                backgroundColor: const Color(0xFFFFF5F5),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                                elevation: 0,
+
+                      const SizedBox(height: 20),
+
+                      // 앱 설정
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 3,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Padding(
+                              padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+                              child: Text(
+                                '앱 설정',
+                                style: TextStyle(
+                                  fontSize: 21,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1C1C1E),
+                                  letterSpacing: 0.5,
+                                ),
                               ),
-                              onPressed: () {
-                                // 로그아웃 로직 (추후 구현)
-                              },
+                            ),
+                            // 글꼴 크기
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 28,
+                                    height: 28,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF3E5F5),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: const Center(
+                                      child: Icon(Icons.text_fields, size: 14),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Expanded(
+                                    child: Text(
+                                      '글꼴 크기',
+                                      style: TextStyle(
+                                        fontSize: 19,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF8E8E93),
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    _fontSize,
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      color: Color(0xFF8E8E93),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Icon(
+                                    Icons.chevron_right,
+                                    color: Color(0xFFC7C7CC),
+                                    size: 16,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // 문의하기
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 3,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: ListTile(
+                          minLeadingWidth: 0,
+                          leading: Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: Color(0xFFF3E5F5),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            alignment: Alignment.center,
+                            child: Icon(Icons.chat_bubble_outline, size: 18, color: Color(0xFF8E8E93)),
+                          ),
+                          title: const Text(
+                            '문의하기',
+                            style: TextStyle(
+                              fontSize: 19,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF8E8E93),
                             ),
                           ),
-                          const SizedBox(height: 10),
-                          const Text('앱 버전 1.0.0', style: TextStyle(color: Color(0xFFB0B0B0), fontSize: 14)),
-                        ],
+                          onTap: _showInquiryDialog,
+                        ),
                       ),
-                    ),
-                  ],
+
+                      const SizedBox(height: 20),
+                    ],
+                  ),
                 ),
         );
       },
     );
   }
-
-  Widget _annualStatBox(String value, String label) {
-    return Column(
-      children: [
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: AppColors.primary)),
-        const SizedBox(height: 2),
-        Text(label, style: const TextStyle(color: Color(0xFF888888), fontSize: 13)),
-      ],
-    );
-  }
-} 
+}

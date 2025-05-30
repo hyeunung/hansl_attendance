@@ -9,6 +9,7 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 import '../../theme/app_colors.dart';
 import '../approval/approval_screen.dart';
 import '../../theme/app_shadows.dart';
+import '../../theme/app_text_theme.dart';
 
 class BusinessTripRequestScreen extends StatefulWidget {
   const BusinessTripRequestScreen({super.key});
@@ -413,8 +414,13 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7FA),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: AppColors.primaryGradient,
+          ),
+        ),
         centerTitle: true,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: AppColors.primary),
@@ -422,13 +428,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
         ),
         title: const Text(
           '출장 신청',
-          style: TextStyle(
-            fontFamily: 'NotoSans',
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-            color: Color(0xFF222222),
-            letterSpacing: 0.5,
-          ),
+          style: AppTextStyles.appBarTitle,
         ),
       ),
       body: Consumer<LeaveProvider>(
@@ -449,7 +449,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                     // 상단 카드
                     Container(
                       decoration: BoxDecoration(
-                        color: AppColors.primary,
+                        gradient: AppColors.primaryGradient,
                         borderRadius: BorderRadius.circular(18),
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
@@ -762,15 +762,8 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                     SizedBox(
                       width: double.infinity,
                       height: 54,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          elevation: 6,
-                          backgroundColor: _canSubmit
-                              ? AppColors.primary
-                              : const Color(0xFFE0E0E0),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        ),
-                        onPressed: _canSubmit
+                      child: GestureDetector(
+                        onTap: _canSubmit
                             ? () async {
                                 final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
                                 final userProvider = Provider.of<UserProvider>(context, listen: false);
@@ -812,12 +805,23 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                                 }
                               }
                             : null,
-                        child: Text(
-                          '신청하기',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: _canSubmit ? Colors.white : const Color(0xFFB0B0B0),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: _canSubmit ? AppColors.primaryGradient : null,
+                            color: _canSubmit ? null : const Color(0xFFE0E0E0),
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              if (_canSubmit) AppShadows.button,
+                            ],
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            '신청하기',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: _canSubmit ? Colors.white : const Color(0xFFB0B0B0),
+                            ),
                           ),
                         ),
                       ),
