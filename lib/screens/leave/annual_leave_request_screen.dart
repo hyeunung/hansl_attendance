@@ -164,12 +164,31 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
     if (_bannerMessage == null) return const SizedBox.shrink();
     return Container(
       width: double.infinity,
-      color: _bannerColor,
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Center(
-        child: Text(
-          _bannerMessage!,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+      alignment: Alignment.center,
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: _bannerColor,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(16),
+          bottomRight: Radius.circular(16),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: _bannerColor.withOpacity(0.18),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+      child: Text(
+        _bannerMessage!,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 18,
+          letterSpacing: 0.2,
         ),
       ),
     );

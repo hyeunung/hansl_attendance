@@ -71,7 +71,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [AppShadows.card],
                   border: Border.all(color: Color(0xFFE9ECEF)),
-                ),
+                    ),
                 child: Column(
                   children: [
                     // 제목 - 아이콘과 함께
@@ -658,4 +658,4 @@ const _listDescStyle = TextStyle(
   color: Color(0xFFAAAAAA),
   letterSpacing: 0.1,
   height: 1.2,
-);
+); 

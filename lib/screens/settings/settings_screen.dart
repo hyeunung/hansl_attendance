@@ -105,7 +105,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             body: Center(child: Text('데이터를 불러오지 못했습니다.\n${leaveProvider.error}', textAlign: TextAlign.center)),
           );
         }
-        return Scaffold(
+    return Scaffold(
           backgroundColor: const Color(0xFFF8F9FA),
           appBar: AppBar(
             backgroundColor: Colors.transparent,
@@ -491,4 +491,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
   }
-}
+} 

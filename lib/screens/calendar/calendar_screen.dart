@@ -55,7 +55,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         final totalCells = days.length + firstWeekday;
         final rows = (totalCells / 7).ceil();
         final today = DateTime.now();
-        return Scaffold(
+    return Scaffold(
           appBar: AppBar(
             title: const Text('달력', style: AppTextStyles.appBarTitle),
             backgroundColor: Colors.transparent,
@@ -404,4 +404,4 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ),
     );
   }
-}
+} 

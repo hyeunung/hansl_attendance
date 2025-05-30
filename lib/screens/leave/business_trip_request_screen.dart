@@ -12,6 +12,7 @@ import '../../theme/app_shadows.dart';
 import '../../theme/app_text_theme.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
 import 'leave_status_screen.dart';
+import '../main_tab.dart';
 
 class BusinessTripRequestScreen extends StatefulWidget {
   const BusinessTripRequestScreen({super.key});
@@ -814,7 +815,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                                 startDate: start,
                                 endDate: end,
                                 reason:
-                                    '출장자: \\${_selectedEmployee ?? ''}\\n추가인원: \\${_selectedCompanions.join(', ')}\\n교통: \\${_selectedTransport ?? ''}\\n출장지: \\${_placeController.text.trim()}\\n업무: \\${_purposeController.text.trim()}',
+                                    '출장자: ${_selectedEmployee ?? ''}\n추가인원: ${_selectedCompanions.join(', ')}\n교통: ${_selectedTransport ?? ''}\n출장지: ${_placeController.text.trim()}\n업무: ${_purposeController.text.trim()}',
                               );
                             } catch (e) {
                               hasError = true;
@@ -825,7 +826,11 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text('신청이 완료되었습니다.'), backgroundColor: AppColors.primary),
                               );
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaveStatusScreen()));
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(builder: (_) => const MainTab(initialIndex: 1)),
+                                (route) => false,
+                              );
                             }
                           } else {
                             if (mounted) {
@@ -883,12 +888,31 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
     if (_bannerMessage == null) return const SizedBox.shrink();
     return Container(
       width: double.infinity,
-      color: _bannerColor,
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Center(
-        child: Text(
-          _bannerMessage!,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+      alignment: Alignment.center,
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: _bannerColor,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(16),
+          bottomRight: Radius.circular(16),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: _bannerColor.withOpacity(0.18),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+      child: Text(
+        _bannerMessage!,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 18,
+          letterSpacing: 0.2,
         ),
       ),
     );

@@ -283,77 +283,53 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
     final reason = l['reason'] ?? '-';
     final status = l['status'];
     final dest = l['destination'] ?? '';
-    
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: const Color(0xFFF2F2F7),
-            width: 1,
-          ),
-        ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [AppShadows.card],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with name and type
+          // 상단: 이름, 유형, 상태
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                name,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 18,
-                  color: Color(0xFF1C1C1E),
-                ),
+              Icon(Icons.person, color: AppColors.primary, size: 22),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: typeBgColor,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(
-                  typeLabel,
-                  style: TextStyle(
-                    color: typeTextColor,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
-                ),
+                child: Text(typeLabel, style: TextStyle(color: typeTextColor, fontWeight: FontWeight.w700)),
               ),
+              const SizedBox(width: 8),
+              _statusChip(status),
             ],
           ),
-          const SizedBox(height: 8),
-          
-          // Details
-          _detailRow('기간', period),
-          if (isBiztrip && dest.isNotEmpty) _detailRow('목적지', dest),
-          _detailRow('신청일', createdAt),
-          
-          const SizedBox(height: 12),
-          
-          // Reason
+          const SizedBox(height: 14),
+          // 상세 정보
+          _infoRow(Icons.date_range, '기간', period),
+          if (isBiztrip && dest.isNotEmpty) _infoRow(Icons.place, '목적지', dest),
+          _infoRow(Icons.calendar_today, '신청일', createdAt),
+          const SizedBox(height: 14),
+          // 사유
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: const Color(0xFFF8F9FA),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Text(
-              reason,
-              style: const TextStyle(
-                color: Color(0xFF6C757D),
-                fontSize: 16,
-                height: 1.4,
-              ),
-            ),
+            child: Text(reason, style: const TextStyle(fontSize: 16, color: Color(0xFF6C757D))),
           ),
-          
           if (showButtons && status == 'pending') ...[
             const SizedBox(height: 12),
             Row(
@@ -374,7 +350,6 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
                         ),
                       ),
                       onPressed: () async {
-                        // Show confirmation dialog
                         final confirmed = await _showConfirmationDialog(
                           context,
                           '반려 확인',
@@ -413,7 +388,6 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
                         ),
                       ),
                       onPressed: () async {
-                        // Show confirmation dialog
                         final confirmed = await _showConfirmationDialog(
                           context,
                           '승인 확인',
@@ -466,29 +440,41 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
     );
   }
 
-  Widget _detailRow(String label, String value) {
+  Widget _infoRow(IconData icon, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: Color(0xFF8E8E93),
-              fontSize: 16,
-            ),
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Color(0xFF1C1C1E),
-              fontWeight: FontWeight.w500,
-              fontSize: 16,
-            ),
-          ),
+          Icon(icon, color: Color(0xFFB0B0B0), size: 18),
+          const SizedBox(width: 8),
+          Text(label, style: const TextStyle(color: Color(0xFF888888))),
+          const SizedBox(width: 8),
+          Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w500))),
         ],
       ),
+    );
+  }
+
+  Widget _statusChip(String status) {
+    Color bg, fg;
+    String label;
+    if (status == 'approved') {
+      bg = const Color(0xFF34C759).withOpacity(0.12);
+      fg = const Color(0xFF34C759);
+      label = '승인';
+    } else if (status == 'rejected') {
+      bg = const Color(0xFFFF3B30).withOpacity(0.12);
+      fg = const Color(0xFFFF3B30);
+      label = '반려';
+    } else {
+      bg = const Color(0xFFFFA726).withOpacity(0.12);
+      fg = const Color(0xFFFFA726);
+      label = '대기';
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
+      child: Text(label, style: TextStyle(color: fg, fontWeight: FontWeight.bold)),
     );
   }
 

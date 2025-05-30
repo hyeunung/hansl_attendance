@@ -7,7 +7,7 @@ class AppTextTheme {
     fontSize: 20,
   );
   // 필요시 추가 텍스트 스타일 정의
-}
+} 
 
 class AppTextStyles {
   static const TextStyle appBarTitle = TextStyle(

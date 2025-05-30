@@ -7,15 +7,16 @@ import 'settings/settings_screen.dart';
 import '../theme/app_colors.dart'; 
 
 class MainTab extends StatefulWidget {
-  const MainTab({super.key});
+  final int initialIndex;
+  const MainTab({super.key, this.initialIndex = 0});
 
   @override
   State<MainTab> createState() => _MainTabState();
 }
 
 class _MainTabState extends State<MainTab> {
-  int _currentIndex = 0;
-  final PageController _pageController = PageController();
+  late int _currentIndex;
+  late PageController _pageController;
   final List<Widget> _screens = const [
     AttendanceScreen(),
     LeaveStatusScreen(),
@@ -23,6 +24,13 @@ class _MainTabState extends State<MainTab> {
     CalendarScreen(),
     SettingsScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: _currentIndex);
+  }
 
   void _onTabTapped(int index) {
     setState(() => _currentIndex = index);
@@ -55,9 +63,9 @@ class _MainTabState extends State<MainTab> {
         ),
         child: BottomNavigationBar(
           backgroundColor: Colors.white, // 내부 배경도 완전 흰색
-          currentIndex: _currentIndex,
+        currentIndex: _currentIndex,
           onTap: _onTabTapped,
-          type: BottomNavigationBarType.fixed,
+        type: BottomNavigationBarType.fixed,
           selectedFontSize: 14,
           unselectedFontSize: 14,
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
@@ -115,7 +123,7 @@ class _MainTabState extends State<MainTab> {
               ),
               label: '',
             ),
-          ],
+        ],
         ),
       ),
     );

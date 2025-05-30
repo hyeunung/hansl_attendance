@@ -266,11 +266,11 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                                     ],
                                   ),
                                   alignment: Alignment.center,
-                                  child: Text(
-                                    '출근하기',
+                                child: Text(
+                                  '출근하기',
                                     style: TextStyle(
-                                      fontFamily: 'NotoSans',
-                                      fontWeight: FontWeight.bold,
+                                    fontFamily: 'NotoSans',
+                                    fontWeight: FontWeight.bold,
                                       fontSize: 21,
                                       color: provider.status == AttendanceStatus.beforeWork ? Colors.white : const Color(0xFFB0B0B0),
                                     ),
@@ -304,11 +304,11 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                                     ],
                                   ),
                                   alignment: Alignment.center,
-                                  child: Text(
-                                    '퇴근하기',
+                                child: Text(
+                                  '퇴근하기',
                                     style: TextStyle(
-                                      fontFamily: 'NotoSans',
-                                      fontWeight: FontWeight.bold,
+                                    fontFamily: 'NotoSans',
+                                    fontWeight: FontWeight.bold,
                                       fontSize: 21,
                                       color: provider.canClockOut ? Colors.white : const Color(0xFFB0B0B0),
                                     ),
