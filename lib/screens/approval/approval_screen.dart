@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
+import '../../providers/user_provider.dart';
 
 class ApprovalScreen extends StatefulWidget {
   const ApprovalScreen({super.key});
@@ -31,6 +32,18 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final employee = userProvider.employee;
+    final role = employee?['role'];
+    final name = employee?['name'];
+    final department = employee?['department'];
+    // manager별 승인 가능 부서 매핑
+    final Map<String, List<String>> managerDepartments = {
+      '양승진': ['개발1팀', '개발2팀'],
+      '최창열': ['개발3팀'],
+      '이정화': ['CAD'],
+      '조근일': ['연구소'],
+    };
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
@@ -50,7 +63,19 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
       ),
       body: Consumer<LeaveProvider>(
         builder: (context, provider, _) {
-          final allLeaves = provider.allLeaves;
+          List<Map<String, dynamic>> allLeaves = provider.allLeaves;
+          // manager는 본인 부서 leave만 승인, admin/hr은 전체
+          if (role == 'manager' && managerDepartments.containsKey(name)) {
+            final myDepts = managerDepartments[name]!;
+            allLeaves = allLeaves.where((l) {
+              final emp = l['employees'];
+              final leaveDept = emp is Map ? emp['department'] : null;
+              final isBiztrip = l['type'] == 'biztrip';
+              // 출장(biztrip)은 양승진만 승인 가능
+              if (isBiztrip && name != '양승진') return false;
+              return leaveDept != null && myDepts.contains(leaveDept);
+            }).toList();
+          }
           final pending = allLeaves.where((l) => l['status'] == 'pending').toList();
           final done = allLeaves.where((l) => l['status'] != 'pending').toList();
           final thisMonth = DateTime.now().month;

@@ -5,6 +5,8 @@ import 'approval/approval_screen.dart';
 import 'calendar/calendar_screen.dart';
 import 'settings/settings_screen.dart';
 import '../theme/app_colors.dart'; 
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 
 class MainTab extends StatefulWidget {
   final int initialIndex;
@@ -17,13 +19,6 @@ class MainTab extends StatefulWidget {
 class _MainTabState extends State<MainTab> {
   late int _currentIndex;
   late PageController _pageController;
-  final List<Widget> _screens = const [
-    AttendanceScreen(),
-    LeaveStatusScreen(),
-    ApprovalScreen(),
-    CalendarScreen(),
-    SettingsScreen(),
-  ];
 
   @override
   void initState() {
@@ -45,10 +40,76 @@ class _MainTabState extends State<MainTab> {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final employee = userProvider.employee;
+    final isAdmin = (employee?['is_admin'] == true) || (employee?['role'] == 'admin' || employee?['role'] == 'hr');
+    final List<Widget> screens = [
+      const AttendanceScreen(),
+      const LeaveStatusScreen(),
+      if (isAdmin) const ApprovalScreen(),
+      const CalendarScreen(),
+      const SettingsScreen(),
+    ];
+    final List<BottomNavigationBarItem> items = [
+      BottomNavigationBarItem(
+        icon: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Icon(
+            Icons.access_time,
+            color: _currentIndex == 0 ? const Color(0xFFFF9500) : Colors.grey,
+          ),
+        ),
+        label: '',
+      ),
+      BottomNavigationBarItem(
+        icon: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Icon(
+            Icons.beach_access,
+            color: _currentIndex == 1 ? AppColors.primary : Colors.grey,
+          ),
+        ),
+        label: '',
+      ),
+      if (isAdmin)
+        BottomNavigationBarItem(
+          icon: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Icon(
+              Icons.check_circle,
+              color: _currentIndex == 2 ? const Color(0xFF34C759) : Colors.grey,
+            ),
+          ),
+          label: '',
+        ),
+      BottomNavigationBarItem(
+        icon: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Icon(
+            Icons.calendar_today,
+            color: _currentIndex == (isAdmin ? 3 : 2) ? const Color(0xFFFF3B30) : Colors.grey,
+          ),
+        ),
+        label: '',
+      ),
+      BottomNavigationBarItem(
+        icon: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Icon(
+            Icons.settings,
+            color: _currentIndex == (isAdmin ? 4 : 3) ? const Color(0xFF8E8E93) : Colors.grey,
+          ),
+        ),
+        label: '',
+      ),
+    ];
+    if (_currentIndex >= screens.length) {
+      _currentIndex = 0;
+    }
     return Scaffold(
       body: PageView(
         controller: _pageController,
-        children: _screens,
+        children: screens,
         onPageChanged: (index) {
           setState(() => _currentIndex = index);
         },
@@ -59,71 +120,20 @@ class _MainTabState extends State<MainTab> {
           border: Border(
             top: BorderSide(color: Color(0xFFE0E0E0), width: 1.5),
           ),
-          color: Colors.white, // 완전 흰색
+          color: Colors.white,
         ),
         child: BottomNavigationBar(
-          backgroundColor: Colors.white, // 내부 배경도 완전 흰색
-        currentIndex: _currentIndex,
+          backgroundColor: Colors.white,
+          currentIndex: _currentIndex,
           onTap: _onTabTapped,
-        type: BottomNavigationBarType.fixed,
+          type: BottomNavigationBarType.fixed,
           selectedFontSize: 14,
           unselectedFontSize: 14,
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
           unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
           selectedIconTheme: const IconThemeData(size: 32),
           unselectedIconTheme: const IconThemeData(size: 32),
-          items: [
-            BottomNavigationBarItem(
-              icon: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Icon(
-                  Icons.access_time,
-                  color: _currentIndex == 0 ? const Color(0xFFFF9500) : Colors.grey,
-                ),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Icon(
-                  Icons.beach_access,
-                  color: _currentIndex == 1 ? AppColors.primary : Colors.grey,
-                ),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Icon(
-                  Icons.check_circle,
-                  color: _currentIndex == 2 ? const Color(0xFF34C759) : Colors.grey,
-                ),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Icon(
-                  Icons.calendar_today,
-                  color: _currentIndex == 3 ? const Color(0xFFFF3B30) : Colors.grey,
-                ),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Icon(
-                  Icons.settings,
-                  color: _currentIndex == 4 ? const Color(0xFF8E8E93) : Colors.grey,
-                ),
-              ),
-              label: '',
-            ),
-        ],
+          items: items,
         ),
       ),
     );
