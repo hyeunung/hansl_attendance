@@ -42,11 +42,13 @@ class _MainTabState extends State<MainTab> {
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
     final employee = userProvider.employee;
-    final isAdmin = (employee?['is_admin'] == true) || (employee?['role'] == 'admin' || employee?['role'] == 'hr');
+    final List<dynamic> purchaseRoles = (employee?['purchase_role'] as List<dynamic>?) ?? [];
+    bool hasPurchaseRole(String role) => purchaseRoles.contains(role);
+    final showPurchaseApprovalTab = hasPurchaseRole('middle_manager') || hasPurchaseRole('final_approver') || hasPurchaseRole('app_admin') || hasPurchaseRole('superadmin');
     final List<Widget> screens = [
       const AttendanceScreen(),
       const LeaveStatusScreen(),
-      if (isAdmin) const ApprovalScreen(),
+      if (showPurchaseApprovalTab) const ApprovalScreen(),
       const CalendarScreen(),
       const SettingsScreen(),
     ];
@@ -71,7 +73,7 @@ class _MainTabState extends State<MainTab> {
         ),
         label: '',
       ),
-      if (isAdmin)
+      if (showPurchaseApprovalTab)
         BottomNavigationBarItem(
           icon: Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
@@ -80,14 +82,14 @@ class _MainTabState extends State<MainTab> {
               color: _currentIndex == 2 ? const Color(0xFF34C759) : Colors.grey,
             ),
           ),
-          label: '',
+          label: '승인',
         ),
       BottomNavigationBarItem(
         icon: Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Icon(
             Icons.calendar_today,
-            color: _currentIndex == (isAdmin ? 3 : 2) ? const Color(0xFFFF3B30) : Colors.grey,
+            color: _currentIndex == (showPurchaseApprovalTab ? 3 : 2) ? const Color(0xFFFF3B30) : Colors.grey,
           ),
         ),
         label: '',
@@ -97,7 +99,7 @@ class _MainTabState extends State<MainTab> {
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Icon(
             Icons.settings,
-            color: _currentIndex == (isAdmin ? 4 : 3) ? const Color(0xFF8E8E93) : Colors.grey,
+            color: _currentIndex == (showPurchaseApprovalTab ? 4 : 3) ? const Color(0xFF8E8E93) : Colors.grey,
           ),
         ),
         label: '',
