@@ -26,20 +26,27 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _error;
   bool _autoLogin = false;
   bool _isSignupMode = false;
+  bool _saveId = false;
 
   @override
   void initState() {
     super.initState();
     _emailController = TextEditingController(text: widget.initialEmail ?? '');
-    _loadAutoLogin();
+    _loadPrefs();
   }
 
-  Future<void> _loadAutoLogin() async {
+  Future<void> _loadPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _autoLogin = prefs.getBool('autoLogin') ?? false;
+      _saveId = prefs.getBool('saveId') ?? false;
+      if (_saveId) {
+        final savedId = prefs.getString('savedId') ?? '';
+        if (savedId.isNotEmpty) {
+          _emailController.text = savedId;
+        }
+      }
       if (_autoLogin) {
-        // 자동로그인 시도
         final savedEmail = prefs.getString('autoLoginEmail') ?? '';
         final savedPassword = prefs.getString('autoLoginPassword') ?? '';
         if (savedEmail.isNotEmpty && savedPassword.isNotEmpty) {
@@ -49,6 +56,16 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       }
     });
+  }
+
+  Future<void> _saveIdPref(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('saveId', value);
+    if (value) {
+      await prefs.setString('savedId', _emailController.text.trim());
+    } else {
+      await prefs.remove('savedId');
+    }
   }
 
   void _navigateWithTransition(Widget page) {
@@ -111,6 +128,10 @@ class _LoginScreenState extends State<LoginScreen> {
           await prefs.remove('autoLoginEmail');
           await prefs.remove('autoLoginPassword');
         }
+        if (_saveId) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('savedId', _emailController.text.trim());
+        }
         _navigateWithTransition(const MainTab());
       } else {
         setState(() {
@@ -126,6 +147,65 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _showResetPasswordDialog() async {
+    final emailController = TextEditingController(text: _emailController.text);
+    String? errorMsg;
+    bool sent = false;
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('비밀번호 재설정'),
+              content: sent
+                  ? const Text('비밀번호 재설정 메일을 전송했습니다. 메일함을 확인해주세요.')
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextField(
+                          controller: emailController,
+                          decoration: const InputDecoration(labelText: '이메일'),
+                        ),
+                        if (errorMsg != null) ...[
+                          const SizedBox(height: 8),
+                          Text(errorMsg!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+                        ]
+                      ],
+                    ),
+              actions: [
+                if (!sent)
+                  TextButton(
+                    onPressed: () async {
+                      final email = emailController.text.trim();
+                      if (email.isEmpty) {
+                        setState(() => errorMsg = '이메일을 입력하세요.');
+                        return;
+                      }
+                      try {
+                        await Supabase.instance.client.auth.resetPasswordForEmail(email);
+                        setState(() {
+                          sent = true;
+                          errorMsg = null;
+                        });
+                      } catch (e) {
+                        setState(() => errorMsg = '메일 전송 실패: $e');
+                      }
+                    },
+                    child: const Text('메일 전송'),
+                  ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('닫기'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -204,6 +284,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         autofillHints: const [AutofillHints.email],
                         enableSuggestions: true,
                         autocorrect: false,
+                        onChanged: (val) {
+                          if (_saveId) _saveIdPref(true);
+                        },
                       ),
                       const SizedBox(height: 14),
                       TextField(
@@ -235,6 +318,17 @@ class _LoginScreenState extends State<LoginScreen> {
                             },
                           ),
                           const Text('자동 로그인', style: TextStyle(fontFamily: 'NotoSans', fontSize: 15, color: Color(0xFF222222))),
+                          const SizedBox(width: 16),
+                          Checkbox(
+                            value: _saveId,
+                            onChanged: (value) {
+                              setState(() {
+                                _saveId = value ?? false;
+                              });
+                              _saveIdPref(value ?? false);
+                            },
+                          ),
+                          const Text('아이디 저장', style: TextStyle(fontFamily: 'NotoSans', fontSize: 15, color: Color(0xFF222222))),
                         ],
                       ),
                       if (_error != null) ...[
@@ -266,26 +360,44 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: const Text('로그인', style: TextStyle(fontFamily: 'NotoSans', fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
                           ),
                         ),
-                        TextButton(
-                          onPressed: () {
-                            if (Platform.isIOS) {
-                              Navigator.of(context).push(
-                                CupertinoPageRoute(
-                                  builder: (_) => SignupScreen(onSignupSuccess: (email) {}),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            TextButton(
+                              onPressed: () {
+                                if (Platform.isIOS) {
+                                  Navigator.of(context).push(
+                                    CupertinoPageRoute(
+                                      builder: (_) => SignupScreen(onSignupSuccess: (email) {}),
+                                    ),
+                                  );
+                                } else {
+                                  _navigateWithTransition(SignupScreen(onSignupSuccess: (email) {}));
+                                }
+                              },
+                              child: const Text('회원가입',
+                                style: TextStyle(
+                                  fontFamily: 'NotoSans',
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 15,
+                                  color: Color(0xFF1777CB),
                                 ),
-                              );
-                            } else {
-                              _navigateWithTransition(SignupScreen(onSignupSuccess: (email) {}));
-                            }
-                          },
-                          child: const Text('회원가입',
-                            style: TextStyle(
-                              fontFamily: 'NotoSans',
-                              fontWeight: FontWeight.w500,
-                              fontSize: 15,
-                              color: Color(0xFF1777CB),
+                              ),
                             ),
-                          ),
+                            const Text('|', style: TextStyle(fontSize: 16, color: Color(0xFFB0B8C1))),
+                            TextButton(
+                              onPressed: _showResetPasswordDialog,
+                              child: const Text('비밀번호 재설정',
+                                style: TextStyle(
+                                  fontFamily: 'NotoSans',
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 15,
+                                  color: Color(0xFF1777CB),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ],

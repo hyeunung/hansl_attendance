@@ -7,6 +7,7 @@ import 'dart:async';
 import '../../models/attendance.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_text_theme.dart';
+import '../auth/login_screen.dart';
 
 class AttendanceScreen extends StatelessWidget {
   const AttendanceScreen({super.key});
@@ -15,18 +16,17 @@ class AttendanceScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<UserProvider>(
       builder: (context, userProvider, _) {
+        final userId = userProvider.id;
+        final userName = userProvider.name;
+        if (userId == null || userId.isEmpty) {
+          // 로그인 정보가 없으면 바로 로그인 화면 반환
+          return const LoginScreen();
+        }
         return ChangeNotifierProvider(
-          create: (_) {
-            final userId = userProvider.id;
-            final userName = userProvider.name;
-            if (userId == null || userId.isEmpty) {
-              throw Exception('UserProvider의 id가 null이거나 빈 문자열입니다. 로그인 로직을 확인하세요.');
-            }
-            return AttendanceProvider(
-              userId: userId,
-              userName: userName ?? '',
-            );
-          },
+          create: (_) => AttendanceProvider(
+            userId: userId,
+            userName: userName ?? '',
+          ),
           child: _AttendanceScreenBody(),
         );
       },
