@@ -42,7 +42,17 @@ class _MainTabState extends State<MainTab> {
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
     final employee = userProvider.employee;
-    final List<dynamic> purchaseRoles = (employee?['purchase_role'] as List<dynamic>?) ?? [];
+    
+    // 사용자 정보가 로드되기 전까지 로딩 화면 표시
+    if (employee == null) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    
+    final List<dynamic> purchaseRoles = (employee['purchase_role'] as List<dynamic>?) ?? [];
     bool hasPurchaseRole(String role) => purchaseRoles.contains(role);
     final showPurchaseApprovalTab = hasPurchaseRole('middle_manager') || hasPurchaseRole('final_approver') || hasPurchaseRole('app_admin') || hasPurchaseRole('superadmin');
     final List<Widget> screens = [
@@ -82,7 +92,7 @@ class _MainTabState extends State<MainTab> {
               color: _currentIndex == 2 ? const Color(0xFF34C759) : Colors.grey,
             ),
           ),
-          label: '승인',
+          label: '',
         ),
       BottomNavigationBarItem(
         icon: Padding(
