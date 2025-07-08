@@ -580,4 +580,4 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
       },
     );
   }
-} 
+}

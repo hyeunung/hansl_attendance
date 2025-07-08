@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/leave_request.dart';
 
+// 연차/출장 등 휴가 관련 DB 연동 서비스
 class LeaveService {
   final _client = Supabase.instance.client;
   final String table = 'leave';
@@ -57,7 +58,10 @@ class LeaveService {
 
   // 내 leave 내역 조회
   Future<List<Map<String, dynamic>>> fetchMyLeavesRaw(String userEmail) async {
-    final response = await _client.from(table).select('*').eq('user_email', userEmail);
+    final response = await _client
+        .from(table)
+        .select('*')
+        .eq('user_email', userEmail);
     return (response as List).cast<Map<String, dynamic>>();
   }
 
@@ -75,11 +79,11 @@ class LeaveService {
   Future<List<Map<String, dynamic>>> fetchTodayLeavesRaw(DateTime today) async {
     final todayStr = today.toIso8601String().substring(0, 10);
     final response = await _client
-      .from(table)
-      .select('*')
-      .eq('status', 'approved')
-      .lte('start_date', todayStr)
-      .gte('end_date', todayStr);
+        .from(table)
+        .select('*')
+        .eq('status', 'approved')
+        .lte('start_date', todayStr)
+        .gte('end_date', todayStr);
     return (response as List).cast<Map<String, dynamic>>();
   }
-} 
+}

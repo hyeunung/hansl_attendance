@@ -1,6 +1,9 @@
+// 연차/반차/출장 등 휴가 유형을 정의하는 enum
 enum LeaveType { annual, halfAm, halfPm, official, biztrip, adjust }
 
+// LeaveType에 대한 확장 기능(라벨, 일수, DB값 등)
 extension LeaveTypeExtension on LeaveType {
+  // 화면에 보여줄 한글 라벨
   String get label {
     switch (this) {
       case LeaveType.annual:
@@ -18,6 +21,7 @@ extension LeaveTypeExtension on LeaveType {
     }
   }
 
+  // 해당 유형의 일수(연차: 1, 반차: 0.5, 기타: 0)
   double get days {
     switch (this) {
       case LeaveType.annual:
@@ -33,6 +37,7 @@ extension LeaveTypeExtension on LeaveType {
     }
   }
 
+  // 문자열(DB 값 등)에서 LeaveType으로 변환
   static LeaveType fromString(String value) {
     switch (value) {
       case 'annual':
@@ -52,6 +57,7 @@ extension LeaveTypeExtension on LeaveType {
     }
   }
 
+  // DB에 저장할 때 사용하는 문자열 값
   String get dbValue {
     switch (this) {
       case LeaveType.annual:
@@ -70,15 +76,16 @@ extension LeaveTypeExtension on LeaveType {
   }
 }
 
+// 연차/출장 등 휴가 신청 정보를 담는 데이터 모델
 class LeaveRequest {
-  final int id;
-  final String userEmail;
-  final LeaveType type;
-  final DateTime startDate;
-  final DateTime endDate;
-  final String? reason;
-  final String status; // pending, approved, rejected
-  final DateTime createdAt;
+  final int id; // 고유 ID
+  final String userEmail; // 신청자 이메일
+  final LeaveType type; // 휴가 유형
+  final DateTime startDate; // 시작 날짜
+  final DateTime endDate; // 종료 날짜
+  final String? reason; // 사유(메모)
+  final String status; // 상태: pending, approved, rejected
+  final DateTime createdAt; // 신청 생성일
   final String? name; // 직원 이름 (join 결과)
 
   LeaveRequest({
@@ -93,11 +100,16 @@ class LeaveRequest {
     this.name,
   });
 
+  // Map(예: DB 조회 결과)에서 LeaveRequest 객체로 변환
   factory LeaveRequest.fromMap(Map<String, dynamic> map) {
     return LeaveRequest(
       id: map['id'] as int,
       userEmail: map['user_email'] as String,
-      type: LeaveType.values.firstWhere((e) => e.toString().split('.').last == (map['type'] as String).replaceAll('_', '')),
+      type: LeaveType.values.firstWhere(
+        (e) =>
+            e.toString().split('.').last ==
+            (map['type'] as String).replaceAll('_', ''),
+      ),
       startDate: DateTime.parse(map['start_date'] as String),
       endDate: DateTime.parse(map['end_date'] as String),
       reason: map['reason'] as String?,
@@ -107,6 +119,7 @@ class LeaveRequest {
     );
   }
 
+  // LeaveRequest 객체를 Map(예: DB 저장용)으로 변환
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -120,4 +133,4 @@ class LeaveRequest {
       // name은 insert/update에 사용하지 않음
     };
   }
-} 
+}
