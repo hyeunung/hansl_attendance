@@ -1,9 +1,19 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
+}
+
+// 서명키 설정 로드
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
 android {
@@ -31,6 +41,15 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            keyAlias = keystoreProperties["keyAlias"] as String? ?: ""
+            keyPassword = keystoreProperties["keyPassword"] as String? ?: ""
+            storeFile = keystoreProperties["storeFile"]?.let { rootProject.file(it) }
+            storePassword = keystoreProperties["storePassword"] as String? ?: ""
+        }
+    }
+
     buildTypes {
         release {
             // Release 빌드 최적화 설정
@@ -38,9 +57,8 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             
-            // TODO: 실제 배포시에는 release keystore로 서명해야 함
-            // signingConfig = signingConfigs.getByName("release")
-            signingConfig = signingConfigs.getByName("debug")
+            // Release 서명키 사용
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
