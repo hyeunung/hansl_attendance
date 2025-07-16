@@ -369,8 +369,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Padding(
-                              padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
                               child: Text(
                                 '앱 설정',
                                 style: ResponsiveUtils.getTextStyle(
