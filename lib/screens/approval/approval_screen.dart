@@ -5,7 +5,9 @@ import 'package:intl/intl.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
+import '../../utils/responsive_utils.dart';
 import '../../providers/user_provider.dart';
+import '../../constants/app_strings.dart';
 
 class ApprovalScreen extends StatefulWidget {
   const ApprovalScreen({super.key});
@@ -37,19 +39,63 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
     final role = employee?['role'];
     final name = employee?['name'];
     final department = employee?['department'];
-    // manager별 승인 가능 부서 매핑
+    final attendanceRole = employee?['attendance_role'];
+    
+    // Admin 역할 확인 (승인/반려 권한 체크용)
+    final bool isAdmin = attendanceRole != null && 
+                        attendanceRole is List && 
+                        attendanceRole.contains('admin');
+    
+    // manager별 승인 가능 부서 매핑 (조회 권한용)
     final Map<String, List<String>> managerDepartments = {
       '양승진': ['개발1팀', '개발2팀'],
       '최창열': ['개발3팀'],
       '이정화': ['CAD'],
       '조근일': ['연구소'],
+      '황연순': ['경영지원팀'],
     };
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text(
-          '승인 관리',
-          style: AppTextStyles.appBarTitle,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              isAdmin ? '연차/출장 관리' : '팀원 승인',
+              style: AppTextStyles.appBarTitle(context),
+            ),
+            if (isAdmin) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.admin_panel_settings,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'ADMIN',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
@@ -64,22 +110,51 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
       body: Consumer<LeaveProvider>(
         builder: (context, provider, _) {
           List<Map<String, dynamic>> allLeaves = provider.allLeaves;
-          // manager는 본인 부서 leave만 승인, admin/hr은 전체
-          if (role == 'manager' && managerDepartments.containsKey(name)) {
+          
+          print('🔍 ApprovalScreen - 전체 데이터 수: ${allLeaves.length}');
+          print('👤 현재 사용자: $name (role: $role, isAdmin: $isAdmin)');
+          print('🏢 현재 부서: $department');
+          
+          if (isAdmin) {
+            // Admin: 모든 신청 표시 (본인 포함)
+            final beforeFilter = allLeaves.length;
+            // Admin은 모든 신청을 볼 수 있음 (필터링 없음)
+            print('👑 Admin 필터링: $beforeFilter -> ${allLeaves.length} (모든 신청 표시)');
+          } else if (managerDepartments.containsKey(name)) {
+            // Manager: 자신 부서의 일반직원 신청만 표시 (Manager 신청 제외)
             final myDepts = managerDepartments[name]!;
+            final beforeFilter = allLeaves.length;
             allLeaves = allLeaves.where((l) {
               final emp = l['employees'];
               final leaveDept = emp is Map ? emp['department'] : null;
-              final isBiztrip = l['type'] == 'biztrip';
-              // 출장(biztrip)은 양승진만 승인 가능
-              if (isBiztrip && name != '양승진') return false;
+              final requesterName = l['name'] ?? '';
+              final requesterEmail = l['user_email'] ?? '';
+              
+              // Manager 신청과 Admin 신청은 제외
+              if (AppStrings.managerNames.contains(requesterName) || 
+                  requesterEmail == AppStrings.adminEmail) {
+                return false;
+              }
+              
+              // 자신 부서 직원만
               return leaveDept != null && myDepts.contains(leaveDept);
             }).toList();
+            print('🏢 Manager 필터링: $beforeFilter -> ${allLeaves.length} (부서: $myDepts)');
           }
+          
           final pending = allLeaves.where((l) => l['status'] == 'pending').toList();
           final done = allLeaves.where((l) => l['status'] != 'pending').toList();
           final thisMonth = DateTime.now().month;
           final thisMonthDone = done.where((l) => DateTime.parse(l['created_at']).month == thisMonth).toList();
+          
+          print('📊 최종 결과: pending=${pending.length}, done=${done.length}, thisMonth=${thisMonthDone.length}');
+          
+          // pending 데이터 상세 출력
+          for (final leave in pending) {
+            final emp = leave['employees'];
+            final dept = emp is Map ? emp['department'] : 'Unknown';
+            print('⏳ Pending: ${leave['name']} ($dept) - ${leave['type']} (${leave['start_date']} ~ ${leave['end_date']})');
+          }
           
           return Column(
             children: [
@@ -167,7 +242,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
                                       '승인 대기 내역이 없습니다.',
                                       style: TextStyle(color: Color(0xFF8E8E93)),
                                     ),
-                                  ...pending.map((l) => _approvalCard(context, l, provider)).toList(),
+                                  ...pending.map((l) => _approvalCard(context, l, provider, canApprove: true)).toList(),
                                 ],
                               ),
                             ),
@@ -208,7 +283,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
                                       '처리 완료 내역이 없습니다.',
                                       style: TextStyle(color: Color(0xFF8E8E93)),
                                     ),
-                                  ...done.map((l) => _approvalCard(context, l, provider, showButtons: false)).toList(),
+                                  ...done.map((l) => _approvalCard(context, l, provider, showButtons: false, canApprove: false)).toList(),
                                 ],
                               ),
                             ),
@@ -240,17 +315,19 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
           children: [
             Text(
               '$value',
-              style: const TextStyle(
+              style: ResponsiveUtils.getTextStyle(
+                context,
                 fontWeight: FontWeight.w700,
                 fontSize: 28,
-                color: Color(0xFF1E90FF),
+                color: const Color(0xFF1E90FF),
               ),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: ResponsiveUtils.spacing(context, 4)),
             Text(
               label,
-              style: const TextStyle(
-                color: Color(0xFF8E8E93),
+              style: ResponsiveUtils.getTextStyle(
+                context,
+                color: const Color(0xFF8E8E93),
                 fontSize: 15,
               ),
             ),
@@ -260,7 +337,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
     );
   }
 
-  Widget _approvalCard(BuildContext context, Map<String, dynamic> l, LeaveProvider provider, {bool showButtons = true}) {
+  Widget _approvalCard(BuildContext context, Map<String, dynamic> l, LeaveProvider provider, {bool showButtons = true, bool canApprove = false}) {
     final type = l['type'];
     String typeLabel;
     Color typeBgColor;
@@ -325,7 +402,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
               Icon(Icons.person, color: AppColors.primary, size: 22),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                child: Text(name, style: ResponsiveUtils.getTextStyle(context, fontWeight: FontWeight.bold, fontSize: 18)),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -355,7 +432,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
             ),
             child: Text(reason, style: const TextStyle(fontSize: 16, color: Color(0xFF6C757D))),
           ),
-          if (showButtons && status == 'pending') ...[
+          if (showButtons && status == 'pending' && canApprove) ...[
             const SizedBox(height: 12),
             Row(
               children: [
@@ -435,6 +512,32 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
                   ),
                 ),
               ],
+            ),
+          ] else if (showButtons && status == 'pending' && !canApprove) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFA726).withOpacity(0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.info, color: const Color(0xFFFFA726), size: 20),
+                  const SizedBox(width: 8),
+                  const Text(
+                    '승인 권한이 없습니다',
+                    style: TextStyle(
+                      color: Color(0xFFFFA726),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ] else if (!showButtons) ...[
             const SizedBox(height: 12),

@@ -7,9 +7,11 @@ import '../../providers/user_provider.dart';
 import '../../providers/leave_provider.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/app_text_theme.dart';
+import '../../utils/responsive_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../auth/login_screen.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -21,10 +23,12 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _approvalNoti = true;
   String _fontSize = '보통';
+  String _appVersion = '로딩 중...';
 
   @override
   void initState() {
     super.initState();
+    _loadAppVersion();
     Future.microtask(() async {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
@@ -38,6 +42,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
         await leaveProvider.fetchMyLeaves(email: email);
       }
     });
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      setState(() {
+        _appVersion = '앱 버전 ${packageInfo.version}+${packageInfo.buildNumber}';
+      });
+    } catch (e) {
+      setState(() {
+        _appVersion = '앱 버전 1.0.1+3';
+      });
+    }
   }
 
   void _showInquiryDialog() {
@@ -116,10 +133,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             centerTitle: true,
-            title: const Text(
-              '설정',
-              style: AppTextStyles.appBarTitle,
-            ),
+                          title: Text(
+                '설정',
+                style: AppTextStyles.appBarTitle(context),
+              ),
             iconTheme: const IconThemeData(color: Colors.white),
           ),
           body: isLoading
@@ -173,18 +190,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 children: [
                                   Text(
                                     name,
-                                    style: const TextStyle(
+                                    style: ResponsiveUtils.getTextStyle(
+                                      context,
                                       fontSize: 22,
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFF1C1C1E),
+                                      color: const Color(0xFF1C1C1E),
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
+                                  SizedBox(height: ResponsiveUtils.spacing(context, 4)),
                                   Text(
                                     '${(department?.isNotEmpty ?? false) ? department : '-'} • ${(position?.isNotEmpty ?? false) ? position : '-'}',
-                                    style: const TextStyle(
+                                    style: ResponsiveUtils.getTextStyle(
+                                      context,
                                       fontSize: 16,
-                                      color: Color(0xFF8E8E93),
+                                      color: const Color(0xFF8E8E93),
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -354,10 +373,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
                               child: Text(
                                 '앱 설정',
-                                style: TextStyle(
+                                style: ResponsiveUtils.getTextStyle(
+                                  context,
                                   fontSize: 21,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF1C1C1E),
+                                  color: const Color(0xFF1C1C1E),
                                   letterSpacing: 0.5,
                                 ),
                               ),
@@ -380,21 +400,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 12),
-                                  const Expanded(
+                                  Expanded(
                                     child: Text(
                                       '글꼴 크기',
-                                      style: TextStyle(
+                                      style: ResponsiveUtils.getTextStyle(
+                                        context,
                                         fontSize: 19,
                                         fontWeight: FontWeight.w600,
-                                        color: Color(0xFF8E8E93),
+                                        color: const Color(0xFF8E8E93),
                                       ),
                                     ),
                                   ),
                                   Text(
                                     _fontSize,
-                                    style: const TextStyle(
+                                    style: ResponsiveUtils.getTextStyle(
+                                      context,
                                       fontSize: 18,
-                                      color: Color(0xFF8E8E93),
+                                      color: const Color(0xFF8E8E93),
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -483,7 +505,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Text('앱 버전 1.0.0', style: TextStyle(color: Color(0xFFB0B0B0), fontSize: 13)),
+                Text(_appVersion, style: const TextStyle(color: Color(0xFFB0B0B0), fontSize: 13)),
               ],
             ),
           ),

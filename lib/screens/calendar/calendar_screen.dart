@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/leave_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
+import '../../utils/responsive_utils.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -49,7 +50,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Widget build(BuildContext context) {
     return Consumer<LeaveProvider>(
       builder: (context, provider, _) {
-        final allLeaves = provider.allLeaves;
+        // 달력에서는 승인된 연차/출장만 표시
+        final allLeaves = provider.allLeaves.where((leave) => leave['status'] == 'approved').toList();
         final days = _daysInMonth(_focusedMonth);
         final firstWeekday = days.first.weekday % 7; // 일요일=0
         final totalCells = days.length + firstWeekday;
@@ -57,7 +59,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         final today = DateTime.now();
     return Scaffold(
           appBar: AppBar(
-            title: const Text('달력', style: AppTextStyles.appBarTitle),
+            title: Text('달력', style: AppTextStyles.appBarTitle(context)),
             backgroundColor: Colors.transparent,
             elevation: 0,
             flexibleSpace: Container(
@@ -356,10 +358,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
             children: [
               Text(
                 e['name'] ?? e['user_email'] ?? '-',
-                style: const TextStyle(
+                style: ResponsiveUtils.getTextStyle(
+                  context,
                   fontWeight: FontWeight.w600,
                   fontSize: 15,
-                  color: Color(0xFF1C1C1E),
+                  color: const Color(0xFF1C1C1E),
                 ),
               ),
               Container(
@@ -383,8 +386,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
             const SizedBox(height: 4),
             Text(
               e['desc'],
-              style: const TextStyle(
-                color: Color(0xFF6C757D),
+              style: ResponsiveUtils.getTextStyle(
+                context,
+                color: const Color(0xFF6C757D),
                 fontSize: 13,
               ),
             ),

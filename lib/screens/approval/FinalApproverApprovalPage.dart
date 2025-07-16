@@ -22,29 +22,21 @@ class _FinalApproverApprovalPageState extends State<FinalApproverApprovalPage> {
 
   Future<void> _loadConfirmedRequests() async {
     setState(() => _isLoading = true);
-    final response = await supabase
-        .from('purchase_requests')
-        .select('
-          id,
-          request_type,
-          request_date,
-          total_amount,
-          currency,
-          po_file_url,
-          vendors(vendor_name)
-        ')
-        .eq('payment_status', '확인')
-        .order('request_date', ascending: true)
-        .execute();
-    if (response.error == null) {
+    try {
+      final response = await supabase
+          .from('purchase_requests')
+          .select('id, request_type, request_date, total_amount, currency, po_file_url')
+          .eq('payment_status', '확인')
+          .order('request_date', ascending: true);
+      
       setState(() {
-        _confirmedRequests = response.data;
+        _confirmedRequests = response;
         _isLoading = false;
       });
-    } else {
+    } catch (e) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('데이터 불러오기 실패: ${response.error!.message}')),
+        SnackBar(content: Text('데이터 불러오기 실패: $e')),
       );
     }
   }
@@ -60,8 +52,7 @@ class _FinalApproverApprovalPageState extends State<FinalApproverApprovalPage> {
               itemBuilder: (context, index) {
                 final pr = _confirmedRequests[index];
                 final id = pr['id'];
-                final type = pr['request_type']; // '원자재' or '소모품'
-                final vendorName = pr['vendors']?['vendor_name'] ?? '-';
+                final type = pr['request_type'] ?? '-'; // '원자재' or '소모품'
                 final requestDate = pr['request_date'] ?? '-';
                 final totalAmount = pr['total_amount'] ?? 0;
                 final currency = pr['currency'] ?? '';
@@ -70,7 +61,7 @@ class _FinalApproverApprovalPageState extends State<FinalApproverApprovalPage> {
                   margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   child: ListTile(
                     title: Text('발주번호: #$id ($type)'),
-                    subtitle: Text('$vendorName • $requestDate • $currency $totalAmount'),
+                    subtitle: Text('$requestDate • $currency $totalAmount'),
                     onTap: () async {
                       await Navigator.push(
                         context,
@@ -79,17 +70,16 @@ class _FinalApproverApprovalPageState extends State<FinalApproverApprovalPage> {
                             purchaseRequestId: id,
                             initialStatus: '확인',
                             onApprove: () async {
-                              final updateRes = await supabase
-                                  .from('purchase_requests')
-                                  .update({'payment_status': '완료'})
-                                  .eq('id', id)
-                                  .execute();
-                              if (updateRes.error == null) {
+                              try {
+                                await supabase
+                                    .from('purchase_requests')
+                                    .update({'payment_status': '완료'})
+                                    .eq('id', id);
                                 Navigator.of(context).pop();
                                 _loadConfirmedRequests();
-                              } else {
+                              } catch (e) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('결제 승인 실패: ${updateRes.error!.message}')),
+                                  SnackBar(content: Text('결제 승인 실패: $e')),
                                 );
                               }
                             },
@@ -99,16 +89,15 @@ class _FinalApproverApprovalPageState extends State<FinalApproverApprovalPage> {
                     },
                     trailing: ElevatedButton(
                       onPressed: () async {
-                        final updateRes = await supabase
-                            .from('purchase_requests')
-                            .update({'payment_status': '완료'})
-                            .eq('id', id)
-                            .execute();
-                        if (updateRes.error == null) {
+                        try {
+                          await supabase
+                              .from('purchase_requests')
+                              .update({'payment_status': '완료'})
+                              .eq('id', id);
                           _loadConfirmedRequests();
-                        } else {
+                        } catch (e) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('결제 승인 실패: ${updateRes.error!.message}')),
+                            SnackBar(content: Text('결제 승인 실패: $e')),
                           );
                         }
                       },

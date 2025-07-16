@@ -7,6 +7,9 @@ import 'settings/settings_screen.dart';
 import '../theme/app_colors.dart'; 
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
+import '../providers/attendance_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../utils/responsive_utils.dart';
 
 class MainTab extends StatefulWidget {
   final int initialIndex;
@@ -25,6 +28,27 @@ class _MainTabState extends State<MainTab> {
     super.initState();
     _currentIndex = widget.initialIndex;
     _pageController = PageController(initialPage: _currentIndex);
+    _loadEmployeeData();
+  }
+
+  Future<void> _loadEmployeeData() async {
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      
+      if (userProvider.email != null) {
+        final employee = await Supabase.instance.client
+            .from('employees')
+            .select()
+            .eq('email', userProvider.email!)
+            .maybeSingle();
+            
+        if (employee != null && mounted) {
+          userProvider.setEmployee(employee);
+        }
+      }
+    } catch (e) {
+      print('직원 정보 로드 중 오류: $e');
+    }
   }
 
   void _onTabTapped(int index) {
@@ -41,20 +65,25 @@ class _MainTabState extends State<MainTab> {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
+    
+    // 사용자 정보가 있으면 AttendanceProvider 생성, 없으면 기본값 사용
+    final attendanceProvider = AttendanceProvider(
+      userId: userProvider.id ?? '',
+      userName: userProvider.name ?? '',
+    );
+    
+    return ChangeNotifierProvider(
+      create: (_) => attendanceProvider,
+      child: _buildMainContent(userProvider),
+    );
+  }
+
+  Widget _buildMainContent(UserProvider userProvider) {
     final employee = userProvider.employee;
-    
-    // 사용자 정보가 로드되기 전까지 로딩 화면 표시
-    if (employee == null) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-    
-    final List<dynamic> purchaseRoles = (employee['purchase_role'] as List<dynamic>?) ?? [];
+    final List<dynamic> purchaseRoles = (employee?['purchase_role'] as List<dynamic>?) ?? [];
     bool hasPurchaseRole(String role) => purchaseRoles.contains(role);
     final showPurchaseApprovalTab = hasPurchaseRole('middle_manager') || hasPurchaseRole('final_approver') || hasPurchaseRole('app_admin') || hasPurchaseRole('superadmin');
+    
     final List<Widget> screens = [
       const AttendanceScreen(),
       const LeaveStatusScreen(),
@@ -62,10 +91,11 @@ class _MainTabState extends State<MainTab> {
       const CalendarScreen(),
       const SettingsScreen(),
     ];
+    
     final List<BottomNavigationBarItem> items = [
       BottomNavigationBarItem(
         icon: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 6)),
           child: Icon(
             Icons.access_time,
             color: _currentIndex == 0 ? const Color(0xFFFF9500) : Colors.grey,
@@ -115,9 +145,11 @@ class _MainTabState extends State<MainTab> {
         label: '',
       ),
     ];
+    
     if (_currentIndex >= screens.length) {
       _currentIndex = 0;
     }
+    
     return Scaffold(
       body: PageView(
         controller: _pageController,
@@ -143,8 +175,8 @@ class _MainTabState extends State<MainTab> {
           unselectedFontSize: 14,
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
           unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
-          selectedIconTheme: const IconThemeData(size: 32),
-          unselectedIconTheme: const IconThemeData(size: 32),
+          selectedIconTheme: IconThemeData(size: ResponsiveUtils.iconSize(context, 30)),
+          unselectedIconTheme: IconThemeData(size: ResponsiveUtils.iconSize(context, 30)),
           items: items,
         ),
       ),

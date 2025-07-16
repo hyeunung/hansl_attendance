@@ -8,6 +8,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../services/supabase_service.dart';
 import '../../providers/user_provider.dart';
+import '../../services/notification_service.dart';
+import '../../utils/responsive_utils.dart';
 
 class LoginScreen extends StatefulWidget {
   final String? initialEmail;
@@ -46,15 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
           _emailController.text = savedId;
         }
       }
-      if (_autoLogin) {
-        final savedEmail = prefs.getString('autoLoginEmail') ?? '';
-        final savedPassword = prefs.getString('autoLoginPassword') ?? '';
-        if (savedEmail.isNotEmpty && savedPassword.isNotEmpty) {
-          _emailController.text = savedEmail;
-          _passwordController.text = savedPassword;
-          _login();
-        }
-      }
+      // 자동로그인은 Supabase 세션에서 처리하므로 여기서는 제거
     });
   }
 
@@ -62,6 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('saveId', value);
     if (value) {
+      // 사용자 이름만 저장 (@hansl.com 제외)
       await prefs.setString('savedId', _emailController.text.trim());
     } else {
       await prefs.remove('savedId');
@@ -97,8 +92,12 @@ class _LoginScreenState extends State<LoginScreen> {
       _error = null;
     });
     try {
+      // 사용자 이름에 @hansl.com을 자동으로 붙여서 이메일 생성
+      final username = _emailController.text.trim();
+      final email = username.contains('@') ? username : '$username@hansl.com';
+      
       final response = await Supabase.instance.client.auth.signInWithPassword(
-        email: _emailController.text.trim(),
+        email: email,
         password: _passwordController.text,
       );
       if (response.user != null) {
@@ -117,22 +116,17 @@ class _LoginScreenState extends State<LoginScreen> {
           email: employee['email'],
         );
         print('로그인 후 UserProvider id: [32m[1m[4m[7m${Provider.of<UserProvider>(context, listen: false).id}[0m');
-        if (_autoLogin) {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setBool('autoLogin', true);
-          await prefs.setString('autoLoginEmail', _emailController.text.trim());
-          await prefs.setString('autoLoginPassword', _passwordController.text);
-        } else {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setBool('autoLogin', false);
-          await prefs.remove('autoLoginEmail');
-          await prefs.remove('autoLoginPassword');
-        }
+        // 자동 로그인 설정 저장 (보안상 비밀번호는 저장하지 않음)
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('autoLogin', _autoLogin);
+        
         if (_saveId) {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('savedId', _emailController.text.trim());
+          // 사용자 이름만 저장 (@hansl.com 제외)
+          final username = _emailController.text.trim();
+          await prefs.setString('savedId', username);
         }
         _navigateWithTransition(const MainTab());
+        NotificationService.refreshTokenAfterLogin();
       } else {
         setState(() {
           _error = '로그인 실패: 알 수 없는 오류';
@@ -150,7 +144,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _showResetPasswordDialog() async {
-    final emailController = TextEditingController(text: _emailController.text);
+    final usernameController = TextEditingController(text: _emailController.text);
     String? errorMsg;
     bool sent = false;
     await showDialog(
@@ -166,8 +160,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         TextField(
-                          controller: emailController,
-                          decoration: const InputDecoration(labelText: '이메일'),
+                          controller: usernameController,
+                          decoration: const InputDecoration(
+                            labelText: '사용자 이름',
+                            suffixText: '@hansl.com',
+                          ),
                         ),
                         if (errorMsg != null) ...[
                           const SizedBox(height: 8),
@@ -179,11 +176,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 if (!sent)
                   TextButton(
                     onPressed: () async {
-                      final email = emailController.text.trim();
-                      if (email.isEmpty) {
-                        setState(() => errorMsg = '이메일을 입력하세요.');
+                      final username = usernameController.text.trim();
+                      if (username.isEmpty) {
+                        setState(() => errorMsg = '사용자 이름을 입력하세요.');
                         return;
                       }
+                      // 사용자 이름에 @hansl.com을 붙여서 이메일 생성
+                      final email = username.contains('@') ? username : '$username@hansl.com';
                       try {
                         await Supabase.instance.client.auth.resetPasswordForEmail(email);
                         setState(() {
@@ -225,32 +224,29 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: 32),
+                SizedBox(height: ResponsiveUtils.spacing(context, 32)),
                 Text(
                   'HANSL',
-                  style: TextStyle(
-                    fontFamily: 'NotoSans',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 40,
-                    color: Color(0xFF1777CB),
-                    letterSpacing: 4,
-                  ),
+                  style: ResponsiveTextStyles.logoTitle(context),
                 ),
-                const SizedBox(height: 10),
-                const Text(
+                SizedBox(height: ResponsiveUtils.spacing(context, 10)),
+                Text(
                   '근태 기록 시스템',
-                  style: TextStyle(
-                    fontFamily: 'NotoSans',
-                    fontWeight: FontWeight.w400,
+                  style: ResponsiveUtils.getTextStyle(
+                    context,
                     fontSize: 16,
-                    color: Color(0xFFB0B8C1),
+                    fontWeight: FontWeight.w400,
+                    color: const Color(0xFFB0B8C1),
                     letterSpacing: 1.2,
                   ),
                 ),
-                const SizedBox(height: 40),
+                SizedBox(height: ResponsiveUtils.spacing(context, 40)),
                 Container(
-                  width: 340,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+                  width: ResponsiveUtils.spacing(context, 340),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: ResponsiveUtils.spacing(context, 20), 
+                    vertical: ResponsiveUtils.spacing(context, 28)
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: boxRadius,
@@ -269,10 +265,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         controller: _emailController,
                         style: const TextStyle(fontFamily: 'NotoSans', fontSize: 16),
                         decoration: InputDecoration(
-                          labelText: 'Email',
+                          labelText: '사용자 이름',
                           labelStyle: const TextStyle(fontFamily: 'NotoSans', fontWeight: FontWeight.w500, fontSize: 15, color: Color(0xFF222222)),
-                          hintText: 'Email을 입력하세요',
+                          hintText: '사용자 이름 입력',
                           hintStyle: const TextStyle(color: Color(0xFFB0B8C1)),
+                          suffixText: '@hansl.com',
+                          suffixStyle: const TextStyle(color: Color(0xFFB0B8C1), fontSize: 16),
                           filled: true,
                           fillColor: Color(0xFFF8F9FA),
                           border: OutlineInputBorder(
@@ -280,8 +278,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderSide: BorderSide.none,
                           ),
                         ),
-                        keyboardType: TextInputType.emailAddress,
-                        autofillHints: const [AutofillHints.email],
+                        keyboardType: TextInputType.text,
+                        autofillHints: const [AutofillHints.username],
                         enableSuggestions: true,
                         autocorrect: false,
                         onChanged: (val) {
@@ -448,8 +446,12 @@ class _SignupScreenState extends State<SignupScreen> {
       return;
     }
     try {
+      // 사용자 이름에 @hansl.com을 자동으로 붙여서 이메일 생성
+      final username = _emailController.text.trim();
+      final email = username.contains('@') ? username : '$username@hansl.com';
+      
       final response = await Supabase.instance.client.auth.signUp(
-        email: _emailController.text.trim(),
+        email: email,
         password: _passwordController.text,
         data: {'display_name': _nameController.text.trim()},
       );
@@ -575,10 +577,12 @@ class _SignupScreenState extends State<SignupScreen> {
                         controller: _emailController,
                         style: const TextStyle(fontFamily: 'NotoSans', fontSize: 16),
                         decoration: InputDecoration(
-                          labelText: 'Email',
+                          labelText: '사용자 이름',
                           labelStyle: const TextStyle(fontFamily: 'NotoSans', fontWeight: FontWeight.w500, fontSize: 15, color: Color(0xFF222222)),
-                          hintText: 'Email을 입력하세요',
+                          hintText: '사용자 이름 입력',
                           hintStyle: const TextStyle(color: Color(0xFFB0B8C1)),
+                          suffixText: '@hansl.com',
+                          suffixStyle: const TextStyle(color: Color(0xFFB0B8C1), fontSize: 16),
                           filled: true,
                           fillColor: Color(0xFFF8F9FA),
                           border: OutlineInputBorder(
@@ -586,8 +590,8 @@ class _SignupScreenState extends State<SignupScreen> {
                             borderSide: BorderSide.none,
                           ),
                         ),
-                        keyboardType: TextInputType.emailAddress,
-                        autofillHints: const [AutofillHints.email],
+                        keyboardType: TextInputType.text,
+                        autofillHints: const [AutofillHints.username],
                         enableSuggestions: true,
                         autocorrect: false,
                       ),

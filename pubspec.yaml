@@ -23,6 +23,7 @@ dependencies:
   flutter_dotenv: ^5.1.0
   firebase_core: ^3.3.0
   firebase_messaging: ^15.0.4
+  package_info_plus: ^4.2.0
 
 dev_dependencies:
   flutter_test:

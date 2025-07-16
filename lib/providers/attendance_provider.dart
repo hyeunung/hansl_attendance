@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:async';
+import 'dart:math';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/attendance_service.dart';
 import '../models/attendance.dart';
@@ -10,14 +11,11 @@ enum AttendanceStatus { beforeWork, working, late, offWork }
 class AttendanceProvider extends ChangeNotifier {
   final String userId;
   final String userName;
-  // 회사 위치
-  static const double companyLat = 35.844541;  //hansl 위도
-  static const double companyLng = 128.506440;  //hansl 경도
-  /*
-  static const double companyLat = 35.804306;  //갈밭로12길 11 위도
-  static const double companyLng = 128.529245;  //갈밭로12길 11 경도
-  */
-  static const double allowedDistance = 100.0; // meters
+  
+  // 회사 위치 정보 (임시: 클라이언트 사이드 검증)
+  static const double _companyLat = 35.844541;  // hansl 위도
+  static const double _companyLng = 128.506440;  // hansl 경도
+  static const double _allowedDistance = 100.0;  // meters
 
   AttendanceStatus status = AttendanceStatus.beforeWork;
   DateTime? clockInTime;
@@ -72,6 +70,7 @@ class AttendanceProvider extends ChangeNotifier {
     notifyListeners();
     final now = DateTime.now();
     final todayStr = "${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+    
     // DB에서 오늘 출근 기록 조회
     final record = await Supabase.instance.client
         .from('attendance_records')
@@ -85,6 +84,7 @@ class AttendanceProvider extends ChangeNotifier {
       clockInTime = DateTime.parse('${todayStr}T${record['clock_in']}');
       clockOutTime = record['clock_out'] != null ? DateTime.tryParse('${todayStr}T${record['clock_out']}') : null;
       isLate = record['status'] == '지각';
+      
       if (clockInTime != null && clockOutTime == null) {
         status = isLate ? AttendanceStatus.late : AttendanceStatus.working;
       } else if (clockInTime != null && clockOutTime != null) {
@@ -100,6 +100,7 @@ class AttendanceProvider extends ChangeNotifier {
       isLate = false;
       canClockIn = true;
     }
+    
     isLoading = false;
     notifyListeners();
   }
@@ -129,15 +130,64 @@ class AttendanceProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // 두 지점 간의 거리 계산 (하버사인 공식)
+  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    const double earthRadius = 6371000; // 지구의 반지름 (미터)
+    final double dLat = _degreesToRadians(lat2 - lat1);
+    final double dLon = _degreesToRadians(lon2 - lon1);
+    final double a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(_degreesToRadians(lat1)) * cos(_degreesToRadians(lat2)) *
+        sin(dLon / 2) * sin(dLon / 2);
+    final double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    return earthRadius * c;
+  }
+
+  double _degreesToRadians(double degrees) {
+    return degrees * pi / 180;
+  }
+
+  // 클라이언트 사이드 위치 검증
+  bool _validateLocation(double latitude, double longitude) {
+    final distance = _calculateDistance(latitude, longitude, _companyLat, _companyLng);
+    return distance <= _allowedDistance;
+  }
+
+  // 클라이언트 사이드 시간 검증
+  bool _validateWorkTime() {
+    final now = DateTime.now();
+    final hour = now.hour;
+    final minute = now.minute;
+    
+    // 00:00 ~ 18:00 사이에만 출근 가능
+    if (hour >= 0 && hour < 18) {
+      return true;
+    } else if (hour == 18 && minute == 0) {
+      return true;
+    }
+    return false;
+  }
+
+  // 지각 여부 판정 (09:00 기준)
+  bool _isLateClockIn() {
+    final now = DateTime.now();
+    final hour = now.hour;
+    final minute = now.minute;
+    
+    // 09:00 이후면 지각
+    return hour > 9 || (hour == 9 && minute > 0);
+  }
+
   Future<void> tryClockIn() async {
     if (isLoading) return;
     isLoading = true;
     notifyListeners();
     errorMessage = null;
-    // 위치 권한 및 거리 체크
+    
+    // 위치 권한 체크
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       errorMessage = '위치 서비스를 켜주세요.';
+      isLoading = false;
       notifyListeners();
       return;
     }
@@ -146,46 +196,77 @@ class AttendanceProvider extends ChangeNotifier {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
         errorMessage = '위치 권한이 필요합니다.';
+        isLoading = false;
         notifyListeners();
         return;
       }
     }
     if (permission == LocationPermission.deniedForever) {
       errorMessage = '위치 권한이 영구적으로 거부되었습니다.';
+      isLoading = false;
       notifyListeners();
       return;
     }
+    
+    // GPS 위치 획득
     Position pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-    double distance = Geolocator.distanceBetween(
-      pos.latitude, pos.longitude, companyLat, companyLng,
-    );
-    if (distance > allowedDistance) {
-      errorMessage = '근무지가 아닙니다';
+    
+    // 클라이언트 사이드 위치 검증 (임시)
+    if (!_validateLocation(pos.latitude, pos.longitude)) {
+      final distance = _calculateDistance(pos.latitude, pos.longitude, _companyLat, _companyLng);
+      errorMessage = '회사에서 ${distance.round()}m 떨어져 있습니다. 허용 범위: ${_allowedDistance.round()}m';
+      isLoading = false;
       notifyListeners();
       return;
     }
-    // 시간 체크
-    final now = DateTime.now();
-    final lateTime = DateTime(now.year, now.month, now.day, 8, 30);
-    isLate = now.isAfter(lateTime);
+    
+    // 클라이언트 사이드 시간 검증 (임시)
+    if (!_validateWorkTime()) {
+      errorMessage = '출근 가능한 시간이 아닙니다. (00:00 ~ 18:00)';
+      isLoading = false;
+      notifyListeners();
+      return;
+    }
+    
+    // 지각 여부 판정
+    var now = DateTime.now();
+    isLate = _isLateClockIn();
     final todayStr = "${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-    // 오늘 내 row 찾기
-    final record = await Supabase.instance.client
-        .from('attendance_records')
-        .select()
-        .eq('employee_id', userId)
-        .eq('date', todayStr)
-        .maybeSingle();
-    if (record != null) {
-      await Supabase.instance.client
+    
+    try {
+      
+      // 오늘 내 row 찾기
+      final record = await Supabase.instance.client
           .from('attendance_records')
-          .update({
-            'clock_in': now.toIso8601String().substring(11, 19),
-            'status': isLate ? '지각' : '정상 출근',
-          })
-          .eq('id', record['id']);
-    } else {
-      errorMessage = '오늘자 출근 row가 없습니다. 관리자에게 문의하세요.';
+          .select()
+          .eq('employee_id', userId)
+          .eq('date', todayStr)
+          .maybeSingle();
+      
+      if (record != null) {
+        // 기존 레코드가 있으면 UPDATE
+        final updateResult = await Supabase.instance.client
+            .from('attendance_records')
+            .update({
+              'clock_in': now.toIso8601String().substring(11, 19),
+              'status': isLate ? '지각' : '정상 출근',
+            })
+            .eq('id', record['id']);
+      } else {
+        // 기존 레코드가 없으면 INSERT (새로 생성)
+        final insertResult = await Supabase.instance.client
+            .from('attendance_records')
+            .insert({
+              'date': todayStr,
+              'employee_id': userId,
+              'employee_name': userName,
+              'clock_in': now.toIso8601String().substring(11, 19),
+              'status': isLate ? '지각' : '정상 출근',
+              'created_at': now.toIso8601String(),
+            });
+      }
+    } catch (e) {
+      errorMessage = '출근 등록 중 오류가 발생했습니다. 다시 시도해주세요.';
       isLoading = false;
       notifyListeners();
       return;
@@ -226,25 +307,46 @@ class AttendanceProvider extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    final now = DateTime.now();
+    
+    // 퇴근 시간 확인 (임시: 클라이언트 사이드)
+    var now = DateTime.now();
+    
     final todayStr = "${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-    // 오늘 내 row 찾기
-    final record = await Supabase.instance.client
-        .from('attendance_records')
-        .select()
-        .eq('employee_id', userId)
-        .eq('date', todayStr)
-        .maybeSingle();
-    if (record != null) {
-      await Supabase.instance.client
+    
+    try {
+      
+      // 오늘 내 row 찾기
+      final record = await Supabase.instance.client
           .from('attendance_records')
-          .update({
-            'clock_out': now.toIso8601String().substring(11, 19),
-            'status': '퇴근',
-          })
-          .eq('id', record['id']);
-    } else {
-      errorMessage = '오늘자 출근 row가 없습니다. 관리자에게 문의하세요.';
+          .select()
+          .eq('employee_id', userId)
+          .eq('date', todayStr)
+          .maybeSingle();
+      
+      if (record != null) {
+        // 기존 레코드가 있으면 UPDATE
+        final updateResult = await Supabase.instance.client
+            .from('attendance_records')
+            .update({
+              'clock_out': now.toIso8601String().substring(11, 19),
+              'status': '퇴근',
+            })
+            .eq('id', record['id']);
+      } else {
+        // 출근 기록 없이 퇴근하는 경우 (예외적 상황)
+        final insertResult = await Supabase.instance.client
+            .from('attendance_records')
+            .insert({
+              'date': todayStr,
+              'employee_id': userId,
+              'employee_name': userName,
+              'clock_out': now.toIso8601String().substring(11, 19),
+              'status': '퇴근',
+              'created_at': now.toIso8601String(),
+            });
+      }
+    } catch (e) {
+      errorMessage = '퇴근 등록 중 오류가 발생했습니다. 다시 시도해주세요.';
       isLoading = false;
       notifyListeners();
       return;
@@ -276,14 +378,14 @@ class AttendanceProvider extends ChangeNotifier {
   }
 
   void _startMidnightResetTimer() {
-    // 자정에 데이터 초기화
+    // 자정에 새로운 날 준비 (데이터 초기화 및 새로고침)
     final now = DateTime.now();
     final tomorrow = DateTime(now.year, now.month, now.day + 1);
     final duration = tomorrow.difference(now);
     Timer(duration, () {
-      _initToday();
-      fetchRecentHistory(); // 자정에 history도 새로고침
-      _startMidnightResetTimer();
+      _initToday(); // 새로운 날의 출근 상태 확인
+      fetchRecentHistory(); // 출근 기록 새로고침
+      _startMidnightResetTimer(); // 다음 자정을 위한 타이머 재설정
     });
   }
 

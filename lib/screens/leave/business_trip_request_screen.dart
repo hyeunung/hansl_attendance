@@ -437,10 +437,10 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
           icon: Icon(Icons.arrow_back, color: AppColors.primary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          '출장 신청',
-          style: AppTextStyles.appBarTitle,
-        ),
+                  title: Text(
+            '출장 신청',
+            style: AppTextStyles.appBarTitle(context),
+          ),
       ),
       body: Consumer<LeaveProvider>(
         builder: (context, leaveProvider, _) {

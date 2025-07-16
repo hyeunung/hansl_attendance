@@ -17,9 +17,9 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.hansl.attendance"
+    namespace = "com.hansl.attendance.v2"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -31,8 +31,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.hansl.attendance"
+        applicationId = "com.hansl.attendance.v2"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -52,10 +51,10 @@ android {
 
     buildTypes {
         release {
-            // Release 빌드 최적화 설정
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // Release 빌드 최적화 설정 (ProGuard 비활성화)
+            isMinifyEnabled = false
+            isShrinkResources = false
+            // proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             
             // Release 서명키 사용
             signingConfig = signingConfigs.getByName("release")

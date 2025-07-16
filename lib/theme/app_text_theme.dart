@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
+import '../utils/responsive_utils.dart';
 
 class AppTextTheme {
-  static const TextStyle title = TextStyle(
-    fontFamily: 'NotoSans',
-    fontWeight: FontWeight.bold,
+  static TextStyle title(BuildContext context) => ResponsiveUtils.getTextStyle(
+    context,
     fontSize: 20,
+    fontWeight: FontWeight.bold,
   );
-  // 필요시 추가 텍스트 스타일 정의
 } 
 
 class AppTextStyles {
-  static const TextStyle appBarTitle = TextStyle(
-    fontSize: 26,
+  static TextStyle appBarTitle(BuildContext context) => ResponsiveUtils.getTextStyle(
+    context,
+    fontSize: 22,
     fontWeight: FontWeight.w700,
     color: Colors.white,
-    fontFamily: 'NotoSans',
   );
-  // 필요시 다른 스타일도 추가
 } 

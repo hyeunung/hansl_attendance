@@ -1,30 +1,49 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io';
+import '../screens/main_tab.dart';
 
 // 백그라운드 메시지 핸들러 (글로벌 함수여야 함)
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  print('백그라운드 메시지 수신: ${message.messageId}');
-  print('제목: ${message.notification?.title}');
-  print('내용: ${message.notification?.body}');
+  try {
+    await Firebase.initializeApp();
+    
+    final title = message.notification?.title ?? '새 알림';
+    final body = message.notification?.body ?? '';
+    final type = message.data['type'] ?? 'unknown';
+    
+    print('📨 백그라운드 메시지 수신:');
+    print('   메시지 ID: ${message.messageId}');
+    print('   제목: $title');
+    print('   내용: $body');
+    print('   타입: $type');
+    print('   데이터: ${message.data}');
+    print('   수신 시간: ${DateTime.now().toIso8601String()}');
+    
+    // TODO: 백그라운드에서 필요한 추가 처리 (예: 로컬 DB 업데이트)
+    
+  } catch (e) {
+    print('❌ 백그라운드 메시지 처리 실패: $e');
+  }
 }
 
 class NotificationService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   static String? _fcmToken;
 
+  /// 글로벌 네비게이터 키 (외부에서 접근 가능)
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
   /// Firebase 알림 서비스 초기화
   static Future<void> initialize() async {
     try {
-      // Firebase 초기화
-      await Firebase.initializeApp();
-      
       // 백그라운드 메시지 핸들러 등록
       FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
       
@@ -70,19 +89,91 @@ class NotificationService {
   /// FCM 토큰 가져오기 및 저장
   static Future<void> _getFCMToken() async {
     try {
-      _fcmToken = await _messaging.getToken();
-      if (_fcmToken != null) {
-        print('🔑 FCM 토큰: $_fcmToken');
+      // iOS에서 APNS 토큰 처리 (필수)
+      if (Platform.isIOS) {
+        print('📱 iOS 플랫폼 감지 - APNS 토큰 확인...');
         
-        // SharedPreferences에 토큰 저장
+        try {
+          // APNS 토큰 요청 (더 긴 타임아웃)
+          String? apnsToken = await _messaging.getAPNSToken()
+              .timeout(const Duration(seconds: 10), onTimeout: () => null);
+          
+          if (apnsToken != null) {
+            print('✅ APNS 토큰 설정됨: ${apnsToken.substring(0, 20)}...');
+            print('✅ iOS 푸시 알림 사용 가능');
+          } else {
+            print('⚠️ APNS 토큰 없음');
+            print('📱 실제 iPhone에서 테스트하거나 알림 권한을 확인하세요');
+            print('📱 시뮬레이터에서는 푸시 알림을 받을 수 없습니다');
+            
+            // 실제 기기에서 추가 시도
+            if (!kIsWeb) {
+              print('🔄 APNS 토큰 추가 시도...');
+              await Future.delayed(const Duration(seconds: 2));
+              apnsToken = await _messaging.getAPNSToken();
+              
+              if (apnsToken != null) {
+                print('✅ APNS 토큰 지연 생성됨: ${apnsToken.substring(0, 20)}...');
+              }
+            }
+          }
+        } catch (apnsError) {
+          print('❌ APNS 토큰 오류: $apnsError');
+          print('📱 iOS 푸시 알림이 작동하지 않을 수 있습니다');
+        }
+      }
+      
+      // FCM 토큰 가져오기 (APNS 토큰 없이도 시도)
+      try {
+        _fcmToken = await _messaging.getToken();
+        
+        if (_fcmToken != null) {
+          print('🔑 FCM 토큰 성공: $_fcmToken');
+          
+          // SharedPreferences에 토큰 저장
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('fcm_token', _fcmToken!);
+          
+          // 서버에 토큰 전송 (Supabase에 저장)
+          await _sendTokenToServer(_fcmToken!);
+        } else {
+          print('❌ FCM 토큰이 null - 재시도');
+          await _retryGetToken();
+        }
+      } catch (fcmError) {
+        print('❌ FCM 토큰 오류: $fcmError - 재시도');
+        await _retryGetToken();
+      }
+      
+    } catch (e) {
+      print('❌ 토큰 가져오기 전체 실패: $e');
+      await _retryGetToken();
+    }
+  }
+  
+  /// FCM 토큰 가져오기 재시도
+  static Future<void> _retryGetToken() async {
+    print('🔄 FCM 토큰 재시도 시작...');
+    
+    try {
+      // 3초 대기 후 재시도
+      await Future.delayed(const Duration(seconds: 3));
+      
+      _fcmToken = await _messaging.getToken();
+      
+      if (_fcmToken != null) {
+        print('✅ FCM 토큰 재시도 성공: $_fcmToken');
+        
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('fcm_token', _fcmToken!);
-        
-        // 서버에 토큰 전송 (Supabase에 저장)
         await _sendTokenToServer(_fcmToken!);
+      } else {
+        print('❌ FCM 토큰 재시도도 null - 토큰 갱신 대기');
+        // onTokenRefresh 리스너는 이미 _setupMessageListeners에서 설정됨
       }
-    } catch (e) {
-      print('❌ FCM 토큰 가져오기 실패: $e');
+    } catch (retryError) {
+      print('❌ FCM 토큰 재시도 실패: $retryError');
+      print('📝 토큰은 나중에 onTokenRefresh에서 처리됩니다.');
     }
   }
 
@@ -113,35 +204,127 @@ class NotificationService {
     _messaging.onTokenRefresh.listen((String token) {
       print('🔄 FCM 토큰 갱신: $token');
       _fcmToken = token;
+      
+      // SharedPreferences에 새로운 토큰 저장
+      SharedPreferences.getInstance().then((prefs) {
+        prefs.setString('fcm_token', token);
+      });
+      
       _sendTokenToServer(token);
     });
   }
 
   /// 로컬 알림 표시 (포그라운드용)
   static void _showLocalNotification(RemoteMessage message) {
-    // Flutter의 기본 스낵바나 다이얼로그로 표시
-    // 실제로는 flutter_local_notifications 플러그인 사용 권장
-    print('📢 알림 표시: ${message.notification?.title} - ${message.notification?.body}');
+    try {
+      final title = message.notification?.title ?? '새 알림';
+      final body = message.notification?.body ?? '';
+      final type = message.data['type'] ?? 'unknown';
+      
+      print('📢 포그라운드 알림 표시:');
+      print('   제목: $title');
+      print('   내용: $body');
+      print('   타입: $type');
+      print('   데이터: ${message.data}');
+      
+      // 알림 수신 이벤트 로깅
+      _logNotificationEvent('received_foreground', message);
+      
+      // TODO: 실제 로컬 알림 표시 구현
+      // flutter_local_notifications 플러그인 사용 권장
+      // await _localNotifications.show(
+      //   message.messageId.hashCode,
+      //   title,
+      //   body,
+      //   NotificationDetails(...)
+      // );
+      
+    } catch (e) {
+      print('❌ 로컬 알림 표시 실패: $e');
+    }
   }
 
   /// 알림 탭 처리
   static void _handleNotificationTap(RemoteMessage message) {
     print('👆 알림 탭 처리: ${message.data}');
     
-    // 알림 타입에 따라 적절한 화면으로 이동
-    String? type = message.data['type'];
-    switch (type) {
-      case 'leave_request':
-        // 연차 신청 화면으로 이동
-        print('📅 연차 신청 알림 - 승인 화면으로 이동');
-        break;
-      case 'business_trip':
-        // 출장 신청 화면으로 이동
-        print('✈️ 출장 신청 알림 - 승인 화면으로 이동');
-        break;
-      default:
-        // 기본 홈 화면으로 이동
-        print('🏠 기본 홈 화면으로 이동');
+    try {
+      // 알림 타입에 따라 적절한 화면으로 이동
+      String? type = message.data['type'];
+      String? requesterEmail = message.data['requester_email'];
+      String? requesterName = message.data['requester_name'];
+      
+      final context = navigatorKey.currentContext;
+      if (context == null) {
+        print('❌ NavigatorKey context가 null입니다.');
+        return;
+      }
+      
+      switch (type) {
+        case 'leave_request':
+        case 'business_trip':
+          // 연차/출장 신청 알림 - 홈 화면으로 이동 (사용자가 승인 탭으로 직접 이동)
+          print('📅 ${type == 'business_trip' ? '출장' : '연차'} 신청 알림 - 홈 화면으로 이동');
+          print('   신청자: $requesterName ($requesterEmail)');
+          print('   사용자가 직접 승인 탭으로 이동해주세요.');
+          
+          // MainTab으로 이동하고 홈 탭(index 0) 선택
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const MainTab(initialIndex: 0), // 홈 탭
+            ),
+            (route) => false,
+          );
+          break;
+          
+        case 'leave_result':
+          // 승인/반려 결과 알림 - 연차 현황 화면으로 이동
+          print('📋 승인/반려 결과 알림 - 연차 현황 화면으로 이동');
+          
+          // MainTab으로 이동하고 연차 탭(index 1) 선택
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const MainTab(initialIndex: 1), // 연차 탭
+            ),
+            (route) => false,
+          );
+          break;
+          
+        default:
+          // 기본 홈 화면으로 이동
+          print('🏠 기본 홈 화면으로 이동 (알림 타입: $type)');
+          
+          // MainTab으로 이동하고 홈 탭(index 0) 선택
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const MainTab(initialIndex: 0), // 홈 탭
+            ),
+            (route) => false,
+          );
+      }
+      
+      // 알림 탭 이벤트 로깅
+      _logNotificationEvent('tap', message);
+      
+    } catch (e) {
+      print('❌ 알림 탭 처리 중 오류: $e');
+    }
+  }
+
+  /// 알림 이벤트 로깅 (분석용)
+  static void _logNotificationEvent(String eventType, RemoteMessage message) {
+    try {
+      final eventData = {
+        'event_type': eventType,
+        'notification_type': message.data['type'],
+        'timestamp': DateTime.now().toIso8601String(),
+        'message_id': message.messageId,
+        'title': message.notification?.title,
+      };
+      print('📊 알림 이벤트 로그: $eventData');
+      // TODO: 실제 분석 서버로 로그 전송 구현
+    } catch (e) {
+      print('❌ 알림 이벤트 로깅 실패: $e');
     }
   }
 
@@ -169,193 +352,112 @@ class NotificationService {
     }
   }
 
-  /// 부서별 관리자 매핑
-  static String _getManagerByDepartment(String department) {
-    switch (department) {
-      case '개발1팀':
-      case '개발2팀':
-        return '개발팀_manager';  // 통합
-      case '개발3팀':
-        return '개발3팀_manager';
-      case '연구소':
-        return '연구소_manager';
-      case '경영지원팀':
-        return '경영지원팀_manager';
-      case 'CAD':
-        return 'CAD_manager';
-      default:
-        return '';
-    }
-  }
-
-  /// 실제 FCM 푸시 알림 전송
-  static Future<bool> _sendActualPushNotification({
-    required String fcmToken,
+  /// Edge Function을 통한 FCM 알림 전송
+  static Future<bool> _callFCMEdgeFunction({
+    required String type,
     required String title,
     required String body,
     required Map<String, String> data,
+    String? requesterDepartment,
+    String? userEmail,
+    String? requesterEmail,
+    bool isManagerRequest = false,
   }) async {
     try {
-      // TODO: Firebase Console에서 가져온 Server Key로 교체 필요
-      const String serverKey = 'YOUR_FIREBASE_SERVER_KEY_HERE';  // AAAA로 시작하는 키
+      final projectId = 'qvhbigvdfyvhoegkhvef'; // 원래 프로젝트 ID로 복원
+      final functionUrl = 'https://$projectId.supabase.co/functions/v1/send_fcm_notification';
       
-      if (serverKey == 'YOUR_FIREBASE_SERVER_KEY_HERE') {
-        print('⚠️ Firebase Server Key가 설정되지 않았습니다. Firebase Console에서 Server Key를 가져와서 설정해주세요.');
-        return false;
-      }
+      final requestData = {
+        'type': type,
+        'title': title,
+        'body': body,
+        'data': data,
+        if (requesterDepartment != null) 'requester_department': requesterDepartment,
+        if (userEmail != null) 'user_email': userEmail,
+        if (requesterEmail != null) 'requester_email': requesterEmail,
+        'is_manager_request': isManagerRequest,
+      };
+      
+      print('📮 Edge Function 호출: $type - $title');
       
       final response = await http.post(
-        Uri.parse('https://fcm.googleapis.com/fcm/send'),
+        Uri.parse(functionUrl),
         headers: {
-          'Authorization': 'key=$serverKey',
           'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${Supabase.instance.client.auth.currentSession?.accessToken}',
         },
-        body: jsonEncode({
-          'to': fcmToken,
-          'notification': {
-            'title': title,
-            'body': body,
-            'sound': 'default',
-          },
-          'data': data,
-          'priority': 'high',
-        }),
+        body: jsonEncode(requestData),
       );
       
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        if (responseData['success'] == 1) {
-          print('✅ FCM 알림 전송 성공: $title');
+        if (responseData['success'] == true) {
+          print('✅ Edge Function 알림 전송 성공: ${responseData['message']}');
           return true;
         } else {
-          print('❌ FCM 알림 전송 실패: ${responseData['results']}');
+          print('❌ Edge Function 알림 전송 실패: ${responseData['message']}');
           return false;
         }
       } else {
-        print('❌ FCM API 호출 실패: ${response.statusCode} - ${response.body}');
+        print('❌ Edge Function 호출 실패: ${response.statusCode} - ${response.body}');
         return false;
       }
     } catch (e) {
-      print('❌ FCM 알림 전송 중 오류: $e');
+      print('❌ Edge Function 호출 중 오류: $e');
       return false;
     }
   }
 
-  /// Admin + 부서별 관리자에게 이중 알림 전송
+  /// Admin + 부서별 관리자에게 알림 전송 (새로운 방식)
   static Future<void> sendNotificationToAdmins({
     required String title,
     required String body,
     required Map<String, String> data,
     String? requesterDepartment,
+    String? requesterEmail,
+    bool isManagerRequest = false,
   }) async {
     try {
-      print('📮 관리자들에게 알림 전송 시작: $title');
+      print('📮 ${isManagerRequest ? 'Admin' : '부서 관리자'}에게 알림 전송 시작: $title');
       
-      // 1. 모든 admin 조회 (attendance_role에 'admin' 포함)
-      final adminResponse = await Supabase.instance.client
-          .from('employees')
-          .select('email, name, fcm_token, attendance_role')
-          .not('fcm_token', 'is', null);
-      
-      final allEmployees = (adminResponse as List).cast<Map<String, dynamic>>();
-      
-      // Admin 필터링 (attendance_role 배열에 'admin' 포함된 사용자)
-      final adminList = allEmployees.where((emp) {
-        final attendanceRole = emp['attendance_role'];
-        if (attendanceRole == null) return false;
-        if (attendanceRole is List) {
-          return attendanceRole.contains('admin');
-        }
-        return false;
-      }).toList();
-      
-      print('📊 Admin 대상자: ${adminList.length}명');
-      
-      // 2. 해당 부서 관리자 조회 (requesterDepartment가 있는 경우)
-      List<Map<String, dynamic>> departmentManagerList = [];
-      if (requesterDepartment != null && requesterDepartment.isNotEmpty) {
-        final managerRole = _getManagerByDepartment(requesterDepartment);
-        if (managerRole.isNotEmpty) {
-          // attendance_role 배열에 해당 관리자 역할이 포함된 사용자 조회
-          final departmentManagers = allEmployees.where((emp) {
-            final attendanceRole = emp['attendance_role'];
-            if (attendanceRole == null) return false;
-            if (attendanceRole is List) {
-              return attendanceRole.contains(managerRole);
-            }
-            return false;
-          }).toList();
-          
-          departmentManagerList = departmentManagers;
-          print('📊 $requesterDepartment 관리자 ($managerRole) 대상자: ${departmentManagerList.length}명');
-        }
-      }
-      
-      // 3. 중복 제거 (admin이면서 해당 부서 관리자인 경우)
-      final allTargets = <String, Map<String, dynamic>>{};
-      
-      // Admin들 추가
-      for (final admin in adminList) {
-        if (admin['fcm_token'] != null && admin['fcm_token'].toString().isNotEmpty) {
-          allTargets[admin['email']] = admin;
-        }
-      }
-      
-      // 부서 관리자들 추가 (중복 방지)
-      for (final manager in departmentManagerList) {
-        if (manager['fcm_token'] != null && manager['fcm_token'].toString().isNotEmpty) {
-          allTargets[manager['email']] = manager;
-        }
-      }
-      
-      print('📊 최종 알림 대상자: ${allTargets.length}명');
-      
-      // 4. 각 대상자에게 실제 푸시 알림 전송
-      int successCount = 0;
-      int failureCount = 0;
-      
-      for (final target in allTargets.values) {
-        try {
-          print('📲 ${target['name']} (${target['email']})에게 알림 전송 중...');
-          
-          // 실제 FCM 푸시 알림 전송
-          final success = await _sendActualPushNotification(
-            fcmToken: target['fcm_token'],
-            title: title,
-            body: body,
-            data: data,
-          );
-          
-          if (success) {
-            successCount++;
-            print('   ✅ 성공');
-          } else {
-            failureCount++;
-            print('   ❌ 실패');
-          }
-        } catch (e) {
-          failureCount++;
-          print('❌ ${target['email']} 알림 전송 실패: $e');
-        }
-      }
-      
-      print('✅ 알림 전송 완료: $successCount성공 / $failureCount실패 / ${allTargets.length}총');
-      
-      // 5. 알림 대상자 요약
-      if (allTargets.isNotEmpty) {
-        print('📋 알림 받은 사용자 목록:');
-        for (final target in allTargets.values) {
-          final roles = target['attendance_role'] as List?;
-          print('   - ${target['name']} (${target['email']}) - 역할: ${roles?.join(", ") ?? "없음"}');
-        }
-      } else {
-        print('⚠️ 알림을 받을 대상자가 없습니다. FCM 토큰이 등록된 admin 또는 관리자를 확인해주세요.');
-      }
+      await _callFCMEdgeFunction(
+        type: 'admin',
+        title: title,
+        body: body,
+        data: data,
+        requesterDepartment: requesterDepartment,
+        requesterEmail: requesterEmail,
+        isManagerRequest: isManagerRequest,
+      );
       
     } catch (e) {
-      print('❌ 관리자 알림 전송 실패: $e');
+      print('❌ 알림 전송 실패: $e');
       rethrow;
     }
+  }
+
+  /// 특정 사용자에게 푸시 알림 전송 (새로운 방식)
+  static Future<void> sendNotificationToUser({
+    required String userEmail,
+    required String title,
+    required String body,
+    required Map<String, String> data,
+  }) async {
+    try {
+      print('📮 $userEmail 사용자에게 알림 전송 시작: $title');
+      
+      await _callFCMEdgeFunction(
+        type: 'user',
+        title: title,
+        body: body,
+        data: data,
+        userEmail: userEmail,
+      );
+      
+    } catch (e) {
+      print('❌ 사용자 알림 전송 실패: $e');
+      rethrow;
+    } 
   }
 
   /// 현재 FCM 토큰 반환
@@ -366,4 +468,18 @@ class NotificationService {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('fcm_token');
   }
-} 
+
+  /// 로그인 후 FCM 토큰 재저장 (로그인 후 호출)
+  static Future<void> refreshTokenAfterLogin() async {
+    try {
+      if (_fcmToken != null) {
+        print('🔄 로그인 후 FCM 토큰 재저장 시작');
+        await _sendTokenToServer(_fcmToken!);
+      } else {
+        print('⚠️ FCM 토큰이 없어서 재저장 불가');
+      }
+    } catch (e) {
+      print('❌ 로그인 후 FCM 토큰 재저장 실패: $e');
+    }
+  }
+}

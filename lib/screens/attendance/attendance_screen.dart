@@ -7,6 +7,7 @@ import 'dart:async';
 import '../../models/attendance.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_text_theme.dart';
+import '../../utils/responsive_utils.dart';
 import '../auth/login_screen.dart';
 
 class AttendanceScreen extends StatelessWidget {
@@ -139,10 +140,10 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                 gradient: AppColors.primaryGradient,
               ),
             ),
-            title: const Text(
-              'HANSL 근무 기록',
-              style: AppTextStyles.appBarTitle,
-            ),
+                          title: Text(
+                'HANSL 근무 기록',
+                style: AppTextStyles.appBarTitle(context),
+              ),
             actions: [
               Padding(
                 padding: const EdgeInsets.only(right: 20.0),
@@ -186,13 +187,13 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text(
+                            Text(
                               '현재 상태',
-                              style: TextStyle(
-                                fontFamily: 'NotoSans',
-                                fontWeight: FontWeight.w600,
+                              style: ResponsiveUtils.getTextStyle(
+                                context,
                                 fontSize: 24,
-                                color: Color(0xFF343A40),
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF343A40),
                               ),
                             ),
                             const SizedBox(height: 20),
@@ -211,10 +212,10 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                               ),
                               child: Text(
                                 provider.statusText,
-                                style: const TextStyle(
-                                  fontFamily: 'NotoSans',
-                                  fontWeight: FontWeight.w600,
+                                style:                                 ResponsiveUtils.getTextStyle(
+                                  context,
                                   fontSize: 17,
+                                  fontWeight: FontWeight.w600,
                                   color: Colors.white,
                                 ),
                               ),
@@ -435,20 +436,20 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
           children: [
             Text(
               label,
-              style: const TextStyle(
-                fontFamily: 'NotoSans',
+              style: ResponsiveUtils.getTextStyle(
+                context,
                 fontSize: 17,
-                color: Color(0xFF6C757D),
+                color: const Color(0xFF6C757D),
                 fontWeight: FontWeight.w700,
               ),
             ),
             Text(
               value,
-              style: const TextStyle(
-                fontFamily: 'NotoSans',
+              style: ResponsiveUtils.getTextStyle(
+                context,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF343A40),
+                color: const Color(0xFF343A40),
               ),
             ),
           ],

@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.hansl.attendance</string>
+	<string>com.hansl.attendance.v2</string>
 	<key>PROJECT_ID</key>
 	<string>hansl-attendance</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:360773211601:ios:161822bffd46fa3bb9bcf0</string>
+	<string>1:360773211601:ios:d8ce25df6a4948ecb9bcf0</string>
 </dict>
 </plist>

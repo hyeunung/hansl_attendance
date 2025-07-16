@@ -1,4 +1,4 @@
-package com.hansl.attendance
+package com.hansl.attendance.v2
 
 import io.flutter.embedding.android.FlutterActivity
 

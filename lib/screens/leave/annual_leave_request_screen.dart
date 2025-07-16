@@ -241,10 +241,10 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
               icon: Icon(Icons.arrow_back, color: AppColors.primary),
               onPressed: () => Navigator.pop(context),
             ),
-            title: const Text(
-              '연차 신청',
-              style: AppTextStyles.appBarTitle,
-            ),
+                          title: Text(
+                '연차 신청',
+                style: AppTextStyles.appBarTitle(context),
+              ),
           ),
           backgroundColor: const Color(0xFFF6F7FA),
           body: ListView(

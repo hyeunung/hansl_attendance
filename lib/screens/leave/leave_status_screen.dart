@@ -8,6 +8,7 @@ import '../../providers/user_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_text_theme.dart';
+import '../../utils/responsive_utils.dart';
 
 class LeaveStatusScreen extends StatefulWidget {
   const LeaveStatusScreen({super.key});
@@ -23,12 +24,15 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
   @override
   void initState() {
     super.initState();
+    // build 완료 후에 비동기적으로 데이터 로드
+    WidgetsBinding.instance.addPostFrameCallback((_) {
     final provider = Provider.of<LeaveProvider>(context, listen: false);
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     if (userProvider.email != null && userProvider.email!.isNotEmpty) {
       provider.fetchMyLeaves(email: userProvider.email!);
     }
     provider.fetchTodayLeaves(DateTime.now());
+    });
   }
 
   @override
@@ -46,10 +50,10 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
           ),
         ),
         centerTitle: true,
-        title: const Text(
-          '연차/출장 대시보드',
-          style: AppTextStyles.appBarTitle,
-        ),
+                  title: Text(
+            '연차/출장 대시보드',
+            style: AppTextStyles.appBarTitle(context),
+          ),
       ),
       body: Consumer<LeaveProvider>(
         builder: (context, provider, _) {
@@ -117,23 +121,23 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
                         children: [
                           Text(
                             provider.remainAnnual.toString(),
-                            style: const TextStyle(
-                              fontFamily: 'NotoSans',
+                            style: ResponsiveUtils.getTextStyle(
+                              context,
                               fontWeight: FontWeight.w700,
                               fontSize: 36,
-                              color: Color(0xFF007AFF),
+                              color: const Color(0xFF007AFF),
                               height: 1.0,
                               letterSpacing: -1.0,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          const Text(
+                          SizedBox(height: ResponsiveUtils.spacing(context, 4)),
+                          Text(
                             '잔여 연차',
-                            style: TextStyle(
-                              fontFamily: 'NotoSans',
+                            style: ResponsiveUtils.getTextStyle(
+                              context,
                               fontWeight: FontWeight.w800,
                               fontSize: 16,
-                              color: Color(0xFF5A6C7D),
+                              color: const Color(0xFF5A6C7D),
                               letterSpacing: 0.1,
                             ),
                           ),
@@ -158,22 +162,22 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
                               children: [
                                 Text(
                                   provider.pendingCount.toString(),
-                                  style: const TextStyle(
-                                    fontFamily: 'NotoSans',
+                                  style: ResponsiveUtils.getTextStyle(
+                                    context,
                                     fontWeight: FontWeight.w600,
                                     fontSize: 22,
-                                    color: Color(0xFFFF9500),
+                                    color: const Color(0xFFFF9500),
                                     height: 1.0,
                                   ),
                                 ),
-                                const SizedBox(height: 2),
+                                SizedBox(height: ResponsiveUtils.spacing(context, 2)),
                                 Text(
                                   '대기 중',
-                                  style: TextStyle(
-                                    fontFamily: 'NotoSans',
+                                  style: ResponsiveUtils.getTextStyle(
+                                    context,
                                     fontWeight: FontWeight.w800,
                                     fontSize: 15,
-                                    color: Color(0xFF8D6E63),
+                                    color: const Color(0xFF8D6E63),
                                   ),
                                 ),
                               ],

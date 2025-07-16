@@ -1,0 +1,18 @@
+{
+  "imports": {
+    "supabase": "jsr:@supabase/functions-js@2.4.1"
+  },
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "allowJs": true,
+    "checkJs": false,
+    "emitDecoratorMetadata": false,
+    "experimentalDecorators": false,
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "noEmit": true,
+    "strict": true,
+    "target": "ES2022",
+    "useDefineForClassFields": true
+  }
+} 
