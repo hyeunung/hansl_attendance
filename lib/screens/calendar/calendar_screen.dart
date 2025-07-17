@@ -72,43 +72,43 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
           backgroundColor: const Color(0xFFF8F9FA),
           body: ListView(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
             children: [
               // 달력
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.08),
-                      blurRadius: 3,
-                      offset: const Offset(0, 1),
+                      blurRadius: ResponsiveUtils.spacing(context, 3),
+                      offset: Offset(0, ResponsiveUtils.spacing(context, 1)),
                     ),
                   ],
                 ),
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
                 child: Column(
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.chevron_left, size: 28, color: Color(0xFF1C1C1E)),
+                          icon: Icon(Icons.chevron_left, size: ResponsiveUtils.iconSize(context, 28), color: const Color(0xFF1C1C1E)),
                           onPressed: () {
                             setState(() {
                               _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month - 1);
                             });
                           },
                         ),
-                        const SizedBox(width: 4),
+                        SizedBox(width: ResponsiveUtils.spacing(context, 4)),
                         Text(
                           '📅  ${_focusedMonth.year}년 ${_focusedMonth.month}월',
-                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 22, color: Color(0xFF1C1C1E)),
+                          style: ResponsiveUtils.getTextStyle(context, fontWeight: FontWeight.w600, fontSize: 22, color: const Color(0xFF1C1C1E)),
                         ),
-                        const SizedBox(width: 4),
+                        SizedBox(width: ResponsiveUtils.spacing(context, 4)),
                         IconButton(
-                          icon: const Icon(Icons.chevron_right, size: 28, color: Color(0xFF1C1C1E)),
+                          icon: Icon(Icons.chevron_right, size: ResponsiveUtils.iconSize(context, 28), color: const Color(0xFF1C1C1E)),
                           onPressed: () {
                             setState(() {
                               _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1);
@@ -117,26 +117,26 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: ResponsiveUtils.spacing(context, 8)),
                     Row(
-                      children: const [
-                        Expanded(child: Center(child: Text('일', style: TextStyle(color: Color(0xFFFF3B30), fontWeight: FontWeight.w500)))),
-                        Expanded(child: Center(child: Text('월', style: TextStyle(color: Color(0xFF1C1C1E), fontWeight: FontWeight.w500)))),
-                        Expanded(child: Center(child: Text('화', style: TextStyle(color: Color(0xFF1C1C1E), fontWeight: FontWeight.w500)))),
-                        Expanded(child: Center(child: Text('수', style: TextStyle(color: Color(0xFF1C1C1E), fontWeight: FontWeight.w500)))),
-                        Expanded(child: Center(child: Text('목', style: TextStyle(color: Color(0xFF1C1C1E), fontWeight: FontWeight.w500)))),
-                        Expanded(child: Center(child: Text('금', style: TextStyle(color: Color(0xFF1C1C1E), fontWeight: FontWeight.w500)))),
-                        Expanded(child: Center(child: Text('토', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)))),
+                      children: [
+                        Expanded(child: Center(child: Text('일', style: ResponsiveUtils.getTextStyle(context, fontSize: 14, color: const Color(0xFFFF3B30), fontWeight: FontWeight.w500)))),
+                        Expanded(child: Center(child: Text('월', style: ResponsiveUtils.getTextStyle(context, fontSize: 14, color: const Color(0xFF1C1C1E), fontWeight: FontWeight.w500)))),
+                        Expanded(child: Center(child: Text('화', style: ResponsiveUtils.getTextStyle(context, fontSize: 14, color: const Color(0xFF1C1C1E), fontWeight: FontWeight.w500)))),
+                        Expanded(child: Center(child: Text('수', style: ResponsiveUtils.getTextStyle(context, fontSize: 14, color: const Color(0xFF1C1C1E), fontWeight: FontWeight.w500)))),
+                        Expanded(child: Center(child: Text('목', style: ResponsiveUtils.getTextStyle(context, fontSize: 14, color: const Color(0xFF1C1C1E), fontWeight: FontWeight.w500)))),
+                        Expanded(child: Center(child: Text('금', style: ResponsiveUtils.getTextStyle(context, fontSize: 14, color: const Color(0xFF1C1C1E), fontWeight: FontWeight.w500)))),
+                        Expanded(child: Center(child: Text('토', style: ResponsiveUtils.getTextStyle(context, fontSize: 14, color: const Color(0xFF007AFF), fontWeight: FontWeight.w500)))),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: ResponsiveUtils.spacing(context, 4)),
                     Column(
                       children: List.generate(rows, (rowIdx) {
                         return Row(
                           children: List.generate(7, (colIdx) {
                             final cellIdx = rowIdx * 7 + colIdx;
                             if (cellIdx < firstWeekday || cellIdx - firstWeekday >= days.length) {
-                              return Expanded(child: Container(height: 54));
+                              return Expanded(child: Container(height: ResponsiveUtils.spacing(context, 54)));
                             }
                             final day = days[cellIdx - firstWeekday];
                             final events = _getEventsForDay(day, allLeaves);
@@ -150,51 +150,52 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                   });
                                 },
                                 child: Container(
-                                  margin: const EdgeInsets.all(2),
+                                  margin: EdgeInsets.all(ResponsiveUtils.spacing(context, 2)),
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                                   ),
-                                  height: 54,
+                                  height: ResponsiveUtils.spacing(context, 54),
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       // 막대기(연차/출장) - 숫자 위에
                                       if (_hasAnnual(events))
                                         Container(
-                                          width: 18,
-                                          height: 4,
-                                          margin: const EdgeInsets.only(bottom: 2),
+                                          width: ResponsiveUtils.spacing(context, 18),
+                                          height: ResponsiveUtils.spacing(context, 4),
+                                          margin: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 2)),
                                           decoration: BoxDecoration(
                                             color: const Color(0xFF34C759).withOpacity(0.8),
-                                            borderRadius: BorderRadius.circular(2),
+                                            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 2)),
                                           ),
                                         ),
                                       if (_hasBiztrip(events))
                                         Container(
-                                          width: 18,
-                                          height: 4,
-                                          margin: const EdgeInsets.only(bottom: 2),
+                                          width: ResponsiveUtils.spacing(context, 18),
+                                          height: ResponsiveUtils.spacing(context, 4),
+                                          margin: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 2)),
                                           decoration: BoxDecoration(
                                             color: const Color(0xFFFF9500).withOpacity(0.8),
-                                            borderRadius: BorderRadius.circular(2),
+                                            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 2)),
                                           ),
                                         ),
                                       // 날짜 숫자 (배경 없음)
                                       Text(
                                         '${day.day}',
-                                        style: const TextStyle(
+                                        style: ResponsiveUtils.getTextStyle(
+                                          context,
                                           fontWeight: FontWeight.w500,
-                                          color: Color(0xFF1C1C1E),
+                                          color: const Color(0xFF1C1C1E),
                                           fontSize: 14,
                                         ),
                                       ),
-                                      const SizedBox(height: 4),
+                                      SizedBox(height: ResponsiveUtils.spacing(context, 4)),
                                       // 하단 점 인디케이터
-                                      const SizedBox(height: 4),
+                                      SizedBox(height: ResponsiveUtils.spacing(context, 4)),
                                       if (isSelected)
                                         Container(
-                                          width: 6,
-                                          height: 6,
+                                          width: ResponsiveUtils.spacing(context, 6),
+                                          height: ResponsiveUtils.spacing(context, 6),
                                           decoration: const BoxDecoration(
                                             color: Color(0xFF1E90FF),
                                             shape: BoxShape.circle,
@@ -202,8 +203,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                         )
                                       else if (isToday)
                                         Container(
-                                          width: 6,
-                                          height: 6,
+                                          width: ResponsiveUtils.spacing(context, 6),
+                                          height: ResponsiveUtils.spacing(context, 6),
                                           decoration: const BoxDecoration(
                                             color: Color(0xFFFF3B30),
                                             shape: BoxShape.circle,
@@ -218,48 +219,48 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         );
                       }),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: ResponsiveUtils.spacing(context, 8)),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _legendDot(const Color(0xFF34C759), '연차'),
-                        const SizedBox(width: 20),
+                        SizedBox(width: ResponsiveUtils.spacing(context, 20)),
                         _legendDot(const Color(0xFFFF9500), '출장'),
                       ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: ResponsiveUtils.spacing(context, 20)),
               // 상세내역
               if (_selectedDay != null)
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.08),
-                        blurRadius: 3,
-                        offset: const Offset(0, 1),
+                        blurRadius: ResponsiveUtils.spacing(context, 3),
+                        offset: Offset(0, ResponsiveUtils.spacing(context, 1)),
                       ),
                     ],
                   ),
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         '${_selectedDay!.year}년 ${_selectedDay!.month}월 ${_selectedDay!.day}일',
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: Color(0xFF1C1C1E)),
+                        style: ResponsiveUtils.getTextStyle(context, fontWeight: FontWeight.w600, fontSize: 16, color: const Color(0xFF1C1C1E)),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: ResponsiveUtils.spacing(context, 16)),
                       ..._getEventsForDay(_selectedDay!, allLeaves).map((e) => _eventTile(e)),
                       if (_getEventsForDay(_selectedDay!, allLeaves).isEmpty)
-                        const Center(
+                        Center(
                           child: Text(
                             '해당 날짜에 등록된 연차/출장이 없습니다.',
-                            style: TextStyle(color: Color(0xFF8E8E93), fontSize: 14),
+                            style: ResponsiveUtils.getTextStyle(context, color: const Color(0xFF8E8E93), fontSize: 14),
                           ),
                         ),
                     ],
@@ -277,19 +278,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 12,
-          height: 3,
+          width: ResponsiveUtils.spacing(context, 12),
+          height: ResponsiveUtils.spacing(context, 3),
           decoration: BoxDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(1.5),
+            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 1.5)),
           ),
         ),
-        const SizedBox(width: 6),
+        SizedBox(width: ResponsiveUtils.spacing(context, 6)),
         Text(
           label,
-          style: const TextStyle(
+          style: ResponsiveUtils.getTextStyle(
+            context,
             fontSize: 12,
-            color: Color(0xFF6C757D),
+            color: const Color(0xFF6C757D),
           ),
         ),
       ],
@@ -341,7 +343,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     if (e['status'] == 'pending') chipLabel += ' (대기)';
     if (e['status'] == 'rejected') chipLabel += ' (반려)';
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 12)),
       decoration: const BoxDecoration(
         border: Border(
           bottom: BorderSide(
@@ -366,14 +368,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: EdgeInsets.symmetric(
+                  horizontal: ResponsiveUtils.spacing(context, 8), 
+                  vertical: ResponsiveUtils.spacing(context, 3)
+                ),
                 decoration: BoxDecoration(
                   color: chipColor,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 6)),
                 ),
                 child: Text(
                   chipLabel,
-                  style: TextStyle(
+                  style: ResponsiveUtils.getTextStyle(
+                    context,
                     fontWeight: FontWeight.w500,
                     color: chipTextColor,
                     fontSize: 11,
@@ -383,7 +389,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ],
           ),
           if (e['desc'] != null) ...[
-            const SizedBox(height: 4),
+            SizedBox(height: ResponsiveUtils.spacing(context, 4)),
             Text(
               e['desc'],
               style: ResponsiveUtils.getTextStyle(
@@ -394,14 +400,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
           ],
           if (e['reason'] != null) ...[
-            const SizedBox(height: 2),
+            SizedBox(height: ResponsiveUtils.spacing(context, 2)),
             Text(
               e['reason'],
-              style: const TextStyle(
-                color: Color(0xFF8E8E93),
-                fontStyle: FontStyle.italic,
+              style: ResponsiveUtils.getTextStyle(
+                context,
+                color: const Color(0xFF8E8E93),
                 fontSize: 12,
-              ),
+              ).copyWith(fontStyle: FontStyle.italic),
             ),
           ],
         ],

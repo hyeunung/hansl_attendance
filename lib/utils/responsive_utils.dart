@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'package:provider/provider.dart';
+import '../providers/font_provider.dart';
 
 class ResponsiveUtils {
   static double getScreenWidth(BuildContext context) {
@@ -50,9 +52,13 @@ class ResponsiveUtils {
     double? letterSpacing,
     double? height,
   }) {
+    // FontProvider에서 글꼴 크기 배율 가져오기
+    final fontProvider = Provider.of<FontProvider>(context, listen: false);
+    final fontScale = fontProvider.fontScale;
+    
     return TextStyle(
       fontFamily: 'NotoSans',
-      fontSize: ResponsiveUtils.fontSize(context, fontSize),
+      fontSize: ResponsiveUtils.fontSize(context, fontSize) * fontScale,
       fontWeight: fontWeight,
       color: color,
       letterSpacing: letterSpacing,

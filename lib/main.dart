@@ -9,6 +9,7 @@ import 'screens/main_tab.dart';
 import 'package:provider/provider.dart';
 import 'providers/user_provider.dart';
 import 'providers/leave_provider.dart';
+import 'providers/font_provider.dart';
 import 'theme/app_colors.dart';
 import 'providers/attendance_provider.dart';
 import 'services/notification_service.dart';
@@ -60,6 +61,7 @@ class HanslApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => LeaveProvider()),
+        ChangeNotifierProvider(create: (_) => FontProvider()),
         ChangeNotifierProxyProvider<UserProvider, AttendanceProvider>(
           create: (_) => AttendanceProvider(userId: '', userName: ''),
           update: (context, userProvider, attendanceProvider) {

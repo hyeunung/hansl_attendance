@@ -65,12 +65,15 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
               style: AppTextStyles.appBarTitle(context),
             ),
             if (isAdmin) ...[
-              const SizedBox(width: 8),
+              SizedBox(width: ResponsiveUtils.spacing(context, 8)),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: EdgeInsets.symmetric(
+                  horizontal: ResponsiveUtils.spacing(context, 8), 
+                  vertical: ResponsiveUtils.spacing(context, 4)
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                   border: Border.all(color: Colors.white.withOpacity(0.3)),
                 ),
                 child: Row(
@@ -79,12 +82,13 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
                     Icon(
                       Icons.admin_panel_settings,
                       color: Colors.white,
-                      size: 16,
+                      size: ResponsiveUtils.iconSize(context, 16),
                     ),
-                    const SizedBox(width: 4),
+                    SizedBox(width: ResponsiveUtils.spacing(context, 4)),
                     Text(
                       'ADMIN',
-                      style: TextStyle(
+                      style: ResponsiveUtils.getTextStyle(
+                        context,
                         color: Colors.white,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -160,37 +164,38 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
             children: [
               // Tab Navigation with updated design
               Container(
-                margin: const EdgeInsets.all(20),
+                margin: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                   boxShadow: [AppShadows.card],
                 ),
                 child: TabBar(
                   controller: _tabController,
-                  tabs: const [
+                  tabs: [
                     Tab(child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 14),
-                      child: Text('대기중'),
+                      padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 14)),
+                      child: const Text('대기중'),
                     )),
                     Tab(child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 14),
-                      child: Text('처리완료'),
+                      padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 14)),
+                      child: const Text('처리완료'),
                     )),
                   ],
                   labelColor: Colors.white,
                   unselectedLabelColor: const Color(0xFF8E8E93),
                   indicator: BoxDecoration(
                     gradient: AppColors.primaryGradient,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                   ),
                   indicatorSize: TabBarIndicatorSize.tab,
                   dividerColor: Colors.transparent,
-                  labelStyle: const TextStyle(
+                  labelStyle: ResponsiveUtils.getTextStyle(
+                    context,
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
                   ),
-                  labelPadding: EdgeInsets.symmetric(vertical: 0),
+                  labelPadding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 0)),
                 ),
               ),
               Expanded(
@@ -199,7 +204,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
                   children: [
                     // 대기중 탭
                     SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: EdgeInsets.symmetric(horizontal: ResponsiveUtils.spacing(context, 20)),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -207,53 +212,54 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
                           Row(
                             children: [
                               _statCard('승인 대기', pending.length),
-                              const SizedBox(width: 12),
+                              SizedBox(width: ResponsiveUtils.spacing(context, 12)),
                               _statCard('이번 달 처리', thisMonthDone.length),
                             ],
                           ),
-                          const SizedBox(height: 20),
+                          SizedBox(height: ResponsiveUtils.spacing(context, 20)),
                           
                           // Pending Requests Container
                           Container(
                             width: double.infinity,
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                               boxShadow: [AppShadows.card],
                             ),
                             child: Padding(
-                              padding: const EdgeInsets.all(20),
+                              padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
+                                  Text(
                                     '승인 대기 목록',
-                                    style: TextStyle(
+                                    style: ResponsiveUtils.getTextStyle(
+                                      context,
                                       fontWeight: FontWeight.w700,
                                       fontSize: 22,
-                                      color: Color(0xFF1C1C1E),
+                                      color: const Color(0xFF1C1C1E),
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
-                                  Divider(thickness: 2, color: Color(0xFFE0E3E8)),
-                                  const SizedBox(height: 16),
+                                  SizedBox(height: ResponsiveUtils.spacing(context, 8)),
+                                  Divider(thickness: 2, color: const Color(0xFFE0E3E8)),
+                                  SizedBox(height: ResponsiveUtils.spacing(context, 16)),
                                   if (pending.isEmpty)
-                                    const Text(
+                                    Text(
                                       '승인 대기 내역이 없습니다.',
-                                      style: TextStyle(color: Color(0xFF8E8E93)),
+                                      style: ResponsiveUtils.getTextStyle(context, fontSize: 14, color: const Color(0xFF8E8E93)),
                                     ),
                                   ...pending.map((l) => _approvalCard(context, l, provider, canApprove: true)).toList(),
                                 ],
                               ),
                             ),
                           ),
-                          const SizedBox(height: 100), // Bottom padding for navigation
+                          SizedBox(height: ResponsiveUtils.spacing(context, 100)), // Bottom padding for navigation
                         ],
                       ),
                     ),
                     // 처리완료 탭
                     SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: EdgeInsets.symmetric(horizontal: ResponsiveUtils.spacing(context, 20)),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -261,34 +267,35 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
                             width: double.infinity,
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                               boxShadow: [AppShadows.card],
                             ),
                             child: Padding(
-                              padding: const EdgeInsets.all(20),
+                              padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
+                                  Text(
                                     '처리 완료 내역',
-                                    style: TextStyle(
+                                    style: ResponsiveUtils.getTextStyle(
+                                      context,
                                       fontWeight: FontWeight.w600,
                                       fontSize: 16,
-                                      color: Color(0xFF1C1C1E),
+                                      color: const Color(0xFF1C1C1E),
                                     ),
                                   ),
-                                  const SizedBox(height: 16),
+                                  SizedBox(height: ResponsiveUtils.spacing(context, 16)),
                                   if (done.isEmpty)
-                                    const Text(
+                                    Text(
                                       '처리 완료 내역이 없습니다.',
-                                      style: TextStyle(color: Color(0xFF8E8E93)),
+                                      style: ResponsiveUtils.getTextStyle(context, fontSize: 14, color: const Color(0xFF8E8E93)),
                                     ),
                                   ...done.map((l) => _approvalCard(context, l, provider, showButtons: false, canApprove: false)).toList(),
                                 ],
                               ),
                             ),
                           ),
-                          const SizedBox(height: 100), // Bottom padding for navigation
+                          SizedBox(height: ResponsiveUtils.spacing(context, 100)), // Bottom padding for navigation
                         ],
                       ),
                     ),
@@ -305,10 +312,10 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
   Widget _statCard(String label, int value) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
           boxShadow: [AppShadows.card],
         ),
         child: Column(
@@ -386,11 +393,11 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
     final status = l['status'];
     final dest = l['destination'] ?? '';
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(18),
+      margin: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 16)),
+      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 18)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 14)),
         boxShadow: [AppShadows.card],
       ),
       child: Column(
@@ -399,56 +406,59 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
           // 상단: 이름, 유형, 상태
           Row(
             children: [
-              Icon(Icons.person, color: AppColors.primary, size: 22),
-              const SizedBox(width: 8),
+              Icon(Icons.person, color: AppColors.primary, size: ResponsiveUtils.iconSize(context, 22)),
+              SizedBox(width: ResponsiveUtils.spacing(context, 8)),
               Expanded(
                 child: Text(name, style: ResponsiveUtils.getTextStyle(context, fontWeight: FontWeight.bold, fontSize: 18)),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: EdgeInsets.symmetric(
+                  horizontal: ResponsiveUtils.spacing(context, 10), 
+                  vertical: ResponsiveUtils.spacing(context, 4)
+                ),
                 decoration: BoxDecoration(
                   color: typeBgColor,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                 ),
-                child: Text(typeLabel, style: TextStyle(color: typeTextColor, fontWeight: FontWeight.w700)),
+                child: Text(typeLabel, style: ResponsiveUtils.getTextStyle(context, fontSize: 14, color: typeTextColor, fontWeight: FontWeight.w700)),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: ResponsiveUtils.spacing(context, 8)),
               _statusChip(status),
             ],
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: ResponsiveUtils.spacing(context, 14)),
           // 상세 정보
           _infoRow(Icons.date_range, '기간', period),
           if (isBiztrip && dest.isNotEmpty) _infoRow(Icons.place, '목적지', dest),
           _infoRow(Icons.calendar_today, '신청일', createdAt),
-          const SizedBox(height: 14),
+          SizedBox(height: ResponsiveUtils.spacing(context, 14)),
           // 사유
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(14),
+            padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 14)),
             decoration: BoxDecoration(
               color: const Color(0xFFF8F9FA),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 10)),
             ),
-            child: Text(reason, style: const TextStyle(fontSize: 16, color: Color(0xFF6C757D))),
+            child: Text(reason, style: ResponsiveUtils.getTextStyle(context, fontSize: 16, color: const Color(0xFF6C757D))),
           ),
           if (showButtons && status == 'pending' && canApprove) ...[
-            const SizedBox(height: 12),
+            SizedBox(height: ResponsiveUtils.spacing(context, 12)),
             Row(
               children: [
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
                       boxShadow: [AppShadows.button],
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                     ),
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFFF3B30),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 18)),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                         ),
                       ),
                       onPressed: () async {
@@ -463,9 +473,10 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
                           await provider.updateLeaveStatus(l['id'], 'rejected');
                         }
                       },
-                      child: const Text(
+                      child: Text(
                         '반려',
-                        style: TextStyle(
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
                           fontWeight: FontWeight.w700,
                           fontSize: 18,
                         ),
@@ -473,20 +484,20 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
                       boxShadow: [AppShadows.button],
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                     ),
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF34C759),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 18)),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                         ),
                       ),
                       onPressed: () async {
@@ -501,9 +512,10 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
                           await provider.updateLeaveStatus(l['id'], 'approved');
                         }
                       },
-                      child: const Text(
+                      child: Text(
                         '승인',
-                        style: TextStyle(
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
                           fontWeight: FontWeight.w700,
                           fontSize: 18,
                         ),
@@ -514,24 +526,25 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
               ],
             ),
           ] else if (showButtons && status == 'pending' && !canApprove) ...[
-            const SizedBox(height: 12),
+            SizedBox(height: ResponsiveUtils.spacing(context, 12)),
             Container(
               width: double.infinity,
               alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 12)),
               decoration: BoxDecoration(
                 color: const Color(0xFFFFA726).withOpacity(0.12),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.info, color: const Color(0xFFFFA726), size: 20),
-                  const SizedBox(width: 8),
-                  const Text(
+                  Icon(Icons.info, color: const Color(0xFFFFA726), size: ResponsiveUtils.iconSize(context, 20)),
+                  SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                  Text(
                     '승인 권한이 없습니다',
-                    style: TextStyle(
-                      color: Color(0xFFFFA726),
+                    style: ResponsiveUtils.getTextStyle(
+                      context,
+                      color: const Color(0xFFFFA726),
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
                     ),
@@ -540,20 +553,21 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
               ),
             ),
           ] else if (!showButtons) ...[
-            const SizedBox(height: 12),
+            SizedBox(height: ResponsiveUtils.spacing(context, 12)),
             Container(
               width: double.infinity,
               alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(vertical: 10),
+              padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 10)),
               decoration: BoxDecoration(
                 color: status == 'approved' 
                     ? const Color(0xFF34C759).withOpacity(0.12) 
                     : const Color(0xFFFF3B30).withOpacity(0.12),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
               ),
               child: Text(
                 status == 'approved' ? '승인 완료' : '반려',
-                style: TextStyle(
+                style: ResponsiveUtils.getTextStyle(
+                  context,
                   color: status == 'approved' 
                       ? const Color(0xFF34C759) 
                       : const Color(0xFFFF3B30),
@@ -570,14 +584,14 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
 
   Widget _infoRow(IconData icon, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+      padding: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 6)),
       child: Row(
         children: [
-          Icon(icon, color: Color(0xFFB0B0B0), size: 18),
-          const SizedBox(width: 8),
-          Text(label, style: const TextStyle(color: Color(0xFF888888))),
-          const SizedBox(width: 8),
-          Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w500))),
+          Icon(icon, color: const Color(0xFFB0B0B0), size: ResponsiveUtils.iconSize(context, 18)),
+          SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+          Text(label, style: ResponsiveUtils.getTextStyle(context, fontSize: 14, color: const Color(0xFF888888))),
+          SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+          Expanded(child: Text(value, style: ResponsiveUtils.getTextStyle(context, fontSize: 14, fontWeight: FontWeight.w500))),
         ],
       ),
     );
@@ -600,9 +614,15 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
       label = '대기';
     }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
-      child: Text(label, style: TextStyle(color: fg, fontWeight: FontWeight.bold)),
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsiveUtils.spacing(context, 10), 
+        vertical: ResponsiveUtils.spacing(context, 4)
+      ),
+      decoration: BoxDecoration(
+        color: bg, 
+        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8))
+      ),
+      child: Text(label, style: ResponsiveUtils.getTextStyle(context, fontSize: 14, color: fg, fontWeight: FontWeight.bold)),
     );
   }
 
@@ -618,11 +638,12 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
       builder: (BuildContext context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 14)),
           ),
           title: Text(
             title,
-            style: const TextStyle(
+            style: ResponsiveUtils.getTextStyle(
+              context,
               fontSize: 18,
               fontWeight: FontWeight.w600,
             ),
@@ -630,50 +651,62 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
           ),
           content: Text(
             message,
-            style: const TextStyle(
-              color: Color(0xFF8E8E93),
+            style: ResponsiveUtils.getTextStyle(
+              context,
+              fontSize: 16,
+              color: const Color(0xFF8E8E93),
               height: 1.4,
             ),
             textAlign: TextAlign.center,
           ),
-          contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
-          actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          contentPadding: EdgeInsets.fromLTRB(
+            ResponsiveUtils.spacing(context, 24), 
+            ResponsiveUtils.spacing(context, 20), 
+            ResponsiveUtils.spacing(context, 24), 
+            ResponsiveUtils.spacing(context, 20)
+          ),
+          actionsPadding: EdgeInsets.fromLTRB(
+            ResponsiveUtils.spacing(context, 24), 
+            ResponsiveUtils.spacing(context, 0), 
+            ResponsiveUtils.spacing(context, 24), 
+            ResponsiveUtils.spacing(context, 24)
+          ),
           actions: [
-            Row(
-              children: [
-                Expanded(
-                  child: TextButton(
-                    style: TextButton.styleFrom(
-                      backgroundColor: const Color(0xFFF2F2F7),
-                      foregroundColor: const Color(0xFF1C1C1E),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                          Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        backgroundColor: const Color(0xFFF2F2F7),
+                        foregroundColor: const Color(0xFF1C1C1E),
+                        padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+                        ),
                       ),
-                    ),
-                    onPressed: () => Navigator.of(context).pop(false),
-                    child: const Text(
-                      '취소',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: Text(
+                        '취소',
+                        style: ResponsiveUtils.getTextStyle(context, fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextButton(
-                    style: TextButton.styleFrom(
-                      backgroundColor: confirmColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  SizedBox(width: ResponsiveUtils.spacing(context, 12)),
+                  Expanded(
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        backgroundColor: confirmColor,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+                        ),
                       ),
-                    ),
-                    onPressed: () => Navigator.of(context).pop(true),
-                    child: Text(
-                      confirmText,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
+                      onPressed: () => Navigator.of(context).pop(true),
+                                              child: Text(
+                          confirmText,
+                          style: ResponsiveUtils.getTextStyle(context, fontSize: 16, fontWeight: FontWeight.w600),
+                        ),
                   ),
                 ),
               ],

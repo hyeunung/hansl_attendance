@@ -168,7 +168,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         if (errorMsg != null) ...[
                           const SizedBox(height: 8),
-                          Text(errorMsg!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+                          Text(errorMsg!, style: ResponsiveUtils.getTextStyle(context, color: Colors.red, fontSize: 13)),
                         ]
                       ],
                     ),
@@ -315,7 +315,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               });
                             },
                           ),
-                          const Text('자동 로그인', style: TextStyle(fontFamily: 'NotoSans', fontSize: 15, color: Color(0xFF222222))),
+                          Text('자동 로그인', style: ResponsiveUtils.getTextStyle(context, fontSize: 15, color: const Color(0xFF222222))),
                           const SizedBox(width: 16),
                           Checkbox(
                             value: _saveId,
@@ -326,12 +326,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               _saveIdPref(value ?? false);
                             },
                           ),
-                          const Text('아이디 저장', style: TextStyle(fontFamily: 'NotoSans', fontSize: 15, color: Color(0xFF222222))),
+                          Text('아이디 저장', style: ResponsiveUtils.getTextStyle(context, fontSize: 15, color: const Color(0xFF222222))),
                         ],
                       ),
                       if (_error != null) ...[
                         const SizedBox(height: 8),
-                        Text(_error!, style: const TextStyle(color: Color(0xFFE53935), fontFamily: 'NotoSans', fontSize: 14)),
+                        Text(_error!, style: ResponsiveUtils.getTextStyle(context, color: const Color(0xFFE53935), fontSize: 14)),
                       ],
                       const SizedBox(height: 16),
                       if (_isLoading)
@@ -355,7 +355,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               foregroundColor: Colors.white,
                               elevation: 0,
                             ),
-                            child: const Text('로그인', style: TextStyle(fontFamily: 'NotoSans', fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
+                            child: Text('로그인', style: ResponsiveUtils.getTextStyle(context, fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -633,7 +633,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                       if (_error != null) ...[
                         const SizedBox(height: 8),
-                        Text(_error!, style: const TextStyle(color: Color(0xFFE53935), fontFamily: 'NotoSans', fontSize: 14)),
+                        Text(_error!, style: ResponsiveUtils.getTextStyle(context, color: const Color(0xFFE53935), fontSize: 14)),
                       ],
                       const SizedBox(height: 16),
                       if (_isLoading)
@@ -657,7 +657,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               foregroundColor: Colors.white,
                               elevation: 0,
                             ),
-                            child: const Text('회원가입 완료', style: TextStyle(fontFamily: 'NotoSans', fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
+                            child: Text('회원가입 완료', style: ResponsiveUtils.getTextStyle(context, fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
                           ),
                         ),
                       ],

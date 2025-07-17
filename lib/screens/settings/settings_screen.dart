@@ -9,6 +9,8 @@ import '../../services/supabase_service.dart';
 import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../providers/font_provider.dart';
+import '../../services/slack_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../auth/login_screen.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -32,6 +34,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Future.microtask(() async {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
+      final fontProvider = Provider.of<FontProvider>(context, listen: false);
+      
+      // 글꼴 크기 로드
+      await fontProvider.loadFontSize();
+      setState(() {
+        _fontSize = fontProvider.fontSize;
+      });
+      
       final email = userProvider.email;
       if (email != null && email.isNotEmpty) {
         final supabaseService = SupabaseService();
@@ -56,6 +66,88 @@ class _SettingsScreenState extends State<SettingsScreen> {
       });
     }
   }
+
+  void _showFontSizeDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('글꼴 크기'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildFontSizeOption('작게'),
+              _buildFontSizeOption('보통'),
+              _buildFontSizeOption('크게'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('취소'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildFontSizeOption(String size) {
+    final isSelected = _fontSize == size;
+    return InkWell(
+      onTap: () async {
+        final fontProvider = Provider.of<FontProvider>(context, listen: false);
+        await fontProvider.setFontSize(size);
+        setState(() {
+          _fontSize = size;
+        });
+        Navigator.of(context).pop();
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        child: Row(
+          children: [
+            Radio<String>(
+              value: size,
+              groupValue: _fontSize,
+              onChanged: (String? value) async {
+                if (value != null) {
+                  final fontProvider = Provider.of<FontProvider>(context, listen: false);
+                  await fontProvider.setFontSize(value);
+                  setState(() {
+                    _fontSize = value;
+                  });
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+            const SizedBox(width: 8),
+            Text(
+              size,
+              style: TextStyle(
+                fontSize: _getFontSizePreview(size),
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  double _getFontSizePreview(String size) {
+    switch (size) {
+      case '작게':
+        return 14.0;
+      case '크게':
+        return 20.0;
+      default:
+        return 17.0; // 보통
+    }
+  }
+
+
 
   void _showInquiryDialog() {
     final TextEditingController _controller = TextEditingController();
@@ -85,12 +177,78 @@ class _SettingsScreenState extends State<SettingsScreen> {
             CupertinoDialogAction(
               isDefaultAction: true,
               child: const Text('보내기'),
-              onPressed: () {
-                // 문의 내용 전송 로직 (추후 구현)
+              onPressed: () async {
+                final content = _controller.text.trim();
+                
+                if (content.isEmpty) {
+                  // 문의 내용이 비어있으면 에러 표시
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('문의 내용을 입력해주세요.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+                
+                // 로딩 표시를 위해 다이얼로그 닫기
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('문의가 접수되었습니다.')),
+                
+                // 로딩 인디케이터 표시
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => const Center(
+                    child: CircularProgressIndicator(),
+                  ),
                 );
+                
+                try {
+                  // 현재 사용자 정보 가져오기
+                  final userProvider = Provider.of<UserProvider>(context, listen: false);
+                  final userName = userProvider.name ?? '알 수 없음';
+                  final userEmail = userProvider.email ?? '알 수 없음';
+                  
+                  // 슬랙으로 문의 전송
+                  final slackService = SlackService();
+                  final success = await slackService.sendInquiryToSlack(
+                    inquiryContent: content,
+                    userEmail: userEmail,
+                    userName: userName,
+                  );
+                  
+                  // 로딩 다이얼로그 닫기
+                  Navigator.pop(context);
+                  
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('✅ 문의가 관리자에게 성공적으로 전송되었습니다!\n곧 답변을 받으실 수 있습니다.'),
+                        backgroundColor: Colors.green,
+                        duration: Duration(seconds: 4),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('❌ 문의 전송에 실패했습니다.\n관리자가 슬랙 설정을 확인중일 수 있습니다.\n잠시 후 다시 시도하거나 직접 연락해주세요.'),
+                        backgroundColor: Colors.red,
+                        duration: Duration(seconds: 6),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  // 로딩 다이얼로그 닫기
+                  Navigator.pop(context);
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('오류가 발생했습니다: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               },
             ),
           ],
@@ -142,40 +300,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
           body: isLoading
               ? const Center(child: CupertinoActivityIndicator())
               : SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
                   child: Column(
                     children: [
                       // 프로필 카드
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.1),
-                              blurRadius: 3,
-                              offset: const Offset(0, 1),
+                              blurRadius: ResponsiveUtils.spacing(context, 3),
+                              offset: Offset(0, ResponsiveUtils.spacing(context, 1)),
                             ),
                           ],
                         ),
-                        padding: const EdgeInsets.all(20),
+                        padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
                         child: Row(
                           children: [
                             Container(
-                              width: 60,
-                              height: 60,
+                              width: ResponsiveUtils.spacing(context, 60),
+                              height: ResponsiveUtils.spacing(context, 60),
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
                                   colors: [Color(0xFF1E90FF), Color(0xFF00BFFF)],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                 ),
-                                borderRadius: BorderRadius.circular(30),
+                                borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 30)),
                               ),
                               child: Center(
                                 child: Text(
                                   name.isNotEmpty ? name[0] : '-',
-                                  style: const TextStyle(
+                                  style: ResponsiveUtils.getTextStyle(
+                                    context,
                                     color: Colors.white,
                                     fontSize: 28,
                                     fontWeight: FontWeight.w600,
@@ -183,7 +342,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 16),
+                            SizedBox(width: ResponsiveUtils.spacing(context, 16)),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,131 +373,147 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                       
-                      const SizedBox(height: 20),
+                      SizedBox(height: ResponsiveUtils.spacing(context, 20)),
 
                       // 연차 현황
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.1),
-                              blurRadius: 3,
-                              offset: const Offset(0, 1),
+                              blurRadius: ResponsiveUtils.spacing(context, 3),
+                              offset: Offset(0, ResponsiveUtils.spacing(context, 1)),
                             ),
                           ],
                         ),
-                        padding: const EdgeInsets.all(20),
+                        padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
-                                const Expanded(
+                                Expanded(
                                   child: Text(
                                     '📅 연차 현황',
-                                    style: TextStyle(
+                                    style: ResponsiveUtils.getTextStyle(
+                                      context,
                                       fontSize: 20,
                                       fontWeight: FontWeight.w800,
-                                      color: Color(0xFF1C1C1E),
+                                      color: const Color(0xFF1C1C1E),
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 12),
+                            SizedBox(height: ResponsiveUtils.spacing(context, 12)),
                             Row(
                               children: [
                                 Expanded(
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: ResponsiveUtils.spacing(context, 16), 
+                                      horizontal: ResponsiveUtils.spacing(context, 8)
+                                    ),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFF8F9FA),
-                                      borderRadius: BorderRadius.circular(10),
+                                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 10)),
                                       border: Border.all(color: const Color(0xFFF2F2F7)),
                                     ),
                                     child: Column(
                                       children: [
                                         Text(
                                           '$totalAnnual',
-                                          style: const TextStyle(
+                                          style: ResponsiveUtils.getTextStyle(
+                                            context,
                                             fontSize: 22,
                                             fontWeight: FontWeight.bold,
-                                            color: Color(0xFF1E90FF),
+                                            color: const Color(0xFF1E90FF),
                                           ),
                                         ),
-                                        const SizedBox(height: 2),
-                                        const Text(
+                                        SizedBox(height: ResponsiveUtils.spacing(context, 2)),
+                                        Text(
                                           '총 연차',
-                                          style: TextStyle(
+                                          style: ResponsiveUtils.getTextStyle(
+                                            context,
                                             fontSize: 19,
                                             fontWeight: FontWeight.w600,
-                                            color: Color(0xFF8E8E93),
+                                            color: const Color(0xFF8E8E93),
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 8),
+                                SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                                 Expanded(
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: ResponsiveUtils.spacing(context, 16), 
+                                      horizontal: ResponsiveUtils.spacing(context, 8)
+                                    ),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFF8F9FA),
-                                      borderRadius: BorderRadius.circular(10),
+                                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 10)),
                                       border: Border.all(color: const Color(0xFFF2F2F7)),
                                     ),
                                     child: Column(
                                       children: [
                                         Text(
                                           '$usedAnnual',
-                                          style: const TextStyle(
+                                          style: ResponsiveUtils.getTextStyle(
+                                            context,
                                             fontSize: 22,
                                             fontWeight: FontWeight.bold,
-                                            color: Color(0xFF1E90FF),
+                                            color: const Color(0xFF1E90FF),
                                           ),
                                         ),
-                                        const SizedBox(height: 2),
-                                        const Text(
+                                        SizedBox(height: ResponsiveUtils.spacing(context, 2)),
+                                        Text(
                                           '소모 연차',
-                                          style: TextStyle(
+                                          style: ResponsiveUtils.getTextStyle(
+                                            context,
                                             fontSize: 19,
                                             fontWeight: FontWeight.w600,
-                                            color: Color(0xFF8E8E93),
+                                            color: const Color(0xFF8E8E93),
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 8),
+                                SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                                 Expanded(
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: ResponsiveUtils.spacing(context, 16), 
+                                      horizontal: ResponsiveUtils.spacing(context, 8)
+                                    ),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFF8F9FA),
-                                      borderRadius: BorderRadius.circular(10),
+                                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 10)),
                                       border: Border.all(color: const Color(0xFFF2F2F7)),
                                     ),
                                     child: Column(
                                       children: [
                                         Text(
                                           '$remainAnnual',
-                                          style: const TextStyle(
+                                          style: ResponsiveUtils.getTextStyle(
+                                            context,
                                             fontSize: 22,
                                             fontWeight: FontWeight.bold,
-                                            color: Color(0xFF1E90FF),
+                                            color: const Color(0xFF1E90FF),
                                           ),
                                         ),
-                                        const SizedBox(height: 2),
-                                        const Text(
+                                        SizedBox(height: ResponsiveUtils.spacing(context, 2)),
+                                        Text(
                                           '잔여',
-                                          style: TextStyle(
+                                          style: ResponsiveUtils.getTextStyle(
+                                            context,
                                             fontSize: 19,
                                             fontWeight: FontWeight.w600,
-                                            color: Color(0xFF8E8E93),
+                                            color: const Color(0xFF8E8E93),
                                           ),
                                         ),
                                       ],
@@ -351,18 +526,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 20),
+                      SizedBox(height: ResponsiveUtils.spacing(context, 20)),
 
                       // 앱 설정
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.1),
-                              blurRadius: 3,
-                              offset: const Offset(0, 1),
+                              blurRadius: ResponsiveUtils.spacing(context, 3),
+                              offset: Offset(0, ResponsiveUtils.spacing(context, 1)),
                             ),
                           ],
                         ),
@@ -370,7 +545,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Padding(
-                              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                              padding: EdgeInsets.fromLTRB(
+                                ResponsiveUtils.spacing(context, 20), 
+                                ResponsiveUtils.spacing(context, 16), 
+                                ResponsiveUtils.spacing(context, 20), 
+                                ResponsiveUtils.spacing(context, 8)
+                              ),
                               child: Text(
                                 '앱 설정',
                                 style: ResponsiveUtils.getTextStyle(
@@ -383,23 +563,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                             ),
                             // 글꼴 크기
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
+                            InkWell(
+                              onTap: () => _showFontSizeDialog(),
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: ResponsiveUtils.spacing(context, 20), 
+                                  vertical: ResponsiveUtils.spacing(context, 16)
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
                                   Container(
-                                    width: 28,
-                                    height: 28,
+                                    width: ResponsiveUtils.spacing(context, 28),
+                                    height: ResponsiveUtils.spacing(context, 28),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFF3E5F5),
-                                      borderRadius: BorderRadius.circular(6),
+                                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 6)),
                                     ),
-                                    child: const Center(
-                                      child: Icon(Icons.text_fields, size: 14),
+                                    child: Center(
+                                      child: Icon(Icons.text_fields, size: ResponsiveUtils.iconSize(context, 14)),
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                  SizedBox(width: ResponsiveUtils.spacing(context, 12)),
                                   Expanded(
                                     child: Text(
                                       '글꼴 크기',
@@ -420,52 +605,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  const Icon(
+                                  SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                                  Icon(
                                     Icons.chevron_right,
-                                    color: Color(0xFFC7C7CC),
-                                    size: 16,
+                                    color: const Color(0xFFC7C7CC),
+                                    size: ResponsiveUtils.iconSize(context, 16),
                                   ),
                                 ],
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
 
-                      const SizedBox(height: 20),
+                      SizedBox(height: ResponsiveUtils.spacing(context, 20)),
 
                       // 문의하기
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.1),
-                              blurRadius: 3,
-                              offset: const Offset(0, 1),
+                              blurRadius: ResponsiveUtils.spacing(context, 3),
+                              offset: Offset(0, ResponsiveUtils.spacing(context, 1)),
                             ),
                           ],
                         ),
                         child: ListTile(
                           minLeadingWidth: 0,
                           leading: Container(
-                            width: 28,
-                            height: 28,
+                            width: ResponsiveUtils.spacing(context, 28),
+                            height: ResponsiveUtils.spacing(context, 28),
                             decoration: BoxDecoration(
-                              color: Color(0xFFF3E5F5),
-                              borderRadius: BorderRadius.circular(6),
+                              color: const Color(0xFFF3E5F5),
+                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 6)),
                             ),
                             alignment: Alignment.center,
-                            child: Icon(Icons.chat_bubble_outline, size: 18, color: Color(0xFF8E8E93)),
+                            child: Icon(Icons.chat_bubble_outline, size: ResponsiveUtils.iconSize(context, 18), color: const Color(0xFF8E8E93)),
                           ),
-                          title: const Text(
+                          title: Text(
                             '문의하기',
-                            style: TextStyle(
+                            style: ResponsiveUtils.getTextStyle(
+                              context,
                               fontSize: 19,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF8E8E93),
+                              color: const Color(0xFF8E8E93),
                             ),
                           ),
                           onTap: _showInquiryDialog,
@@ -475,16 +662,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
           bottomNavigationBar: Padding(
-            padding: const EdgeInsets.only(bottom: 18, top: 8),
+            padding: EdgeInsets.only(
+              bottom: ResponsiveUtils.spacing(context, 18), 
+              top: ResponsiveUtils.spacing(context, 8)
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(
-                  width: 120,
-                  height: 36,
+                  width: ResponsiveUtils.spacing(context, 120),
+                  height: ResponsiveUtils.spacing(context, 36),
                   child: TextButton.icon(
-                    icon: const Icon(Icons.logout, color: Color(0xFFFF3B30), size: 18),
-                    label: const Text('로그아웃', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFFF3B30), fontSize: 14)),
+                    icon: Icon(Icons.logout, color: const Color(0xFFFF3B30), size: ResponsiveUtils.iconSize(context, 18)),
+                    label: Text('로그아웃', style: ResponsiveUtils.getTextStyle(context, fontWeight: FontWeight.bold, color: const Color(0xFFFF3B30), fontSize: 14)),
                     style: TextButton.styleFrom(
                       backgroundColor: Colors.transparent,
                       elevation: 0,
@@ -504,8 +694,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     },
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(_appVersion, style: const TextStyle(color: Color(0xFFB0B0B0), fontSize: 13)),
+                SizedBox(height: ResponsiveUtils.spacing(context, 6)),
+                Text(_appVersion, style: ResponsiveUtils.getTextStyle(context, color: const Color(0xFFB0B0B0), fontSize: 13)),
               ],
             ),
           ),
