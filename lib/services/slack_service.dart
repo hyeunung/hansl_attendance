@@ -17,8 +17,8 @@ class SlackService {
       final functionUrl = 'https://$projectId.supabase.co/functions/v1/send_slack_notification_attendance';
       
       // 사용자 정보 가져오기
-      final currentUser = Supabase.instance.client.auth.currentUser;
-      final accessToken = currentUser?.accessToken;
+      final session = Supabase.instance.client.auth.currentSession;
+      final accessToken = session?.accessToken;
       
       if (accessToken == null) {
         print('❌ 인증 토큰이 없습니다.');
