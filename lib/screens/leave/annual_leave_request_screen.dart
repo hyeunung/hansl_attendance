@@ -219,8 +219,8 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
         int hireYear = 0;
         int yearsOfService = 0;
         String yearLabel = '';
-        if (employee != null && employee['hire_date'] != null) {
-          hireYear = DateTime.parse(employee['hire_date']).year;
+        if (employee != null && employee['join_date'] != null) {
+          hireYear = DateTime.parse(employee['join_date']).year;
           yearsOfService = (thisYear - hireYear) + 1;
           yearLabel = '${yearsOfService}년차';
         }

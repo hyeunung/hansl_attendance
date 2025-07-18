@@ -95,8 +95,8 @@ class LeaveProvider extends ChangeNotifier {
   Future<double> calculateRemainAnnual(String userEmail) async {
     final supabaseService = SupabaseService();
     final employee = await supabaseService.getEmployeeByEmail(userEmail);
-    if (employee == null || employee['hire_date'] == null) return 0;
-    final DateTime hireDate = DateTime.parse(employee['hire_date']);
+    if (employee == null || employee['join_date'] == null) return 0;
+    final DateTime hireDate = DateTime.parse(employee['join_date']);
     final now = DateTime.now();
     final int yearsOfService = (now.year - hireDate.year) + 1;
     double totalAnnual = 0;
@@ -146,8 +146,8 @@ class LeaveProvider extends ChangeNotifier {
   Future<double> calculateGrantedAnnual(String userEmail) async {
     final supabaseService = SupabaseService();
     final employee = await supabaseService.getEmployeeByEmail(userEmail);
-    if (employee == null || employee['hire_date'] == null) return 0.0;
-    final DateTime hireDate = DateTime.parse(employee['hire_date']);
+    if (employee == null || employee['join_date'] == null) return 0.0;
+    final DateTime hireDate = DateTime.parse(employee['join_date']);
     final now = DateTime.now();
     final int yearsOfService = (now.year - hireDate.year) + 1;
     double totalAnnual = 0;
@@ -303,8 +303,8 @@ class LeaveProvider extends ChangeNotifier {
   // 특정 연도 지급연차 계산 (법정 공식)
   double getGrantedAnnualForYear(int year) {
     final employeeData = _employee;
-    if (employeeData == null || employeeData['hire_date'] == null) return 0.0;
-    final hireDate = DateTime.parse(employeeData['hire_date']);
+    if (employeeData == null || employeeData['join_date'] == null) return 0.0;
+    final hireDate = DateTime.parse(employeeData['join_date']);
     if (year == hireDate.year) {
       int months = (year - hireDate.year) * 12 + (1 - hireDate.month);
       return months.clamp(0, 11).toDouble();
