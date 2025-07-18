@@ -98,19 +98,19 @@ class LeaveProvider extends ChangeNotifier {
     if (employee == null || employee['join_date'] == null) return 0;
     final DateTime hireDate = DateTime.parse(employee['join_date']);
     final now = DateTime.now();
-    final int yearsOfService = (now.year - hireDate.year) + 1;
+    final int yearsOfService = (now.year - hireDate.year);
     double totalAnnual = 0;
-    if (yearsOfService == 1) {
+    if (yearsOfService == 0) {
       // 1년차: 월차(최대 11개)
       int months = (now.year - hireDate.year) * 12 + (now.month - hireDate.month);
       if (now.day < hireDate.day) months--;
       totalAnnual = months.clamp(0, 11).toDouble();
     } else {
       // 2년차: 15 + 1년차 미사용 월차, 3년차~: 15 + ((근속년수-2)~/2)
-      int add = ((yearsOfService - 2) ~/ 2); // 3년차부터 2년마다 1개 추가
+      int add = ((yearsOfService - 1) ~/ 2); // 2년차부터 2년마다 1개 추가
       totalAnnual = (15 + add).toDouble();
-      // 2년차에만 1년차 미사용 월차 이월
-      if (yearsOfService == 2) {
+              // 2년차에만 1년차 미사용 월차 이월
+        if (yearsOfService == 1) {
         int months = 11;
         double usedInFirstYear = 0;
         for (final l in myLeaves) {
@@ -149,16 +149,16 @@ class LeaveProvider extends ChangeNotifier {
     if (employee == null || employee['join_date'] == null) return 0.0;
     final DateTime hireDate = DateTime.parse(employee['join_date']);
     final now = DateTime.now();
-    final int yearsOfService = (now.year - hireDate.year) + 1;
+    final int yearsOfService = (now.year - hireDate.year);
     double totalAnnual = 0;
-    if (yearsOfService == 1) {
+    if (yearsOfService == 0) {
       int months = (now.year - hireDate.year) * 12 + (now.month - hireDate.month);
       if (now.day < hireDate.day) months--;
       totalAnnual = months.clamp(0, 11).toDouble();
     } else {
-      int add = ((yearsOfService - 2) ~/ 2);
+      int add = ((yearsOfService - 1) ~/ 2);
       totalAnnual = (15 + add).toDouble();
-      if (yearsOfService == 2) {
+      if (yearsOfService == 1) {
         int months = 11;
         double usedInFirstYear = 0;
         for (final l in myLeaves) {
@@ -309,8 +309,8 @@ class LeaveProvider extends ChangeNotifier {
       int months = (year - hireDate.year) * 12 + (1 - hireDate.month);
       return months.clamp(0, 11).toDouble();
     } else {
-      final yearsOfService = (year - hireDate.year) + 1;
-      return (15 + ((yearsOfService - 2) ~/ 2)).toDouble();
+      final yearsOfService = (year - hireDate.year);
+              return (15 + ((yearsOfService - 1) ~/ 2)).toDouble();
     }
   }
 
