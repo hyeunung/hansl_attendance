@@ -3,6 +3,9 @@ import '../services/leave_service.dart';
 import '../services/supabase_service.dart';
 import '../services/notification_service.dart';
 import '../constants/app_strings.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LeaveProvider extends ChangeNotifier {
   final LeaveService _service = LeaveService();
@@ -53,8 +56,10 @@ class LeaveProvider extends ChangeNotifier {
     notifyListeners();
     try {
       myLeaves = await _service.fetchMyLeavesRaw(email);
-      _remainAnnual = (await calculateRemainAnnual(email)).toDouble();
-      _currentGrantedAnnual = (await calculateGrantedAnnual(email)).toDouble();
+      
+      // 서버에서 연차 계산 후 DB 값 가져오기
+      await _calculateAndUpdateAnnualLeave(email);
+      await _loadAnnualLeaveFromDB(email);
     } catch (e) {
       error = e.toString();
     } finally {
@@ -91,91 +96,67 @@ class LeaveProvider extends ChangeNotifier {
     }
   }
 
-  // 법정 연차 지급 공식 반영 (1년차 월차, 2년차 15+미사용, 3년차~ 2년마다 1개 추가)
-  Future<double> calculateRemainAnnual(String userEmail) async {
-    final supabaseService = SupabaseService();
-    final employee = await supabaseService.getEmployeeByEmail(userEmail);
-    if (employee == null || employee['join_date'] == null) return 0;
-    final DateTime hireDate = DateTime.parse(employee['join_date']);
-    final now = DateTime.now();
-    final int yearsOfService = (now.year - hireDate.year);
-    double totalAnnual = 0;
-    if (yearsOfService == 0) {
-      // 1년차: 월차(최대 11개)
-      int months = (now.year - hireDate.year) * 12 + (now.month - hireDate.month);
-      if (now.day < hireDate.day) months--;
-      totalAnnual = months.clamp(0, 11).toDouble();
-    } else {
-      // 2년차: 15 + 1년차 미사용 월차, 3년차~: 15 + ((근속년수-2)~/2)
-      int add = ((yearsOfService - 1) ~/ 2); // 2년차부터 2년마다 1개 추가
-      totalAnnual = (15 + add).toDouble();
-              // 2년차에만 1년차 미사용 월차 이월
-        if (yearsOfService == 1) {
-        int months = 11;
-        double usedInFirstYear = 0;
-        for (final l in myLeaves) {
-          final leaveDate = DateTime.parse(l['start_date']);
-          if (l['status'] == 'approved' && leaveDate.isAfter(hireDate) && leaveDate.isBefore(hireDate.add(Duration(days: 365)))) {
-            if (l['type'] == 'annual') {
-              usedInFirstYear += ((DateTime.parse(l['end_date']).difference(DateTime.parse(l['start_date'])).inDays) + 1) * 1.0;
-            } else if (l['type'] == 'halfAm' || l['type'] == 'half_am' || l['type'] == 'halfPm' || l['type'] == 'half_pm') {
-              usedInFirstYear += 0.5;
-            }
-          }
+  // 서버에서 연차 계산 (Edge Function 호출)
+  Future<void> _calculateAndUpdateAnnualLeave(String userEmail) async {
+    try {
+      const projectId = 'qvhbigvdfyvhoegkhvef';
+      final functionUrl = 'https://$projectId.supabase.co/functions/v1/calculate_annual_leave';
+      
+      final response = await http.post(
+        Uri.parse(functionUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${Supabase.instance.client.auth.currentSession?.accessToken}',
+        },
+        body: jsonEncode({
+          'userEmail': userEmail,
+          'targetYear': DateTime.now().year,
+        }),
+      );
+      
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        if (responseData['success'] == true) {
+          print('✅ 서버 연차 계산 완료: ${responseData['data']}');
+        } else {
+          print('❌ 서버 연차 계산 실패: ${responseData['error']}');
         }
-        int unusedFirstYear = months - usedInFirstYear.round();
-        if (unusedFirstYear > 0) totalAnnual += unusedFirstYear.toDouble();
+      } else {
+        print('❌ Edge Function 호출 실패: ${response.statusCode} - ${response.body}');
       }
+    } catch (e) {
+      print('❌ 연차 계산 중 오류: $e');
+      // 연차 계산 실패는 전체 프로세스를 중단시키지 않음
     }
-
-    // 전체 사용 연차 차감
-    double used = 0;
-    for (final l in myLeaves) {
-      if (l['status'] == 'approved') {
-        if (l['type'] == 'annual') {
-          used += ((DateTime.parse(l['end_date']).difference(DateTime.parse(l['start_date'])).inDays) + 1) * 1.0;
-        } else if (l['type'] == 'halfAm' || l['type'] == 'half_am' || l['type'] == 'halfPm' || l['type'] == 'half_pm') {
-          used += 0.5;
-        }
-      }
-    }
-    return (totalAnnual - used).clamp(0, totalAnnual);
   }
 
-  // 현재 지급 연차(법정 지급 공식, 사용 차감 전)
-  Future<double> calculateGrantedAnnual(String userEmail) async {
-    final supabaseService = SupabaseService();
-    final employee = await supabaseService.getEmployeeByEmail(userEmail);
-    if (employee == null || employee['join_date'] == null) return 0.0;
-    final DateTime hireDate = DateTime.parse(employee['join_date']);
-    final now = DateTime.now();
-    final int yearsOfService = (now.year - hireDate.year);
-    double totalAnnual = 0;
-    if (yearsOfService == 0) {
-      int months = (now.year - hireDate.year) * 12 + (now.month - hireDate.month);
-      if (now.day < hireDate.day) months--;
-      totalAnnual = months.clamp(0, 11).toDouble();
-    } else {
-      int add = ((yearsOfService - 1) ~/ 2);
-      totalAnnual = (15 + add).toDouble();
-      if (yearsOfService == 1) {
-        int months = 11;
-        double usedInFirstYear = 0;
-        for (final l in myLeaves) {
-          final leaveDate = DateTime.parse(l['start_date']);
-          if (l['status'] == 'approved' && leaveDate.isAfter(hireDate) && leaveDate.isBefore(hireDate.add(Duration(days: 365)))) {
-            if (l['type'] == 'annual') {
-              usedInFirstYear += ((DateTime.parse(l['end_date']).difference(DateTime.parse(l['start_date'])).inDays) + 1) * 1.0;
-            } else if (l['type'] == 'halfAm' || l['type'] == 'half_am' || l['type'] == 'halfPm' || l['type'] == 'half_pm') {
-              usedInFirstYear += 0.5;
-            }
-          }
-        }
-        int unusedFirstYear = months - usedInFirstYear.round();
-        if (unusedFirstYear > 0) totalAnnual += unusedFirstYear.toDouble();
+  // DB에서 계산된 연차 정보 로드
+  Future<void> _loadAnnualLeaveFromDB(String userEmail) async {
+    try {
+      final supabaseService = SupabaseService();
+      final employee = await supabaseService.getEmployeeByEmail(userEmail);
+      
+      if (employee != null) {
+        _currentGrantedAnnual = (employee['annual_leave_granted_current_year'] ?? 0).toDouble();
+        _remainAnnual = double.tryParse(employee['remaining_annual_leave']?.toString() ?? '0') ?? 0.0;
+        
+        print('📊 DB에서 로드된 연차 정보: 지급=${_currentGrantedAnnual}, 잔여=${_remainAnnual}');
       }
+    } catch (e) {
+      print('❌ DB 연차 정보 로드 실패: $e');
+      // 기본값 유지
+      _currentGrantedAnnual = 0;
+      _remainAnnual = 0;
     }
-    return totalAnnual;
+  }
+
+  // 특정 연도 지급연차 조회 (DB에서)
+  double getGrantedAnnualForYear(int year) {
+    // 현재는 현재 연도만 지원, 향후 확장 가능
+    if (year == DateTime.now().year) {
+      return _currentGrantedAnnual;
+    }
+    return 0.0;
   }
 
   // 연차/출장 신청
@@ -300,20 +281,6 @@ class LeaveProvider extends ChangeNotifier {
     }
   }
 
-  // 특정 연도 지급연차 계산 (법정 공식)
-  double getGrantedAnnualForYear(int year) {
-    final employeeData = _employee;
-    if (employeeData == null || employeeData['join_date'] == null) return 0.0;
-    final hireDate = DateTime.parse(employeeData['join_date']);
-    if (year == hireDate.year) {
-      int months = (year - hireDate.year) * 12 + (1 - hireDate.month);
-      return months.clamp(0, 11).toDouble();
-    } else {
-      final yearsOfService = (year - hireDate.year);
-              return (15 + ((yearsOfService - 1) ~/ 2)).toDouble();
-    }
-  }
-
   Future<void> updateLeaveStatus(int id, String status) async {
     try {
       // 1. 승인/반려하기 전에 해당 신청 정보 조회
@@ -336,7 +303,12 @@ class LeaveProvider extends ChangeNotifier {
       // 2. 상태 업데이트
       await _service.updateLeaveStatus(id, status);
       
-      // 3. 신청자에게 승인/반려 결과 알림 전송
+      // 3. 신청자의 연차 정보 재계산 (승인/반려 시)
+      if (requesterEmail != null && requesterEmail.isNotEmpty) {
+        await _calculateAndUpdateAnnualLeave(requesterEmail);
+      }
+      
+      // 4. 신청자에게 승인/반려 결과 알림 전송
       if (requesterEmail != null && requesterEmail.isNotEmpty) {
         try {
           final typeLabel = _getTypeLabel(leaveType);
@@ -370,7 +342,7 @@ class LeaveProvider extends ChangeNotifier {
         }
       }
       
-      // 4. 목록 새로고침
+      // 5. 목록 새로고침
       await fetchAllLeaves();
     } catch (e) {
       print('❌ 승인/반려 처리 실패: $e');
