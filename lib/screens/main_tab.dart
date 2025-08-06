@@ -158,6 +158,9 @@ class _MainTabState extends State<MainTab> {
           setState(() => _currentIndex = index);
         },
         physics: const BouncingScrollPhysics(),
+        // 페이지가 화면에서 벗어나도 상태를 유지하도록 설정
+        pageSnapping: true,
+        allowImplicitScrolling: true,
       ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(

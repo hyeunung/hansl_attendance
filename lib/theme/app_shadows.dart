@@ -8,7 +8,7 @@ class AppShadows {
   );
 
   static BoxShadow get button => BoxShadow(
-    color: Colors.black.withOpacity(0.36),
+    color: Colors.black.withValues(alpha: 0.36),
     blurRadius: 6,
     offset: Offset(0, 2),
   );

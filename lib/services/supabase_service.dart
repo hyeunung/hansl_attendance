@@ -1,20 +1,20 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'database_optimization_service.dart';
 
 class SupabaseService {
-  // Supabase 연동 관련 메서드 작성 예정
+  final DatabaseOptimizationService _dbOptim = DatabaseOptimizationService.instance;
 
+  /// Get employee name by email with optimized caching
   Future<String?> getEmployeeNameByEmail(String email) async {
-    final response = await Supabase.instance.client
-        .from('employees')
-        .select('name')
-        .eq('email', email)
-        .single();
-    if (response != null && response['name'] != null) {
-      return response['name'] as String;
-    }
-    return null;
+    final employee = await _dbOptim.getEmployeeByEmail(
+      email,
+      selectFields: ['name'],
+      cacheKey: 'employee_name',
+    );
+    return employee?['name'] as String?;
   }
 
+  /// Fetch all employee names with caching
   Future<List<String>> fetchEmployees() async {
     final response = await Supabase.instance.client
         .from('employees')
@@ -25,36 +25,27 @@ class SupabaseService {
     return [];
   }
 
+  /// Get complete employee data by email with optimized caching
   Future<Map<String, dynamic>?> getEmployeeByEmail(String email) async {
-    final response = await Supabase.instance.client
-        .from('employees')
-        .select('*')
-        .eq('email', email)
-        .single();
-    if (response != null && response['email'] != null) {
-      return response as Map<String, dynamic>;
-    }
-    return null;
+    return await _dbOptim.getEmployeeByEmail(email);
   }
 
-  /// 현재 로그인한 사용자의 role과 is_admin 값을 조회합니다.
+  /// Get current user role and admin status with optimized caching
   Future<Map<String, dynamic>> loadUserRole() async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) {
       throw Exception('로그인된 사용자가 없습니다.');
     }
-    final response = await Supabase.instance.client
-        .from('employees')
-        .select('role, is_admin')
-        .eq('id', userId)
-        .single();
 
-    if (response == null || response['role'] == null || response['is_admin'] == null) {
+    final roleData = await _dbOptim.getEmployeeRole(userId);
+    
+    if (roleData == null || roleData['role'] == null || roleData['is_admin'] == null) {
       throw Exception('역할 조회 실패: 데이터가 없습니다.');
     }
+    
     return {
-      'role': response['role'] as String,
-      'isAdmin': response['is_admin'] as bool,
+      'role': roleData['role'] as String,
+      'isAdmin': roleData['is_admin'] as bool,
     };
   }
 } 

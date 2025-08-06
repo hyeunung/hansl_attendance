@@ -72,9 +72,9 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
                   vertical: ResponsiveUtils.spacing(context, 4)
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-                  border: Border.all(color: Colors.white.withOpacity(0.3)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -532,7 +532,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
               alignment: Alignment.center,
               padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 12)),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFA726).withOpacity(0.12),
+                color: const Color(0xFFFFA726).withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
               ),
               child: Row(
@@ -560,8 +560,8 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
               padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 10)),
               decoration: BoxDecoration(
                 color: status == 'approved' 
-                    ? const Color(0xFF34C759).withOpacity(0.12) 
-                    : const Color(0xFFFF3B30).withOpacity(0.12),
+                    ? const Color(0xFF34C759).withValues(alpha: 0.12) 
+                    : const Color(0xFFFF3B30).withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
               ),
               child: Text(
@@ -601,15 +601,15 @@ class _ApprovalScreenState extends State<ApprovalScreen> with SingleTickerProvid
     Color bg, fg;
     String label;
     if (status == 'approved') {
-      bg = const Color(0xFF34C759).withOpacity(0.12);
+      bg = const Color(0xFF34C759).withValues(alpha: 0.12);
       fg = const Color(0xFF34C759);
       label = '승인';
     } else if (status == 'rejected') {
-      bg = const Color(0xFFFF3B30).withOpacity(0.12);
+      bg = const Color(0xFFFF3B30).withValues(alpha: 0.12);
       fg = const Color(0xFFFF3B30);
       label = '반려';
     } else {
-      bg = const Color(0xFFFFA726).withOpacity(0.12);
+      bg = const Color(0xFFFFA726).withValues(alpha: 0.12);
       fg = const Color(0xFFFFA726);
       label = '대기';
     }

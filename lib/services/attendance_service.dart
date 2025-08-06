@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'database_optimization_service.dart';
 
 class AttendanceService {
   final supabase = Supabase.instance.client;
+  final DatabaseOptimizationService _dbOptim = DatabaseOptimizationService.instance;
 
   Future<void> recordClockIn({
     required String employeeId,
@@ -9,19 +12,30 @@ class AttendanceService {
   }) async {
     final today = DateTime.now().toIso8601String().substring(0, 10);
     final now = DateTime.now().toIso8601String().substring(11, 19);
+    
     try {
-      final res = await supabase
-          .from('attendance_records')
-          .insert({
-      'date': today,
-      'employee_id': employeeId,
-      'employee_name': employeeName,
-      'status': '출근',
-      'clock_in': now,
-    });
-      print('recordClockIn insert result: $res');
+      await _dbOptim.optimizedInsert(
+        table: 'attendance_records',
+        data: {
+          'date': today,
+          'employee_id': employeeId,
+          'employee_name': employeeName,
+          'status': '출근',
+          'clock_in': now,
+        },
+        invalidateCachePatterns: [
+          'attendance_${employeeId}_$today',
+          'attendance_${employeeId}_',
+        ],
+      );
+      
+      if (kDebugMode) {
+        print('✅ recordClockIn completed with cache invalidation');
+      }
     } catch (e) {
-      print('recordClockIn error: $e');
+      if (kDebugMode) {
+        print('❌ recordClockIn error: $e');
+      }
       rethrow;
     }
   }
@@ -31,22 +45,56 @@ class AttendanceService {
   }) async {
     final today = DateTime.now().toIso8601String().substring(0, 10);
     final now = DateTime.now().toIso8601String().substring(11, 19);
+    
     try {
-      final res = await supabase
-          .from('attendance_records')
-          .update({
-      'status': '퇴근',
-      'clock_out': now,
-    }).match({
-      'date': today,
-      'employee_id': employeeId,
-    });
-      print('recordClockOut update result: $res');
+      await _dbOptim.optimizedUpdate(
+        table: 'attendance_records',
+        data: {
+          'status': '퇴근',
+          'clock_out': now,
+        },
+        match: {
+          'date': today,
+          'employee_id': employeeId,
+        },
+        invalidateCachePatterns: [
+          'attendance_${employeeId}_$today',
+          'attendance_${employeeId}_',
+        ],
+      );
+      
+      if (kDebugMode) {
+        print('✅ recordClockOut completed with cache invalidation');
+      }
     } catch (e) {
-      print('recordClockOut error: $e');
+      if (kDebugMode) {
+        print('❌ recordClockOut error: $e');
+      }
       rethrow;
     }
   }
 
-  // 출퇴근 관련 메서드 작성 예정
+  /// Get attendance records with optimized caching
+  Future<List<Map<String, dynamic>>> getAttendanceHistory({
+    required String employeeId,
+    DateTime? date,
+    int? limit,
+  }) async {
+    return await _dbOptim.getAttendanceRecords(
+      employeeId,
+      date: date,
+      limit: limit,
+      includeHistory: limit != null,
+    );
+  }
+
+  /// Get today's attendance record with optimized caching
+  Future<Map<String, dynamic>?> getTodayAttendance(String employeeId) async {
+    final records = await _dbOptim.getAttendanceRecords(
+      employeeId,
+      date: DateTime.now(),
+      limit: 1,
+    );
+    return records.isNotEmpty ? records.first : null;
+  }
 } 

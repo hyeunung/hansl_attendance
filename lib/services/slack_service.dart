@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -10,7 +11,9 @@ class SlackService {
     required String userName,
   }) async {
     try {
-      print('📤 근태앱 문의 메시지 슬랙 전송 시작...');
+      if (kDebugMode) {
+        print('📤 근태앱 문의 메시지 슬랙 전송 시작...');
+      }
       
       // Supabase 프로젝트 URL에서 Edge Function 호출
       final projectId = 'qvhbigvdfyvhoegkhvef'; // 프로젝트 ID
@@ -21,7 +24,9 @@ class SlackService {
       final accessToken = session?.accessToken;
       
       if (accessToken == null) {
-        print('❌ 인증 토큰이 없습니다.');
+        if (kDebugMode) {
+          print('❌ 인증 토큰이 없습니다.');
+        }
         return false;
       }
       
@@ -35,12 +40,14 @@ class SlackService {
           .single();
         userDepartment = userResponse['department'] as String?;
       } catch (e) {
-        print('⚠️ 사용자 부서 정보 조회 실패: $e');
+        if (kDebugMode) {
+          print('⚠️ 사용자 부서 정보 조회 실패: $e');
+        }
       }
       
       final requestData = {
         'type': 'inquiry',
-        'title': '🆘 HANSL 근태앱 문의사항',
+        'title': '🆘 문의사항',
         'message': inquiryContent,
         'inquiry_content': inquiryContent,
         'user_email': userEmail,
@@ -49,7 +56,9 @@ class SlackService {
         'requester_email': userEmail,
       };
       
-      print('📮 Edge Function 호출: send_slack_notification_attendance');
+      if (kDebugMode) {
+        print('📮 Edge Function 호출: send_slack_notification_attendance');
+      }
       
       final response = await http.post(
         Uri.parse(functionUrl),
@@ -68,23 +77,31 @@ class SlackService {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         if (responseData['success'] == true) {
-          print('✅ 근태앱 문의 메시지 슬랙 전송 성공: ${responseData['message']}');
+          if (kDebugMode) {
+            print('✅ 근태앱 문의 메시지 슬랙 전송 성공: ${responseData['message']}');
+          }
           return true;
         } else {
-          print('❌ 근태앱 문의 메시지 슬랙 전송 실패: ${responseData['message']}');
+          if (kDebugMode) {
+            print('❌ 근태앱 문의 메시지 슬랙 전송 실패: ${responseData['message']}');
+          }
           return false;
         }
       } else {
-        print('❌ Edge Function 호출 실패: ${response.statusCode} - ${response.body}');
+        if (kDebugMode) {
+          print('❌ Edge Function 호출 실패: ${response.statusCode} - ${response.body}');
+        }
         return false;
       }
       
     } catch (e) {
-      print('❌ 슬랙 문의 메시지 전송 중 오류: $e');
-      if (e.toString().contains('타임아웃')) {
-        print('   네트워크 연결이 느리거나 서버에 문제가 있을 수 있습니다.');
-      } else if (e.toString().contains('SocketException')) {
-        print('   인터넷 연결을 확인해주세요.');
+      if (kDebugMode) {
+        print('❌ 슬랙 문의 메시지 전송 중 오류: $e');
+        if (e.toString().contains('타임아웃')) {
+          print('   네트워크 연결이 느리거나 서버에 문제가 있을 수 있습니다.');
+        } else if (e.toString().contains('SocketException')) {
+          print('   인터넷 연결을 확인해주세요.');
+        }
       }
       return false;
     }

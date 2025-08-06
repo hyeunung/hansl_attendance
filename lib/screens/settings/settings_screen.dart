@@ -31,26 +31,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _loadAppVersion();
-    Future.microtask(() async {
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
+    // 글꼴 크기 초기화
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       final fontProvider = Provider.of<FontProvider>(context, listen: false);
-      
-      // 글꼴 크기 로드
-      await fontProvider.loadFontSize();
       setState(() {
         _fontSize = fontProvider.fontSize;
       });
-      
-      final email = userProvider.email;
-      if (email != null && email.isNotEmpty) {
-        final supabaseService = SupabaseService();
-        final emp = await supabaseService.getEmployeeByEmail(email);
-        if (emp != null) {
-          userProvider.setEmployee(emp);
-        }
-        await leaveProvider.fetchMyLeaves(email: email);
-      }
     });
   }
 
@@ -62,7 +48,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       });
     } catch (e) {
       setState(() {
-        _appVersion = '앱 버전 1.1.0+6';
+                          _appVersion = '앱 버전 1.2.0+1';
       });
     }
   }
@@ -192,24 +178,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   return;
                 }
                 
-                // 로딩 표시를 위해 다이얼로그 닫기
+                // 사용자 정보를 먼저 가져오기
+                final userProvider = Provider.of<UserProvider>(context, listen: false);
+                final userName = userProvider.name ?? '알 수 없음';
+                final userEmail = userProvider.email ?? '알 수 없음';
+                
+                // 문의 다이얼로그 닫기
                 Navigator.pop(context);
                 
-                // 로딩 인디케이터 표시
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (context) => const Center(
-                    child: CircularProgressIndicator(),
+                // 짧은 딜레이 후 로딩 표시
+                await Future.delayed(const Duration(milliseconds: 100));
+                
+                if (!mounted) return;
+                
+                // 간단한 로딩 오버레이 표시
+                final overlay = Overlay.of(context);
+                final overlayEntry = OverlayEntry(
+                  builder: (context) => Container(
+                    color: Colors.black54,
+                    child: const Center(
+                      child: CupertinoActivityIndicator(
+                        radius: 20,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 );
+                overlay.insert(overlayEntry);
                 
                 try {
-                  // 현재 사용자 정보 가져오기
-                  final userProvider = Provider.of<UserProvider>(context, listen: false);
-                  final userName = userProvider.name ?? '알 수 없음';
-                  final userEmail = userProvider.email ?? '알 수 없음';
-                  
                   // 슬랙으로 문의 전송
                   final slackService = SlackService();
                   final success = await slackService.sendInquiryToSlack(
@@ -218,10 +215,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     userName: userName,
                   );
                   
-                  // 로딩 다이얼로그 닫기
-                  Navigator.pop(context);
+                  // 로딩 오버레이 제거
+                  overlayEntry.remove();
                   
                   if (success) {
+                    // 문의 내용 입력 필드 초기화
+                    _controller.clear();
+                    
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('✅ 문의가 관리자에게 성공적으로 전송되었습니다!\n곧 답변을 받으실 수 있습니다.'),
@@ -239,8 +239,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     );
                   }
                 } catch (e) {
-                  // 로딩 다이얼로그 닫기
-                  Navigator.pop(context);
+                  // 로딩 오버레이 제거
+                  overlayEntry.remove();
                   
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -257,29 +257,167 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _showAccountDeletionDialog() {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: const Text('계정 삭제', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFD32F2F))),
+          content: const Padding(
+            padding: EdgeInsets.only(top: 12),
+            child: Text(
+              '계정을 삭제하면 모든 데이터가 영구적으로 삭제됩니다.\n\n• 출퇴근 기록\n• 연차 신청 내역\n• 개인 정보\n\n이 작업은 되돌릴 수 없습니다.',
+              style: TextStyle(fontSize: 14),
+            ),
+          ),
+          actions: [
+            CupertinoDialogAction(
+              child: const Text('취소'),
+              onPressed: () => Navigator.pop(context),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              child: const Text('삭제'),
+              onPressed: () async {
+                Navigator.pop(context);
+                
+                // 최종 확인 다이얼로그
+                final confirmed = await showCupertinoDialog<bool>(
+                  context: context,
+                  builder: (context) {
+                    return CupertinoAlertDialog(
+                      title: const Text('정말 삭제하시겠습니까?'),
+                      content: const Text('마지막 확인입니다. 계정을 삭제하시겠습니까?'),
+                      actions: [
+                        CupertinoDialogAction(
+                          child: const Text('취소'),
+                          onPressed: () => Navigator.pop(context, false),
+                        ),
+                        CupertinoDialogAction(
+                          isDestructiveAction: true,
+                          child: const Text('삭제'),
+                          onPressed: () => Navigator.pop(context, true),
+                        ),
+                      ],
+                    );
+                  },
+                );
+                
+                if (confirmed == true) {
+                  await _deleteAccount();
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteAccount() async {
+    // 로딩 다이얼로그 표시
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+    
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final userId = userProvider.id;
+      
+      if (userId != null) {
+        // Supabase에서 사용자 관련 데이터 삭제
+        final supabase = Supabase.instance.client;
+        
+        // 1. 출퇴근 기록 삭제
+        await supabase.from('daily_attendances').delete().eq('user_id', userId);
+        
+        // 2. 연차 신청 기록 삭제  
+        await supabase.from('leave_requests').delete().eq('user_id', userId);
+        
+        // 3. 직원 정보 삭제
+        await supabase.from('employees').delete().eq('id', userId);
+        
+        // 4. 로그아웃 (Auth 사용자는 관리자가 별도 삭제)
+        await supabase.auth.signOut();
+        
+        // 5. 자동 로그인 정보 삭제
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('autoLogin', false);
+        await prefs.remove('autoLoginEmail');
+        await prefs.remove('autoLoginPassword');
+      }
+      
+      // 로딩 다이얼로그 닫기
+      Navigator.pop(context);
+      
+      // 성공 메시지 표시
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('계정이 성공적으로 삭제되었습니다.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      
+      // 로그인 화면으로 이동
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false,
+      );
+      
+    } catch (e) {
+      // 로딩 다이얼로그 닫기
+      Navigator.pop(context);
+      
+      // 에러 메시지 표시
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('계정 삭제 중 오류가 발생했습니다: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Consumer2<UserProvider, LeaveProvider>(
-      builder: (context, userProvider, leaveProvider, _) {
-        final employee = userProvider.employee;
-        final name = employee?['name'] ?? '-';
-        final department = employee?['department'] ?? '-';
-        final position = employee?['position'] ?? '-';
-        final totalAnnual = leaveProvider.currentGrantedAnnual;
-        final remainAnnual = leaveProvider.remainAnnual;
-        final usedAnnual = (totalAnnual - remainAnnual).clamp(0, totalAnnual);
-        final isLoading = leaveProvider.isLoading;
-        final email = userProvider.email;
-        if (email == null || email.isEmpty) {
-          return const Scaffold(
-            body: Center(child: Text('로그인 정보가 없습니다. 다시 로그인 해주세요.', style: TextStyle(fontSize: 16))),
-          );
-        }
-        if (leaveProvider.error != null) {
-          return Scaffold(
-            body: Center(child: Text('데이터를 불러오지 못했습니다.\n${leaveProvider.error}', textAlign: TextAlign.center)),
-          );
-        }
+    final userProvider = Provider.of<UserProvider>(context);
+    final leaveProvider = Provider.of<LeaveProvider>(context);
+    
+    // 데이터가 없으면 여기서 로드
+    if (!leaveProvider.isLoading && leaveProvider.myLeaves.isEmpty) {
+      final email = userProvider.email;
+      if (email != null && email.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          leaveProvider.fetchMyLeaves(email: email);
+        });
+      }
+    }
+    
+    final employee = userProvider.employee;
+    final name = employee?['name'] ?? '-';
+    final department = employee?['department'] ?? '-';
+    final position = employee?['position'] ?? '-';
+    final totalAnnual = leaveProvider.currentGrantedAnnual;
+    final usedAnnual = leaveProvider.usedAnnual;
+    final remainAnnual = leaveProvider.remainAnnual;
+    final isLoading = leaveProvider.isLoading;
+    final email = userProvider.email;
+    
+    if (email == null || email.isEmpty) {
+      return const Scaffold(
+        body: Center(child: Text('로그인 정보가 없습니다. 다시 로그인 해주세요.', style: TextStyle(fontSize: 16))),
+      );
+    }
+    
+    if (leaveProvider.error != null) {
+      return Scaffold(
+        body: Center(child: Text('데이터를 불러오지 못했습니다.\n${leaveProvider.error}', textAlign: TextAlign.center)),
+      );
+    }
     return Scaffold(
           backgroundColor: const Color(0xFFF8F9FA),
           appBar: AppBar(
@@ -310,7 +448,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withValues(alpha: 0.1),
                               blurRadius: ResponsiveUtils.spacing(context, 3),
                               offset: Offset(0, ResponsiveUtils.spacing(context, 1)),
                             ),
@@ -382,7 +520,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withValues(alpha: 0.1),
                               blurRadius: ResponsiveUtils.spacing(context, 3),
                               offset: Offset(0, ResponsiveUtils.spacing(context, 1)),
                             ),
@@ -535,7 +673,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withValues(alpha: 0.1),
                               blurRadius: ResponsiveUtils.spacing(context, 3),
                               offset: Offset(0, ResponsiveUtils.spacing(context, 1)),
                             ),
@@ -628,7 +766,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withValues(alpha: 0.1),
                               blurRadius: ResponsiveUtils.spacing(context, 3),
                               offset: Offset(0, ResponsiveUtils.spacing(context, 1)),
                             ),
@@ -669,30 +807,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(
-                  width: ResponsiveUtils.spacing(context, 120),
-                  height: ResponsiveUtils.spacing(context, 36),
-                  child: TextButton.icon(
-                    icon: Icon(Icons.logout, color: const Color(0xFFFF3B30), size: ResponsiveUtils.iconSize(context, 18)),
-                    label: Text('로그아웃', style: ResponsiveUtils.getTextStyle(context, fontWeight: FontWeight.bold, color: const Color(0xFFFF3B30), fontSize: 14)),
-                    style: TextButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      elevation: 0,
-                      shape: null,
-                      padding: EdgeInsets.zero,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: ResponsiveUtils.spacing(context, 120),
+                      height: ResponsiveUtils.spacing(context, 36),
+                      child: TextButton.icon(
+                        icon: Icon(Icons.delete_forever, color: const Color(0xFFFF3B30), size: ResponsiveUtils.iconSize(context, 18)),
+                        label: Text('계정 삭제', style: ResponsiveUtils.getTextStyle(context, fontWeight: FontWeight.bold, color: const Color(0xFFFF3B30), fontSize: 14)),
+                        style: TextButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          elevation: 0,
+                          shape: null,
+                          padding: EdgeInsets.zero,
+                        ),
+                        onPressed: _showAccountDeletionDialog,
+                      ),
                     ),
-                    onPressed: () async {
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.setBool('autoLogin', false);
-                      await prefs.remove('autoLoginEmail');
-                      await prefs.remove('autoLoginPassword');
-                      if (!mounted) return;
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (context) => LoginScreen()),
-                        (route) => false,
-                      );
-                    },
-                  ),
+                    SizedBox(width: ResponsiveUtils.spacing(context, 20)),
+                    SizedBox(
+                      width: ResponsiveUtils.spacing(context, 120),
+                      height: ResponsiveUtils.spacing(context, 36),
+                      child: TextButton.icon(
+                        icon: Icon(Icons.logout, color: const Color(0xFFFF3B30), size: ResponsiveUtils.iconSize(context, 18)),
+                        label: Text('로그아웃', style: ResponsiveUtils.getTextStyle(context, fontWeight: FontWeight.bold, color: const Color(0xFFFF3B30), fontSize: 14)),
+                        style: TextButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          elevation: 0,
+                          shape: null,
+                          padding: EdgeInsets.zero,
+                        ),
+                        onPressed: () async {
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.setBool('autoLogin', false);
+                          await prefs.remove('autoLoginEmail');
+                          await prefs.remove('autoLoginPassword');
+                          if (!mounted) return;
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(builder: (context) => LoginScreen()),
+                            (route) => false,
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
                 SizedBox(height: ResponsiveUtils.spacing(context, 6)),
                 Text(_appVersion, style: ResponsiveUtils.getTextStyle(context, color: const Color(0xFFB0B0B0), fontSize: 13)),
@@ -700,7 +859,5 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
         );
-      },
-    );
   }
 }

@@ -64,12 +64,8 @@ class AttendanceRecord {
       'employee_id': employeeId,
       'employee_name': employeeName,
       'status': status,
-      'clock_in': clockIn != null
-          ? clockIn!.toIso8601String().substring(11, 19)
-          : null,
-      'clock_out': clockOut != null
-          ? clockOut!.toIso8601String().substring(11, 19)
-          : null,
+      'clock_in': clockIn?.toIso8601String().substring(11, 19),
+      'clock_out': clockOut?.toIso8601String().substring(11, 19),
       'note': note,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),

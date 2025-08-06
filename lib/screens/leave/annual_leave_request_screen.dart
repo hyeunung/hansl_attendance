@@ -113,7 +113,7 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
   Widget _buildDateChip(DateTime d, LeaveType type) {
     return Chip(
       label: Text(DateFormat('yyyy.MM.dd').format(d)),
-      backgroundColor: _typeColor(type).withOpacity(0.15),
+      backgroundColor: _typeColor(type).withValues(alpha: 0.15),
       labelStyle: TextStyle(color: _typeColor(type), fontWeight: FontWeight.bold),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     );
@@ -174,7 +174,7 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: _bannerColor.withOpacity(0.18),
+            color: _bannerColor.withValues(alpha: 0.18),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -222,7 +222,7 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
         if (employee != null && employee['join_date'] != null) {
           hireYear = DateTime.parse(employee['join_date']).year;
           yearsOfService = (thisYear - hireYear);
-          yearLabel = '${yearsOfService}년차';
+          yearLabel = '$yearsOfService년차';
         }
 
         final thisYearGranted = leaveProvider.getGrantedAnnualForYear(thisYear);
@@ -330,8 +330,8 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Text('• $thisYear.01.01 ~ $thisYear.12.31   ${thisYearGranted}일   >', style: const TextStyle(color: Colors.white, fontSize: 15)),
-                    Text('• $nextYear.01.01 ~ $nextYear.12.31   ${nextYearGranted}일   >', style: const TextStyle(color: Colors.white, fontSize: 15)),
+                    Text('• $thisYear.01.01 ~ $thisYear.12.31   $thisYearGranted일   >', style: const TextStyle(color: Colors.white, fontSize: 15)),
+                    Text('• $nextYear.01.01 ~ $nextYear.12.31   $nextYearGranted일   >', style: const TextStyle(color: Colors.white, fontSize: 15)),
                   ],
                 ),
               ),
@@ -371,7 +371,7 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
                         isTodayHighlighted: true,
                         selectedDecoration: const BoxDecoration(),
                         todayDecoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.2),
+                          color: AppColors.primary.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
                         disabledTextStyle: TextStyle(color: Colors.grey.shade400),
@@ -426,7 +426,7 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
                             width: 36,
                             height: 36,
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.2),
+                              color: AppColors.primary.withValues(alpha: 0.2),
                               shape: BoxShape.circle,
                             ),
                             alignment: Alignment.center,

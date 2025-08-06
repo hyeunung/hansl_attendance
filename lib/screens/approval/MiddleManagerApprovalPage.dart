@@ -22,30 +22,23 @@ class _MiddleManagerApprovalPageState extends State<MiddleManagerApprovalPage> {
 
   Future<void> _loadPendingRequests() async {
     setState(() => _isLoading = true);
-    final response = await supabase
-        .from('purchase_requests')
-        .select('
-          id,
-          request_type,
-          request_date,
-          total_amount,
-          currency,
-          po_file_url,
-          vendors(vendor_name)
-        ')
-        .eq('payment_status', '대기')
-        .order('request_date', ascending: true)
-        .execute();
-    if (response.error == null) {
+    try {
+      final response = await supabase
+          .from('purchase_requests')
+          .select('id, request_type, request_date, total_amount, currency, po_file_url, vendors(vendor_name)')
+          .eq('payment_status', '대기')
+          .order('request_date', ascending: true);
       setState(() {
-        _pendingRequests = response.data;
+        _pendingRequests = response;
         _isLoading = false;
       });
-    } else {
+    } catch (e) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('데이터 불러오기 실패: ${response.error!.message}')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('데이터 불러오기 실패: $e')),
+        );
+      }
     }
   }
 
@@ -79,18 +72,21 @@ class _MiddleManagerApprovalPageState extends State<MiddleManagerApprovalPage> {
                             purchaseRequestId: id,
                             initialStatus: '대기',
                             onApprove: () async {
-                              final updateRes = await supabase
-                                  .from('purchase_requests')
-                                  .update({'payment_status': '확인'})
-                                  .eq('id', id)
-                                  .execute();
-                              if (updateRes.error == null) {
-                                Navigator.of(context).pop();
-                                _loadPendingRequests();
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('승인 실패: ${updateRes.error!.message}')),
-                                );
+                              try {
+                                await supabase
+                                    .from('purchase_requests')
+                                    .update({'payment_status': '확인'})
+                                    .eq('id', id);
+                                if (mounted) {
+                                  Navigator.of(context).pop();
+                                  _loadPendingRequests();
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('승인 실패: $e')),
+                                  );
+                                }
                               }
                             },
                           ),
@@ -99,17 +95,18 @@ class _MiddleManagerApprovalPageState extends State<MiddleManagerApprovalPage> {
                     },
                     trailing: ElevatedButton(
                       onPressed: () async {
-                        final updateRes = await supabase
-                            .from('purchase_requests')
-                            .update({'payment_status': '확인'})
-                            .eq('id', id)
-                            .execute();
-                        if (updateRes.error == null) {
+                        try {
+                          await supabase
+                              .from('purchase_requests')
+                              .update({'payment_status': '확인'})
+                              .eq('id', id);
                           _loadPendingRequests();
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('승인 실패: ${updateRes.error!.message}')),
-                          );
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('승인 실패: $e')),
+                            );
+                          }
                         }
                       },
                       child: const Text('확인'),
@@ -120,4 +117,4 @@ class _MiddleManagerApprovalPageState extends State<MiddleManagerApprovalPage> {
             ),
     );
   }
-} 
+}

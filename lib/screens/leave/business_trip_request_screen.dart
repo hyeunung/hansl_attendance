@@ -159,7 +159,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                                     margin: const EdgeInsets.symmetric(vertical: 4),
                                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                     decoration: BoxDecoration(
-                                      color: selected ? AppColors.primary.withOpacity(0.12) : Colors.white,
+                                      color: selected ? AppColors.primary.withValues(alpha: 0.12) : Colors.white,
                                       border: Border.all(
                                         color: selected ? AppColors.primary : const Color(0xFFE0E0E0),
                                         width: selected ? 2 : 1,
@@ -275,7 +275,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                                     margin: const EdgeInsets.symmetric(vertical: 4),
                                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                     decoration: BoxDecoration(
-                                      color: selected ? AppColors.primary.withOpacity(0.12) : Colors.white,
+                                      color: selected ? AppColors.primary.withValues(alpha: 0.12) : Colors.white,
                                       border: Border.all(
                                         color: selected ? AppColors.primary : const Color(0xFFE0E0E0),
                                         width: selected ? 2 : 1,
@@ -368,11 +368,11 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                       calendarStyle: CalendarStyle(
                         isTodayHighlighted: true,
                         selectedDecoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.18),
+                          color: AppColors.primary.withValues(alpha: 0.18),
                           shape: BoxShape.circle,
                         ),
                         todayDecoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.2),
+                          color: Colors.blue.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
                         disabledTextStyle: TextStyle(color: Colors.grey.shade400),
@@ -387,7 +387,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                       children: (tempSelected.toList()..sort((a, b) => a.compareTo(b)))
                           .map((d) => Chip(
                                 label: Text(DateFormat('yyyy.MM.dd').format(d)),
-                                backgroundColor: AppColors.primary.withOpacity(0.12),
+                                backgroundColor: AppColors.primary.withValues(alpha: 0.12),
                                 labelStyle: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
                                 onDeleted: () => setModalState(() => tempSelected.remove(d)),
                               ))
@@ -618,7 +618,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                           children: (_selectedDates.toList()..sort((a, b) => a.compareTo(b)))
                               .map((d) => Chip(
                                     label: Text(DateFormat('yyyy.MM.dd').format(d)),
-                                    backgroundColor: AppColors.primary.withOpacity(0.12),
+                                    backgroundColor: AppColors.primary.withValues(alpha: 0.12),
                                     labelStyle: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
                                     onDeleted: () => setState(() => _selectedDates.remove(d)),
                                   ))
@@ -898,7 +898,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: _bannerColor.withOpacity(0.18),
+            color: _bannerColor.withValues(alpha: 0.18),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),

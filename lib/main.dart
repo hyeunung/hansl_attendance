@@ -5,14 +5,14 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash/splash_screen.dart';
-import 'screens/main_tab.dart';
 import 'package:provider/provider.dart';
 import 'providers/user_provider.dart';
 import 'providers/leave_provider.dart';
 import 'providers/font_provider.dart';
-import 'theme/app_colors.dart';
 import 'providers/attendance_provider.dart';
 import 'services/notification_service.dart';
+import 'services/cache_service.dart';\nimport 'services/performance_initialization.dart';
+import 'utils/asset_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,15 +45,67 @@ void main() async {
     // Firebase 알림 서비스 초기화
     await NotificationService.initialize();
     
-  } catch (e, stackTrace) {
+    // 성능 최적화 서비스 초기화 (캐시, 타이머, 비동기 작업 관리)
+    await PerformanceInitialization.initialize();
+    
+  } catch (e) {
     // 오류가 발생해도 앱은 실행되도록 함
   }
   
   runApp(const HanslApp());
 }
 
-class HanslApp extends StatelessWidget {
+class HanslApp extends StatefulWidget {
   const HanslApp({super.key});
+
+  @override
+  State<HanslApp> createState() => _HanslAppState();
+}
+
+class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    
+    // Initialize asset manager after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AssetManager.initialize(context);
+      
+      // Enable performance monitoring in debug mode
+      if (PerformanceInitialization.isInitialized) {
+        PerformanceInitialization.enablePerformanceMonitoring();
+      }
+    });
+  }
+  
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    // Dispose performance services when app shuts down
+    PerformanceInitialization.dispose();
+    super.dispose();
+  }
+  
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    if (PerformanceInitialization.isInitialized) {
+      switch (state) {
+        case AppLifecycleState.paused:
+          // App goes to background - perform maintenance
+          PerformanceInitialization.performMaintenance();
+          break;
+        case AppLifecycleState.resumed:
+          // App comes to foreground - log current stats
+          PerformanceInitialization.logPerformanceStats();
+          break;
+        default:
+          break;
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

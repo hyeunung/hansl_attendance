@@ -81,7 +81,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withValues(alpha: 0.08),
                       blurRadius: ResponsiveUtils.spacing(context, 3),
                       offset: Offset(0, ResponsiveUtils.spacing(context, 1)),
                     ),
@@ -165,7 +165,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                           height: ResponsiveUtils.spacing(context, 4),
                                           margin: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 2)),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF34C759).withOpacity(0.8),
+                                            color: const Color(0xFF34C759).withValues(alpha: 0.8),
                                             borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 2)),
                                           ),
                                         ),
@@ -175,7 +175,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                           height: ResponsiveUtils.spacing(context, 4),
                                           margin: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 2)),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFFFF9500).withOpacity(0.8),
+                                            color: const Color(0xFF1976D2).withValues(alpha: 0.8),
                                             borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 2)),
                                           ),
                                         ),
@@ -240,7 +240,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: ResponsiveUtils.spacing(context, 3),
                         offset: Offset(0, ResponsiveUtils.spacing(context, 1)),
                       ),
@@ -335,6 +335,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
         break;
       case 'biztrip':
         chipLabel = '출장';
+        // 출장은 파란색으로 변경
+        if (e['status'] == 'approved') {
+          chipColor = const Color(0xFFE3F2FD);
+          chipTextColor = const Color(0xFF1976D2);
+        }
         break;
       default:
         chipLabel = e['type'];
@@ -342,6 +347,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
     // 상태 라벨 추가
     if (e['status'] == 'pending') chipLabel += ' (대기)';
     if (e['status'] == 'rejected') chipLabel += ' (반려)';
+    
+    // reason 필터링: CSV 데이터 이관 메시지는 표시하지 않음
+    String? displayReason;
+    if (e['reason'] != null && 
+        !e['reason'].contains('CSV 데이터 이관') && 
+        !e['reason'].contains('상반기 연차 사용')) {
+      displayReason = e['reason'];
+    }
+    
     return Container(
       padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 12)),
       decoration: const BoxDecoration(
@@ -399,15 +413,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
             ),
           ],
-          if (e['reason'] != null) ...[
+          if (displayReason != null) ...[
             SizedBox(height: ResponsiveUtils.spacing(context, 2)),
             Text(
-              e['reason'],
+              displayReason,
               style: ResponsiveUtils.getTextStyle(
                 context,
                 color: const Color(0xFF8E8E93),
                 fontSize: 12,
-              ).copyWith(fontStyle: FontStyle.italic),
+              ),
             ),
           ],
         ],

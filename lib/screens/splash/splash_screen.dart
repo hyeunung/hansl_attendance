@@ -39,7 +39,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _checkAuthStatus() async {
-    await Future.delayed(const Duration(seconds: 2)); // 스플래시 표시 시간
+    await Future.delayed(const Duration(milliseconds: 1500)); // 스플래시 표시 시간 1.5초
     
     if (_isNavigating || !mounted) return;
     

@@ -9,6 +9,8 @@ import '../../theme/app_shadows.dart';
 import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
 import '../auth/login_screen.dart';
+import '../../services/timer_manager.dart';
+import '../../services/ui_optimization_service.dart';
 
 class AttendanceScreen extends StatelessWidget {
   const AttendanceScreen({super.key});
@@ -40,33 +42,90 @@ class _AttendanceScreenBody extends StatefulWidget {
   State<_AttendanceScreenBody> createState() => _AttendanceScreenBodyState();
 }
 
-class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
+class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> 
+    with TimerManagementMixin, UIOptimizationMixin {
   String? _bannerMessage;
   Color _bannerColor = const Color(0xFF357AE8);
-  Timer? _timer;
+  
+  // UI update frequency optimization
+  static const Duration _uiUpdateInterval = Duration(seconds: 5); // Reduced from 1 second
+  bool _shouldUpdateUI = true;
 
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() {});
-    });
+    _startOptimizedUITimer();
+  }
+  
+  void _startOptimizedUITimer() {
+    // Use optimized timer with reduced frequency
+    createScopedPeriodicTimer(
+      key: 'ui_update',
+      interval: _uiUpdateInterval,
+      callback: (timer) {
+        if (mounted && _shouldUpdateUI) {
+          setState(() {
+            // Only update if there are active working states that need time updates
+            final provider = Provider.of<AttendanceProvider>(context, listen: false);
+            _shouldUpdateUI = provider.status == AttendanceStatus.working || 
+                            provider.status == AttendanceStatus.late;
+          });
+        }
+      },
+    );
+    
+    // Add a fast timer for critical UI updates (only when actively working)
+    _scheduleSmartUIUpdates();
+  }
+  
+  void _scheduleSmartUIUpdates() {
+    // Smart UI updates that adjust frequency based on user activity
+    createScopedPeriodicTimer(
+      key: 'smart_ui_update',
+      interval: const Duration(minutes: 1),
+      callback: (timer) {
+        if (!mounted) return;
+        
+        final provider = Provider.of<AttendanceProvider>(context, listen: false);
+        
+        // Increase frequency when actively working, decrease when idle
+        if (provider.status == AttendanceStatus.working || 
+            provider.status == AttendanceStatus.late) {
+          _shouldUpdateUI = true;
+          // Trigger immediate update for work duration display
+          if (mounted) setState(() {});
+        } else {
+          _shouldUpdateUI = false;
+        }
+      },
+    );
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    // Dispose all scoped timers
+    disposeScopedTimers();
     super.dispose();
   }
 
   void _showBanner(String msg, {bool error = false}) {
-    setState(() {
+    // Use optimized setState with throttling
+    optimizedSetState(() {
       _bannerMessage = msg;
       _bannerColor = error ? Colors.red : const Color(0xFF357AE8);
     });
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) setState(() => _bannerMessage = null);
-    });
+    
+    // Use scoped timer for banner auto-hide
+    createScopedTimer(
+      key: 'banner_hide',
+      delay: const Duration(seconds: 2),
+      callback: () {
+        if (mounted) {
+          optimizedSetState(() => _bannerMessage = null);
+        }
+      },
+      forceRestart: true, // Always restart timer for new banners
+    );
   }
 
   Widget _buildBanner() {
@@ -116,19 +175,22 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
   Color _getStatusShadowColor(String statusText) {
     switch (statusText) {
       case '지각':
-        return const Color(0xFFEE5A24).withOpacity(0.3);
+        return const Color(0xFFEE5A24).withValues(alpha: 0.3);
       case '정상 출근':
-        return const Color(0xFF0D4F8C).withOpacity(0.3);
+        return const Color(0xFF0D4F8C).withValues(alpha: 0.3);
       case '퇴근':
-        return const Color(0xFF45A049).withOpacity(0.3);
+        return const Color(0xFF45A049).withValues(alpha: 0.3);
       default:
-        return const Color(0xFF757575).withOpacity(0.3);
+        return const Color(0xFF757575).withValues(alpha: 0.3);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AttendanceProvider>(
+    return OptimizedConsumer<AttendanceProvider>(
+      componentKey: 'attendance_main',
+      throttleDuration: const Duration(milliseconds: 100), // Smooth but not excessive
+      shouldRebuild: (provider) => !provider.isLoading, // Only rebuild when not loading
       builder: (context, provider, _) {
         return Scaffold(
           backgroundColor: const Color(0xFFF8F9FB),
@@ -142,23 +204,28 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
               ),
             ),
                           title: Text(
-                'HANSL 근무 기록',
+                '근무 기록',
                 style: AppTextStyles.appBarTitle(context),
               ),
             actions: [
               Padding(
-                                  padding: EdgeInsets.only(right: ResponsiveUtils.spacing(context, 20)),
-                child: Consumer<UserProvider>(
+                padding: EdgeInsets.only(right: ResponsiveUtils.spacing(context, 20)),
+                child: OptimizedConsumer<UserProvider>(
+                  componentKey: 'user_name_header',
+                  throttleDuration: const Duration(seconds: 1), // Name rarely changes
+                  shouldRebuild: (provider) => provider.name != null,
                   builder: (context, userProvider, _) {
                     final name = userProvider.name ?? '-';
-                    return Center(
-                      child: Text(
-                        name,
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 16,
-                          color: Colors.white,
+                    return RepaintBoundary(
+                      child: Center(
+                        child: Text(
+                          name,
+                          style: ResponsiveUtils.getTextStyle(
+                            context,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 16,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     );
@@ -267,7 +334,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                                     boxShadow: [
                                       if (provider.status == AttendanceStatus.beforeWork)
                                         BoxShadow(
-                                          color: Colors.black.withOpacity(0.32),
+                                          color: Colors.black.withValues(alpha: 0.32),
                                           blurRadius: ResponsiveUtils.spacing(context, 7),
                                           offset: Offset(0, ResponsiveUtils.spacing(context, 2)),
                                         ),
@@ -305,7 +372,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> {
                                     boxShadow: [
                                       if (provider.canClockOut)
                                         BoxShadow(
-                                          color: Colors.black.withOpacity(0.32),
+                                          color: Colors.black.withValues(alpha: 0.32),
                                           blurRadius: ResponsiveUtils.spacing(context, 7),
                                           offset: Offset(0, ResponsiveUtils.spacing(context, 2)),
                                         ),

@@ -29,39 +29,27 @@ async function getAdminSlackIds(supabase: any): Promise<string[]> {
   try {
     console.log('📊 관리자 Slack ID 조회 시작... (근태앱 문의)')
     
-    // 관리자들 조회 (Slack ID가 있는)
-    const { data: allEmployees, error } = await supabase
+    // attendance_role에 'admin'이 포함된 사용자들 조회
+    const { data: admins, error } = await supabase
       .from('employees')
-      .select('email, name, slack_id, attendance_role')
+      .select('slack_id, name')
       .not('slack_id', 'is', null)
+      .filter('attendance_role', 'cs', '{"admin"}')
     
     if (error) {
-      console.error('Error fetching employees:', error)
+      console.error('Error fetching admin slack IDs:', error)
       return []
     }
 
-    const slackIds: string[] = []
-    const processedEmails = new Set<string>()
-
-    // Admin 필터링
-    const adminList = allEmployees.filter((emp: any) => {
-      const attendanceRole = emp.attendance_role
-      if (attendanceRole && Array.isArray(attendanceRole)) {
-        return attendanceRole.includes('admin')
-      }
-      return false
-    })
-
-    // Admin Slack ID 추가
-    for (const admin of adminList) {
-      if (admin.slack_id && !processedEmails.has(admin.email)) {
-        slackIds.push(admin.slack_id)
-        processedEmails.add(admin.email)
-        console.log(`📧 Admin: ${admin.name} (${admin.email})`)
-      }
+    if (!admins || admins.length === 0) {
+      console.log('⚠️ admin 권한을 가진 사용자가 없습니다.')
+      return []
     }
 
-    console.log(`📊 총 ${slackIds.length}명의 관리자에게 문의 메시지 전송 예정`)
+    console.log('찾은 admin 사용자:', admins)
+    const slackIds = admins.map((admin: any) => admin.slack_id)
+    console.log(`📊 총 ${slackIds.length}명의 관리자에게 문의 메시지 전송 예정: ${slackIds.join(', ')}`)
+    
     return slackIds
 
   } catch (error) {
@@ -119,14 +107,22 @@ async function sendSlackMessage(webhookUrl: string, message: any): Promise<boole
 }
 
 function buildInquirySlackMessage(message: string, userEmail: string, userName: string, userSlackId?: string): any {
-  const timestamp = new Date()
-  const formattedTime = `${timestamp.getFullYear()}-${(timestamp.getMonth() + 1).toString().padStart(2, '0')}-${timestamp.getDate().toString().padStart(2, '0')} ${timestamp.getHours().toString().padStart(2, '0')}:${timestamp.getMinutes().toString().padStart(2, '0')}`
+  // 한국 시간(KST, UTC+9)으로 변환
+  const now = new Date()
+  // toLocaleString을 사용하여 한국 시간대로 변환
+  const kstDate = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Seoul"}))
+  const year = kstDate.getFullYear()
+  const month = (kstDate.getMonth() + 1).toString().padStart(2, '0')
+  const day = kstDate.getDate().toString().padStart(2, '0')
+  const hours = kstDate.getHours().toString().padStart(2, '0')
+  const minutes = kstDate.getMinutes().toString().padStart(2, '0')
+  const formattedTime = `${year}-${month}-${day} ${hours}:${minutes} (KST)`
 
   const userInfo = userSlackId ? `${userName} (<@${userSlackId}>)` : userName
   
   return {
-    username: 'HANSL 근태앱 문의 시스템',
-    icon_emoji: ':question:',
+    username: `${userName} (HANSL 근태앱)`,
+    icon_emoji: ':raising_hand:',
     blocks: [
       {
         type: 'header',
@@ -190,11 +186,31 @@ Deno.serve(async (req: Request) => {
     const slackWebhookUrl = Deno.env.get('SLACK_WEBHOOK_URL')
     
     if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Missing Supabase environment variables')
+      console.error('❌ Supabase 환경변수가 설정되지 않았습니다')
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: 'Supabase environment variables not configured',
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500 
+        }
+      )
     }
 
     if (!slackWebhookUrl || slackWebhookUrl === 'YOUR_SLACK_WEBHOOK_URL_HERE') {
-      throw new Error('Slack webhook URL not configured')
+      console.error('❌ Slack Webhook URL이 설정되지 않았습니다')
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: 'Slack webhook URL not configured. Please contact administrator.',
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      )
     }
 
     // Supabase 클라이언트 초기화
@@ -250,34 +266,28 @@ Deno.serve(async (req: Request) => {
     const messageContent = inquiry_content || message
     const slackMessage = buildInquirySlackMessage(messageContent, user_email, user_name, userSlackId || undefined)
 
-    // 각 관리자에게 메시지 전송
-    let successCount = 0
-    let failureCount = 0
-
-    for (const adminSlackId of adminSlackIds) {
-      // DM으로 전송
-      const messageWithChannel = {
-        ...slackMessage,
-        channel: `@${adminSlackId}`
-      }
-      
-      const success = await sendSlackMessage(slackWebhookUrl, messageWithChannel)
-      if (success) {
-        successCount++
-      } else {
-        failureCount++
-      }
+    // Webhook으로 채널에 메시지 전송
+    // 관리자들을 멘션하여 알림
+    const adminMentions = adminSlackIds.map(id => `<@${id}>`).join(' ')
+    
+    // text 필드 추가 (Slack 알림에 표시됨)
+    const channelMessage = {
+      ...slackMessage,
+      text: `🆘 새로운 문의가 접수되었습니다! ${adminMentions}`
     }
+    
+    console.log('📮 Slack 채널로 문의 메시지 전송 중...')
+    const success = await sendSlackMessage(slackWebhookUrl, channelMessage)
 
-    console.log(`📊 근태앱 문의 메시지 전송 완료: ${successCount}성공 / ${failureCount}실패 / ${adminSlackIds.length}총`)
+    console.log(`📊 근태앱 문의 메시지 전송 ${success ? '성공' : '실패'} - ${adminSlackIds.length}명의 관리자에게 멘션`)
 
     return new Response(
       JSON.stringify({
-        success: true,
-        message: `Inquiry sent to ${successCount} admins: ${successCount} success, ${failureCount} failure`,
-        total: adminSlackIds.length,
-        success_count: successCount,
-        failure_count: failureCount,
+        success: success,
+        message: success 
+          ? `Inquiry sent successfully. ${adminSlackIds.length} admins mentioned.`
+          : 'Failed to send inquiry to Slack channel',
+        mentioned_admins: adminSlackIds.length,
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

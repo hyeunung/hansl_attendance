@@ -1,7 +1,7 @@
 // 앱에서 사용하는 문자열 상수들을 모아놓는 클래스
 class AppStrings {
   // 기본 문자열
-  static const String appName = '한슬 출근';
+  static const String appName = 'HANSL';
   static const String loginTitle = '로그인';
   static const String emailHint = '이메일';
   static const String passwordHint = '비밀번호';

@@ -9,6 +9,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
+import '../../services/ui_optimization_service.dart';
 
 class LeaveStatusScreen extends StatefulWidget {
   const LeaveStatusScreen({super.key});
@@ -17,7 +18,7 @@ class LeaveStatusScreen extends StatefulWidget {
   State<LeaveStatusScreen> createState() => _LeaveStatusScreenState();
 }
 
-class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
+class _LeaveStatusScreenState extends State<LeaveStatusScreen> with UIOptimizationMixin {
   int _selectedTab = 0; // 0: 연차, 1: 출장
   final double rValue = 14;
 
@@ -55,7 +56,10 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
             style: AppTextStyles.appBarTitle(context),
           ),
       ),
-      body: Consumer<LeaveProvider>(
+      body: OptimizedConsumer<LeaveProvider>(
+        componentKey: 'leave_status_main',
+        throttleDuration: const Duration(milliseconds: 200), // Moderate throttling for leave data
+        shouldRebuild: (provider) => !provider.isLoading && provider.error == null,
         builder: (context, provider, _) {
           print('myLeaves: ' + provider.myLeaves.toString());
           if (provider.isLoading) {
@@ -88,7 +92,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
                         Container(
                           padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 6)),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF007AFF).withOpacity(0.1),
+                            color: const Color(0xFF007AFF).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                           ),
                           child: Icon(
@@ -432,7 +436,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
             borderRadius: BorderRadius.circular(r),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.36),
+                color: Colors.black.withValues(alpha: 0.36),
                 blurRadius: ResponsiveUtils.spacing(context, 6),
                 offset: Offset(0, ResponsiveUtils.spacing(context, 2)),
               ),
@@ -530,7 +534,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.13),
+                  color: statusColor.withValues(alpha: 0.13),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -617,7 +621,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
         label,
         style: ResponsiveUtils.getTextStyle(
           context,
-          color: textColor.withOpacity(0.8),
+          color: textColor.withValues(alpha: 0.8),
           fontWeight: FontWeight.w700,
           fontSize: 15,
           letterSpacing: 0.1,

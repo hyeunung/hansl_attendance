@@ -19,18 +19,22 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     final body = message.notification?.body ?? '';
     final type = message.data['type'] ?? 'unknown';
     
-    print('📨 백그라운드 메시지 수신:');
-    print('   메시지 ID: ${message.messageId}');
-    print('   제목: $title');
-    print('   내용: $body');
-    print('   타입: $type');
-    print('   데이터: ${message.data}');
-    print('   수신 시간: ${DateTime.now().toIso8601String()}');
+    if (kDebugMode) {
+      print('📨 백그라운드 메시지 수신:');
+      print('   메시지 ID: ${message.messageId}');
+      print('   제목: $title');
+      print('   내용: $body');
+      print('   타입: $type');
+      print('   데이터: ${message.data}');
+      print('   수신 시간: ${DateTime.now().toIso8601String()}');
+    }
     
     // TODO: 백그라운드에서 필요한 추가 처리 (예: 로컬 DB 업데이트)
     
   } catch (e) {
-    print('❌ 백그라운드 메시지 처리 실패: $e');
+    if (kDebugMode) {
+      print('❌ 백그라운드 메시지 처리 실패: $e');
+    }
   }
 }
 
@@ -59,9 +63,13 @@ class NotificationService {
       // 메시지 리스너 설정
       _setupMessageListeners();
       
-      print('🔔 Firebase 알림 서비스 초기화 완료');
+      if (kDebugMode) {
+        print('🔔 Firebase 알림 서비스 초기화 완료');
+      }
     } catch (e) {
-      print('❌ Firebase 알림 서비스 초기화 실패: $e');
+      if (kDebugMode) {
+        print('❌ Firebase 알림 서비스 초기화 실패: $e');
+      }
     }
   }
 
@@ -78,11 +86,17 @@ class NotificationService {
     );
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      print('✅ 알림 권한 허용됨');
+      if (kDebugMode) {
+        print('✅ 알림 권한 허용됨');
+      }
     } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
-      print('⚠️ 임시 알림 권한 허용됨');
+      if (kDebugMode) {
+        print('⚠️ 임시 알림 권한 허용됨');
+      }
     } else {
-      print('❌ 알림 권한 거부됨');
+      if (kDebugMode) {
+        print('❌ 알림 권한 거부됨');
+      }
     }
   }
 
@@ -91,7 +105,9 @@ class NotificationService {
     try {
       // iOS에서 APNS 토큰 처리 (필수)
       if (Platform.isIOS) {
-        print('📱 iOS 플랫폼 감지 - APNS 토큰 확인...');
+        if (kDebugMode) {
+          print('📱 iOS 플랫폼 감지 - APNS 토큰 확인...');
+        }
         
         try {
           // APNS 토큰 요청 (더 긴 타임아웃)
@@ -99,27 +115,37 @@ class NotificationService {
               .timeout(const Duration(seconds: 10), onTimeout: () => null);
           
           if (apnsToken != null) {
-            print('✅ APNS 토큰 설정됨: ${apnsToken.substring(0, 20)}...');
-            print('✅ iOS 푸시 알림 사용 가능');
+            if (kDebugMode) {
+              print('✅ APNS 토큰 설정됨: ${apnsToken.substring(0, 20)}...');
+              print('✅ iOS 푸시 알림 사용 가능');
+            }
           } else {
-            print('⚠️ APNS 토큰 없음');
-            print('📱 실제 iPhone에서 테스트하거나 알림 권한을 확인하세요');
-            print('📱 시뮬레이터에서는 푸시 알림을 받을 수 없습니다');
+            if (kDebugMode) {
+              print('⚠️ APNS 토큰 없음');
+              print('📱 실제 iPhone에서 테스트하거나 알림 권한을 확인하세요');
+              print('📱 시뮬레이터에서는 푸시 알림을 받을 수 없습니다');
+            }
             
             // 실제 기기에서 추가 시도
             if (!kIsWeb) {
-              print('🔄 APNS 토큰 추가 시도...');
+              if (kDebugMode) {
+                print('🔄 APNS 토큰 추가 시도...');
+              }
               await Future.delayed(const Duration(seconds: 2));
               apnsToken = await _messaging.getAPNSToken();
               
               if (apnsToken != null) {
-                print('✅ APNS 토큰 지연 생성됨: ${apnsToken.substring(0, 20)}...');
+                if (kDebugMode) {
+                  print('✅ APNS 토큰 지연 생성됨: ${apnsToken.substring(0, 20)}...');
+                }
               }
             }
           }
         } catch (apnsError) {
-          print('❌ APNS 토큰 오류: $apnsError');
-          print('📱 iOS 푸시 알림이 작동하지 않을 수 있습니다');
+          if (kDebugMode) {
+            print('❌ APNS 토큰 오류: $apnsError');
+            print('📱 iOS 푸시 알림이 작동하지 않을 수 있습니다');
+          }
         }
       }
       
@@ -128,7 +154,9 @@ class NotificationService {
         _fcmToken = await _messaging.getToken();
         
         if (_fcmToken != null) {
-          print('🔑 FCM 토큰 성공: $_fcmToken');
+          if (kDebugMode) {
+            print('🔑 FCM 토큰 성공: $_fcmToken');
+          }
           
           // SharedPreferences에 토큰 저장
           final prefs = await SharedPreferences.getInstance();
@@ -137,23 +165,31 @@ class NotificationService {
           // 서버에 토큰 전송 (Supabase에 저장)
           await _sendTokenToServer(_fcmToken!);
         } else {
-          print('❌ FCM 토큰이 null - 재시도');
+          if (kDebugMode) {
+            print('❌ FCM 토큰이 null - 재시도');
+          }
           await _retryGetToken();
         }
       } catch (fcmError) {
-        print('❌ FCM 토큰 오류: $fcmError - 재시도');
+        if (kDebugMode) {
+          print('❌ FCM 토큰 오류: $fcmError - 재시도');
+        }
         await _retryGetToken();
       }
       
     } catch (e) {
-      print('❌ 토큰 가져오기 전체 실패: $e');
+      if (kDebugMode) {
+        print('❌ 토큰 가져오기 전체 실패: $e');
+      }
       await _retryGetToken();
     }
   }
   
   /// FCM 토큰 가져오기 재시도
   static Future<void> _retryGetToken() async {
-    print('🔄 FCM 토큰 재시도 시작...');
+    if (kDebugMode) {
+      print('🔄 FCM 토큰 재시도 시작...');
+    }
     
     try {
       // 3초 대기 후 재시도
@@ -162,18 +198,24 @@ class NotificationService {
       _fcmToken = await _messaging.getToken();
       
       if (_fcmToken != null) {
-        print('✅ FCM 토큰 재시도 성공: $_fcmToken');
+        if (kDebugMode) {
+          print('✅ FCM 토큰 재시도 성공: $_fcmToken');
+        }
         
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('fcm_token', _fcmToken!);
         await _sendTokenToServer(_fcmToken!);
       } else {
-        print('❌ FCM 토큰 재시도도 null - 토큰 갱신 대기');
+        if (kDebugMode) {
+          print('❌ FCM 토큰 재시도도 null - 토큰 갱신 대기');
+        }
         // onTokenRefresh 리스너는 이미 _setupMessageListeners에서 설정됨
       }
     } catch (retryError) {
-      print('❌ FCM 토큰 재시도 실패: $retryError');
-      print('📝 토큰은 나중에 onTokenRefresh에서 처리됩니다.');
+      if (kDebugMode) {
+        print('❌ FCM 토큰 재시도 실패: $retryError');
+        print('📝 토큰은 나중에 onTokenRefresh에서 처리됩니다.');
+      }
     }
   }
 
@@ -190,19 +232,25 @@ class NotificationService {
   static void _setupMessageListeners() {
     // 포그라운드에서 메시지 수신
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print('📱 포그라운드 메시지 수신: ${message.notification?.title}');
+      if (kDebugMode) {
+        print('📱 포그라운드 메시지 수신: ${message.notification?.title}');
+      }
       _showLocalNotification(message);
     });
 
     // 앱이 백그라운드에서 열릴 때 (알림 탭)
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      print('🔔 알림 탭으로 앱 열림: ${message.notification?.title}');
+      if (kDebugMode) {
+        print('🔔 알림 탭으로 앱 열림: ${message.notification?.title}');
+      }
       _handleNotificationTap(message);
     });
 
     // 토큰 갱신 리스너
     _messaging.onTokenRefresh.listen((String token) {
-      print('🔄 FCM 토큰 갱신: $token');
+      if (kDebugMode) {
+        print('🔄 FCM 토큰 갱신: $token');
+      }
       _fcmToken = token;
       
       // SharedPreferences에 새로운 토큰 저장
@@ -221,11 +269,13 @@ class NotificationService {
       final body = message.notification?.body ?? '';
       final type = message.data['type'] ?? 'unknown';
       
-      print('📢 포그라운드 알림 표시:');
-      print('   제목: $title');
-      print('   내용: $body');
-      print('   타입: $type');
-      print('   데이터: ${message.data}');
+      if (kDebugMode) {
+        print('📢 포그라운드 알림 표시:');
+        print('   제목: $title');
+        print('   내용: $body');
+        print('   타입: $type');
+        print('   데이터: ${message.data}');
+      }
       
       // 알림 수신 이벤트 로깅
       _logNotificationEvent('received_foreground', message);
@@ -240,13 +290,17 @@ class NotificationService {
       // );
       
     } catch (e) {
-      print('❌ 로컬 알림 표시 실패: $e');
+      if (kDebugMode) {
+        print('❌ 로컬 알림 표시 실패: $e');
+      }
     }
   }
 
   /// 알림 탭 처리
   static void _handleNotificationTap(RemoteMessage message) {
-    print('👆 알림 탭 처리: ${message.data}');
+    if (kDebugMode) {
+      print('👆 알림 탭 처리: ${message.data}');
+    }
     
     try {
       // 알림 타입에 따라 적절한 화면으로 이동
@@ -256,7 +310,9 @@ class NotificationService {
       
       final context = navigatorKey.currentContext;
       if (context == null) {
-        print('❌ NavigatorKey context가 null입니다.');
+        if (kDebugMode) {
+          print('❌ NavigatorKey context가 null입니다.');
+        }
         return;
       }
       
@@ -264,9 +320,11 @@ class NotificationService {
         case 'leave_request':
         case 'business_trip':
           // 연차/출장 신청 알림 - 홈 화면으로 이동 (사용자가 승인 탭으로 직접 이동)
-          print('📅 ${type == 'business_trip' ? '출장' : '연차'} 신청 알림 - 홈 화면으로 이동');
-          print('   신청자: $requesterName ($requesterEmail)');
-          print('   사용자가 직접 승인 탭으로 이동해주세요.');
+          if (kDebugMode) {
+            print('📅 ${type == 'business_trip' ? '출장' : '연차'} 신청 알림 - 홈 화면으로 이동');
+            print('   신청자: $requesterName ($requesterEmail)');
+            print('   사용자가 직접 승인 탭으로 이동해주세요.');
+          }
           
           // MainTab으로 이동하고 홈 탭(index 0) 선택
           Navigator.of(context).pushAndRemoveUntil(
@@ -279,7 +337,9 @@ class NotificationService {
           
         case 'leave_result':
           // 승인/반려 결과 알림 - 연차 현황 화면으로 이동
-          print('📋 승인/반려 결과 알림 - 연차 현황 화면으로 이동');
+          if (kDebugMode) {
+            print('📋 승인/반려 결과 알림 - 연차 현황 화면으로 이동');
+          }
           
           // MainTab으로 이동하고 연차 탭(index 1) 선택
           Navigator.of(context).pushAndRemoveUntil(
@@ -292,7 +352,9 @@ class NotificationService {
           
         default:
           // 기본 홈 화면으로 이동
-          print('🏠 기본 홈 화면으로 이동 (알림 타입: $type)');
+          if (kDebugMode) {
+            print('🏠 기본 홈 화면으로 이동 (알림 타입: $type)');
+          }
           
           // MainTab으로 이동하고 홈 탭(index 0) 선택
           Navigator.of(context).pushAndRemoveUntil(
@@ -307,7 +369,9 @@ class NotificationService {
       _logNotificationEvent('tap', message);
       
     } catch (e) {
-      print('❌ 알림 탭 처리 중 오류: $e');
+      if (kDebugMode) {
+        print('❌ 알림 탭 처리 중 오류: $e');
+      }
     }
   }
 
@@ -321,10 +385,14 @@ class NotificationService {
         'message_id': message.messageId,
         'title': message.notification?.title,
       };
-      print('📊 알림 이벤트 로그: $eventData');
+      if (kDebugMode) {
+        print('📊 알림 이벤트 로그: $eventData');
+      }
       // TODO: 실제 분석 서버로 로그 전송 구현
     } catch (e) {
-      print('❌ 알림 이벤트 로깅 실패: $e');
+      if (kDebugMode) {
+        print('❌ 알림 이벤트 로깅 실패: $e');
+      }
     }
   }
 
@@ -333,11 +401,15 @@ class NotificationService {
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) {
-        print('❌ 로그인된 사용자가 없어서 토큰 저장 불가');
+        if (kDebugMode) {
+          print('❌ 로그인된 사용자가 없어서 토큰 저장 불가');
+        }
         return;
       }
 
-      print('📤 서버에 토큰 전송: $token');
+      if (kDebugMode) {
+        print('📤 서버에 토큰 전송: $token');
+      }
       
       // Supabase에 FCM 토큰 저장
       await Supabase.instance.client
@@ -345,10 +417,14 @@ class NotificationService {
           .update({'fcm_token': token})
           .eq('email', user.email!);
       
-      print('✅ FCM 토큰 저장 완료: ${user.email}');
+      if (kDebugMode) {
+        print('✅ FCM 토큰 저장 완료: ${user.email}');
+      }
       
     } catch (e) {
-      print('❌ 서버에 토큰 전송 실패: $e');
+      if (kDebugMode) {
+        print('❌ 서버에 토큰 전송 실패: $e');
+      }
     }
   }
 
@@ -378,7 +454,9 @@ class NotificationService {
         'is_manager_request': isManagerRequest,
       };
       
-      print('📮 Edge Function 호출: $type - $title');
+      if (kDebugMode) {
+        print('📮 Edge Function 호출: $type - $title');
+      }
       
       final response = await http.post(
         Uri.parse(functionUrl),
@@ -392,18 +470,26 @@ class NotificationService {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         if (responseData['success'] == true) {
-          print('✅ Edge Function 알림 전송 성공: ${responseData['message']}');
+          if (kDebugMode) {
+            print('✅ Edge Function 알림 전송 성공: ${responseData['message']}');
+          }
           return true;
         } else {
-          print('❌ Edge Function 알림 전송 실패: ${responseData['message']}');
+          if (kDebugMode) {
+            print('❌ Edge Function 알림 전송 실패: ${responseData['message']}');
+          }
           return false;
         }
       } else {
-        print('❌ Edge Function 호출 실패: ${response.statusCode} - ${response.body}');
+        if (kDebugMode) {
+          print('❌ Edge Function 호출 실패: ${response.statusCode} - ${response.body}');
+        }
         return false;
       }
     } catch (e) {
-      print('❌ Edge Function 호출 중 오류: $e');
+      if (kDebugMode) {
+        print('❌ Edge Function 호출 중 오류: $e');
+      }
       return false;
     }
   }
@@ -418,7 +504,9 @@ class NotificationService {
     bool isManagerRequest = false,
   }) async {
     try {
-      print('📮 ${isManagerRequest ? 'Admin' : '부서 관리자'}에게 알림 전송 시작: $title');
+      if (kDebugMode) {
+        print('📮 ${isManagerRequest ? 'Admin' : '부서 관리자'}에게 알림 전송 시작: $title');
+      }
       
       await _callFCMEdgeFunction(
         type: 'admin',
@@ -431,7 +519,9 @@ class NotificationService {
       );
       
     } catch (e) {
-      print('❌ 알림 전송 실패: $e');
+      if (kDebugMode) {
+        print('❌ 알림 전송 실패: $e');
+      }
       rethrow;
     }
   }
@@ -444,7 +534,9 @@ class NotificationService {
     required Map<String, String> data,
   }) async {
     try {
-      print('📮 $userEmail 사용자에게 알림 전송 시작: $title');
+      if (kDebugMode) {
+        print('📮 $userEmail 사용자에게 알림 전송 시작: $title');
+      }
       
       await _callFCMEdgeFunction(
         type: 'user',
@@ -455,7 +547,9 @@ class NotificationService {
       );
       
     } catch (e) {
-      print('❌ 사용자 알림 전송 실패: $e');
+      if (kDebugMode) {
+        print('❌ 사용자 알림 전송 실패: $e');
+      }
       rethrow;
     } 
   }
@@ -473,13 +567,19 @@ class NotificationService {
   static Future<void> refreshTokenAfterLogin() async {
     try {
       if (_fcmToken != null) {
-        print('🔄 로그인 후 FCM 토큰 재저장 시작');
+        if (kDebugMode) {
+          print('🔄 로그인 후 FCM 토큰 재저장 시작');
+        }
         await _sendTokenToServer(_fcmToken!);
       } else {
-        print('⚠️ FCM 토큰이 없어서 재저장 불가');
+        if (kDebugMode) {
+          print('⚠️ FCM 토큰이 없어서 재저장 불가');
+        }
       }
     } catch (e) {
-      print('❌ 로그인 후 FCM 토큰 재저장 실패: $e');
+      if (kDebugMode) {
+        print('❌ 로그인 후 FCM 토큰 재저장 실패: $e');
+      }
     }
   }
 }

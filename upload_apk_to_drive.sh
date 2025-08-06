@@ -41,7 +41,7 @@ fi
 
 # 5. 바탕화면에도 복사 (선택사항)
 echo "🖥️  바탕화면에도 복사 중..."
-cp "build/app/outputs/flutter-apk/app-release.apk" "~/Desktop/${APK_NAME}"
+cp "build/app/outputs/flutter-apk/app-release.apk" "$HOME/Desktop/${APK_NAME}"
 
 echo ""
 echo "🎉 모든 작업 완료!"
