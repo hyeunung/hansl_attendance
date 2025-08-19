@@ -1,12 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../main_tab.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../../services/supabase_service.dart';
 import '../../providers/user_provider.dart';
 import '../../services/notification_service.dart';
 import '../../utils/responsive_utils.dart';
@@ -22,12 +21,9 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   late final TextEditingController _emailController;
   final _passwordController = TextEditingController();
-  final _nameController = TextEditingController();
-  final _passwordConfirmController = TextEditingController();
   bool _isLoading = false;
   String? _error;
   bool _autoLogin = false;
-  bool _isSignupMode = false;
   bool _saveId = false;
 
   @override
@@ -95,26 +91,52 @@ class _LoginScreenState extends State<LoginScreen> {
       // 입력된 이메일을 그대로 사용
       final email = _emailController.text.trim();
       
+      print('🔐 로그인 시도 중... 이메일: $email');
       final response = await Supabase.instance.client.auth.signInWithPassword(
         email: email,
         password: _passwordController.text,
       );
+      
+      print('📱 로그인 응답: ${response.user != null ? "성공" : "실패"}');
+      print('📱 세션 정보: ${response.session != null ? "존재함" : "없음"}');
+      
       if (response.user != null) {
         // 직원 정보 employees 테이블에서 조회
         final email = response.user!.email;
+        print('📧 응답 이메일: $email');
+        
         if (email == null) throw Exception('이메일 정보가 없습니다.');
         final employee = await Supabase.instance.client
             .from('employees')
             .select()
             .eq('email', email)
             .maybeSingle();
+            
+        print('👤 직원 정보 조회 결과: ${employee != null ? "찾음" : "없음"}');
+        if (employee != null) {
+          print('👤 직원 데이터: $employee');
+        }
+        
         if (employee == null) throw Exception('등록된 사용자 정보가 없습니다.');
-        Provider.of<UserProvider>(context, listen: false).setUser(
+        
+        // UserProvider에 사용자 정보와 직원 정보 모두 설정
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        userProvider.setUser(
           id: employee['id'],
           name: employee['name'],
           email: employee['email'],
         );
-        print('로그인 후 UserProvider id: [32m[1m[4m[7m${Provider.of<UserProvider>(context, listen: false).id}[0m');
+        userProvider.setEmployee(employee);
+        
+        print('✅ UserProvider 설정 완료');
+        print('👤 저장된 ID: ${userProvider.id}');
+        print('👤 저장된 이름: ${userProvider.name}');
+        print('👤 저장된 이메일: ${userProvider.email}');
+        
+        // 세션 지속성 확인
+        final currentSession = Supabase.instance.client.auth.currentSession;
+        print('🔒 현재 세션 상태: ${currentSession != null ? "유지됨" : "없음"}');
+        
         // 자동 로그인 설정 저장 (보안상 비밀번호는 저장하지 않음)
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('autoLogin', _autoLogin);
@@ -123,6 +145,8 @@ class _LoginScreenState extends State<LoginScreen> {
           // 이메일 주소 저장
           await prefs.setString('savedId', _emailController.text.trim());
         }
+        
+        print('✅ 로그인 완료 - 메인 화면으로 이동');
         _navigateWithTransition(const MainTab());
         NotificationService.refreshTokenAfterLogin();
       } else {
@@ -182,13 +206,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       }
                       // 입력된 이메일을 그대로 사용
                       try {
-                        await Supabase.instance.client.auth.resetPasswordForEmail(email);
+                        await Supabase.instance.client.auth.resetPasswordForEmail(
+                          email,
+                          redirectTo: 'com.hansl.attendance.v2://reset-password',
+                        );
                         setState(() {
                           sent = true;
                           errorMsg = null;
                         });
                       } catch (e) {
-                        setState(() => errorMsg = '메일 전송 실패: $e');
+                        print('Password reset error: $e');
+                        setState(() => errorMsg = '메일 전송 실패: ${e.toString()}');
                       }
                     },
                     child: const Text('메일 전송'),
@@ -214,7 +242,7 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: Platform.isAndroid ? BackButton(color: Colors.black) : null,
+        leading: kIsWeb ? null : (Platform.isAndroid ? BackButton(color: Colors.black) : null),
       ),
       body: SafeArea(
         child: Center(
