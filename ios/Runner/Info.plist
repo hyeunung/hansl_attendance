@@ -18,12 +18,12 @@
 		<string>HANSL</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
-		<key>CFBundleShortVersionString</key>
-		<string>1.2.0</string>
+			<key>CFBundleShortVersionString</key>
+	<string>1.2.5</string>
 		<key>CFBundleSignature</key>
 		<string>????</string>
-		<key>CFBundleVersion</key>
-		<string>1</string>
+			<key>CFBundleVersion</key>
+	<string>1</string>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>NSAppTransportSecurity</key>
@@ -58,14 +58,16 @@
 		<key>UIStatusBarStyle</key>
 		<string></string>
 		<key>UISupportedInterfaceOrientations</key>
-		<array>
+				<array>
 			<string>UIInterfaceOrientationPortrait</string>
 			<string>UIInterfaceOrientationLandscapeLeft</string>
 			<string>UIInterfaceOrientationLandscapeRight</string>
 		</array>
-		<key>UIStatusBarHidden</key>
-		<true/>
-		<key>UIViewControllerBasedStatusBarAppearance</key>
-		<false/>
-	</dict>
+	<key>UIStatusBarHidden</key>
+	<true/>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+</dict>
 </plist>
