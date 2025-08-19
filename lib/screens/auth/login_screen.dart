@@ -109,7 +109,7 @@ class _LoginScreenState extends State<LoginScreen> {
         final employee = await Supabase.instance.client
             .from('employees')
             .select()
-            .eq('email', email)
+            .ilike('email', email)  // 대소문자 무시하고 이메일 매칭
             .maybeSingle();
             
         print('👤 직원 정보 조회 결과: ${employee != null ? "찾음" : "없음"}');
@@ -470,8 +470,23 @@ class _SignupScreenState extends State<SignupScreen> {
       return;
     }
     try {
-      // 입력된 이메일을 그대로 사용
-      final email = _emailController.text.trim();
+      // 입력된 이메일을 소문자로 변환하고 공백 제거
+      final email = _emailController.text.trim().toLowerCase();
+      
+      // 먼저 employees 테이블에 해당 이메일이 있는지 확인
+      final existingEmployee = await Supabase.instance.client
+          .from('employees')
+          .select()
+          .ilike('email', email)  // 대소문자 무시
+          .maybeSingle();
+      
+      if (existingEmployee == null) {
+        setState(() {
+          _error = '등록된 직원이 아닙니다. 관리자에게 문의하세요.';
+          _isLoading = false;
+        });
+        return;
+      }
       
       final response = await Supabase.instance.client.auth.signUp(
         email: email,
