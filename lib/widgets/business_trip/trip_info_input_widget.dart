@@ -41,25 +41,26 @@ class TripInfoInputWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildDateSection() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [AppShadows.card],
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader('날짜', isRequired: true),
-          const SizedBox(height: 10),
-          _buildDateSelector(),
-          if (selectedDates.isNotEmpty) _buildDateChips(),
-        ],
-      ),
-    );
-  }
+  // 현재 사용되지 않는 메서드 - 필요시 활성화
+  // Widget _buildDateSection() {
+  //   return Container(
+  //     decoration: BoxDecoration(
+  //       color: Colors.white,
+  //       borderRadius: BorderRadius.circular(14),
+  //       boxShadow: [AppShadows.card],
+  //     ),
+  //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         _buildSectionHeader('날짜', isRequired: true),
+  //         const SizedBox(height: 10),
+  //         _buildDateSelector(),
+  //         if (selectedDates.isNotEmpty) _buildDateChips(),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildDateSelector() {
     return InkWell(
