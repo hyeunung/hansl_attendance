@@ -3,35 +3,35 @@ import 'package:provider/provider.dart';
 import '../../theme/app_colors.dart';
 import '../../providers/attendance_provider.dart';
 import '../../providers/user_provider.dart';
-import 'dart:async';
+import '../../providers/notification_provider.dart';
 import '../../models/attendance.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
-import '../auth/login_screen.dart';
+import '../notification/notification_center_screen.dart';
 import '../../services/timer_manager.dart';
 import '../../services/ui_optimization_service.dart';
+import '../../providers/leave_provider.dart';
 
-class AttendanceScreen extends StatelessWidget {
+class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
 
   @override
+  State<AttendanceScreen> createState() => _AttendanceScreenState();
+}
+
+class _AttendanceScreenState extends State<AttendanceScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true; // 화면 상태 유지
+
+  @override
   Widget build(BuildContext context) {
-    return Consumer<UserProvider>(
-      builder: (context, userProvider, _) {
-        final userId = userProvider.id;
-        final userName = userProvider.name;
-        if (userId == null || userId.isEmpty) {
-          // 로그인 정보가 없으면 바로 로그인 화면 반환
-          return const LoginScreen();
-        }
-        return ChangeNotifierProvider(
-          create: (_) => AttendanceProvider(
-            userId: userId,
-            userName: userName ?? '',
-          ),
-          child: _AttendanceScreenBody(),
-        );
+    super.build(context); // AutomaticKeepAliveClientMixin 필수
+
+    return Consumer<AttendanceProvider>(
+      builder: (context, attendanceProvider, _) {
+        return _AttendanceScreenBody();
       },
     );
   }
@@ -42,63 +42,17 @@ class _AttendanceScreenBody extends StatefulWidget {
   State<_AttendanceScreenBody> createState() => _AttendanceScreenBodyState();
 }
 
-class _AttendanceScreenBodyState extends State<_AttendanceScreenBody> 
+class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
     with TimerManagementMixin, UIOptimizationMixin {
   String? _bannerMessage;
   Color _bannerColor = const Color(0xFF357AE8);
-  
-  // UI update frequency optimization
-  static const Duration _uiUpdateInterval = Duration(seconds: 5); // Reduced from 1 second
-  bool _shouldUpdateUI = true;
+  bool _isClockInLoading = false;
+  bool _isClockOutLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _startOptimizedUITimer();
-  }
-  
-  void _startOptimizedUITimer() {
-    // Use optimized timer with reduced frequency
-    createScopedPeriodicTimer(
-      key: 'ui_update',
-      interval: _uiUpdateInterval,
-      callback: (timer) {
-        if (mounted && _shouldUpdateUI) {
-          setState(() {
-            // Only update if there are active working states that need time updates
-            final provider = Provider.of<AttendanceProvider>(context, listen: false);
-            _shouldUpdateUI = provider.status == AttendanceStatus.working || 
-                            provider.status == AttendanceStatus.late;
-          });
-        }
-      },
-    );
-    
-    // Add a fast timer for critical UI updates (only when actively working)
-    _scheduleSmartUIUpdates();
-  }
-  
-  void _scheduleSmartUIUpdates() {
-    // Smart UI updates that adjust frequency based on user activity
-    createScopedPeriodicTimer(
-      key: 'smart_ui_update',
-      interval: const Duration(minutes: 1),
-      callback: (timer) {
-        if (!mounted) return;
-        
-        final provider = Provider.of<AttendanceProvider>(context, listen: false);
-        
-        // Increase frequency when actively working, decrease when idle
-        if (provider.status == AttendanceStatus.working || 
-            provider.status == AttendanceStatus.late) {
-          _shouldUpdateUI = true;
-          // Trigger immediate update for work duration display
-          if (mounted) setState(() {});
-        } else {
-          _shouldUpdateUI = false;
-        }
-      },
-    );
+    // No unnecessary timers
   }
 
   @override
@@ -114,7 +68,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
       _bannerMessage = msg;
       _bannerColor = error ? Colors.red : const Color(0xFF357AE8);
     });
-    
+
     // Use scoped timer for banner auto-hide
     createScopedTimer(
       key: 'banner_hide',
@@ -133,11 +87,18 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
     return Container(
       width: double.infinity,
       color: _bannerColor,
-      padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 12)),
+      padding: EdgeInsets.symmetric(
+        vertical: ResponsiveUtils.spacing(context, 12),
+      ),
       child: Center(
         child: Text(
           _bannerMessage!,
-          style: ResponsiveUtils.getTextStyle(context, color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+          style: ResponsiveUtils.getTextStyle(
+            context,
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
         ),
       ),
     );
@@ -187,10 +148,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
 
   @override
   Widget build(BuildContext context) {
-    return OptimizedConsumer<AttendanceProvider>(
-      componentKey: 'attendance_main',
-      throttleDuration: const Duration(milliseconds: 100), // Smooth but not excessive
-      shouldRebuild: (provider) => !provider.isLoading, // Only rebuild when not loading
+    return Consumer<AttendanceProvider>(
       builder: (context, provider, _) {
         return Scaffold(
           backgroundColor: const Color(0xFFF8F9FB),
@@ -203,16 +161,75 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
                 gradient: AppColors.primaryGradient,
               ),
             ),
-                          title: Text(
-                '근무 기록',
-                style: AppTextStyles.appBarTitle(context),
-              ),
+            title: Text('근무 기록', style: AppTextStyles.appBarTitle(context)),
             actions: [
+              // 알림 아이콘과 배지
+              Consumer<NotificationProvider>(
+                builder: (context, notificationProvider, _) {
+                  return Stack(
+                    children: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.notifications_outlined,
+                          color: Colors.white,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const NotificationCenterScreen(),
+                            ),
+                          ).then((_) {
+                            // 알림 센터에서 돌아오면 알림 개수 새로고침
+                            notificationProvider.loadNotifications();
+                          });
+                        },
+                      ),
+                      if (notificationProvider.unreadCount > 0)
+                        Positioned(
+                          right: 8,
+                          top: 8,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 18,
+                              minHeight: 18,
+                            ),
+                            child: Center(
+                              child: Text(
+                                notificationProvider.unreadCount > 99
+                                    ? '99+'
+                                    : notificationProvider.unreadCount
+                                          .toString(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+              // 사용자 이름
               Padding(
-                padding: EdgeInsets.only(right: ResponsiveUtils.spacing(context, 20)),
+                padding: EdgeInsets.only(
+                  right: ResponsiveUtils.spacing(context, 20),
+                ),
                 child: OptimizedConsumer<UserProvider>(
                   componentKey: 'user_name_header',
-                  throttleDuration: const Duration(seconds: 1), // Name rarely changes
+                  throttleDuration: const Duration(
+                    seconds: 1,
+                  ), // Name rarely changes
                   shouldRebuild: (provider) => provider.name != null,
                   builder: (context, userProvider, _) {
                     final name = userProvider.name ?? '-';
@@ -234,268 +251,490 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
               ),
             ],
           ),
-          body: Column(
-            children: [
-              _buildBanner(),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: ResponsiveUtils.spacing(context, 20), 
-                    vertical: ResponsiveUtils.spacing(context, 20)
+          body: RefreshIndicator(
+            onRefresh: () async {
+              // 모든 탭의 데이터 새로고침
+              // 모든 데이터 새로고침
+              final attendanceProvider = Provider.of<AttendanceProvider>(
+                context,
+                listen: false,
+              );
+              final leaveProvider = Provider.of<LeaveProvider>(
+                context,
+                listen: false,
+              );
+              final userProvider = Provider.of<UserProvider>(
+                context,
+                listen: false,
+              );
+
+              await Future.wait([
+                attendanceProvider.forceRefreshAll(),
+                if (userProvider.email != null) ...[
+                  leaveProvider.fetchAllLeaves(forceRefresh: true),
+                  leaveProvider.fetchMyLeaves(
+                    email: userProvider.email!,
+                    forceRefresh: true,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // 현재 상태 카드
-                      Container(
-                        padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 30)),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
-                          boxShadow: [AppShadows.card],
-                          border: Border.all(color: const Color(0xFFE9ECEF)),
+                ],
+              ]);
+            },
+            child: Column(
+              children: [
+                _buildBanner(),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: ResponsiveUtils.spacing(context, 20),
+                      vertical: ResponsiveUtils.spacing(context, 20),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // 현재 상태 카드
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            vertical: ResponsiveUtils.spacing(context, 30),
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(
+                              ResponsiveUtils.spacing(context, 20),
+                            ),
+                            boxShadow: [AppShadows.card],
+                            border: Border.all(color: const Color(0xFFE9ECEF)),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '현재 상태',
+                                style: ResponsiveUtils.getTextStyle(
+                                  context,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF343A40),
+                                ),
+                              ),
+                              SizedBox(
+                                height: ResponsiveUtils.spacing(context, 20),
+                              ),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: ResponsiveUtils.spacing(
+                                    context,
+                                    24,
+                                  ),
+                                  vertical: ResponsiveUtils.spacing(
+                                    context,
+                                    12,
+                                  ),
+                                ),
+                                decoration: BoxDecoration(
+                                  gradient: _getStatusGradient(
+                                    provider.statusText,
+                                  ),
+                                  borderRadius: BorderRadius.circular(
+                                    ResponsiveUtils.spacing(context, 25),
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: _getStatusShadowColor(
+                                        provider.statusText,
+                                      ),
+                                      blurRadius: ResponsiveUtils.spacing(
+                                        context,
+                                        15,
+                                      ),
+                                      offset: Offset(
+                                        0,
+                                        ResponsiveUtils.spacing(context, 4),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  provider.statusText,
+                                  style: ResponsiveUtils.getTextStyle(
+                                    context,
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(
+                                height: ResponsiveUtils.spacing(context, 15),
+                              ),
+                              Text(
+                                provider.status == AttendanceStatus.offWork
+                                    ? '${provider.clockInStr} ~ ${provider.clockOutStr}'
+                                    : provider.clockInTime == null
+                                    ? '-'
+                                    : '${provider.clockInStr} 부터',
+                                style: ResponsiveUtils.getTextStyle(
+                                  context,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                  color: const Color(0xFF6C757D),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        SizedBox(height: ResponsiveUtils.spacing(context, 25)),
+                        // 출근/퇴근 버튼 (흰카드 없이 Row만)
+                        Row(
                           children: [
-                            Text(
-                              '현재 상태',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF343A40),
+                            Expanded(
+                              child: SizedBox(
+                                height: ResponsiveUtils.spacing(context, 65),
+                                child: GestureDetector(
+                                  onTap:
+                                      provider.status ==
+                                              AttendanceStatus.beforeWork &&
+                                          !_isClockInLoading
+                                      ? () async {
+                                          setState(() {
+                                            _isClockInLoading = true;
+                                          });
+                                          await provider.tryClockIn();
+                                          if (mounted) {
+                                            setState(() {
+                                              _isClockInLoading = false;
+                                            });
+                                            if (provider.errorMessage != null) {
+                                              _showBanner(
+                                                provider.errorMessage!,
+                                                error: true,
+                                              );
+                                              provider.clearError();
+                                            } else {
+                                              // 출근 성공 메시지 표시
+                                              final now = DateTime.now();
+                                              final hour = now.hour;
+                                              final isLate =
+                                                  hour >= 9 ||
+                                                  (hour == 8 &&
+                                                      now.minute > 30);
+                                              if (isLate) {
+                                                _showBanner(
+                                                  '지각 처리되었습니다.',
+                                                  error: false,
+                                                );
+                                              } else {
+                                                _showBanner(
+                                                  '정상 출근 처리되었습니다.',
+                                                  error: false,
+                                                );
+                                              }
+                                            }
+                                          }
+                                        }
+                                      : null,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      gradient:
+                                          provider.status ==
+                                              AttendanceStatus.beforeWork
+                                          ? AppColors.primaryGradient
+                                          : null,
+                                      color:
+                                          provider.status ==
+                                              AttendanceStatus.beforeWork
+                                          ? null
+                                          : const Color(0xFFE9ECEF),
+                                      borderRadius: BorderRadius.circular(
+                                        ResponsiveUtils.spacing(context, 14),
+                                      ),
+                                      boxShadow: [
+                                        if (provider.status ==
+                                            AttendanceStatus.beforeWork)
+                                          BoxShadow(
+                                            color: Colors.black.withValues(
+                                              alpha: 0.32,
+                                            ),
+                                            blurRadius: ResponsiveUtils.spacing(
+                                              context,
+                                              7,
+                                            ),
+                                            offset: Offset(
+                                              0,
+                                              ResponsiveUtils.spacing(
+                                                context,
+                                                2,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: _isClockInLoading
+                                        ? SizedBox(
+                                            width: 24,
+                                            height: 24,
+                                            child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : Text(
+                                            '출근하기',
+                                            style: ResponsiveUtils.getTextStyle(
+                                              context,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 21,
+                                              color:
+                                                  provider.status ==
+                                                      AttendanceStatus
+                                                          .beforeWork
+                                                  ? Colors.white
+                                                  : const Color(0xFFB0B0B0),
+                                            ),
+                                          ),
+                                  ),
+                                ),
                               ),
                             ),
-                            SizedBox(height: ResponsiveUtils.spacing(context, 20)),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: ResponsiveUtils.spacing(context, 24), 
-                                vertical: ResponsiveUtils.spacing(context, 12)
+                            SizedBox(
+                              width: ResponsiveUtils.spacing(context, 15),
+                            ),
+                            Expanded(
+                              child: SizedBox(
+                                height: ResponsiveUtils.spacing(context, 65),
+                                child: GestureDetector(
+                                  onTap:
+                                      provider.canClockOut &&
+                                          !_isClockOutLoading
+                                      ? () async {
+                                          setState(() {
+                                            _isClockOutLoading = true;
+                                          });
+                                          await provider.tryClockOut();
+                                          if (mounted) {
+                                            setState(() {
+                                              _isClockOutLoading = false;
+                                            });
+                                            if (provider.errorMessage != null) {
+                                              _showBanner(
+                                                provider.errorMessage!,
+                                                error: true,
+                                              );
+                                              provider.clearError();
+                                            }
+                                          }
+                                        }
+                                      : null,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      gradient: provider.canClockOut
+                                          ? AppColors.primaryGradient
+                                          : null,
+                                      color: provider.canClockOut
+                                          ? null
+                                          : const Color(0xFFE9ECEF),
+                                      borderRadius: BorderRadius.circular(
+                                        ResponsiveUtils.spacing(context, 14),
+                                      ),
+                                      boxShadow: [
+                                        if (provider.canClockOut)
+                                          BoxShadow(
+                                            color: Colors.black.withValues(
+                                              alpha: 0.32,
+                                            ),
+                                            blurRadius: ResponsiveUtils.spacing(
+                                              context,
+                                              7,
+                                            ),
+                                            offset: Offset(
+                                              0,
+                                              ResponsiveUtils.spacing(
+                                                context,
+                                                2,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: _isClockOutLoading
+                                        ? SizedBox(
+                                            width: 24,
+                                            height: 24,
+                                            child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : Text(
+                                            '퇴근하기',
+                                            style: ResponsiveUtils.getTextStyle(
+                                              context,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 21,
+                                              color: provider.canClockOut
+                                                  ? Colors.white
+                                                  : const Color(0xFFB0B0B0),
+                                            ),
+                                          ),
+                                  ),
+                                ),
                               ),
-                              decoration: BoxDecoration(
-                                gradient: _getStatusGradient(provider.statusText),
-                                borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 25)),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: _getStatusShadowColor(provider.statusText),
-                                    blurRadius: ResponsiveUtils.spacing(context, 15),
-                                    offset: Offset(0, ResponsiveUtils.spacing(context, 4)),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: ResponsiveUtils.spacing(context, 25)),
+                        // 오늘의 근무 요약 카드
+                        Container(
+                          padding: EdgeInsets.all(
+                            ResponsiveUtils.spacing(context, 25),
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(
+                              ResponsiveUtils.spacing(context, 20),
+                            ),
+                            boxShadow: [AppShadows.card],
+                            border: Border.all(color: const Color(0xFFE9ECEF)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.all(
+                                      ResponsiveUtils.spacing(context, 2),
+                                    ),
+                                    child: Text(
+                                      '💼',
+                                      style: ResponsiveUtils.getTextStyle(
+                                        context,
+                                        fontSize: 20,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: ResponsiveUtils.spacing(context, 10),
+                                  ),
+                                  Text(
+                                    '오늘의 근무 요약',
+                                    style: ResponsiveUtils.getTextStyle(
+                                      context,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 22,
+                                      color: const Color(0xFF343A40),
+                                    ),
                                   ),
                                 ],
                               ),
-                              child: Text(
-                                provider.statusText,
-                                style:                                 ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
+                              SizedBox(
+                                height: ResponsiveUtils.spacing(context, 20),
+                              ),
+                              _buildSummaryItem('출근 시간', provider.clockInStr),
+                              if (provider.status == AttendanceStatus.offWork)
+                                _buildSummaryItem(
+                                  '퇴근 시간',
+                                  provider.clockOutStr,
                                 ),
+                              _buildSummaryItem(
+                                '근무 시간',
+                                provider.todayWorkDuration,
+                                isLast: true,
                               ),
-                            ),
-                            SizedBox(height: ResponsiveUtils.spacing(context, 15)),
-                            Text(
-                              provider.clockInTime == null
-                                  ? '-'
-                                  : '${provider.clockInStr} 부터',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                                color: const Color(0xFF6C757D),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: ResponsiveUtils.spacing(context, 25)),
-                      // 출근/퇴근 버튼 (흰카드 없이 Row만)
-                      Row(
-                        children: [
-                          Expanded(
-                            child: SizedBox(
-                              height: ResponsiveUtils.spacing(context, 65),
-                              child: GestureDetector(
-                                onTap: provider.status == AttendanceStatus.beforeWork
-                                    ? () async {
-                                        await provider.tryClockIn();
-                                        if (provider.errorMessage != null) {
-                                          _showBanner(provider.errorMessage!, error: true);
-                                          provider.clearError();
-                                        }
-                                      }
-                                    : null,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    gradient: provider.status == AttendanceStatus.beforeWork ? AppColors.primaryGradient : null,
-                                    color: provider.status == AttendanceStatus.beforeWork ? null : const Color(0xFFE9ECEF),
-                                                                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 14)),
-                                    boxShadow: [
-                                      if (provider.status == AttendanceStatus.beforeWork)
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.32),
-                                          blurRadius: ResponsiveUtils.spacing(context, 7),
-                                          offset: Offset(0, ResponsiveUtils.spacing(context, 2)),
-                                        ),
-                                    ],
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    '출근하기',
-                                    style: ResponsiveUtils.getTextStyle(
-                                      context,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 21,
-                                      color: provider.status == AttendanceStatus.beforeWork ? Colors.white : const Color(0xFFB0B0B0),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
+                            ],
                           ),
-                          SizedBox(width: ResponsiveUtils.spacing(context, 15)),
-                          Expanded(
-                            child: SizedBox(
-                              height: ResponsiveUtils.spacing(context, 65),
-                              child: GestureDetector(
-                                onTap: provider.canClockOut
-                                    ? () async {
-                                        await provider.tryClockOut();
-                                      }
-                                    : null,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    gradient: provider.canClockOut ? AppColors.primaryGradient : null,
-                                    color: provider.canClockOut ? null : const Color(0xFFE9ECEF),
-                                                                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 14)),
-                                    boxShadow: [
-                                      if (provider.canClockOut)
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.32),
-                                          blurRadius: ResponsiveUtils.spacing(context, 7),
-                                          offset: Offset(0, ResponsiveUtils.spacing(context, 2)),
-                                        ),
-                                    ],
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    '퇴근하기',
-                                    style: ResponsiveUtils.getTextStyle(
-                                      context,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 21,
-                                      color: provider.canClockOut ? Colors.white : const Color(0xFFB0B0B0),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
+                        ),
+                        SizedBox(height: ResponsiveUtils.spacing(context, 25)),
+                        // 최근 기록 카드
+                        Container(
+                          padding: EdgeInsets.all(
+                            ResponsiveUtils.spacing(context, 25),
                           ),
-                        ],
-                      ),
-                      SizedBox(height: ResponsiveUtils.spacing(context, 25)),
-                      // 오늘의 근무 요약 카드
-                      Container(
-                        padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 25)),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
-                          boxShadow: [AppShadows.card],
-                          border: Border.all(color: const Color(0xFFE9ECEF)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                                                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 2)),
-                              child: Text(
-                                '💼',
-                                style: ResponsiveUtils.getTextStyle(context, fontSize: 20),
-                              ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(
+                              ResponsiveUtils.spacing(context, 20),
                             ),
-                            SizedBox(width: ResponsiveUtils.spacing(context, 10)),
-                            Text(
-                              '오늘의 근무 요약',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 22,
-                                color: const Color(0xFF343A40),
-                              ),
-                            ),
-                              ],
-                            ),
-                            SizedBox(height: ResponsiveUtils.spacing(context, 20)),
-                            _buildSummaryItem('출근 시간', provider.clockInStr),
-                            _buildSummaryItem('근무 시간', provider.todayWorkDuration, isLast: true),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: ResponsiveUtils.spacing(context, 25)),
-                      // 최근 기록 카드
-                      Container(
-                        padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 25)),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
-                          boxShadow: [AppShadows.card],
-                          border: Border.all(color: const Color(0xFFE9ECEF)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                                                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 2)),
-                              child: Text(
-                                '⏱️',
-                                style: ResponsiveUtils.getTextStyle(context, fontSize: 20),
-                              ),
-                            ),
-                            SizedBox(width: ResponsiveUtils.spacing(context, 10)),
-                            Text(
-                              '최근 기록',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 22,
-                                color: const Color(0xFF343A40),
-                              ),
-                            ),
-                              ],
-                            ),
-                            SizedBox(height: ResponsiveUtils.spacing(context, 15)),
-                            provider.recentHistory.isEmpty
-                                ? Container(
-                                    padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 20)),
-                                    alignment: Alignment.center,
+                            boxShadow: [AppShadows.card],
+                            border: Border.all(color: const Color(0xFFE9ECEF)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.all(
+                                      ResponsiveUtils.spacing(context, 2),
+                                    ),
                                     child: Text(
-                                      '아직 기록이 없습니다',
+                                      '⏱️',
                                       style: ResponsiveUtils.getTextStyle(
                                         context,
-                                        color: const Color(0xFF6C757D),
-                                        fontSize: 16,
+                                        fontSize: 20,
                                       ),
                                     ),
-                                  )
-                                : Column(
-                                    children: provider.recentHistory.map((record) => Padding(
-                                      padding: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 8)),
-                                      child: _buildHistoryRow(record),
-                                    )).toList(),
                                   ),
-                          ],
+                                  SizedBox(
+                                    width: ResponsiveUtils.spacing(context, 10),
+                                  ),
+                                  Text(
+                                    '최근 기록',
+                                    style: ResponsiveUtils.getTextStyle(
+                                      context,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 22,
+                                      color: const Color(0xFF343A40),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(
+                                height: ResponsiveUtils.spacing(context, 15),
+                              ),
+                              provider.recentHistory.isEmpty
+                                  ? Container(
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: ResponsiveUtils.spacing(
+                                          context,
+                                          20,
+                                        ),
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        '아직 기록이 없습니다',
+                                        style: ResponsiveUtils.getTextStyle(
+                                          context,
+                                          color: const Color(0xFF6C757D),
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    )
+                                  : Column(
+                                      children: provider.recentHistory
+                                          .map(
+                                            (record) => Padding(
+                                              padding: EdgeInsets.only(
+                                                bottom: ResponsiveUtils.spacing(
+                                                  context,
+                                                  8,
+                                                ),
+                                              ),
+                                              child: _buildHistoryRow(record),
+                                            ),
+                                          )
+                                          .toList(),
+                                    ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -530,10 +769,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
         ),
         if (!isLast) ...[
           SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-          Container(
-            height: 1,
-            color: const Color(0xFFF1F3F4),
-          ),
+          Container(height: 1, color: const Color(0xFFF1F3F4)),
           SizedBox(height: ResponsiveUtils.spacing(context, 12)),
         ],
       ],
@@ -543,12 +779,14 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
   Widget _buildHistoryRow(AttendanceRecord record) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: ResponsiveUtils.spacing(context, 12), 
-        vertical: ResponsiveUtils.spacing(context, 10)
+        horizontal: ResponsiveUtils.spacing(context, 12),
+        vertical: ResponsiveUtils.spacing(context, 10),
       ),
       decoration: BoxDecoration(
         color: const Color(0xFFF5F6F8),
-        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 10)),
+        borderRadius: BorderRadius.circular(
+          ResponsiveUtils.spacing(context, 10),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,

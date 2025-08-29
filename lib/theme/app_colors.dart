@@ -11,4 +11,4 @@ class AppColors {
     end: Alignment.bottomRight,
   );
   // 필요시 추가 컬러 정의
-} 
+}

@@ -10,25 +10,19 @@ class AssetManager {
 
   // Track loaded assets to avoid duplicates
   final Set<String> _loadedAssets = <String>{};
-  
+
   // Critical assets that should be preloaded
   static const List<String> _criticalAssets = [
     'assets/images/splash_logo.jpeg',
     'assets/icons/icon_1024.png',
   ];
 
-  // Font assets (organized by weight for optimization)
-  static const Map<String, String> _optimizedFonts = {
-    'regular': 'assets/fonts/NotoSans-Regular.otf',
-    'medium': 'assets/fonts/NotoSans-Medium.otf', 
-    'bold': 'assets/fonts/NotoSans-Bold.otf',
-    'black': 'assets/fonts/NotoSans-Black.otf',
-  };
+  // Font assets removed - not used
 
   /// Initialize asset management (call in main.dart)
   static Future<void> initialize(BuildContext context) async {
     debugPrint('AssetManager: Initializing...');
-    
+
     // Configure image cache for optimal performance
     ImagePreloader.configureImageCache(
       maxCacheSize: 100,
@@ -37,7 +31,7 @@ class AssetManager {
 
     // Preload critical assets
     await ImagePreloader.preloadCriticalAssets(context);
-    
+
     debugPrint('AssetManager: Initialization complete');
   }
 
@@ -58,7 +52,7 @@ class AssetManager {
       if (!await assetExists(assetPath)) {
         return null;
       }
-      
+
       final data = await rootBundle.load(assetPath);
       _instance._loadedAssets.add(assetPath);
       return data;
@@ -109,8 +103,8 @@ class AssetManager {
   static List<String> getUnusedFontFiles() {
     // Based on font usage analysis, these weights are not used:
     return [
-      'assets/fonts/NotoSans-Thin.otf',      // FontWeight.w100 - not used
-      'assets/fonts/NotoSans-Light.otf',     // FontWeight.w300 - not used  
+      'assets/fonts/NotoSans-Thin.otf', // FontWeight.w100 - not used
+      'assets/fonts/NotoSans-Light.otf', // FontWeight.w300 - not used
       'assets/fonts/NotoSans-DemiLight.otf', // FontWeight.w350 - not used
     ];
   }
@@ -120,7 +114,7 @@ class AssetManager {
     final unusedFonts = getUnusedFontFiles();
     final totalFontSize = _calculateFontSizes();
     final unusedFontSize = _calculateUnusedFontSizes(unusedFonts);
-    
+
     return AssetOptimizationReport(
       unusedFonts: unusedFonts,
       totalFontSize: totalFontSize,
@@ -133,26 +127,26 @@ class AssetManager {
   static int _calculateFontSizes() {
     // Font sizes in bytes (approximate)
     return 396 * 1024 + // NotoSans-Black.otf
-           388 * 1024 + // NotoSans-Bold.otf  
-           388 * 1024 + // NotoSans-DemiLight.otf
-           388 * 1024 + // NotoSans-Light.otf
-           384 * 1024 + // NotoSans-Medium.otf
-           384 * 1024 + // NotoSans-Regular.otf
-           392 * 1024;  // NotoSans-Thin.otf
+        388 * 1024 + // NotoSans-Bold.otf
+        388 * 1024 + // NotoSans-DemiLight.otf
+        388 * 1024 + // NotoSans-Light.otf
+        384 * 1024 + // NotoSans-Medium.otf
+        384 * 1024 + // NotoSans-Regular.otf
+        392 * 1024; // NotoSans-Thin.otf
   }
 
   static int _calculateUnusedFontSizes(List<String> unusedFonts) {
     // Approximate sizes for unused fonts
     return 392 * 1024 + // NotoSans-Thin.otf
-           388 * 1024 + // NotoSans-Light.otf
-           388 * 1024;  // NotoSans-DemiLight.otf
+        388 * 1024 + // NotoSans-Light.otf
+        388 * 1024; // NotoSans-DemiLight.otf
   }
 
   static List<String> _getOptimizationRecommendations() {
     return [
       'Remove unused font weights (Thin, Light, DemiLight) to save ~1.16MB',
       'Convert JPEG splash logo to WebP for better compression',
-      'Enable image caching for frequently used assets', 
+      'Enable image caching for frequently used assets',
       'Implement lazy loading for non-critical images',
       'Use vector icons instead of multiple PNG sizes where possible',
       'Compress existing PNG icons without quality loss',

@@ -30,4 +30,4 @@ class AppShadows {
   static List<BoxShadow> buttonShadow = [button];
   static List<BoxShadow> lightShadow = [light];
   static List<BoxShadow> strongShadow = [strong];
-} 
+}

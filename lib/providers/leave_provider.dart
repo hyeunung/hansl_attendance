@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'dart:async';
 import '../services/leave_service.dart';
 import '../services/supabase_service.dart';
@@ -13,17 +12,20 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class LeaveProvider extends ChangeNotifier with TimerManagementMixin, AsyncOperationMixin {
+class LeaveProvider extends ChangeNotifier
+    with TimerManagementMixin, AsyncOperationMixin {
   final LeaveService _service = LeaveService();
   final CacheService _cache = CacheService.instance;
   final RequestUtils _requestUtils = RequestUtils.instance;
-  
+
   List<Map<String, dynamic>> myLeaves = [];
   List<Map<String, dynamic>> todayLeaves = [];
-  List<Map<String, dynamic>> allLeaves = [];
+  List<Map<String, dynamic>> allLeaves = []; // 승인 화면용 - 모든 상태 포함
+  List<Map<String, dynamic>> approvedLeavesForCalendar = []; // 달력용 - 승인된 것만
+  List<Map<String, dynamic>> _allLeavesRaw = []; // 그룹화 전 원본 데이터
   bool isLoading = false;
   String? error;
-  
+
   // Cache keys for different data types
   static const String _myLeavesCacheKey = 'my_leaves_';
   static const String _todayLeavesCacheKey = 'today_leaves_';
@@ -39,29 +41,186 @@ class LeaveProvider extends ChangeNotifier with TimerManagementMixin, AsyncOpera
 
   double _usedAnnual = 0;
   double get usedAnnual => _usedAnnual;
-  
+
   // 배치 업데이트 지원
   bool _shouldNotify = true;
 
-  // 대기 중 신청 개수
-  int get pendingCount => myLeaves.where((l) => l['status'] == 'pending').length;
+  // 대기 중 신청 개수 (본인 신청만)
+  int get myPendingCount =>
+      myLeaves.where((l) => l['status'] == 'pending').length;
+
+  // 전체 승인 대기 중 신청 개수 (관리자용)
+  int get allPendingCount =>
+      allLeaves.where((l) => l['status'] == 'pending').length;
+
+  // 대기 중 신청 개수 (대시보드용 - 권한에 따라 다르게 표시)
+  int get pendingCount {
+    // 본인 대기중 항목만 표시 (대시보드는 개인 현황)
+    return myPendingCount;
+  }
 
   // 출장 일수(approved만)
   int get biztripDays {
     int days = 0;
     for (final l in myLeaves) {
       if (l['status'] == 'approved' && l['type'] == 'biztrip') {
-        days += (DateTime.parse(l['end_date']).difference(DateTime.parse(l['start_date'])).inDays) + 1;
+        days +=
+            (DateTime.parse(
+              l['end_date'],
+            ).difference(DateTime.parse(l['start_date'])).inDays) +
+            1;
       }
     }
     return days;
   }
 
-  // 최근 신청(최신순 5개)
+  // 최근 신청(최신순 5개) - 연속된 날짜는 그룹화
   List<Map<String, dynamic>> get recentLeaves {
     final sorted = [...myLeaves];
-    sorted.sort((a, b) => DateTime.parse(b['created_at']).compareTo(DateTime.parse(a['created_at'])));
-    return sorted.take(5).toList();
+    sorted.sort(
+      (a, b) => DateTime.parse(
+        b['created_at'],
+      ).compareTo(DateTime.parse(a['created_at'])),
+    );
+
+    // 연속된 날짜 그룹화 (연차와 출장 모두)
+    final grouped = _groupContinuousLeaves(sorted);
+    return grouped.take(5).toList();
+  }
+
+  // 연속된 날짜의 연차/출장 신청을 그룹화
+  List<Map<String, dynamic>> _groupContinuousLeaves(
+    List<Map<String, dynamic>> leaves,
+  ) {
+    if (leaves.isEmpty) return [];
+
+    final List<Map<String, dynamic>> grouped = [];
+    Map<String, dynamic>? currentGroup;
+
+    for (final leave in leaves) {
+      final type = leave['type'];
+      final status = leave['status'];
+      final startDate = DateTime.parse(leave['start_date']);
+      final endDate = DateTime.parse(leave['end_date']);
+
+      // 연차(annual)와 출장(biztrip)만 그룹화 대상
+      if (type != 'annual' && type != 'biztrip') {
+        grouped.add(leave);
+        currentGroup = null;
+        continue;
+      }
+
+      // 현재 그룹과 연속되는지 확인
+      if (currentGroup != null &&
+          currentGroup['type'] == type &&
+          currentGroup['status'] == status) {
+        final groupEndDate = DateTime.parse(currentGroup['end_date']);
+        final dayDiff = startDate.difference(groupEndDate).inDays;
+
+        // 1일 차이(연속된 날짜)면 그룹 확장
+        if (dayDiff.abs() <= 1) {
+          // 그룹의 날짜 범위 확장
+          final groupStartDate = DateTime.parse(currentGroup['start_date']);
+          currentGroup['start_date'] =
+              (startDate.isBefore(groupStartDate) ? startDate : groupStartDate)
+                  .toIso8601String();
+          currentGroup['end_date'] =
+              (endDate.isAfter(groupEndDate) ? endDate : groupEndDate)
+                  .toIso8601String();
+
+          // 그룹화된 항목 수 증가
+          currentGroup['grouped_count'] =
+              (currentGroup['grouped_count'] ?? 1) + 1;
+
+          // 가장 최근 created_at 유지
+          final currentCreated = DateTime.parse(currentGroup['created_at']);
+          final newCreated = DateTime.parse(leave['created_at']);
+          if (newCreated.isAfter(currentCreated)) {
+            currentGroup['created_at'] = leave['created_at'];
+          }
+          continue;
+        }
+      }
+
+      // 새로운 그룹 시작
+      currentGroup = Map<String, dynamic>.from(leave);
+      currentGroup['grouped_count'] = 1;
+      grouped.add(currentGroup);
+    }
+
+    return grouped;
+  }
+
+  // 승인 화면용 그룹화 (같은 사용자의 같은 타입, 같은 상태만 그룹화)
+  List<Map<String, dynamic>> _groupContinuousLeavesForApproval(
+    List<Map<String, dynamic>> leaves,
+  ) {
+    if (leaves.isEmpty) return [];
+
+    final List<Map<String, dynamic>> grouped = [];
+    Map<String, dynamic>? currentGroup;
+
+    for (final leave in leaves) {
+      final type = leave['type'];
+      final status = leave['status'];
+      final userEmail = leave['user_email'];
+      final startDate = DateTime.parse(leave['start_date']);
+      final endDate = DateTime.parse(leave['end_date']);
+
+      // 연차(annual)와 출장(biztrip)만 그룹화 대상
+      if (type != 'annual' && type != 'biztrip') {
+        grouped.add(leave);
+        currentGroup = null;
+        continue;
+      }
+
+      // 현재 그룹과 연속되는지 확인 (같은 사용자, 같은 타입, 같은 상태)
+      if (currentGroup != null &&
+          currentGroup['user_email'] == userEmail &&
+          currentGroup['type'] == type &&
+          currentGroup['status'] == status) {
+        final groupEndDate = DateTime.parse(currentGroup['end_date']);
+        final dayDiff = startDate.difference(groupEndDate).inDays;
+
+        // 1일 차이(연속된 날짜)면 그룹 확장
+        if (dayDiff.abs() <= 1) {
+          // 그룹의 날짜 범위 확장
+          final groupStartDate = DateTime.parse(currentGroup['start_date']);
+          currentGroup['start_date'] =
+              (startDate.isBefore(groupStartDate) ? startDate : groupStartDate)
+                  .toIso8601String();
+          currentGroup['end_date'] =
+              (endDate.isAfter(groupEndDate) ? endDate : groupEndDate)
+                  .toIso8601String();
+
+          // 그룹화된 항목 수 증가
+          currentGroup['grouped_count'] =
+              (currentGroup['grouped_count'] ?? 1) + 1;
+
+          // 그룹화된 ID들 저장 (승인/반려 시 사용)
+          if (currentGroup['grouped_ids'] == null) {
+            currentGroup['grouped_ids'] = [currentGroup['id']];
+          }
+          currentGroup['grouped_ids'].add(leave['id']);
+
+          // 가장 최근 created_at 유지
+          final currentCreated = DateTime.parse(currentGroup['created_at']);
+          final newCreated = DateTime.parse(leave['created_at']);
+          if (newCreated.isAfter(currentCreated)) {
+            currentGroup['created_at'] = leave['created_at'];
+          }
+          continue;
+        }
+      }
+
+      // 새로운 그룹 시작
+      currentGroup = Map<String, dynamic>.from(leave);
+      currentGroup['grouped_count'] = 1;
+      currentGroup['grouped_ids'] = [leave['id']];
+      grouped.add(currentGroup);
+    }
+
+    return grouped;
   }
 
   Map<String, dynamic>? _employee;
@@ -74,133 +233,271 @@ class LeaveProvider extends ChangeNotifier with TimerManagementMixin, AsyncOpera
     }
   }
 
-  Future<void> fetchMyLeaves({required String email, bool forceRefresh = false}) async {
+  Future<void> fetchMyLeaves({
+    required String email,
+    bool forceRefresh = false,
+  }) async {
     _updateLoadingState(true, null);
-    
+
     try {
       final cacheKey = '$_myLeavesCacheKey$email';
-      
-      // Use cache with fallback to API
-      final newLeaves = await _cache.getOrFetch<List<Map<String, dynamic>>>(
-        key: cacheKey,
-        fallback: () => _requestUtils.dedupedRequest(
-          key: 'fetch_my_leaves_$email',
-          request: () => _service.fetchMyLeavesRaw(email),
-        ),
-        ttl: CacheConfig.leaveDataTtl,
-        usePersistentCache: true,
-        useMemoryCache: true,
-        fromJson: (json) => List<Map<String, dynamic>>.from(json['leaves']),
-        toJson: (data) => {'leaves': data, 'timestamp': DateTime.now().toIso8601String()},
-      );
-      
+      List<Map<String, dynamic>>? newLeaves;
+
+      if (forceRefresh) {
+        // 캐시 무효화
+        await _cache.invalidate(cacheKey);
+        if (kDebugMode) print('🔄 My leaves 캐시 무효화됨 (forceRefresh: true)');
+        
+        // DB에서 직접 가져오기
+        newLeaves = await _service.fetchMyLeavesRaw(email);
+      } else {
+        // 캐시 사용
+        newLeaves = await _cache.getOrFetch<List<Map<String, dynamic>>>(
+          key: cacheKey,
+          fallback: () => _requestUtils.dedupedRequest(
+            key: 'fetch_my_leaves_$email',
+            request: () => _service.fetchMyLeavesRaw(email),
+          ),
+          ttl: CacheConfig.leaveDataTtl,
+          usePersistentCache: true,
+          useMemoryCache: true,
+          fromJson: (json) => List<Map<String, dynamic>>.from(json['leaves']),
+          toJson: (data) => {
+            'leaves': data,
+            'timestamp': DateTime.now().toIso8601String(),
+          },
+        );
+      }
+
       // Load annual leave data with caching
       await _loadAnnualLeaveFromDB(email, forceRefresh: forceRefresh);
-      
+
       // Update UI only if data actually changed
       if (newLeaves != null && !_isLeavesEqual(myLeaves, newLeaves)) {
         _batchUpdate(() {
-          myLeaves = newLeaves;
+          myLeaves = newLeaves!;
           isLoading = false;
         });
-        
-        if (kDebugMode) print('✅ My leaves updated from ${forceRefresh ? 'API' : 'cache'}: ${newLeaves.length} items');
+
+        if (kDebugMode)
+          print(
+            '✅ My leaves updated from ${forceRefresh ? 'DB' : 'cache'}: ${newLeaves.length} items',
+          );
       } else {
         _updateLoadingState(false, null);
       }
-      
-      // Force refresh if requested
-      if (forceRefresh) {
-        await _cache.invalidate(cacheKey);
-      }
-      
     } catch (e) {
       _updateLoadingState(false, e.toString());
       if (kDebugMode) print('❌ Failed to fetch my leaves: $e');
     }
   }
 
-  Future<void> fetchTodayLeaves(DateTime today, {bool forceRefresh = false}) async {
+  Future<void> fetchTodayLeaves(
+    DateTime today, {
+    bool forceRefresh = false,
+  }) async {
     _updateLoadingState(true, null);
-    
+
     try {
       final dateStr = today.toIso8601String().substring(0, 10);
       final cacheKey = '$_todayLeavesCacheKey$dateStr';
-      
+
       // Use shorter TTL for today's data as it changes more frequently
-      final newTodayLeaves = await _cache.getOrFetch<List<Map<String, dynamic>>>(
-        key: cacheKey,
-        fallback: () => _requestUtils.dedupedRequest(
-          key: 'fetch_today_leaves_$dateStr',
-          request: () => _service.fetchTodayLeavesRaw(today),
-        ),
-        ttl: const Duration(minutes: 5), // Shorter TTL for today's data
-        usePersistentCache: true,
-        useMemoryCache: true,
-        fromJson: (json) => List<Map<String, dynamic>>.from(json['leaves']),
-        toJson: (data) => {'leaves': data, 'timestamp': DateTime.now().toIso8601String()},
-      );
-      
-      if (newTodayLeaves != null && !_isLeavesEqual(todayLeaves, newTodayLeaves)) {
+      final newTodayLeaves = await _cache
+          .getOrFetch<List<Map<String, dynamic>>>(
+            key: cacheKey,
+            fallback: () => _requestUtils.dedupedRequest(
+              key: 'fetch_today_leaves_$dateStr',
+              request: () => _service.fetchTodayLeavesRaw(today),
+            ),
+            ttl: const Duration(minutes: 5), // Shorter TTL for today's data
+            usePersistentCache: true,
+            useMemoryCache: true,
+            fromJson: (json) => List<Map<String, dynamic>>.from(json['leaves']),
+            toJson: (data) => {
+              'leaves': data,
+              'timestamp': DateTime.now().toIso8601String(),
+            },
+          );
+
+      if (newTodayLeaves != null &&
+          !_isLeavesEqual(todayLeaves, newTodayLeaves)) {
         _batchUpdate(() {
           todayLeaves = newTodayLeaves;
           isLoading = false;
         });
-        
-        if (kDebugMode) print('✅ Today leaves updated: ${newTodayLeaves.length} items');
+
+        if (kDebugMode)
+          print('✅ Today leaves updated: ${newTodayLeaves.length} items');
       } else {
         _updateLoadingState(false, null);
       }
-      
+
       if (forceRefresh) {
         await _cache.invalidate(cacheKey);
       }
-      
     } catch (e) {
       _updateLoadingState(false, e.toString());
       if (kDebugMode) print('❌ Failed to fetch today leaves: $e');
     }
   }
 
-  Future<void> fetchAllLeaves({bool forceRefresh = false}) async {
+  // 달력용: 승인된 연차/출장만 가져오기
+  Future<void> fetchApprovedLeavesForCalendar({
+    bool forceRefresh = false,
+  }) async {
     _updateLoadingState(true, null);
-    
+
     try {
-      final newAllLeaves = await _cache.getOrFetch<List<Map<String, dynamic>>>(
-        key: _allLeavesCacheKey,
-        fallback: () => _requestUtils.dedupedRequest(
-          key: 'fetch_all_leaves',
-          request: () => _service.fetchAllLeavesRaw(),
-        ),
-        ttl: CacheConfig.leaveDataTtl,
-        usePersistentCache: true,
-        useMemoryCache: true,
-        fromJson: (json) => List<Map<String, dynamic>>.from(json['leaves']),
-        toJson: (data) => {'leaves': data, 'timestamp': DateTime.now().toIso8601String()},
-      );
-      
-      if (newAllLeaves != null && !_isLeavesEqual(allLeaves, newAllLeaves)) {
+      if (forceRefresh) {
+        await _cache.invalidate('calendar_approved_leaves');
+      }
+
+      final approvedLeaves = await _cache
+          .getOrFetch<List<Map<String, dynamic>>>(
+            key: 'calendar_approved_leaves',
+            fallback: () => _requestUtils.dedupedRequest(
+              key: 'fetch_calendar_leaves',
+              request: () =>
+                  _service.fetchAllLeavesRaw(approvedOnly: true), // 승인된 것만
+            ),
+            ttl: const Duration(minutes: 10), // 달력용은 10분 캐시
+            usePersistentCache: true,
+            useMemoryCache: true,
+            fromJson: (json) => List<Map<String, dynamic>>.from(json['leaves']),
+            toJson: (data) => {
+              'leaves': data,
+              'timestamp': DateTime.now().toIso8601String(),
+            },
+          );
+
+      if (approvedLeaves != null) {
         _batchUpdate(() {
-          allLeaves = newAllLeaves;
+          approvedLeavesForCalendar =
+              approvedLeaves; // allLeaves 대신 approvedLeavesForCalendar 사용
           isLoading = false;
         });
-        
-        if (kDebugMode) print('✅ All leaves updated: ${newAllLeaves.length} items');
+
+        if (kDebugMode) {
+          print('✅ 달력용 승인된 연차/출장 로드: ${approvedLeaves.length}개');
+          print('🔧 allLeaves는 변경되지 않음 (${allLeaves.length}개 유지)');
+        }
       } else {
         _updateLoadingState(false, null);
       }
+    } catch (e) {
+      _updateLoadingState(false, e.toString());
+      if (kDebugMode) print('❌ Failed to fetch approved leaves: $e');
+    }
+  }
+
+  // 관리자용: 모든 상태의 연차/출장 가져오기
+  Future<void> fetchAllLeaves({bool forceRefresh = false}) async {
+    _updateLoadingState(true, null);
+
+    try {
+      // forceRefresh가 true면 DB에서 직접 가져오기
+      List<Map<String, dynamic>>? newAllLeaves;
       
       if (forceRefresh) {
+        // 캐시 무효화
         await _cache.invalidate(_allLeavesCacheKey);
+        if (kDebugMode) print('🔄 All leaves 캐시 무효화됨 (forceRefresh: true)');
+        
+        // DB에서 직접 가져오기
+        newAllLeaves = await _service.fetchAllLeavesRaw(approvedOnly: false);
+      } else {
+        // 캐시 사용
+        newAllLeaves = await _cache.getOrFetch<List<Map<String, dynamic>>>(
+          key: _allLeavesCacheKey,
+          fallback: () => _requestUtils.dedupedRequest(
+            key: 'fetch_all_leaves',
+            request: () =>
+                _service.fetchAllLeavesRaw(approvedOnly: false), // 관리자 화면용: 모든 상태
+          ),
+          ttl: CacheConfig.leaveDataTtl,
+          usePersistentCache: true,
+          useMemoryCache: true,
+          fromJson: (json) => List<Map<String, dynamic>>.from(json['leaves']),
+          toJson: (data) => {
+            'leaves': data,
+            'timestamp': DateTime.now().toIso8601String(),
+          },
+        );
       }
-      
+
+      if (newAllLeaves != null) {
+        // 원본 데이터 저장
+        _allLeavesRaw = newAllLeaves;
+
+        // 사용자별로 그룹화 적용
+        final groupedByUser = <String, List<Map<String, dynamic>>>{};
+        for (final leave in newAllLeaves) {
+          final userEmail = leave['user_email'] ?? '';
+          if (!groupedByUser.containsKey(userEmail)) {
+            groupedByUser[userEmail] = [];
+          }
+          groupedByUser[userEmail]!.add(leave);
+        }
+
+        // 각 사용자별로 그룹화 적용 후 합치기
+        final allGroupedLeaves = <Map<String, dynamic>>[];
+        for (final userLeaves in groupedByUser.values) {
+          // 날짜순 정렬
+          userLeaves.sort(
+            (a, b) => DateTime.parse(
+              a['start_date'],
+            ).compareTo(DateTime.parse(b['start_date'])),
+          );
+          // 그룹화 적용
+          final grouped = _groupContinuousLeavesForApproval(userLeaves);
+          allGroupedLeaves.addAll(grouped);
+        }
+
+        // 최신순으로 정렬
+        allGroupedLeaves.sort(
+          (a, b) => DateTime.parse(
+            b['created_at'],
+          ).compareTo(DateTime.parse(a['created_at'])),
+        );
+
+        _batchUpdate(() {
+          allLeaves = allGroupedLeaves;
+          isLoading = false;
+        });
+
+        if (kDebugMode) {
+          print(
+            '✅ All leaves updated: ${newAllLeaves.length} items -> ${allGroupedLeaves.length} after grouping',
+          );
+          // pending 상태의 출장 신청 확인
+          final pendingBiztrips = allGroupedLeaves
+              .where((l) => l['status'] == 'pending' && l['type'] == 'biztrip')
+              .toList();
+          print('📋 Pending biztrip requests: ${pendingBiztrips.length}');
+          for (final trip in pendingBiztrips) {
+            final groupedCount = trip['grouped_count'] ?? 1;
+            if (groupedCount > 1) {
+              print(
+                '  - ${trip['name']} (${trip['start_date']} ~ ${trip['end_date']}) [연속 ${groupedCount}건]',
+              );
+            } else {
+              print(
+                '  - ${trip['name']} (${trip['start_date']} ~ ${trip['end_date']})',
+              );
+            }
+          }
+        }
+      } else {
+        _updateLoadingState(false, null);
+      }
     } catch (e) {
       _updateLoadingState(false, e.toString());
       if (kDebugMode) print('❌ Failed to fetch all leaves: $e');
     }
   }
 
-  // ❌ 삭제됨: _calculateAndUpdateAnnualLeave 함수 
+  // ❌ 삭제됨: _calculateAndUpdateAnnualLeave 함수
   // 이유: 사용되지 않는 중복 함수
   // 연차 계산은 백엔드 update_used_annual_leave 함수에서 전담
 
@@ -208,41 +505,62 @@ class LeaveProvider extends ChangeNotifier with TimerManagementMixin, AsyncOpera
   Future<void> _updateUsedAnnualLeave(String userEmail) async {
     try {
       const projectId = 'qvhbigvdfyvhoegkhvef';
-      final functionUrl = 'https://$projectId.supabase.co/functions/v1/update_used_annual_leave';
-      
+      final functionUrl =
+          'https://$projectId.supabase.co/functions/v1/update_used_annual_leave';
+
       final response = await http.post(
         Uri.parse(functionUrl),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${Supabase.instance.client.auth.currentSession?.accessToken}',
+          'Authorization':
+              'Bearer ${Supabase.instance.client.auth.currentSession?.accessToken}',
         },
         body: jsonEncode({
           'userEmail': userEmail,
           'targetYear': DateTime.now().year,
         }),
       );
-      
+
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         if (responseData['success'] == true) {
-          if (kDebugMode) { print('✅ 서버 사용연차 업데이트 완료: ${responseData['message']}'); }
+          if (kDebugMode) {
+            print('✅ 서버 사용연차 업데이트 완료: ${responseData['message']}');
+          }
         } else {
-          if (kDebugMode) { print('❌ 서버 사용연차 업데이트 실패: ${responseData['error']}'); }
+          if (kDebugMode) {
+            print('❌ 서버 사용연차 업데이트 실패: ${responseData['error']}');
+          }
         }
       } else {
-        if (kDebugMode) { print('❌ 사용연차 업데이트 Edge Function 호출 실패: ${response.statusCode} - ${response.body}'); }
+        if (kDebugMode) {
+          print(
+            '❌ 사용연차 업데이트 Edge Function 호출 실패: ${response.statusCode} - ${response.body}',
+          );
+        }
       }
     } catch (e) {
-      if (kDebugMode) { print('❌ 사용연차 업데이트 중 오류: $e'); }
+      if (kDebugMode) {
+        print('❌ 사용연차 업데이트 중 오류: $e');
+      }
       // 사용연차 업데이트 실패는 전체 프로세스를 중단시키지 않음
     }
   }
 
   // DB에서 계산된 연차 정보 로드 (캐시 적용)
-  Future<void> _loadAnnualLeaveFromDB(String userEmail, {bool forceRefresh = false}) async {
+  Future<void> _loadAnnualLeaveFromDB(
+    String userEmail, {
+    bool forceRefresh = false,
+  }) async {
     try {
       final cacheKey = '$_annualLeaveCacheKey$userEmail';
-      
+
+      // forceRefresh일 경우 먼저 캐시 무효화
+      if (forceRefresh) {
+        await _cache.invalidate(cacheKey);
+        if (kDebugMode) debugPrint('🗑️ 연차 정보 캐시 무효화: $cacheKey');
+      }
+
       final employee = await _cache.getOrFetch<Map<String, dynamic>>(
         key: cacheKey,
         fallback: () async {
@@ -257,32 +575,56 @@ class LeaveProvider extends ChangeNotifier with TimerManagementMixin, AsyncOpera
         fromJson: (json) => Map<String, dynamic>.from(json),
         toJson: (data) => Map<String, dynamic>.from(data),
       );
-      
+
       if (employee != null) {
-        final newGrantedAnnual = (employee['annual_leave_granted_current_year'] ?? 0).toDouble();
-        final newUsedAnnual = double.tryParse(employee['used_annual_leave']?.toString() ?? '0') ?? 0.0;
-        final newRemainAnnual = double.tryParse(employee['remaining_annual_leave']?.toString() ?? '0') ?? 0.0;
-        
+        // Store employee data for next year calculation
+        _employee = employee;
+
+        // 직원 정보를 별도로 캐싱 (requestLeave에서 빠르게 접근하기 위해)
+        // CacheService는 getOrFetch만 제공하므로 _employee 변수에 저장
+
+        if (kDebugMode) {
+          debugPrint('🔍 DB에서 가져온 Employee 데이터:');
+          debugPrint('   - used_annual_leave: ${employee['used_annual_leave']}');
+          debugPrint(
+            '   - annual_leave_granted_current_year: ${employee['annual_leave_granted_current_year']}',
+        );
+          debugPrint(
+            '   - remaining_annual_leave: ${employee['remaining_annual_leave']}',
+          );
+        }
+
+        final newGrantedAnnual =
+            (employee['annual_leave_granted_current_year'] ?? 0).toDouble();
+        // DB 컬럼명은 used_annual_leave임
+        final newUsedAnnual =
+            double.tryParse(employee['used_annual_leave']?.toString() ?? '0') ??
+            0.0;
+        final newRemainAnnual =
+            double.tryParse(
+              employee['remaining_annual_leave']?.toString() ?? '0',
+            ) ??
+            0.0;
+
         // Only update if values changed
-        if (_currentGrantedAnnual != newGrantedAnnual || 
-            _usedAnnual != newUsedAnnual || 
+        if (_currentGrantedAnnual != newGrantedAnnual ||
+            _usedAnnual != newUsedAnnual ||
             _remainAnnual != newRemainAnnual) {
           _currentGrantedAnnual = newGrantedAnnual;
           _usedAnnual = newUsedAnnual;
           _remainAnnual = newRemainAnnual;
-          
+
           if (kDebugMode) {
-            print('📊 연차 정보 업데이트: 지급=$_currentGrantedAnnual, 사용=$_usedAnnual, 잔여=$_remainAnnual');
+            print(
+              '📊 연차 정보 업데이트: 지급=$_currentGrantedAnnual, 사용=$_usedAnnual, 잔여=$_remainAnnual',
+            );
           }
         }
       }
-      
-      if (forceRefresh) {
-        await _cache.invalidate(cacheKey);
-      }
-      
     } catch (e) {
-      if (kDebugMode) { print('❌ DB 연차 정보 로드 실패: $e'); }
+      if (kDebugMode) {
+        print('❌ DB 연차 정보 로드 실패: $e');
+      }
       // 기본값 유지
       _currentGrantedAnnual = 0;
       _usedAnnual = 0;
@@ -292,11 +634,33 @@ class LeaveProvider extends ChangeNotifier with TimerManagementMixin, AsyncOpera
 
   // 특정 연도 지급연차 조회 (DB에서)
   double getGrantedAnnualForYear(int year) {
-    // 현재는 현재 연도만 지원, 향후 확장 가능
+    // 현재 연도인 경우 DB에서 가져온 값 사용
     if (year == DateTime.now().year) {
       return _currentGrantedAnnual;
     }
-    return 0.0;
+
+    // 내년 연차 계산 (백엔드 annual_year_update 로직과 동일)
+    if (_employee != null && _employee!['join_date'] != null) {
+      final joinDate = DateTime.parse(_employee!['join_date']);
+      final joinYear = joinDate.year;
+      final serviceYears = year - joinYear;
+
+      // 백엔드 calculateAnnualLeave 함수와 동일한 로직
+      if (serviceYears == 0) {
+        // 신입: 15개 기본값
+        return 15;
+      } else if (serviceYears == 1 || serviceYears == 2) {
+        // 1~2년차: 15개 고정
+        return 15;
+      } else {
+        // 3년차 이상: 법정연차 (2년마다 1개씩 추가, 최대 25개)
+        final additionalLeave = ((serviceYears - 1) / 2).floor();
+        final totalLeave = (15 + additionalLeave).clamp(0, 25);
+        return totalLeave.toDouble();
+      }
+    }
+
+    return 15.0; // 기본값
   }
 
   // 연차/출장 신청
@@ -309,12 +673,25 @@ class LeaveProvider extends ChangeNotifier with TimerManagementMixin, AsyncOpera
   }) async {
     _updateLoadingState(true, null);
     try {
-      // employees DB에서 name과 department 조회
-      final supabaseService = SupabaseService();
-      final employee = await supabaseService.getEmployeeByEmail(userEmail);
-      final name = employee?['name'] ?? '';
-      final department = employee?['department'] ?? '';
-      
+      // 캐시된 직원 정보 사용 (DB 조회 최소화)
+      String name = '';
+      String department = '';
+
+      // _employee에 캐시된 정보가 있으면 사용
+      if (_employee != null) {
+        name = _employee?['name'] ?? '';
+        department = _employee?['department'] ?? '';
+      } else {
+        // 캐시에 없을 경우만 DB 조회
+        final supabaseService = SupabaseService();
+        final employee = await supabaseService.getEmployeeByEmail(userEmail);
+        if (employee != null) {
+          _employee = employee; // 메모리에 캐싱
+          name = employee['name'] ?? '';
+          department = employee['department'] ?? '';
+        }
+      }
+
       // DB에 연차/출장 신청 저장
       await _service.insertLeave({
         'user_email': userEmail,
@@ -326,19 +703,42 @@ class LeaveProvider extends ChangeNotifier with TimerManagementMixin, AsyncOpera
         'status': 'pending',
         'created_at': DateTime.now().toIso8601String(),
       });
-      
-      // 푸시 알림 전송 (Manager/일반직원 구분)
+
+      // 캐시 무효화 - 신청 직후 새로운 데이터를 가져올 수 있도록
+      await _cache.invalidate(_allLeavesCacheKey);
+      await _cache.invalidate('$_myLeavesCacheKey$userEmail');
+      if (kDebugMode) print('🔄 Leave 신청 후 캐시 무효화 완료');
+
+      // 푸시 알림 전송
       try {
         final typeLabel = _getTypeLabel(type);
         final period = _formatPeriod(startDate, endDate);
-        
+
         // 신청자 구분: Manager / Admin / 일반직원
         final isManager = AppStrings.managerNames.contains(name);
         final isAdmin = userEmail == AppStrings.adminEmail;
-        
+
         if (isAdmin) {
-          // Admin 신청 → 아무에게도 알림 안함 (혼자 처리)
-          if (kDebugMode) { print('👑 Admin 신청이므로 알림 전송 생략: $name님의 $typeLabel 신청'); }
+          // Admin 신청 → 본인에게 확인 알림 전송
+          await NotificationService.sendNotificationToAdmins(
+            title: '✅ $typeLabel 신청 완료',
+            body: '귀하의 $typeLabel 신청이 접수되었습니다.\n기간: $period',
+            data: {
+              'type': type == 'biztrip' ? 'business_trip' : 'leave_request',
+              'requester_email': userEmail,
+              'requester_name': name,
+              'start_date': startDate.toIso8601String().substring(0, 10),
+              'end_date': endDate.toIso8601String().substring(0, 10),
+              'leave_type': type,
+              'requester_is_admin': 'true',
+            },
+            requesterDepartment: department,
+            requesterEmail: userEmail,
+            isManagerRequest: false,
+          );
+          if (kDebugMode) {
+            print('👑 Admin 본인에게 확인 알림 전송: $name님의 $typeLabel 신청');
+          }
         } else if (isManager) {
           // Manager 신청 → Admin에게만 알림
           await NotificationService.sendNotificationToAdmins(
@@ -357,7 +757,9 @@ class LeaveProvider extends ChangeNotifier with TimerManagementMixin, AsyncOpera
             requesterEmail: userEmail,
             isManagerRequest: true, // Manager 신청임을 명시
           );
-          if (kDebugMode) { print('✅ Admin 알림 전송 완료: $name 매니저님의 $typeLabel 신청'); }
+          if (kDebugMode) {
+            print('✅ Admin 알림 전송 완료: $name 매니저님의 $typeLabel 신청');
+          }
         } else {
           // 일반직원 신청 → 해당 부서 Manager + Admin 둘 다 알림
           await NotificationService.sendNotificationToAdmins(
@@ -376,16 +778,24 @@ class LeaveProvider extends ChangeNotifier with TimerManagementMixin, AsyncOpera
             requesterEmail: userEmail,
             isManagerRequest: false, // 일반직원 신청임을 명시
           );
-          if (kDebugMode) { print('✅ 부서 관리자 + Admin 알림 전송 완료: $name님의 $typeLabel 신청'); }
+          if (kDebugMode) {
+            print('✅ 부서 관리자 + Admin 알림 전송 완료: $name님의 $typeLabel 신청');
+          }
         }
       } catch (notificationError) {
-        if (kDebugMode) { print('⚠️ 알림 전송 실패: $notificationError'); }
+        if (kDebugMode) {
+          print('⚠️ 알림 전송 실패: $notificationError');
+        }
         // 알림 실패는 전체 프로세스를 중단시키지 않음
       }
-      
-      // 사용연차 업데이트 후 다시 로드 및 캐시 무효화
-      await _updateUsedAnnualLeave(userEmail);
-      await _invalidateUserRelatedCaches(userEmail);
+
+      // 사용연차 업데이트와 캐시 무효화를 병렬 처리
+      await Future.wait([
+        _updateUsedAnnualLeave(userEmail),
+        _invalidateUserRelatedCaches(userEmail),
+      ]);
+
+      // fetchMyLeaves 호출 (사용자 연차 정보 갱신)
       await fetchMyLeaves(email: userEmail, forceRefresh: true);
     } catch (e) {
       _updateLoadingState(false, e.toString());
@@ -412,58 +822,116 @@ class LeaveProvider extends ChangeNotifier with TimerManagementMixin, AsyncOpera
 
   // 기간 포맷팅 헬퍼 메서드
   String _formatPeriod(DateTime startDate, DateTime endDate) {
-    if (startDate.year == endDate.year && startDate.month == endDate.month && startDate.day == endDate.day) {
+    if (startDate.year == endDate.year &&
+        startDate.month == endDate.month &&
+        startDate.day == endDate.day) {
       return '${startDate.month}월 ${startDate.day}일';
     } else {
       return '${startDate.month}월 ${startDate.day}일 ~ ${endDate.month}월 ${endDate.day}일';
     }
   }
 
-  Future<void> updateLeaveStatus(int id, String status) async {
+  Future<void> updateLeaveStatus(int id, String status, {bool skipNotification = false}) async {
     try {
-      // 1. 승인/반려하기 전에 해당 신청 정보 조회
-      final leaveDetails = allLeaves.firstWhere(
+      if (kDebugMode) {
+        print('🔄 승인/반려 처리 시작: ID $id -> $status');
+      }
+
+      // 1. 원본 데이터에서 찾기 (_allLeavesRaw 사용)
+      final rawLeaveIndex = _allLeavesRaw.indexWhere(
         (leave) => leave['id'] == id,
-        orElse: () => <String, dynamic>{},
       );
-      
-      if (leaveDetails.isEmpty) {
-        if (kDebugMode) { print('❌ 신청 정보를 찾을 수 없습니다: ID $id'); }
+
+      if (rawLeaveIndex == -1) {
+        if (kDebugMode) {
+          print('❌ 신청 정보를 찾을 수 없습니다: ID $id');
+        }
         return;
       }
-      
+
+      final leaveDetails = _allLeavesRaw[rawLeaveIndex];
       final requesterEmail = leaveDetails['user_email'] as String?;
       final requesterName = leaveDetails['name'] as String? ?? '사용자';
       final leaveType = leaveDetails['type'] as String? ?? '';
       final startDate = leaveDetails['start_date'] as String? ?? '';
       final endDate = leaveDetails['end_date'] as String? ?? '';
-      
-      // 2. 상태 업데이트
+
+      // 2. DB 상태 업데이트
       await _service.updateLeaveStatus(id, status);
-      
+      if (kDebugMode) {
+        print('✅ DB 업데이트 완료: ID $id -> $status');
+      }
+
+      // 2-1. 원본 데이터 즉시 업데이트
+      _allLeavesRaw[rawLeaveIndex]['status'] = status;
+      _allLeavesRaw[rawLeaveIndex]['updated_at'] = DateTime.now()
+          .toIso8601String();
+
+      // 2-2. 그룹화된 데이터에서도 업데이트
+      for (int i = 0; i < allLeaves.length; i++) {
+        final leave = allLeaves[i];
+        final groupedIds = leave['grouped_ids'] as List<dynamic>?;
+
+        // 그룹화된 항목인 경우
+        if (groupedIds != null && groupedIds.contains(id)) {
+          // 그룹에서 해당 항목 제거가 필요한지 확인
+          if (groupedIds.length > 1) {
+            // 그룹에 다른 항목이 있으면, 상태가 다른 항목은 그룹에서 제거
+            // 전체 데이터를 다시 그룹화하는 것이 더 안전
+            _reprocessGroupedData();
+            break;
+          } else {
+            // 단일 항목이면 상태만 업데이트
+            allLeaves[i]['status'] = status;
+            allLeaves[i]['updated_at'] = DateTime.now().toIso8601String();
+          }
+        } else if (leave['id'] == id) {
+          // 그룹화되지 않은 단일 항목
+          allLeaves[i]['status'] = status;
+          allLeaves[i]['updated_at'] = DateTime.now().toIso8601String();
+        }
+      }
+
+      // myLeaves에서도 업데이트 (동일한 신청이 있다면)
+      final myLeaveIndex = myLeaves.indexWhere((leave) => leave['id'] == id);
+      if (myLeaveIndex != -1) {
+        myLeaves[myLeaveIndex]['status'] = status;
+        myLeaves[myLeaveIndex]['updated_at'] = DateTime.now().toIso8601String();
+      }
+
+      notifyListeners();
+
       // 3. 신청자의 사용연차 정보 재계산 (승인/반려 시)
       if (requesterEmail != null && requesterEmail.isNotEmpty) {
         await _updateUsedAnnualLeave(requesterEmail);
       }
-      
-      // 4. 신청자에게 승인/반려 결과 알림 전송
-      if (requesterEmail != null && requesterEmail.isNotEmpty) {
+
+      // 4. 캐시 무효화만 하고 데이터 새로고침은 하지 않음
+      // 로컬 데이터는 이미 업데이트했으므로
+      await _invalidateRelatedCaches(requesterEmail);
+
+      // 5. UI 즉시 업데이트를 위해 notifyListeners 호출은 유지
+
+      // 6. 신청자에게 승인/반려 결과 알림 전송 (선택적 - 실패해도 프로세스 계속)
+      if (requesterEmail != null && requesterEmail.isNotEmpty && !skipNotification) {
+        // 알림 전송
         try {
           final typeLabel = _getTypeLabel(leaveType);
           final statusLabel = status == 'approved' ? '승인' : '반려';
           final statusEmoji = status == 'approved' ? '✅' : '❌';
-          
+
           String period = '';
           if (startDate.isNotEmpty && endDate.isNotEmpty) {
             final start = DateTime.parse(startDate);
             final end = DateTime.parse(endDate);
             period = _formatPeriod(start, end);
           }
-          
+
           await NotificationService.sendNotificationToUser(
             userEmail: requesterEmail,
             title: '$statusEmoji $typeLabel $statusLabel',
-            body: '$requesterName님의 $typeLabel 신청이 $statusLabel되었습니다.${period.isNotEmpty ? '\n기간: $period' : ''}',
+            body:
+                '$requesterName님의 $typeLabel 신청이 $statusLabel되었습니다.${period.isNotEmpty ? '\n기간: $period' : ''}',
             data: {
               'type': 'leave_result',
               'leave_id': id.toString(),
@@ -473,22 +941,212 @@ class LeaveProvider extends ChangeNotifier with TimerManagementMixin, AsyncOpera
               'end_date': endDate,
             },
           );
-          if (kDebugMode) { print('✅ 신청자 알림 전송 완료: $requesterName님에게 $typeLabel $statusLabel 알림'); }
+          if (kDebugMode) {
+            print(
+              '✅ 신청자 알림 전송 완료: $requesterName님에게 $typeLabel $statusLabel 알림',
+            );
+          }
         } catch (notificationError) {
-          if (kDebugMode) { print('⚠️ 신청자 알림 전송 실패: $notificationError'); }
-          // 알림 실패는 전체 프로세스를 중단시키지 않음
+          if (kDebugMode) {
+            print('⚠️ 신청자 알림 전송 실패 (무시하고 계속): $notificationError');
+          }
+          // 알림 실패는 전체 프로세스를 중단시키지 않음 - 무시하고 계속
         }
       }
-      
-      // 5. 목록 새로고침 및 캐시 무효화
-      await _invalidateRelatedCaches(requesterEmail);
-      await fetchAllLeaves(forceRefresh: true);
+
+      // 7. 승인/반려 처리 완료
+      if (kDebugMode) {
+        print('✅ 승인/반려 처리 완료: 로컬 데이터 업데이트 완료');
+      }
+
+      // 8. UI 업데이트를 위한 notifyListeners 호출
+      notifyListeners();
+      if (kDebugMode) {
+        print('✅ UI 업데이트 알림 완료');
+      }
     } catch (e) {
-      if (kDebugMode) { print('❌ 승인/반려 처리 실패: $e'); }
+      if (kDebugMode) {
+        print('❌ 승인/반려 처리 실패: $e');
+      }
       rethrow;
     }
   }
-  
+
+  // 연차/출장 신청 삭제
+  Future<void> deleteLeaveRequest({
+    required int leaveId,
+    required String userEmail,
+    required String userName,
+    required String leaveType,
+    required String startDate,
+    required String endDate,
+  }) async {
+    try {
+      if (kDebugMode) {
+        print('🗑️ 연차/출장 신청 삭제 시작: ID=$leaveId');
+      }
+
+      // 1. Edge Function을 통해 삭제 (RLS 우회)
+      final response = await _service.deleteLeaveViaEdgeFunction(
+        leaveId: leaveId,
+        userEmail: userEmail,
+        isAdmin: false,
+      );
+
+      if (kDebugMode) {
+        print('✅ Edge Function을 통한 삭제 완료: ${response['message']}');
+      }
+
+      // 2. 로컬 데이터 업데이트
+      myLeaves.removeWhere((leave) => leave['id'] == leaveId);
+      allLeaves.removeWhere((leave) => leave['id'] == leaveId);
+      
+      // 3. 캐시 무효화 - 중요!
+      await _cache.invalidate('$_myLeavesCacheKey$userEmail');
+      await _cache.invalidate(_allLeavesCacheKey);
+      final dateStr = DateTime.now().toIso8601String().substring(0, 10);
+      await _cache.invalidate('$_todayLeavesCacheKey$dateStr');
+      
+      if (kDebugMode) {
+        print('🔄 캐시 무효화 완료');
+      }
+      
+      // 4. SuperAdmin에게 알림 전송
+      try {
+        await NotificationService.sendNotificationToAdmins(
+          title: '📝 연차/출장 신청 취소',
+          body: '$userName님이 ${leaveType == 'biztrip' ? '출장' : '연차'} 신청을 취소했습니다.\n기간: $startDate ~ $endDate',
+          data: {
+            'type': 'leave_cancelled',
+            'user_email': userEmail,
+            'user_name': userName,
+            'leave_type': leaveType,
+            'start_date': startDate,
+            'end_date': endDate,
+          },
+          requesterEmail: userEmail,
+        );
+        if (kDebugMode) {
+          print('✅ SuperAdmin 알림 전송 완료');
+        }
+      } catch (notificationError) {
+        if (kDebugMode) {
+          print('⚠️ 알림 전송 실패 (무시하고 계속): $notificationError');
+        }
+        // 알림 실패는 전체 프로세스를 중단시키지 않음
+      }
+
+      // 5. 사용연차 재계산
+      await _updateUsedAnnualLeave(userEmail);
+
+      // 6. 최신 데이터로 강제 새로고침
+      await fetchMyLeaves(email: userEmail, forceRefresh: true);
+      await fetchAllLeaves(forceRefresh: true);
+
+      // 7. UI 업데이트
+      notifyListeners();
+
+      if (kDebugMode) {
+        print('✅ 연차/출장 신청 삭제 완료');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ 연차/출장 신청 삭제 실패: $e');
+      }
+      throw Exception('신청 취소 중 오류가 발생했습니다: $e');
+    }
+  }
+
+  // 관리자가 처리완료된 연차/출장 삭제
+  Future<void> deleteApprovedLeave({
+    required int leaveId,
+    required String requesterEmail,
+    required String requesterName,
+    required String leaveType,
+    required String startDate,
+    required String endDate,
+    required String status,
+  }) async {
+    try {
+      if (kDebugMode) {
+        print('🗑️ 관리자 처리완료 항목 삭제 시작: ID=$leaveId');
+      }
+
+      // 1. Edge Function을 통해 삭제 (RLS 우회, 관리자 권한)
+      final response = await _service.deleteLeaveViaEdgeFunction(
+        leaveId: leaveId,
+        userEmail: null, // 관리자는 userEmail 체크 불필요
+        isAdmin: true,
+      );
+
+      if (kDebugMode) {
+        print('✅ Edge Function을 통한 관리자 삭제 완료: ${response['message']}');
+      }
+
+      // 2. 로컬 데이터 업데이트
+      myLeaves.removeWhere((leave) => leave['id'] == leaveId);
+      allLeaves.removeWhere((leave) => leave['id'] == leaveId);
+      
+      // 3. 캐시 무효화 - 중요!
+      await _cache.invalidate('$_myLeavesCacheKey$requesterEmail');
+      await _cache.invalidate(_allLeavesCacheKey);
+      final dateStr = DateTime.now().toIso8601String().substring(0, 10);
+      await _cache.invalidate('$_todayLeavesCacheKey$dateStr');
+      
+      if (kDebugMode) {
+        print('🔄 캐시 무효화 완료');
+      }
+      
+      // 4. 신청자에게 알림 전송
+      try {
+        final statusText = status == 'approved' ? '승인' : '반려';
+        final typeText = leaveType == 'biztrip' ? '출장' : '연차';
+        
+        await NotificationService.sendNotificationToUser(
+          userEmail: requesterEmail,
+          title: '⚠️ $typeText 기록 삭제',
+          body: '관리자가 $statusText된 $typeText 기록을 삭제했습니다.\n기간: $startDate ~ $endDate\n문의사항은 관리자에게 연락해주세요.',
+          data: {
+            'type': 'leave_deleted_by_admin',
+            'user_email': requesterEmail,
+            'user_name': requesterName,
+            'leave_type': leaveType,
+            'start_date': startDate,
+            'end_date': endDate,
+            'status': status,
+          },
+        );
+        if (kDebugMode) {
+          print('✅ 신청자 알림 전송 완료');
+        }
+      } catch (notificationError) {
+        if (kDebugMode) {
+          print('⚠️ 알림 전송 실패 (무시하고 계속): $notificationError');
+        }
+        // 알림 실패는 전체 프로세스를 중단시키지 않음
+      }
+
+      // 5. 사용연차 재계산
+      await _updateUsedAnnualLeave(requesterEmail);
+
+      // 6. 최신 데이터로 강제 새로고침
+      await fetchMyLeaves(email: requesterEmail, forceRefresh: true);
+      await fetchAllLeaves(forceRefresh: true);
+
+      // 7. UI 업데이트
+      notifyListeners();
+
+      if (kDebugMode) {
+        print('✅ 관리자 처리완료 항목 삭제 완료');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ 관리자 처리완료 항목 삭제 실패: $e');
+      }
+      throw Exception('삭제 중 오류가 발생했습니다: $e');
+    }
+  }
+
   // 배치 업데이트 헬퍼 메서드들
   void _batchUpdate(VoidCallback updates) {
     _shouldNotify = false;
@@ -496,7 +1154,7 @@ class LeaveProvider extends ChangeNotifier with TimerManagementMixin, AsyncOpera
     _shouldNotify = true;
     _debouncedNotify();
   }
-  
+
   void _updateLoadingState(bool loading, String? errorMsg) {
     if (isLoading != loading || error != errorMsg) {
       _batchUpdate(() {
@@ -505,7 +1163,7 @@ class LeaveProvider extends ChangeNotifier with TimerManagementMixin, AsyncOpera
       });
     }
   }
-  
+
   // 디바운싱된 알림 (using TimerManager)
   void _debouncedNotify() {
     scopedDebounce(
@@ -518,7 +1176,7 @@ class LeaveProvider extends ChangeNotifier with TimerManagementMixin, AsyncOpera
       },
     );
   }
-  
+
   @override
   void dispose() {
     // Dispose all scoped timers and operations
@@ -526,58 +1184,110 @@ class LeaveProvider extends ChangeNotifier with TimerManagementMixin, AsyncOpera
     disposeScopedOperations();
     super.dispose();
   }
-  
+
+  // 그룹화된 데이터를 다시 처리하는 메서드 (최적화)
+  void _reprocessGroupedData() {
+    if (_allLeavesRaw.isEmpty) return;
+
+    // 변경된 상태의 항목만 찾아서 부분 업데이트
+    final pendingItems = <Map<String, dynamic>>[];
+    final nonPendingItems = <Map<String, dynamic>>[];
+
+    for (final leave in _allLeavesRaw) {
+      if (leave['status'] == 'pending') {
+        pendingItems.add(leave);
+      } else {
+        nonPendingItems.add(leave);
+      }
+    }
+
+    // pending 항목만 그룹화 (승인/반려된 항목은 그룹화 불필요)
+    final groupedPending = _groupContinuousLeavesForApproval(pendingItems);
+
+    // 결합하고 정렬
+    final allGroupedLeaves = [...groupedPending, ...nonPendingItems];
+    allGroupedLeaves.sort(
+      (a, b) => DateTime.parse(
+        b['created_at'],
+      ).compareTo(DateTime.parse(a['created_at'])),
+    );
+
+    // 업데이트
+    allLeaves = allGroupedLeaves;
+
+    if (kDebugMode) {
+      print(
+        '✅ 그룹화 데이터 재처리 완료 (최적화): ${_allLeavesRaw.length} -> ${allGroupedLeaves.length}',
+      );
+    }
+  }
+
   // 리스트 비교 헬퍼
-  bool _isLeavesEqual(List<Map<String, dynamic>> old, List<Map<String, dynamic>> newList) {
+  bool _isLeavesEqual(
+    List<Map<String, dynamic>> old,
+    List<Map<String, dynamic>> newList,
+  ) {
     if (old.length != newList.length) return false;
     for (int i = 0; i < old.length; i++) {
       // ID와 상태만 비교 (핵심 데이터)
-      if (old[i]['id'] != newList[i]['id'] || old[i]['status'] != newList[i]['status']) {
+      if (old[i]['id'] != newList[i]['id'] ||
+          old[i]['status'] != newList[i]['status']) {
         return false;
       }
     }
     return true;
   }
-  
+
   // 캐시 무효화 헬퍼 메서드들
   Future<void> _invalidateUserRelatedCaches(String userEmail) async {
     await _cache.invalidate('$_myLeavesCacheKey$userEmail');
     await _cache.invalidate('$_annualLeaveCacheKey$userEmail');
     await _cache.invalidate('$_employeeCacheKey$userEmail');
-    if (kDebugMode) print('🗑️ User related caches invalidated for: $userEmail');
+    if (kDebugMode)
+      print('🗑️ User related caches invalidated for: $userEmail');
   }
-  
+
   Future<void> _invalidateRelatedCaches(String? userEmail) async {
     // Invalidate all leaves cache
     await _cache.invalidate(_allLeavesCacheKey);
-    
+
     // Invalidate today's leaves cache for current date
     final today = DateTime.now().toIso8601String().substring(0, 10);
     await _cache.invalidate('$_todayLeavesCacheKey$today');
-    
+
     // If user email provided, invalidate user-specific caches
     if (userEmail != null && userEmail.isNotEmpty) {
       await _invalidateUserRelatedCaches(userEmail);
     }
-    
+
     if (kDebugMode) print('🗑️ Related leave caches invalidated');
   }
-  
+
   /// Force refresh all data by clearing cache and reloading
   Future<void> forceRefreshAll({String? userEmail}) async {
+    // 캐시만 삭제하고 병렬로 필요한 데이터만 가져오기
     await _cache.clearAll();
-    
+
+    // 병렬 처리로 성능 개선
+    final futures = <Future>[];
+
     if (userEmail != null) {
-      await fetchMyLeaves(email: userEmail, forceRefresh: true);
+      futures.add(fetchMyLeaves(email: userEmail, forceRefresh: true));
     }
-    await fetchAllLeaves(forceRefresh: true);
-    await fetchTodayLeaves(DateTime.now(), forceRefresh: true);
-    
-    if (kDebugMode) print('🔄 Force refreshed all leave data');
+
+    // 승인 화면에서는 fetchAllLeaves만 필요
+    futures.add(fetchAllLeaves(forceRefresh: true));
+
+    // todayLeaves는 필요할 때만 가져오도록 (일반적으로 필요 없음)
+    // futures.add(fetchTodayLeaves(DateTime.now(), forceRefresh: true));
+
+    await Future.wait(futures);
+
+    if (kDebugMode) print('🔄 Force refreshed leave data');
   }
-  
+
   /// Get cache statistics for debugging
   Map<String, dynamic> getCacheStats() {
     return _cache.getStats();
   }
-} 
+}

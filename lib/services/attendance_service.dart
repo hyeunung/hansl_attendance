@@ -4,7 +4,8 @@ import 'database_optimization_service.dart';
 
 class AttendanceService {
   final supabase = Supabase.instance.client;
-  final DatabaseOptimizationService _dbOptim = DatabaseOptimizationService.instance;
+  final DatabaseOptimizationService _dbOptim =
+      DatabaseOptimizationService.instance;
 
   Future<void> recordClockIn({
     required String employeeId,
@@ -12,7 +13,7 @@ class AttendanceService {
   }) async {
     final today = DateTime.now().toIso8601String().substring(0, 10);
     final now = DateTime.now().toIso8601String().substring(11, 19);
-    
+
     try {
       await _dbOptim.optimizedInsert(
         table: 'attendance_records',
@@ -28,7 +29,7 @@ class AttendanceService {
           'attendance_${employeeId}_',
         ],
       );
-      
+
       if (kDebugMode) {
         print('✅ recordClockIn completed with cache invalidation');
       }
@@ -40,29 +41,21 @@ class AttendanceService {
     }
   }
 
-  Future<void> recordClockOut({
-    required String employeeId,
-  }) async {
+  Future<void> recordClockOut({required String employeeId}) async {
     final today = DateTime.now().toIso8601String().substring(0, 10);
     final now = DateTime.now().toIso8601String().substring(11, 19);
-    
+
     try {
       await _dbOptim.optimizedUpdate(
         table: 'attendance_records',
-        data: {
-          'status': '퇴근',
-          'clock_out': now,
-        },
-        match: {
-          'date': today,
-          'employee_id': employeeId,
-        },
+        data: {'status': '퇴근', 'clock_out': now},
+        match: {'date': today, 'employee_id': employeeId},
         invalidateCachePatterns: [
           'attendance_${employeeId}_$today',
           'attendance_${employeeId}_',
         ],
       );
-      
+
       if (kDebugMode) {
         print('✅ recordClockOut completed with cache invalidation');
       }
@@ -97,4 +90,4 @@ class AttendanceService {
     );
     return records.isNotEmpty ? records.first : null;
   }
-} 
+}

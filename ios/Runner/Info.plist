@@ -19,7 +19,7 @@
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
 			<key>CFBundleShortVersionString</key>
-	<string>1.2.5</string>
+	<string>2.0.3</string>
 		<key>CFBundleSignature</key>
 		<string>????</string>
 			<key>CFBundleVersion</key>
@@ -43,6 +43,8 @@
 				</dict>
 			</dict>
 		</dict>
+		<key>FirebaseAppDelegateProxyEnabled</key>
+		<true/>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 		<string>이 앱에서 정확한 출근 위치 확인을 위해 위치 정보에 접근합니다. 이는 근태 관리 시스템의 핵심 기능으로, 사용자의 출근 위치를 확인하여 정확한 근무 시간을 기록하기 위해 필요합니다.</string>
 		<key>NSLocationAlwaysUsageDescription</key>
@@ -69,5 +71,17 @@
 	<false/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<!-- Deep link configuration for Supabase Auth -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>supabase-auth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.hansl.app</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

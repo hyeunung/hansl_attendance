@@ -1,7 +1,7 @@
 // 출퇴근(근태) 데이터 모델 정의
 class Attendance {
   // 출퇴근 정보 필드 및 생성자 작성 예정
-} 
+}
 
 // 한 번의 출근/퇴근 기록을 나타내는 클래스
 class AttendanceRecord {

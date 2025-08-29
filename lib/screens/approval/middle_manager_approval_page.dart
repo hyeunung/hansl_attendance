@@ -3,10 +3,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'po_preview_page.dart'; // PO 미리보기 페이지 경로 (같은 폴더에 생성 예정)
 
 class MiddleManagerApprovalPage extends StatefulWidget {
-  const MiddleManagerApprovalPage({Key? key}) : super(key: key);
+  const MiddleManagerApprovalPage({super.key});
 
   @override
-  _MiddleManagerApprovalPageState createState() => _MiddleManagerApprovalPageState();
+  _MiddleManagerApprovalPageState createState() =>
+      _MiddleManagerApprovalPageState();
 }
 
 class _MiddleManagerApprovalPageState extends State<MiddleManagerApprovalPage> {
@@ -25,7 +26,9 @@ class _MiddleManagerApprovalPageState extends State<MiddleManagerApprovalPage> {
     try {
       final response = await supabase
           .from('purchase_requests')
-          .select('id, request_type, request_date, total_amount, currency, po_file_url, vendors(vendor_name)')
+          .select(
+            'id, request_type, request_date, total_amount, currency, po_file_url, vendors(vendor_name)',
+          )
           .eq('payment_status', '대기')
           .order('request_date', ascending: true);
       setState(() {
@@ -35,9 +38,9 @@ class _MiddleManagerApprovalPageState extends State<MiddleManagerApprovalPage> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('데이터 불러오기 실패: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('데이터 불러오기 실패: $e')));
       }
     }
   }
@@ -60,10 +63,15 @@ class _MiddleManagerApprovalPageState extends State<MiddleManagerApprovalPage> {
                 final currency = pr['currency'] ?? '';
 
                 return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   child: ListTile(
                     title: Text('발주번호: #$id ($type)'),
-                    subtitle: Text('$vendorName • $requestDate • $currency $totalAmount'),
+                    subtitle: Text(
+                      '$vendorName • $requestDate • $currency $totalAmount',
+                    ),
                     onTap: () async {
                       await Navigator.push(
                         context,

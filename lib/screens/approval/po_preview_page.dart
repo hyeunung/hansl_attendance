@@ -39,10 +39,10 @@ class _PoPreviewPageState extends State<PoPreviewPage> {
         .eq('id', widget.purchaseRequestId)
         .single();
 
-    if (response == null || response['po_file_url'] == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('발주서가 없습니다.')),
-      );
+    if (response['po_file_url'] == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('발주서가 없습니다.')));
       setState(() => _isLoading = false);
       return;
     }
@@ -60,9 +60,9 @@ class _PoPreviewPageState extends State<PoPreviewPage> {
       });
     } catch (e) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('발주서 다운로드 오류: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('발주서 다운로드 오류: $e')));
     }
   }
 
@@ -73,30 +73,32 @@ class _PoPreviewPageState extends State<PoPreviewPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : localFilePath == null
-              ? const Center(child: Text('발주서 로드 실패'))
-              : Column(
-                  children: [
-                    Expanded(
-                      child: PDFView(
-                        filePath: localFilePath!,
-                        enableSwipe: true,
-                        swipeHorizontal: false,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          await widget.onApprove();
-                        },
-                        child: Text(
-                          widget.initialStatus == '대기' ? '확인(승인)' : '결제 승인',
-                        ),
-                        style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 48)),
-                      ),
-                    ),
-                  ],
+          ? const Center(child: Text('발주서 로드 실패'))
+          : Column(
+              children: [
+                Expanded(
+                  child: PDFView(
+                    filePath: localFilePath!,
+                    enableSwipe: true,
+                    swipeHorizontal: false,
+                  ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      await widget.onApprove();
+                    },
+                    child: Text(
+                      widget.initialStatus == '대기' ? '확인(승인)' : '결제 승인',
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                ),
+              ],
+            ),
     );
   }
-} 
+}

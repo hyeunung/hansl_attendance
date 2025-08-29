@@ -1,24 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/leave_provider.dart';
+import '../../widgets/optimized_widgets.dart';
 import '../../providers/user_provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import '../../services/supabase_service.dart';
-import 'package:dropdown_button2/dropdown_button2.dart';
 import '../../theme/app_colors.dart';
-import '../approval/approval_screen.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_text_theme.dart';
-import 'package:keyboard_actions/keyboard_actions.dart';
-import 'leave_status_screen.dart';
 import '../main_tab.dart';
+import '../../utils/logger.dart';
 
 class BusinessTripRequestScreen extends StatefulWidget {
   const BusinessTripRequestScreen({super.key});
 
   @override
-  State<BusinessTripRequestScreen> createState() => _BusinessTripRequestScreenState();
+  State<BusinessTripRequestScreen> createState() =>
+      _BusinessTripRequestScreenState();
 }
 
 class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
@@ -80,7 +79,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
         }
       }
     });
-    print('직원 목록: $response');
+    AppLogger.debug('직원 목록 로드 완료', '총 ${response.length}명');
   }
 
   // 추가 인원 선택: 중앙 Dialog + 검색 + 카드형 멀티셀렉트
@@ -93,6 +92,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
     await showDialog(
       context: context,
       barrierDismissible: true,
+      barrierColor: Colors.black87,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
@@ -100,7 +100,9 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                 .where((name) => name.contains(search))
                 .toList();
             return Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 curve: Curves.easeInOut,
@@ -109,19 +111,31 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('추가 인원 선택', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                    const Text(
+                      '추가 인원 선택',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     if (tempSelected.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 10),
                         child: Wrap(
                           spacing: 8,
-                          children: tempSelected.map((name) => Chip(
-                            label: Text(name),
-                            onDeleted: () {
-                              setModalState(() => tempSelected.remove(name));
-                            },
-                          )).toList(),
+                          children: tempSelected
+                              .map(
+                                (name) => Chip(
+                                  label: Text(name),
+                                  onDeleted: () {
+                                    setModalState(
+                                      () => tempSelected.remove(name),
+                                    );
+                                  },
+                                ),
+                              )
+                              .toList(),
                         ),
                       ),
                     TextField(
@@ -129,7 +143,10 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                         hintText: '이름 검색',
                         prefixIcon: const Icon(Icons.search),
                         contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
                         filled: true,
                         fillColor: const Color(0xFFF4F5F7),
                       ),
@@ -156,12 +173,23 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                                     });
                                   },
                                   child: Container(
-                                    margin: const EdgeInsets.symmetric(vertical: 4),
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                    margin: const EdgeInsets.symmetric(
+                                      vertical: 4,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 12,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: selected ? AppColors.primary.withValues(alpha: 0.12) : Colors.white,
+                                      color: selected
+                                          ? AppColors.primary.withValues(
+                                              alpha: 0.12,
+                                            )
+                                          : Colors.white,
                                       border: Border.all(
-                                        color: selected ? AppColors.primary : const Color(0xFFE0E0E0),
+                                        color: selected
+                                            ? AppColors.primary
+                                            : const Color(0xFFE0E0E0),
                                         width: selected ? 2 : 1,
                                       ),
                                       borderRadius: BorderRadius.circular(10),
@@ -169,8 +197,15 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                                     child: Row(
                                       children: [
                                         CircleAvatar(
-                                          backgroundColor: selected ? AppColors.primary : const Color(0xFFE0E0E0),
-                                          child: Text(name.characters.first, style: const TextStyle(color: Colors.white)),
+                                          backgroundColor: selected
+                                              ? AppColors.primary
+                                              : const Color(0xFFE0E0E0),
+                                          child: Text(
+                                            name.characters.first,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
                                         ),
                                         const SizedBox(width: 12),
                                         Expanded(
@@ -178,13 +213,18 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                                             name,
                                             style: TextStyle(
                                               fontWeight: FontWeight.bold,
-                                              color: selected ? AppColors.primary : Colors.black87,
+                                              color: selected
+                                                  ? AppColors.primary
+                                                  : Colors.black87,
                                               fontSize: 16,
                                             ),
                                           ),
                                         ),
                                         if (selected)
-                                          Icon(Icons.check_circle, color: AppColors.primary),
+                                          Icon(
+                                            Icons.check_circle,
+                                            color: AppColors.primary,
+                                          ),
                                       ],
                                     ),
                                   ),
@@ -200,13 +240,21 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         onPressed: () {
                           setState(() => _selectedCompanions = tempSelected);
                           Navigator.pop(context);
                         },
-                        child: const Text('확인', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          '확인',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -226,12 +274,17 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
     await showDialog(
       context: context,
       barrierDismissible: true,
+      barrierColor: Colors.black87,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            final filtered = candidates.where((name) => name.contains(search)).toList();
+            final filtered = candidates
+                .where((name) => name.contains(search))
+                .toList();
             return Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 curve: Curves.easeInOut,
@@ -240,14 +293,23 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('출장자(신청자) 선택', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                    const Text(
+                      '출장자(신청자) 선택',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     TextField(
                       decoration: InputDecoration(
                         hintText: '이름 검색',
                         prefixIcon: const Icon(Icons.search),
                         contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
                         filled: true,
                         fillColor: const Color(0xFFF4F5F7),
                       ),
@@ -272,12 +334,23 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                                     Navigator.pop(context);
                                   },
                                   child: Container(
-                                    margin: const EdgeInsets.symmetric(vertical: 4),
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                    margin: const EdgeInsets.symmetric(
+                                      vertical: 4,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 12,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: selected ? AppColors.primary.withValues(alpha: 0.12) : Colors.white,
+                                      color: selected
+                                          ? AppColors.primary.withValues(
+                                              alpha: 0.12,
+                                            )
+                                          : Colors.white,
                                       border: Border.all(
-                                        color: selected ? AppColors.primary : const Color(0xFFE0E0E0),
+                                        color: selected
+                                            ? AppColors.primary
+                                            : const Color(0xFFE0E0E0),
                                         width: selected ? 2 : 1,
                                       ),
                                       borderRadius: BorderRadius.circular(10),
@@ -285,8 +358,15 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                                     child: Row(
                                       children: [
                                         CircleAvatar(
-                                          backgroundColor: selected ? AppColors.primary : const Color(0xFFE0E0E0),
-                                          child: Text(name.characters.first, style: const TextStyle(color: Colors.white)),
+                                          backgroundColor: selected
+                                              ? AppColors.primary
+                                              : const Color(0xFFE0E0E0),
+                                          child: Text(
+                                            name.characters.first,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
                                         ),
                                         const SizedBox(width: 12),
                                         Expanded(
@@ -294,121 +374,24 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                                             name,
                                             style: TextStyle(
                                               fontWeight: FontWeight.bold,
-                                              color: selected ? AppColors.primary : Colors.black87,
+                                              color: selected
+                                                  ? AppColors.primary
+                                                  : Colors.black87,
                                               fontSize: 16,
                                             ),
                                           ),
                                         ),
                                         if (selected)
-                                          Icon(Icons.check_circle, color: AppColors.primary),
+                                          Icon(
+                                            Icons.check_circle,
+                                            color: AppColors.primary,
+                                          ),
                                       ],
                                     ),
                                   ),
                                 );
                               }).toList(),
                             ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _showDatePickerDialog(List<Map<String, dynamic>> myLeaves) async {
-    final now = DateTime.now();
-    Set<DateTime> tempSelected = {..._selectedDates};
-    // 이미 신청된 날짜
-    final Set<DateTime> disabledDates = myLeaves.map((l) {
-      final start = DateTime.parse(l['start_date']);
-      final end = DateTime.parse(l['end_date']);
-      return List.generate(end.difference(start).inDays + 1, (i) => DateTime(start.year, start.month, start.day + i));
-    }).expand((x) => x).toSet();
-    await showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeInOut,
-                padding: const EdgeInsets.all(20),
-                width: 370,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('출장 날짜 선택', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-                    const SizedBox(height: 12),
-                    TableCalendar(
-                      firstDay: DateTime(now.year, 1, 1),
-                      lastDay: DateTime(now.year + 1, 12, 31),
-                      focusedDay: tempSelected.isNotEmpty ? tempSelected.first : DateTime.now(),
-                      selectedDayPredicate: (day) => tempSelected.any((d) => isSameDay(d, day)),
-                      onDaySelected: (selectedDay, _) {
-                        if (disabledDates.any((d) => isSameDay(d, selectedDay))) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('이미 신청된 날짜입니다.'), backgroundColor: Colors.red),
-                          );
-                          return;
-                        }
-                        setModalState(() {
-                          if (tempSelected.any((d) => isSameDay(d, selectedDay))) {
-                            tempSelected.removeWhere((d) => isSameDay(d, selectedDay));
-                          } else {
-                            tempSelected.add(selectedDay);
-                          }
-                        });
-                      },
-                      calendarStyle: CalendarStyle(
-                        isTodayHighlighted: true,
-                        selectedDecoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.18),
-                          shape: BoxShape.circle,
-                        ),
-                        todayDecoration: BoxDecoration(
-                          color: Colors.blue.withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        disabledTextStyle: TextStyle(color: Colors.grey.shade400),
-                      ),
-                      enabledDayPredicate: (day) => !disabledDates.any((d) => isSameDay(d, day)),
-                      headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true),
-                      calendarFormat: CalendarFormat.month,
-                    ),
-                    const SizedBox(height: 16),
-                    Wrap(
-                      spacing: 8,
-                      children: (tempSelected.toList()..sort((a, b) => a.compareTo(b)))
-                          .map((d) => Chip(
-                                label: Text(DateFormat('yyyy.MM.dd').format(d)),
-                                backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-                                labelStyle: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
-                                onDeleted: () => setModalState(() => tempSelected.remove(d)),
-                              ))
-                          .toList(),
-                    ),
-                    const SizedBox(height: 18),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 46,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        onPressed: () {
-                          setState(() => _selectedDates = tempSelected);
-                          Navigator.pop(context);
-                        },
-                        child: const Text('확인', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      ),
                     ),
                   ],
                 ),
@@ -428,448 +411,704 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: AppColors.primaryGradient,
-          ),
+          decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
         ),
         centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.primary),
-          onPressed: () => Navigator.pop(context),
-        ),
-                  title: Text(
-            '출장 신청',
-            style: AppTextStyles.appBarTitle(context),
-          ),
+        automaticallyImplyLeading: false,
+        title: Text('출장 신청', style: AppTextStyles.appBarTitle(context)),
       ),
-      body: Consumer<LeaveProvider>(
+      body: OptimizedConsumer<LeaveProvider>(
+        componentKey: 'business_trip_main',
+        throttleDuration: const Duration(milliseconds: 150),
+        shouldRebuild: (provider) => !provider.isLoading,
         builder: (context, leaveProvider, _) {
           final now = DateTime.now();
           final thisMonth = now.month;
           final thisYear = now.year;
-          final myBiztrips = leaveProvider.myLeaves.where((l) => l['type'] == 'biztrip').toList();
-          final monthBiztrips = myBiztrips.where((l) => DateTime.parse(l['start_date']).month == thisMonth && DateTime.parse(l['start_date']).year == thisYear).length;
-          final yearBiztrips = myBiztrips.where((l) => DateTime.parse(l['start_date']).year == thisYear).length;
-          return ListView(
-            padding: const EdgeInsets.all(18),
-            children: [
-              _buildBanner(),
-              // 상단 카드
-              Container(
-                decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('이번달 출장', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
-                    const SizedBox(height: 18),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          '$monthBiztrips회',
-                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 40, color: Colors.white, height: 1.1),
+          final myBiztrips = leaveProvider.myLeaves
+              .where((l) => l['type'] == 'biztrip')
+              .toList();
+          final monthBiztrips = myBiztrips
+              .where(
+                (l) =>
+                    DateTime.parse(l['start_date']).month == thisMonth &&
+                    DateTime.parse(l['start_date']).year == thisYear,
+              )
+              .length;
+          final yearBiztrips = myBiztrips
+              .where((l) => DateTime.parse(l['start_date']).year == thisYear)
+              .length;
+          return SingleChildScrollView(
+            physics: const ClampingScrollPhysics(),
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              children: [
+                _buildBanner(),
+                // 상단 카드
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16,
+                    horizontal: 20,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '이번달 출장',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: Colors.white,
                         ),
-                        const SizedBox(width: 20),
-                        Text(
-                          '올해 누적 출장  $yearBiztrips회',
-                          style: const TextStyle(fontSize: 16, color: Colors.white70, fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ),
-                  ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '$monthBiztrips회',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 40,
+                              color: Colors.white,
+                              height: 1.1,
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                          Text(
+                            '올해 누적 출장  $yearBiztrips회',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.white70,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 22),
-              // 출장자(신청자)
-              Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [AppShadows.card],
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            const Text('출장자(신청자)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-                            const Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
-                          ],
+                const SizedBox(height: 12),
+                // 출장자(신청자)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [AppShadows.card],
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Text(
+                                '출장자(신청자)',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 17,
+                                ),
+                              ),
+                              const Text(
+                                '  *',
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 17,
+                                ),
+                              ),
+                            ],
+                          ),
+                          GestureDetector(
+                            onTap: _showCompanionDialog,
+                            child: const Text(
+                              '+ 추가 인원',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      GestureDetector(
+                        onTap: _employeeList.isNotEmpty && !_isLoadingEmployees
+                            ? _showEmployeeDialog
+                            : null,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF4F5F7),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 10,
+                          ),
+                          child: _isLoadingEmployees
+                              ? const SizedBox(
+                                  height: 40,
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                )
+                              : Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      _selectedEmployee ?? '출장자를 선택하세요',
+                                      style: TextStyle(
+                                        fontSize: 17,
+                                        color: _selectedEmployee != null
+                                            ? AppColors.primary
+                                            : Colors.grey,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                         ),
-                        GestureDetector(
-                          onTap: _showCompanionDialog,
-                          child: const Text(
-                            '+ 추가 인원',
-                            style: TextStyle(color: AppColors.primary, fontSize: 15, fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(height: 4),
+                      if (_selectedCompanions.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Wrap(
+                            spacing: 8,
+                            children: _selectedCompanions
+                                .map(
+                                  (m) => Chip(
+                                    label: Text(m),
+                                    onDeleted: () => setState(
+                                      () => _selectedCompanions.remove(m),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    GestureDetector(
-                      onTap: _employeeList.isNotEmpty && !_isLoadingEmployees ? _showEmployeeDialog : null,
-                      child: Container(
+                      const SizedBox(height: 4),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // 캘린더를 메인 화면에 직접 배치
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [AppShadows.card],
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Text(
+                            '날짜 선택',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 17,
+                            ),
+                          ),
+                          const Text(
+                            '  *',
+                            style: TextStyle(color: Colors.red, fontSize: 17),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      SizedBox(
+                        height: 210, // 캘린더 높이 더 줄임 (overflow 방지)
+                        child: TableCalendar(
+                          firstDay: DateTime(now.year, 1, 1),
+                          lastDay: DateTime(now.year + 1, 12, 31),
+                          focusedDay: DateTime.now(),
+                          selectedDayPredicate: (day) =>
+                              _selectedDates.any((d) => isSameDay(d, day)),
+                          onDaySelected: (selectedDay, _) {
+                            final disabledDates = leaveProvider.myLeaves
+                                .map((l) {
+                                  final start = DateTime.parse(l['start_date']);
+                                  final end = DateTime.parse(l['end_date']);
+                                  return List.generate(
+                                    end.difference(start).inDays + 1,
+                                    (i) => DateTime(
+                                      start.year,
+                                      start.month,
+                                      start.day + i,
+                                    ),
+                                  );
+                                })
+                                .expand((x) => x)
+                                .toSet();
+
+                            if (disabledDates.any(
+                              (d) => isSameDay(d, selectedDay),
+                            )) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('이미 신청된 날짜입니다.'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+
+                            setState(() {
+                              if (_selectedDates.any(
+                                (d) => isSameDay(d, selectedDay),
+                              )) {
+                                _selectedDates.removeWhere(
+                                  (d) => isSameDay(d, selectedDay),
+                                );
+                              } else {
+                                _selectedDates.add(selectedDay);
+                              }
+                            });
+                          },
+                          calendarStyle: CalendarStyle(
+                            isTodayHighlighted: true,
+                            selectedDecoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.18),
+                              shape: BoxShape.circle,
+                            ),
+                            todayDecoration: BoxDecoration(
+                              color: Colors.blue.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            disabledTextStyle: TextStyle(
+                              color: Colors.grey.shade400,
+                            ),
+                            cellMargin: const EdgeInsets.all(2),
+                            cellPadding: const EdgeInsets.all(0),
+                          ),
+                          enabledDayPredicate: (day) {
+                            final disabledDates = leaveProvider.myLeaves
+                                .map((l) {
+                                  final start = DateTime.parse(l['start_date']);
+                                  final end = DateTime.parse(l['end_date']);
+                                  return List.generate(
+                                    end.difference(start).inDays + 1,
+                                    (i) => DateTime(
+                                      start.year,
+                                      start.month,
+                                      start.day + i,
+                                    ),
+                                  );
+                                })
+                                .expand((x) => x)
+                                .toSet();
+                            return !disabledDates.any((d) => isSameDay(d, day));
+                          },
+                          headerStyle: const HeaderStyle(
+                            formatButtonVisible: false,
+                            titleCentered: true,
+                            headerPadding: EdgeInsets.symmetric(vertical: 4),
+                          ),
+                          calendarFormat: CalendarFormat.month,
+                          // 좌우 스와이프만 허용, 상하는 전체 화면 스크롤로 전달
+                          pageJumpingEnabled: true,
+                          availableGestures: AvailableGestures.horizontalSwipe,
+                          sixWeekMonthsEnforced: false, // 높이 유연하게 조정
+                          daysOfWeekHeight: 28,
+                          daysOfWeekStyle: DaysOfWeekStyle(
+                            weekdayStyle: const TextStyle(
+                              color: Colors.black87,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                            weekendStyle: TextStyle(
+                              color: Colors.red.shade400,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (_selectedDates.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                          child: Wrap(
+                            spacing: 8,
+                            children:
+                                (_selectedDates.toList()
+                                      ..sort((a, b) => a.compareTo(b)))
+                                    .map(
+                                      (d) => Chip(
+                                        label: Text(
+                                          DateFormat('yyyy.MM.dd').format(d),
+                                        ),
+                                        backgroundColor: AppColors.primary
+                                            .withValues(alpha: 0.12),
+                                        labelStyle: TextStyle(
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        onDeleted: () => setState(
+                                          () => _selectedDates.remove(d),
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                          ),
+                        ),
+                      const SizedBox(height: 4),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // 출장지
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [AppShadows.card],
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Text(
+                            '출장지',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 17,
+                            ),
+                          ),
+                          const Text(
+                            '  *',
+                            style: TextStyle(color: Colors.red, fontSize: 17),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
                         decoration: BoxDecoration(
                           color: const Color(0xFFF4F5F7),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                        child: _isLoadingEmployees
-                            ? const SizedBox(height: 40, child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
-                            : Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    _selectedEmployee ?? '출장자를 선택하세요',
-                                    style: TextStyle(
-                                      fontSize: 17,
-                                      color: _selectedEmployee != null ? AppColors.primary : Colors.grey,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    if (_selectedCompanions.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Wrap(
-                          spacing: 8,
-                          children: _selectedCompanions.map((m) => Chip(
-                            label: Text(m),
-                            onDeleted: () => setState(() => _selectedCompanions.remove(m)),
-                          )).toList(),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
                         ),
-                      ),
-                    const SizedBox(height: 8),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 18),
-              // 날짜
-              Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [AppShadows.card],
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Text('날짜', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-                        const Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF4F5F7),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
-                      child: InkWell(
-                        onTap: () {
-                          final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
-                          _showDatePickerDialog(leaveProvider.myLeaves);
-                        },
-                        child: Row(
-                          children: [
-                            const Icon(Icons.calendar_today, color: Colors.grey),
-                            SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                _selectedDates.isNotEmpty
-                                    ? ((_selectedDates.toList()..sort((a, b) => a.compareTo(b)))
-                                        .map((d) => DateFormat('yyyy.MM.dd').format(d))
-                                        .join(', '))
-                                    : '출장 날짜를 선택하세요',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: _selectedDates.isNotEmpty ? AppColors.primary : Colors.grey,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                        child: TextField(
+                          controller: _placeController,
+                          focusNode: _placeFocusNode,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            color: Color(0xFF222222),
+                          ),
+                          decoration: const InputDecoration(
+                            hintText: '출장지를 입력하세요',
+                            hintStyle: TextStyle(
+                              fontSize: 17,
+                              color: Colors.grey,
                             ),
-                          ],
+                            border: InputBorder.none,
+                          ),
                         ),
                       ),
-                    ),
-                    if (_selectedDates.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: Wrap(
-                          spacing: 8,
-                          children: (_selectedDates.toList()..sort((a, b) => a.compareTo(b)))
-                              .map((d) => Chip(
-                                    label: Text(DateFormat('yyyy.MM.dd').format(d)),
-                                    backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-                                    labelStyle: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
-                                    onDeleted: () => setState(() => _selectedDates.remove(d)),
-                                  ))
-                              .toList(),
+                      const SizedBox(height: 4),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // 교통
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [AppShadows.card],
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Text(
+                            '교통',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 17,
+                            ),
+                          ),
+                          const Text(
+                            '  *',
+                            style: TextStyle(color: Colors.red, fontSize: 17),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF4F5F7),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ),
-                    const SizedBox(height: 8),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 18),
-              // 출장지
-              Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [AppShadows.card],
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Text('출장지', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-                        const Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF4F5F7),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      child: TextField(
-                        controller: _placeController,
-                        focusNode: _placeFocusNode,
-                        style: const TextStyle(fontSize: 17, color: Color(0xFF222222)),
-                        decoration: const InputDecoration(
-                          hintText: '출장지를 입력하세요',
-                          hintStyle: TextStyle(fontSize: 17, color: Colors.grey),
-                          border: InputBorder.none,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 2,
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 18),
-              // 교통
-              Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [AppShadows.card],
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Text('교통', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-                        const Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF4F5F7),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _selectedTransport,
-                          hint: const Text('교통수단을 선택하세요'),
-                          isExpanded: true,
-                          items: _transports
-                              .map((t) => DropdownMenuItem(
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedTransport,
+                            hint: const Text('교통수단을 선택하세요'),
+                            isExpanded: true,
+                            items: _transports
+                                .map(
+                                  (t) => DropdownMenuItem(
                                     value: t,
                                     child: Text(t),
-                                  ))
-                              .toList(),
-                          onChanged: (v) => setState(() => _selectedTransport = v),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (v) =>
+                                setState(() => _selectedTransport = v),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                  ],
+                      const SizedBox(height: 4),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 18),
-              // 업무
-              Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [AppShadows.card],
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Text('업무', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-                        const Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF4F5F7),
-                        borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 10),
+                // 업무
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [AppShadows.card],
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Text(
+                            '업무',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 17,
+                            ),
+                          ),
+                          const Text(
+                            '  *',
+                            style: TextStyle(color: Colors.red, fontSize: 17),
+                          ),
+                        ],
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      child: TextField(
-                        controller: _purposeController,
-                        focusNode: _purposeFocusNode,
-                        maxLines: 4,
-                        style: const TextStyle(fontSize: 17, color: Color(0xFF222222)),
-                        decoration: const InputDecoration(
-                          hintText: '업무를 입력하세요',
-                          hintStyle: TextStyle(fontSize: 17, color: Color(0xFF888888)),
-                          border: InputBorder.none,
+                      const SizedBox(height: 10),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF4F5F7),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        onChanged: (_) => setState(() {}),
-                      ),
-                    ),
-                    if (_purposeController.text.trim().isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.only(left: 4, top: 8),
-                        child: Text(
-                          '업무는 필수 입력 항목입니다.',
-                          style: TextStyle(color: Colors.red, fontSize: 15),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        child: TextField(
+                          controller: _purposeController,
+                          focusNode: _purposeFocusNode,
+                          maxLines: 3,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            color: Color(0xFF222222),
+                          ),
+                          decoration: const InputDecoration(
+                            hintText: '업무를 입력하세요',
+                            hintStyle: TextStyle(
+                              fontSize: 17,
+                              color: Color(0xFF888888),
+                            ),
+                            border: InputBorder.none,
+                          ),
+                          onChanged: (_) => setState(() {}),
                         ),
                       ),
-                    const SizedBox(height: 8),
-                  ],
+
+                      const SizedBox(height: 4),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
-      bottomNavigationBar: AnimatedPadding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-        child: Container(
-          color: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
-          child: Row(
-            children: [
-              if (MediaQuery.of(context).viewInsets.bottom > 0)
-                SizedBox(width: 48), // 왼쪽 공간(키보드 올라왔을 때만)
-              Expanded(
-                child: GestureDetector(
-                  onTap: _canSubmit
-                      ? () async {
-                          final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
-                          final userProvider = Provider.of<UserProvider>(context, listen: false);
-                          final userEmail = userProvider.email;
-                          if (userEmail == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('로그인 정보가 없습니다.'), backgroundColor: Colors.red),
+      bottomNavigationBar: SafeArea(
+        child: AnimatedPadding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          child: Container(
+            color: Colors.white,
+            padding: const EdgeInsets.only(
+              top: 12,
+              bottom: 12,
+              left: 20,
+              right: 20,
+            ),
+            child: Row(
+              children: [
+                if (MediaQuery.of(context).viewInsets.bottom > 0)
+                  SizedBox(width: 48), // 왼쪽 공간(키보드 올라왔을 때만)
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _canSubmit
+                        ? () async {
+                            final leaveProvider = Provider.of<LeaveProvider>(
+                              context,
+                              listen: false,
                             );
-                            return;
-                          }
-                          bool hasError = false;
-                          final selectedDates = _selectedDates.toList()..sort();
-                          // 연속 구간별로 묶기
-                          List<List<DateTime>> ranges = [];
-                          for (final d in selectedDates) {
-                            if (ranges.isEmpty || d.difference(ranges.last.last).inDays > 1) {
-                              ranges.add([d]);
+                            final userProvider = Provider.of<UserProvider>(
+                              context,
+                              listen: false,
+                            );
+                            final userEmail = userProvider.email;
+                            if (userEmail == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('로그인 정보가 없습니다.'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+                            bool hasError = false;
+                            final selectedDates = _selectedDates.toList()
+                              ..sort();
+                            // 연속 구간별로 묶기
+                            List<List<DateTime>> ranges = [];
+                            for (final d in selectedDates) {
+                              if (ranges.isEmpty ||
+                                  d.difference(ranges.last.last).inDays > 1) {
+                                ranges.add([d]);
+                              } else {
+                                ranges.last.add(d);
+                              }
+                            }
+                            for (final range in ranges) {
+                              final start = range.first;
+                              final end = range.last;
+                              try {
+                                await leaveProvider.requestLeave(
+                                  userEmail: userEmail,
+                                  type: 'biztrip',
+                                  startDate: start,
+                                  endDate: end,
+                                  reason:
+                                      '출장자: ${_selectedEmployee ?? ''}\n추가인원: ${_selectedCompanions.join(', ')}\n교통: ${_selectedTransport ?? ''}\n출장지: ${_placeController.text.trim()}\n업무: ${_purposeController.text.trim()}',
+                                );
+                              } catch (e) {
+                                hasError = true;
+                              }
+                            }
+                            if (!hasError) {
+                              // 캐시 무효화 및 데이터 새로고침
+                              await leaveProvider.fetchAllLeaves(
+                                forceRefresh: true,
+                              );
+                              await leaveProvider.fetchMyLeaves(
+                                email: userEmail,
+                                forceRefresh: true,
+                              );
+
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('신청이 완료되었습니다.'),
+                                    backgroundColor: AppColors.primary,
+                                  ),
+                                );
+                                Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const MainTab(initialIndex: 1),
+                                  ),
+                                  (route) => false,
+                                );
+                              }
                             } else {
-                              ranges.last.add(d);
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('신청 중 오류가 발생했습니다.'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
                             }
                           }
-                          for (final range in ranges) {
-                            final start = range.first;
-                            final end = range.last;
-                            try {
-                              await leaveProvider.requestLeave(
-                                userEmail: userEmail,
-                                type: 'biztrip',
-                                startDate: start,
-                                endDate: end,
-                                reason:
-                                    '출장자: ${_selectedEmployee ?? ''}\n추가인원: ${_selectedCompanions.join(', ')}\n교통: ${_selectedTransport ?? ''}\n출장지: ${_placeController.text.trim()}\n업무: ${_purposeController.text.trim()}',
-                              );
-                            } catch (e) {
-                              hasError = true;
-                            }
-                          }
-                          if (!hasError) {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('신청이 완료되었습니다.'), backgroundColor: AppColors.primary),
-                              );
-                              Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(builder: (_) => const MainTab(initialIndex: 1)),
-                                (route) => false,
-                              );
-                            }
-                          } else {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('신청 중 오류가 발생했습니다.'), backgroundColor: Colors.red),
-                              );
-                            }
-                          }
-                        }
-                      : null,
-                  child: Container(
-                    height: 54,
-                    decoration: BoxDecoration(
-                      gradient: _canSubmit ? AppColors.primaryGradient : null,
-                      color: _canSubmit ? null : const Color(0xFFE0E0E0),
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: [
-                        if (_canSubmit) AppShadows.button,
-                      ],
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      '신청하기',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: _canSubmit ? Colors.white : const Color(0xFFB0B0B0),
+                        : null,
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        gradient: _canSubmit ? AppColors.primaryGradient : null,
+                        color: _canSubmit ? null : const Color(0xFFE0E0E0),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [if (_canSubmit) AppShadows.button],
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '신청하기',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: _canSubmit
+                              ? Colors.white
+                              : const Color(0xFFB0B0B0),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              if (MediaQuery.of(context).viewInsets.bottom > 0)
-                IconButton(
-                  icon: const Icon(Icons.keyboard_arrow_down),
-                  onPressed: () => FocusScope.of(context).unfocus(), // 키보드 내리기
-                ),
-            ],
+                const SizedBox(width: 8),
+                if (MediaQuery.of(context).viewInsets.bottom > 0)
+                  IconButton(
+                    icon: const Icon(Icons.keyboard_arrow_down),
+                    onPressed: () =>
+                        FocusScope.of(context).unfocus(), // 키보드 내리기
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -881,7 +1120,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
         _selectedDates.isNotEmpty &&
         _placeController.text.trim().isNotEmpty &&
         _selectedTransport != null &&
-        _purposeController.text.trim().isNotEmpty;
+        _purposeController.text.isNotEmpty; // 공백만 있어도 허용
   }
 
   Widget _buildBanner() {
@@ -917,4 +1156,4 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
       ),
     );
   }
-} 
+}

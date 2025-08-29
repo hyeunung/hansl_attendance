@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
 
 /// Optimized image loading widget with caching, error handling, and progressive loading
 class OptimizedImage extends StatefulWidget {
@@ -49,7 +48,16 @@ class OptimizedImage extends StatefulWidget {
 
 class _OptimizedImageState extends State<OptimizedImage> {
   bool _hasError = false;
-  bool _isLoading = true;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Set initial loading state for network images
+    if (widget.networkUrl != null) {
+      _isLoading = true;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -109,9 +117,23 @@ class _OptimizedImageState extends State<OptimizedImage> {
               filterQuality: widget.filterQuality,
               loadingBuilder: (context, child, loadingProgress) {
                 if (loadingProgress == null) {
-                  _isLoading = false;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) {
+                      setState(() {
+                        _isLoading = false;
+                      });
+                    }
+                  });
                   return child;
                 }
+
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted && !_isLoading) {
+                    setState(() {
+                      _isLoading = true;
+                    });
+                  }
+                });
                 return _buildPlaceholder();
               },
               errorBuilder: (context, error, stackTrace) {
@@ -222,7 +244,7 @@ class CachedAssetImage extends StatelessWidget {
 /// Preloader for critical images
 class ImagePreloader {
   static final Set<String> _preloadedAssets = <String>{};
-  
+
   /// Preload critical assets (splash, icons, etc.)
   static Future<void> preloadCriticalAssets(BuildContext context) async {
     final criticalAssets = [

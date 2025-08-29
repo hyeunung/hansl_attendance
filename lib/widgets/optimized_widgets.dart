@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
+import 'package:provider/provider.dart';
 import '../services/ui_optimization_service.dart';
 
 /// Collection of optimized widgets for better performance
-library optimized_widgets;
 
 /// Optimized Card widget with intelligent rebuilding
 class OptimizedCard extends StatelessWidget {
@@ -35,9 +34,7 @@ class OptimizedCard extends StatelessWidget {
       color: color,
       elevation: elevation,
       shape: shape,
-      child: padding != null 
-          ? Padding(padding: padding!, child: child)
-          : child,
+      child: padding != null ? Padding(padding: padding!, child: child) : child,
     );
 
     // Wrap with RepaintBoundary for better performance
@@ -47,10 +44,7 @@ class OptimizedCard extends StatelessWidget {
 
     // Add semantics if provided
     if (semanticsLabel != null) {
-      cardWidget = Semantics(
-        label: semanticsLabel,
-        child: cardWidget,
-      );
+      cardWidget = Semantics(label: semanticsLabel, child: cardWidget);
     }
 
     return cardWidget;
@@ -151,7 +145,8 @@ class OptimizedButton extends StatefulWidget {
   State<OptimizedButton> createState() => _OptimizedButtonState();
 }
 
-class _OptimizedButtonState extends State<OptimizedButton> with UIOptimizationMixin {
+class _OptimizedButtonState extends State<OptimizedButton>
+    with UIOptimizationMixin {
   bool _isPressed = false;
 
   void _handlePressed() {
@@ -161,10 +156,7 @@ class _OptimizedButtonState extends State<OptimizedButton> with UIOptimizationMi
 
     if (widget.debounceDuration != null) {
       // Use debounced operation
-      debouncedOperation(
-        widget.onPressed!,
-        delay: widget.debounceDuration,
-      );
+      debouncedOperation(widget.onPressed!, delay: widget.debounceDuration);
     } else {
       widget.onPressed!();
     }
@@ -182,11 +174,13 @@ class _OptimizedButtonState extends State<OptimizedButton> with UIOptimizationMi
     return RepaintBoundary(
       child: ElevatedButton(
         onPressed: widget.enabled ? _handlePressed : null,
-        style: widget.style?.copyWith(
-          overlayColor: _isPressed 
-              ? WidgetStateProperty.all(Colors.black.withValues(alpha: 0.1))
-              : null,
-        ) ?? (widget.style),
+        style:
+            widget.style?.copyWith(
+              overlayColor: _isPressed
+                  ? WidgetStateProperty.all(Colors.black.withValues(alpha: 0.1))
+                  : null,
+            ) ??
+            (widget.style),
         child: widget.child,
       ),
     );
@@ -537,4 +531,45 @@ class UIPerformanceConstants {
   // List view settings
   static const double defaultCacheExtent = 200.0;
   static const int defaultMaxListItems = 100;
+}
+
+/// OptimizedConsumer - Provider Consumer with intelligent throttling
+class OptimizedConsumer<T extends ChangeNotifier> extends StatefulWidget {
+  final String componentKey;
+  final Duration? throttleDuration;
+  final bool Function(T)? shouldRebuild;
+  final Widget Function(BuildContext, T, Widget?) builder;
+  final Widget? child;
+
+  const OptimizedConsumer({
+    super.key,
+    required this.componentKey,
+    required this.builder,
+    this.throttleDuration,
+    this.shouldRebuild,
+    this.child,
+  });
+
+  @override
+  State<OptimizedConsumer<T>> createState() => _OptimizedConsumerState<T>();
+}
+
+class _OptimizedConsumerState<T extends ChangeNotifier>
+    extends State<OptimizedConsumer<T>>
+    with UIOptimizationMixin {
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<T>(
+      child: widget.child,
+      builder: (context, value, child) {
+        // Check if should rebuild
+        if (widget.shouldRebuild != null && !widget.shouldRebuild!(value)) {
+          return child ?? const SizedBox.shrink();
+        }
+
+        // Use throttled setState for better performance
+        return widget.builder(context, value, child);
+      },
+    );
+  }
 }

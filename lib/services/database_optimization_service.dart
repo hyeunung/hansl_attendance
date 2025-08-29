@@ -8,28 +8,27 @@ import 'async_operation_manager.dart';
 /// Database query optimization service
 /// Provides optimized database access patterns with intelligent caching,
 /// query batching, and performance monitoring
-class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin {
-  static final DatabaseOptimizationService _instance = DatabaseOptimizationService._internal();
+class DatabaseOptimizationService
+    with TimerManagementMixin, AsyncOperationMixin {
+  static final DatabaseOptimizationService _instance =
+      DatabaseOptimizationService._internal();
   static DatabaseOptimizationService get instance => _instance;
   DatabaseOptimizationService._internal();
 
   final SupabaseClient _client = Supabase.instance.client;
   final CacheService _cache = CacheService.instance;
-  
+
   // Query performance tracking
   int _totalQueries = 0;
   int _cacheHits = 0;
   int _batchedQueries = 0;
   final List<QueryPerformance> _performanceLog = [];
-  
+
   // Query batching
-  final Map<String, List<_BatchedQuery>> _queryBatches = {};
-  
-  static const Duration _batchWindow = Duration(milliseconds: 200);
-  static const int _maxBatchSize = 10;
 
   /// Optimized employee queries with intelligent caching
-  Future<Map<String, dynamic>?> getEmployeeByEmail(String email, {
+  Future<Map<String, dynamic>?> getEmployeeByEmail(
+    String email, {
     Duration? cacheTtl,
     List<String>? selectFields,
     String? cacheKey,
@@ -38,9 +37,9 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
     final effectiveCacheKey = cacheKey ?? 'employee_email_$email';
     final effectiveFields = selectFields ?? ['*'];
     final fieldsStr = effectiveFields.join(',');
-    
+
     return await _cache.getOrFetch<Map<String, dynamic>>(
-      key: '${effectiveCacheKey}_${fieldsStr}',
+      key: '${effectiveCacheKey}_$fieldsStr',
       fallback: () => _executeWithTimeout(
         operation: () async {
           _recordQueryStart('getEmployeeByEmail');
@@ -50,7 +49,7 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
               .eq('email', email)
               .single();
           _recordQueryEnd('getEmployeeByEmail', true);
-          return response as Map<String, dynamic>?;
+          return response;
         },
         timeout: const Duration(seconds: 10),
         cancellationToken: cancellationToken,
@@ -62,7 +61,8 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
   }
 
   /// Optimized employee role lookup with caching
-  Future<Map<String, dynamic>?> getEmployeeRole(String userId, {
+  Future<Map<String, dynamic>?> getEmployeeRole(
+    String userId, {
     Duration? cacheTtl,
     CancellationToken? cancellationToken,
   }) async {
@@ -77,7 +77,7 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
               .eq('id', userId)
               .single();
           _recordQueryEnd('getEmployeeRole', true);
-          return response as Map<String, dynamic>?;
+          return response;
         },
         timeout: const Duration(seconds: 8),
         cancellationToken: cancellationToken,
@@ -97,51 +97,60 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
     Duration? cacheTtl,
     CancellationToken? cancellationToken,
   }) async {
-    final dateStr = date?.toIso8601String().substring(0, 10) ?? 
-                   DateTime.now().toIso8601String().substring(0, 10);
+    final dateStr =
+        date?.toIso8601String().substring(0, 10) ??
+        DateTime.now().toIso8601String().substring(0, 10);
     final limitStr = limit != null ? '_limit_$limit' : '';
     final historyStr = includeHistory ? '_with_history' : '';
-    
-    final cacheKey = 'attendance_${employeeId}_${dateStr}${limitStr}${historyStr}';
-    
+
+    final cacheKey = 'attendance_${employeeId}_$dateStr$limitStr$historyStr';
+
     // Use shorter TTL for today's data, longer for historical data
-    final isToday = dateStr == DateTime.now().toIso8601String().substring(0, 10);
-    final effectiveTtl = cacheTtl ?? 
-        (isToday ? CacheConfig.attendanceTodayTtl : CacheConfig.attendanceHistoryTtl);
-    
+    final isToday =
+        dateStr == DateTime.now().toIso8601String().substring(0, 10);
+    final effectiveTtl =
+        cacheTtl ??
+        (isToday
+            ? CacheConfig.attendanceTodayTtl
+            : CacheConfig.attendanceHistoryTtl);
+
     return await _cache.getOrFetch<List<Map<String, dynamic>>>(
-      key: cacheKey,
-      fallback: () => _executeWithTimeout(
-        operation: () async {
-          _recordQueryStart('getAttendanceRecords');
-          
-          var query = _client
-              .from('attendance_records')
-              .select()
-              .eq('employee_id', employeeId);
-          
-          if (!includeHistory) {
-            query = query.eq('date', dateStr);
-          }
-          
-          if (limit != null) {
-            query = query.limit(limit);
-          }
-          
-          query = query.order('date', ascending: false);
-          
-          final response = await query;
-          _recordQueryEnd('getAttendanceRecords', true);
-          
-          return (response as List).cast<Map<String, dynamic>>();
-        },
-        timeout: const Duration(seconds: 15),
-        cancellationToken: cancellationToken,
-      ),
-      ttl: effectiveTtl,
-      fromJson: (json) => (json as List).cast<Map<String, dynamic>>(),
-      toJson: (data) => data,
-    );
+          key: cacheKey,
+          fallback: () => _executeWithTimeout(
+            operation: () async {
+              _recordQueryStart('getAttendanceRecords');
+
+              // Build query step by step without reassigning different types
+              dynamic query = _client
+                  .from('attendance_records')
+                  .select()
+                  .eq('employee_id', employeeId);
+
+              if (!includeHistory) {
+                query = query.eq('date', dateStr);
+              }
+
+              if (limit != null) {
+                query = query.limit(limit);
+              }
+
+              query = query.order('date', ascending: false);
+
+              final response = await query;
+              _recordQueryEnd('getAttendanceRecords', true);
+
+              return (response as List).cast<Map<String, dynamic>>();
+            },
+            timeout: const Duration(seconds: 15),
+            cancellationToken: cancellationToken,
+          ),
+          ttl: effectiveTtl,
+          fromJson: (json) =>
+              (json['data'] as List?)?.cast<Map<String, dynamic>>() ??
+              <Map<String, dynamic>>[],
+          toJson: (data) => {'data': data},
+        ) ??
+        [];
   }
 
   /// Optimized leave requests with complex filtering and caching
@@ -156,80 +165,93 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
   }) async {
     // Generate cache key based on parameters
     final keyParts = <String>[
-      'leave_requests',
+      'leave',
       if (userEmail != null) 'user_$userEmail',
       if (status != null) 'status_$status',
-      if (startDate != null) 'start_${startDate.toIso8601String().substring(0, 10)}',
+      if (startDate != null)
+        'start_${startDate.toIso8601String().substring(0, 10)}',
       if (endDate != null) 'end_${endDate.toIso8601String().substring(0, 10)}',
       if (includeEmployeeData) 'with_employee',
     ];
     final cacheKey = keyParts.join('_');
-    
+
     return await _cache.getOrFetch<List<Map<String, dynamic>>>(
-      key: cacheKey,
-      fallback: () => _executeWithTimeout(
-        operation: () async {
-          _recordQueryStart('getLeaveRequests');
-          
-          var query = _client.from('leave').select('*');
-          
-          if (userEmail != null) {
-            query = query.eq('user_email', userEmail);
-          }
-          
-          if (status != null) {
-            query = query.eq('status', status);
-          }
-          
-          if (startDate != null) {
-            query = query.gte('start_date', startDate.toIso8601String().substring(0, 10));
-          }
-          
-          if (endDate != null) {
-            query = query.lte('end_date', endDate.toIso8601String().substring(0, 10));
-          }
-          
-          query = query.order('created_at', ascending: false);
-          
-          final leaveData = await query;
-          final leaveList = (leaveData as List).cast<Map<String, dynamic>>();
-          
-          // Add employee data if requested
-          if (includeEmployeeData) {
-            await _enrichWithEmployeeData(leaveList);
-          }
-          
-          _recordQueryEnd('getLeaveRequests', true);
-          return leaveList;
-        },
-        timeout: const Duration(seconds: 20),
-        cancellationToken: cancellationToken,
-      ),
-      ttl: cacheTtl ?? CacheConfig.leaveDataTtl,
-      fromJson: (json) => (json as List).cast<Map<String, dynamic>>(),
-      toJson: (data) => data,
-    );
+          key: cacheKey,
+          fallback: () => _executeWithTimeout(
+            operation: () async {
+              _recordQueryStart('getLeaveRequests');
+
+              dynamic query = _client.from('leave').select('*');
+
+              if (userEmail != null) {
+                query = query.eq('user_email', userEmail);
+              }
+
+              if (status != null) {
+                query = query.eq('status', status);
+              }
+
+              if (startDate != null) {
+                query = query.gte(
+                  'start_date',
+                  startDate.toIso8601String().substring(0, 10),
+                );
+              }
+
+              if (endDate != null) {
+                query = query.lte(
+                  'end_date',
+                  endDate.toIso8601String().substring(0, 10),
+                );
+              }
+
+              query = query.order('created_at', ascending: false);
+
+              final leaveData = await query;
+              final leaveList = (leaveData as List)
+                  .cast<Map<String, dynamic>>();
+
+              // Add employee data if requested
+              if (includeEmployeeData) {
+                await _enrichWithEmployeeData(leaveList);
+              }
+
+              _recordQueryEnd('getLeaveRequests', true);
+              return leaveList;
+            },
+            timeout: const Duration(seconds: 20),
+            cancellationToken: cancellationToken,
+          ),
+          ttl: cacheTtl ?? CacheConfig.leaveDataTtl,
+          fromJson: (json) =>
+              (json['data'] as List?)?.cast<Map<String, dynamic>>() ??
+              <Map<String, dynamic>>[],
+          toJson: (data) => {'data': data},
+        ) ??
+        [];
   }
 
   /// Batch employee data enrichment to reduce N+1 queries
-  Future<void> _enrichWithEmployeeData(List<Map<String, dynamic>> leaveList) async {
+  Future<void> _enrichWithEmployeeData(
+    List<Map<String, dynamic>> leaveList,
+  ) async {
     if (leaveList.isEmpty) return;
-    
+
     // Extract unique emails
     final emails = leaveList
         .map((leave) => leave['user_email'] as String?)
         .where((email) => email != null)
         .toSet()
         .cast<String>();
-    
+
     if (emails.isEmpty) return;
-    
+
     // Single query to get all employee data
     final employeeData = await _client
         .from('employees')
-        .select('email, name, role, is_admin, department')
-        .in_('email', emails.toList());
-    
+        .select('email, name, role, is_admin, department, attendance_role')
+        .inFilter('email', emails.toList());
+
     // Create lookup map
     final employeeMap = <String, Map<String, dynamic>>{};
     for (final emp in employeeData as List) {
@@ -239,18 +261,20 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
         employeeMap[email] = empData;
       }
     }
-    
+
     // Enrich leave data
     for (final leave in leaveList) {
       final userEmail = leave['user_email'] as String?;
       if (userEmail != null) {
-        leave['employees'] = employeeMap[userEmail] ?? {
-          'name': leave['name'] ?? '알 수 없음',
-          'email': userEmail,
-          'role': null,
-          'is_admin': false,
-          'department': null,
-        };
+        leave['employees'] =
+            employeeMap[userEmail] ??
+            {
+              'name': leave['name'] ?? '알 수 없음',
+              'email': userEmail,
+              'role': null,
+              'is_admin': false,
+              'department': null,
+            };
       }
     }
   }
@@ -266,24 +290,18 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
     return await _executeWithTimeout(
       operation: () async {
         _recordQueryStart('optimizedInsert_$table');
-        
-        var query = _client.from(table);
-        
-        if (upsert) {
-          query = query.upsert(data);
-        } else {
-          query = query.insert(data);
-        }
-        
-        final response = await query.select();
-        
+
+        final response = upsert
+            ? await _client.from(table).upsert(data).select()
+            : await _client.from(table).insert(data).select();
+
         // Invalidate related cache patterns
         if (invalidateCachePatterns != null) {
           for (final pattern in invalidateCachePatterns) {
             await _cache.invalidatePattern(pattern);
           }
         }
-        
+
         _recordQueryEnd('optimizedInsert_$table', true);
         return response as T;
       },
@@ -303,22 +321,22 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
     return await _executeWithTimeout(
       operation: () async {
         _recordQueryStart('optimizedUpdate_$table');
-        
-        var query = _client.from(table).update(data);
-        
+
+        dynamic query = _client.from(table).update(data);
+
         for (final entry in match.entries) {
           query = query.eq(entry.key, entry.value);
         }
-        
+
         final response = await query.select();
-        
+
         // Invalidate related cache patterns
         if (invalidateCachePatterns != null) {
           for (final pattern in invalidateCachePatterns) {
             await _cache.invalidatePattern(pattern);
           }
         }
-        
+
         _recordQueryEnd('optimizedUpdate_$table', true);
         return response as T;
       },
@@ -335,13 +353,12 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
   }) async {
     _recordQueryStart('batchQueries');
     _batchedQueries += queries.length;
-    
+
     final results = <String, dynamic>{};
-    
+
     try {
-      final futures = queries.map((key, queryFn) => 
-          MapEntry(key, queryFn()));
-      
+      final futures = queries.map((key, queryFn) => MapEntry(key, queryFn()));
+
       final settledResults = await Future.wait(
         futures.values.map((future) async {
           try {
@@ -353,12 +370,12 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
         }),
         eagerError: false,
       );
-      
+
       int index = 0;
       for (final key in futures.keys) {
         results[key] = settledResults[index++];
       }
-      
+
       _recordQueryEnd('batchQueries', true);
       return results;
     } catch (e) {
@@ -375,7 +392,7 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
       startTime: DateTime.now(),
     );
     _performanceLog.add(performance);
-    
+
     // Keep only recent entries
     if (_performanceLog.length > 100) {
       _performanceLog.removeRange(0, _performanceLog.length - 100);
@@ -385,12 +402,10 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
   void _recordQueryEnd(String queryType, bool success) {
     final entry = _performanceLog.lastWhere(
       (p) => p.queryType == queryType && p.endTime == null,
-      orElse: () => QueryPerformance(
-        queryType: queryType,
-        startTime: DateTime.now(),
-      ),
+      orElse: () =>
+          QueryPerformance(queryType: queryType, startTime: DateTime.now()),
     );
-    
+
     entry.endTime = DateTime.now();
     entry.success = success;
   }
@@ -401,30 +416,44 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
     Duration timeout = const Duration(seconds: 30),
     CancellationToken? cancellationToken,
   }) async {
-    return await executeWithCancellation(
-      operation: () => operation().timeout(timeout),
-      cancellationToken: cancellationToken,
-      onTimeout: () => throw TimeoutException('Database operation timed out', timeout),
+    if (cancellationToken != null && cancellationToken.isCancelled) {
+      throw const CancellationException('Operation was cancelled');
+    }
+
+    return await operation().timeout(
+      timeout,
+      onTimeout: () {
+        throw TimeoutException('Database operation timed out', timeout);
+      },
     );
   }
 
   /// Get query performance statistics
   Map<String, dynamic> getPerformanceStats() {
-    final recentQueries = _performanceLog.where((p) => 
-        p.endTime != null && 
-        p.endTime!.isAfter(DateTime.now().subtract(const Duration(minutes: 10)))
-    ).toList();
-    
-    final totalExecutionTime = recentQueries.fold<int>(0, (sum, p) => 
-        sum + (p.endTime!.difference(p.startTime).inMilliseconds));
-    
-    final avgExecutionTime = recentQueries.isNotEmpty ? 
-        totalExecutionTime / recentQueries.length : 0.0;
-    
+    final recentQueries = _performanceLog
+        .where(
+          (p) =>
+              p.endTime != null &&
+              p.endTime!.isAfter(
+                DateTime.now().subtract(const Duration(minutes: 10)),
+              ),
+        )
+        .toList();
+
+    final totalExecutionTime = recentQueries.fold<int>(
+      0,
+      (sum, p) => sum + (p.endTime!.difference(p.startTime).inMilliseconds),
+    );
+
+    final avgExecutionTime = recentQueries.isNotEmpty
+        ? totalExecutionTime / recentQueries.length
+        : 0.0;
+
     final successfulQueries = recentQueries.where((p) => p.success).length;
-    final successRate = recentQueries.isNotEmpty ? 
-        successfulQueries / recentQueries.length : 1.0;
-    
+    final successRate = recentQueries.isNotEmpty
+        ? successfulQueries / recentQueries.length
+        : 1.0;
+
     return {
       'total_queries': _totalQueries,
       'cache_hits': _cacheHits,
@@ -435,12 +464,16 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
       'cache_hit_rate': _totalQueries > 0 ? _cacheHits / _totalQueries : 0.0,
       'performance_log': _performanceLog
           .where((p) => p.endTime != null)
-          .map((p) => {
-            'query_type': p.queryType,
-            'execution_time_ms': p.endTime!.difference(p.startTime).inMilliseconds,
-            'success': p.success,
-            'timestamp': p.startTime.toIso8601String(),
-          })
+          .map(
+            (p) => {
+              'query_type': p.queryType,
+              'execution_time_ms': p.endTime!
+                  .difference(p.startTime)
+                  .inMilliseconds,
+              'success': p.success,
+              'timestamp': p.startTime.toIso8601String(),
+            },
+          )
           .toList(),
     };
   }
@@ -453,13 +486,22 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
     _performanceLog.clear();
   }
 
+  /// Invalidate cache patterns manually
+  Future<void> invalidateCache({List<String>? patterns}) async {
+    if (patterns != null && patterns.isNotEmpty) {
+      for (final pattern in patterns) {
+        await _cache.invalidatePattern(pattern);
+        if (kDebugMode) print('🗑️ Cache invalidated: $pattern');
+      }
+    } else {
+      await _cache.clearAll();
+      if (kDebugMode) print('🗑️ All cache cleared');
+    }
+  }
+
   /// Dispose resources
-  @override
   void dispose() {
-    disposeScopedTimers();
-    disposeAsyncOperations();
     clearPerformanceStats();
-    super.dispose();
   }
 }
 
@@ -475,19 +517,6 @@ class QueryPerformance {
     required this.startTime,
     this.endTime,
     this.success = false,
-  });
-}
-
-/// Batched query item for optimization
-class _BatchedQuery {
-  final String key;
-  final Future<dynamic> Function() query;
-  final Completer<dynamic> completer;
-
-  _BatchedQuery({
-    required this.key,
-    required this.query,
-    required this.completer,
   });
 }
 
@@ -539,7 +568,7 @@ class QueryBuilder {
   }
 
   Future<List<Map<String, dynamic>>> execute() async {
-    var query = _client.from(_table).select(_select.join(','));
+    dynamic query = _client.from(_table).select(_select.join(','));
 
     for (final filter in _filters) {
       final parts = filter.split('.');
@@ -591,5 +620,16 @@ class TimeoutException implements Exception {
   TimeoutException(this.message, this.duration);
 
   @override
-  String toString() => 'TimeoutException: $message${duration != null ? ' (${duration!.inSeconds}s)' : ''}';
+  String toString() =>
+      'TimeoutException: $message${duration != null ? ' (${duration!.inSeconds}s)' : ''}';
+}
+
+/// Cancellation exception for database operations
+class CancellationException implements Exception {
+  final String message;
+
+  const CancellationException(this.message);
+
+  @override
+  String toString() => 'CancellationException: $message';
 }

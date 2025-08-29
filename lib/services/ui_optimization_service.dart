@@ -2,11 +2,13 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:provider/provider.dart';
 
 /// UI optimization service for efficient rendering and state management
 /// Provides intelligent widget rebuilding, performance monitoring, and memory management
 class UIOptimizationService {
-  static final UIOptimizationService _instance = UIOptimizationService._internal();
+  static final UIOptimizationService _instance =
+      UIOptimizationService._internal();
   static UIOptimizationService get instance => _instance;
   UIOptimizationService._internal();
 
@@ -15,18 +17,18 @@ class UIOptimizationService {
   int _preventedRebuilds = 0;
   final Map<String, int> _componentRebuilds = {};
   final Map<String, DateTime> _lastRebuildTime = {};
-  
+
   // Rebuild throttling
   final Map<String, Timer> _rebuildThrottlers = {};
   final Map<String, VoidCallback> _pendingCallbacks = {};
-  
+
   // Memory management
   final Set<String> _activeComponents = {};
   final Map<String, WeakReference<StatefulWidget>> _componentReferences = {};
-  
-  static const Duration _defaultThrottleDuration = Duration(milliseconds: 16); // 60 FPS
-  static const Duration _heavyOperationThrottle = Duration(milliseconds: 100);
-  static const Duration _backgroundThrottle = Duration(milliseconds: 500);
+
+  static const Duration _defaultThrottleDuration = Duration(
+    milliseconds: 16,
+  ); // 60 FPS
 
   /// Throttled setState that prevents excessive rebuilds
   void throttledSetState({
@@ -36,18 +38,18 @@ class UIOptimizationService {
     bool forceUpdate = false,
   }) {
     final duration = throttleDuration ?? _defaultThrottleDuration;
-    
+
     // Track component activity
     _activeComponents.add(componentKey);
-    
+
     if (forceUpdate || !_rebuildThrottlers.containsKey(componentKey)) {
       _executeCallback(componentKey, callback);
-      
+
       // Set up throttle timer
       _rebuildThrottlers[componentKey]?.cancel();
       _rebuildThrottlers[componentKey] = Timer(duration, () {
         _rebuildThrottlers.remove(componentKey);
-        
+
         // Execute any pending callback
         final pendingCallback = _pendingCallbacks.remove(componentKey);
         if (pendingCallback != null) {
@@ -58,18 +60,21 @@ class UIOptimizationService {
       // Store the callback for later execution
       _pendingCallbacks[componentKey] = callback;
       _preventedRebuilds++;
-      
+
       if (kDebugMode) {
-        print('⏳ Throttled rebuild for $componentKey (saved ${_preventedRebuilds} rebuilds)');
+        print(
+          '⏳ Throttled rebuild for $componentKey (saved ${_preventedRebuilds} rebuilds)',
+        );
       }
     }
   }
 
   void _executeCallback(String componentKey, VoidCallback callback) {
     _totalRebuilds++;
-    _componentRebuilds[componentKey] = (_componentRebuilds[componentKey] ?? 0) + 1;
+    _componentRebuilds[componentKey] =
+        (_componentRebuilds[componentKey] ?? 0) + 1;
     _lastRebuildTime[componentKey] = DateTime.now();
-    
+
     // Execute on next frame to avoid build-during-build errors
     SchedulerBinding.instance.addPostFrameCallback((_) {
       try {
@@ -84,7 +89,8 @@ class UIOptimizationService {
 
   /// Smart Consumer wrapper that optimizes rebuild frequency
   Widget optimizedConsumer<T extends ChangeNotifier>({
-    required Widget Function(BuildContext context, T provider, Widget? child) builder,
+    required Widget Function(BuildContext context, T provider, Widget? child)
+    builder,
     required String componentKey,
     Widget? child,
     bool Function(T previous, T current)? shouldRebuild,
@@ -94,13 +100,13 @@ class UIOptimizationService {
       builder: (context, provider, child) {
         // Register component
         _activeComponents.add(componentKey);
-        
+
         // Custom shouldRebuild logic
         if (shouldRebuild != null) {
           // This would require a custom implementation of Consumer
           // For now, we'll use standard Consumer with optimization notes
         }
-        
+
         return _OptimizedBuilder(
           key: ValueKey(componentKey),
           componentKey: componentKey,
@@ -118,7 +124,7 @@ class UIOptimizationService {
     Duration? delay,
   }) {
     final batchDelay = delay ?? const Duration(milliseconds: 16);
-    
+
     Timer(batchDelay, () {
       for (final entry in operations.entries) {
         throttledSetState(
@@ -166,15 +172,19 @@ class UIOptimizationService {
     final lastRebuild = _lastRebuildTime[componentKey];
     final isActive = _activeComponents.contains(componentKey);
     final hasThrottler = _rebuildThrottlers.containsKey(componentKey);
-    
+
     return {
       'component_key': componentKey,
       'rebuilds': rebuilds,
       'last_rebuild': lastRebuild?.toIso8601String(),
       'is_active': isActive,
       'has_throttler': hasThrottler,
-      'rebuild_frequency': rebuilds > 0 && lastRebuild != null 
-          ? rebuilds / DateTime.now().difference(lastRebuild).inMinutes.clamp(1, double.infinity)
+      'rebuild_frequency': rebuilds > 0 && lastRebuild != null
+          ? rebuilds /
+                DateTime.now()
+                    .difference(lastRebuild)
+                    .inMinutes
+                    .clamp(1, double.infinity)
           : 0.0,
     };
   }
@@ -183,11 +193,12 @@ class UIOptimizationService {
   Map<String, dynamic> getUIPerformanceStats() {
     final activeComponentCount = _activeComponents.length;
     final totalComponents = _componentReferences.length;
-    final averageRebuilds = _componentRebuilds.isNotEmpty 
-        ? _componentRebuilds.values.reduce((a, b) => a + b) / _componentRebuilds.length
+    final averageRebuilds = _componentRebuilds.isNotEmpty
+        ? _componentRebuilds.values.reduce((a, b) => a + b) /
+              _componentRebuilds.length
         : 0.0;
-    
-    final rebuildSavings = _totalRebuilds > 0 
+
+    final rebuildSavings = _totalRebuilds > 0
         ? _preventedRebuilds / (_totalRebuilds + _preventedRebuilds)
         : 0.0;
 
@@ -207,36 +218,41 @@ class UIOptimizationService {
   List<Map<String, dynamic>> _getMostActiveComponents() {
     final sortedComponents = _componentRebuilds.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    
-    return sortedComponents.take(5).map((entry) => {
-      'component_key': entry.key,
-      'rebuilds': entry.value,
-      'last_rebuild': _lastRebuildTime[entry.key]?.toIso8601String(),
-    }).toList();
+
+    return sortedComponents
+        .take(5)
+        .map(
+          (entry) => {
+            'component_key': entry.key,
+            'rebuilds': entry.value,
+            'last_rebuild': _lastRebuildTime[entry.key]?.toIso8601String(),
+          },
+        )
+        .toList();
   }
 
   /// Cleanup expired components and free memory
   void cleanup() {
     final now = DateTime.now();
     final expiredComponents = <String>[];
-    
+
     // Find components that haven't been rebuilt in the last 5 minutes
     for (final entry in _lastRebuildTime.entries) {
       if (now.difference(entry.value).inMinutes > 5) {
         expiredComponents.add(entry.key);
       }
     }
-    
+
     // Clean up expired components
     for (final key in expiredComponents) {
       if (!_activeComponents.contains(key)) {
         unregisterComponent(key);
       }
     }
-    
+
     // Clean up weak references
     _componentReferences.removeWhere((key, ref) => ref.target == null);
-    
+
     if (kDebugMode && expiredComponents.isNotEmpty) {
       print('🧹 Cleaned up ${expiredComponents.length} expired UI components');
     }
@@ -287,7 +303,10 @@ class _OptimizedBuilderState extends State<_OptimizedBuilder> {
   @override
   void initState() {
     super.initState();
-    UIOptimizationService.instance.registerComponent(widget.componentKey, widget);
+    UIOptimizationService.instance.registerComponent(
+      widget.componentKey,
+      widget,
+    );
   }
 
   @override
@@ -299,19 +318,20 @@ class _OptimizedBuilderState extends State<_OptimizedBuilder> {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final throttleDuration = widget.throttleDuration ?? const Duration(milliseconds: 16);
-    
+    final throttleDuration =
+        widget.throttleDuration ?? const Duration(milliseconds: 16);
+
     // Use cached widget if within throttle period
     if (_cachedWidget != null && _lastBuildTime != null) {
       if (now.difference(_lastBuildTime!).compareTo(throttleDuration) < 0) {
         return _cachedWidget!;
       }
     }
-    
+
     // Build new widget
     _cachedWidget = widget.builder();
     _lastBuildTime = now;
-    
+
     return _cachedWidget!;
   }
 }
@@ -319,7 +339,7 @@ class _OptimizedBuilderState extends State<_OptimizedBuilder> {
 /// Mixin for easy UI optimization integration
 mixin UIOptimizationMixin<T extends StatefulWidget> on State<T> {
   late final String _componentKey;
-  
+
   @override
   void initState() {
     super.initState();
@@ -359,7 +379,8 @@ mixin UIOptimizationMixin<T extends StatefulWidget> on State<T> {
 
 /// Optimized Consumer wrapper for selective rebuilds
 class OptimizedConsumer<T extends ChangeNotifier> extends StatelessWidget {
-  final Widget Function(BuildContext context, T provider, Widget? child) builder;
+  final Widget Function(BuildContext context, T provider, Widget? child)
+  builder;
   final String componentKey;
   final Widget? child;
   final bool Function(T provider)? shouldRebuild;
@@ -425,9 +446,7 @@ class OptimizedListView extends StatelessWidget {
       itemCount: itemCount,
       itemBuilder: (context, index) {
         // Use RepaintBoundary to isolate list items
-        return RepaintBoundary(
-          child: itemBuilder(context, index),
-        );
+        return RepaintBoundary(child: itemBuilder(context, index));
       },
       // Performance optimizations
       cacheExtent: 200.0, // Cache items 200 pixels off-screen

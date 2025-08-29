@@ -67,7 +67,10 @@ class _LoginScreenState extends State<LoginScreen> {
           const begin = Offset(1.0, 0.0);
           const end = Offset.zero;
           const curve = Curves.ease;
-          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          var tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
           var fadeTween = Tween<double>(begin: 0.0, end: 1.0);
           return SlideTransition(
             position: animation.drive(tween),
@@ -90,35 +93,35 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       // 입력된 이메일을 그대로 사용
       final email = _emailController.text.trim();
-      
+
       print('🔐 로그인 시도 중... 이메일: $email');
       final response = await Supabase.instance.client.auth.signInWithPassword(
         email: email,
         password: _passwordController.text,
       );
-      
+
       print('📱 로그인 응답: ${response.user != null ? "성공" : "실패"}');
       print('📱 세션 정보: ${response.session != null ? "존재함" : "없음"}');
-      
+
       if (response.user != null) {
         // 직원 정보 employees 테이블에서 조회
         final email = response.user!.email;
         print('📧 응답 이메일: $email');
-        
+
         if (email == null) throw Exception('이메일 정보가 없습니다.');
         final employee = await Supabase.instance.client
             .from('employees')
             .select()
-            .ilike('email', email)  // 대소문자 무시하고 이메일 매칭
+            .ilike('email', email) // 대소문자 무시하고 이메일 매칭
             .maybeSingle();
-            
+
         print('👤 직원 정보 조회 결과: ${employee != null ? "찾음" : "없음"}');
         if (employee != null) {
           print('👤 직원 데이터: $employee');
         }
-        
+
         if (employee == null) throw Exception('등록된 사용자 정보가 없습니다.');
-        
+
         // UserProvider에 사용자 정보와 직원 정보 모두 설정
         final userProvider = Provider.of<UserProvider>(context, listen: false);
         userProvider.setUser(
@@ -127,25 +130,25 @@ class _LoginScreenState extends State<LoginScreen> {
           email: employee['email'],
         );
         userProvider.setEmployee(employee);
-        
+
         print('✅ UserProvider 설정 완료');
         print('👤 저장된 ID: ${userProvider.id}');
         print('👤 저장된 이름: ${userProvider.name}');
         print('👤 저장된 이메일: ${userProvider.email}');
-        
+
         // 세션 지속성 확인
         final currentSession = Supabase.instance.client.auth.currentSession;
         print('🔒 현재 세션 상태: ${currentSession != null ? "유지됨" : "없음"}');
-        
+
         // 자동 로그인 설정 저장 (보안상 비밀번호는 저장하지 않음)
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('autoLogin', _autoLogin);
-        
+
         if (_saveId) {
           // 이메일 주소 저장
           await prefs.setString('savedId', _emailController.text.trim());
         }
-        
+
         print('✅ 로그인 완료 - 메인 화면으로 이동');
         _navigateWithTransition(const MainTab());
         NotificationService.refreshTokenAfterLogin();
@@ -191,8 +194,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         if (errorMsg != null) ...[
                           const SizedBox(height: 8),
-                          Text(errorMsg!, style: ResponsiveUtils.getTextStyle(context, color: Colors.red, fontSize: 13)),
-                        ]
+                          Text(
+                            errorMsg!,
+                            style: ResponsiveUtils.getTextStyle(
+                              context,
+                              color: Colors.red,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
               actions: [
@@ -206,10 +216,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       }
                       // 입력된 이메일을 그대로 사용
                       try {
-                        await Supabase.instance.client.auth.resetPasswordForEmail(
-                          email,
-                          redirectTo: 'com.hansl.attendance.v2://reset-password',
-                        );
+                        await Supabase.instance.client.auth
+                            .resetPasswordForEmail(
+                              email,
+                              redirectTo:
+                                  'com.hansl.attendance.v2://reset-password',
+                            );
                         setState(() {
                           sent = true;
                           errorMsg = null;
@@ -242,7 +254,9 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: kIsWeb ? null : (Platform.isAndroid ? BackButton(color: Colors.black) : null),
+        leading: kIsWeb
+            ? null
+            : (Platform.isAndroid ? BackButton(color: Colors.black) : null),
       ),
       body: SafeArea(
         child: Center(
@@ -251,10 +265,7 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 SizedBox(height: ResponsiveUtils.spacing(context, 32)),
-                Text(
-                  'HANSL',
-                  style: ResponsiveTextStyles.logoTitle(context),
-                ),
+                Text('HANSL', style: ResponsiveTextStyles.logoTitle(context)),
                 SizedBox(height: ResponsiveUtils.spacing(context, 10)),
                 Text(
                   '근태 기록 시스템',
@@ -270,8 +281,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 Container(
                   width: ResponsiveUtils.spacing(context, 340),
                   padding: EdgeInsets.symmetric(
-                    horizontal: ResponsiveUtils.spacing(context, 20), 
-                    vertical: ResponsiveUtils.spacing(context, 28)
+                    horizontal: ResponsiveUtils.spacing(context, 20),
+                    vertical: ResponsiveUtils.spacing(context, 28),
                   ),
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -289,10 +300,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       TextField(
                         controller: _emailController,
-                        style: const TextStyle(fontFamily: 'NotoSans', fontSize: 16),
+                        style: const TextStyle(
+                          fontFamily: 'NotoSans',
+                          fontSize: 16,
+                        ),
                         decoration: InputDecoration(
                           labelText: '이메일',
-                          labelStyle: const TextStyle(fontFamily: 'NotoSans', fontWeight: FontWeight.w500, fontSize: 15, color: Color(0xFF222222)),
+                          labelStyle: const TextStyle(
+                            fontFamily: 'NotoSans',
+                            fontWeight: FontWeight.w500,
+                            fontSize: 15,
+                            color: Color(0xFF222222),
+                          ),
                           hintText: '이메일 주소 입력',
                           hintStyle: const TextStyle(color: Color(0xFFB0B8C1)),
                           filled: true,
@@ -313,10 +332,18 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 14),
                       TextField(
                         controller: _passwordController,
-                        style: const TextStyle(fontFamily: 'NotoSans', fontSize: 16),
+                        style: const TextStyle(
+                          fontFamily: 'NotoSans',
+                          fontSize: 16,
+                        ),
                         decoration: InputDecoration(
                           labelText: '비밀번호',
-                          labelStyle: const TextStyle(fontFamily: 'NotoSans', fontWeight: FontWeight.w500, fontSize: 15, color: Color(0xFF222222)),
+                          labelStyle: const TextStyle(
+                            fontFamily: 'NotoSans',
+                            fontWeight: FontWeight.w500,
+                            fontSize: 15,
+                            color: Color(0xFF222222),
+                          ),
                           hintText: '비밀번호 입력',
                           hintStyle: const TextStyle(color: Color(0xFFB0B8C1)),
                           filled: true,
@@ -339,7 +366,14 @@ class _LoginScreenState extends State<LoginScreen> {
                               });
                             },
                           ),
-                          Text('자동 로그인', style: ResponsiveUtils.getTextStyle(context, fontSize: 15, color: const Color(0xFF222222))),
+                          Text(
+                            '자동 로그인',
+                            style: ResponsiveUtils.getTextStyle(
+                              context,
+                              fontSize: 15,
+                              color: const Color(0xFF222222),
+                            ),
+                          ),
                           const SizedBox(width: 16),
                           Checkbox(
                             value: _saveId,
@@ -350,12 +384,26 @@ class _LoginScreenState extends State<LoginScreen> {
                               _saveIdPref(value ?? false);
                             },
                           ),
-                          Text('아이디 저장', style: ResponsiveUtils.getTextStyle(context, fontSize: 15, color: const Color(0xFF222222))),
+                          Text(
+                            '아이디 저장',
+                            style: ResponsiveUtils.getTextStyle(
+                              context,
+                              fontSize: 15,
+                              color: const Color(0xFF222222),
+                            ),
+                          ),
                         ],
                       ),
                       if (_error != null) ...[
                         const SizedBox(height: 8),
-                        Text(_error!, style: ResponsiveUtils.getTextStyle(context, color: const Color(0xFFE53935), fontSize: 14)),
+                        Text(
+                          _error!,
+                          style: ResponsiveUtils.getTextStyle(
+                            context,
+                            color: const Color(0xFFE53935),
+                            fontSize: 14,
+                          ),
+                        ),
                       ],
                       const SizedBox(height: 16),
                       if (_isLoading)
@@ -379,7 +427,15 @@ class _LoginScreenState extends State<LoginScreen> {
                               foregroundColor: Colors.white,
                               elevation: 0,
                             ),
-                            child: Text('로그인', style: ResponsiveUtils.getTextStyle(context, fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
+                            child: Text(
+                              '로그인',
+                              style: ResponsiveUtils.getTextStyle(
+                                context,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -391,14 +447,19 @@ class _LoginScreenState extends State<LoginScreen> {
                                 if (Platform.isIOS) {
                                   Navigator.of(context).push(
                                     CupertinoPageRoute(
-                                      builder: (_) => SignupScreen(onSignupSuccess: (email) {}),
+                                      builder: (_) => SignupScreen(
+                                        onSignupSuccess: (email) {},
+                                      ),
                                     ),
                                   );
                                 } else {
-                                  _navigateWithTransition(SignupScreen(onSignupSuccess: (email) {}));
+                                  _navigateWithTransition(
+                                    SignupScreen(onSignupSuccess: (email) {}),
+                                  );
                                 }
                               },
-                              child: const Text('회원가입',
+                              child: const Text(
+                                '회원가입',
                                 style: TextStyle(
                                   fontFamily: 'NotoSans',
                                   fontWeight: FontWeight.w500,
@@ -407,10 +468,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                             ),
-                            const Text('|', style: TextStyle(fontSize: 16, color: Color(0xFFB0B8C1))),
+                            const Text(
+                              '|',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFFB0B8C1),
+                              ),
+                            ),
                             TextButton(
                               onPressed: _showResetPasswordDialog,
-                              child: const Text('비밀번호 재설정',
+                              child: const Text(
+                                '비밀번호 재설정',
                                 style: TextStyle(
                                   fontFamily: 'NotoSans',
                                   fontWeight: FontWeight.w500,
@@ -472,14 +540,14 @@ class _SignupScreenState extends State<SignupScreen> {
     try {
       // 입력된 이메일을 소문자로 변환하고 공백 제거
       final email = _emailController.text.trim().toLowerCase();
-      
+
       // 먼저 employees 테이블에 해당 이메일이 있는지 확인
       final existingEmployee = await Supabase.instance.client
           .from('employees')
           .select()
-          .ilike('email', email)  // 대소문자 무시
+          .ilike('email', email) // 대소문자 무시
           .maybeSingle();
-      
+
       if (existingEmployee == null) {
         setState(() {
           _error = '등록된 직원이 아닙니다. 관리자에게 문의하세요.';
@@ -487,7 +555,7 @@ class _SignupScreenState extends State<SignupScreen> {
         });
         return;
       }
-      
+
       final response = await Supabase.instance.client.auth.signUp(
         email: email,
         password: _passwordController.text,
@@ -500,21 +568,26 @@ class _SignupScreenState extends State<SignupScreen> {
         );
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => LoginScreen(initialEmail: _emailController.text.trim()),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              const begin = Offset(-1.0, 0.0); // 왼쪽에서 슬라이드
-              const end = Offset.zero;
-              const curve = Curves.ease;
-              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-              var fadeTween = Tween<double>(begin: 0.0, end: 1.0);
-              return SlideTransition(
-                position: animation.drive(tween),
-                child: FadeTransition(
-                  opacity: animation.drive(fadeTween),
-                  child: child,
-                ),
-              );
-            },
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                LoginScreen(initialEmail: _emailController.text.trim()),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  const begin = Offset(-1.0, 0.0); // 왼쪽에서 슬라이드
+                  const end = Offset.zero;
+                  const curve = Curves.ease;
+                  var tween = Tween(
+                    begin: begin,
+                    end: end,
+                  ).chain(CurveTween(curve: curve));
+                  var fadeTween = Tween<double>(begin: 0.0, end: 1.0);
+                  return SlideTransition(
+                    position: animation.drive(tween),
+                    child: FadeTransition(
+                      opacity: animation.drive(fadeTween),
+                      child: child,
+                    ),
+                  );
+                },
             transitionDuration: const Duration(milliseconds: 350),
           ),
         );
@@ -526,7 +599,8 @@ class _SignupScreenState extends State<SignupScreen> {
       }
     } catch (e) {
       String msg = '회원가입 실패: $e';
-      if (e.toString().contains('user_already_exists') || e.toString().contains('already registered')) {
+      if (e.toString().contains('user_already_exists') ||
+          e.toString().contains('already registered')) {
         msg = '이미 가입된 이메일입니다. 로그인 해주세요.';
       }
       setState(() {
@@ -581,7 +655,10 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 40),
                 Container(
                   width: 340,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 28,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: boxRadius,
@@ -598,10 +675,18 @@ class _SignupScreenState extends State<SignupScreen> {
                     children: [
                       TextField(
                         controller: _nameController,
-                        style: const TextStyle(fontFamily: 'NotoSans', fontSize: 16),
+                        style: const TextStyle(
+                          fontFamily: 'NotoSans',
+                          fontSize: 16,
+                        ),
                         decoration: InputDecoration(
                           labelText: '이름',
-                          labelStyle: const TextStyle(fontFamily: 'NotoSans', fontWeight: FontWeight.w500, fontSize: 15, color: Color(0xFF222222)),
+                          labelStyle: const TextStyle(
+                            fontFamily: 'NotoSans',
+                            fontWeight: FontWeight.w500,
+                            fontSize: 15,
+                            color: Color(0xFF222222),
+                          ),
                           filled: true,
                           fillColor: Color(0xFFF8F9FA),
                           border: OutlineInputBorder(
@@ -613,10 +698,18 @@ class _SignupScreenState extends State<SignupScreen> {
                       const SizedBox(height: 14),
                       TextField(
                         controller: _emailController,
-                        style: const TextStyle(fontFamily: 'NotoSans', fontSize: 16),
+                        style: const TextStyle(
+                          fontFamily: 'NotoSans',
+                          fontSize: 16,
+                        ),
                         decoration: InputDecoration(
                           labelText: '이메일',
-                          labelStyle: const TextStyle(fontFamily: 'NotoSans', fontWeight: FontWeight.w500, fontSize: 15, color: Color(0xFF222222)),
+                          labelStyle: const TextStyle(
+                            fontFamily: 'NotoSans',
+                            fontWeight: FontWeight.w500,
+                            fontSize: 15,
+                            color: Color(0xFF222222),
+                          ),
                           hintText: '이메일 주소 입력',
                           hintStyle: const TextStyle(color: Color(0xFFB0B8C1)),
                           filled: true,
@@ -634,10 +727,18 @@ class _SignupScreenState extends State<SignupScreen> {
                       const SizedBox(height: 14),
                       TextField(
                         controller: _passwordController,
-                        style: const TextStyle(fontFamily: 'NotoSans', fontSize: 16),
+                        style: const TextStyle(
+                          fontFamily: 'NotoSans',
+                          fontSize: 16,
+                        ),
                         decoration: InputDecoration(
                           labelText: '비밀번호',
-                          labelStyle: const TextStyle(fontFamily: 'NotoSans', fontWeight: FontWeight.w500, fontSize: 15, color: Color(0xFF222222)),
+                          labelStyle: const TextStyle(
+                            fontFamily: 'NotoSans',
+                            fontWeight: FontWeight.w500,
+                            fontSize: 15,
+                            color: Color(0xFF222222),
+                          ),
                           hintText: '비밀번호 입력',
                           hintStyle: const TextStyle(color: Color(0xFFB0B8C1)),
                           filled: true,
@@ -652,10 +753,18 @@ class _SignupScreenState extends State<SignupScreen> {
                       const SizedBox(height: 14),
                       TextField(
                         controller: _passwordConfirmController,
-                        style: const TextStyle(fontFamily: 'NotoSans', fontSize: 16),
+                        style: const TextStyle(
+                          fontFamily: 'NotoSans',
+                          fontSize: 16,
+                        ),
                         decoration: InputDecoration(
                           labelText: '비밀번호 확인',
-                          labelStyle: const TextStyle(fontFamily: 'NotoSans', fontWeight: FontWeight.w500, fontSize: 15, color: Color(0xFF222222)),
+                          labelStyle: const TextStyle(
+                            fontFamily: 'NotoSans',
+                            fontWeight: FontWeight.w500,
+                            fontSize: 15,
+                            color: Color(0xFF222222),
+                          ),
                           hintText: '비밀번호 확인',
                           hintStyle: const TextStyle(color: Color(0xFFB0B8C1)),
                           filled: true,
@@ -669,7 +778,14 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                       if (_error != null) ...[
                         const SizedBox(height: 8),
-                        Text(_error!, style: ResponsiveUtils.getTextStyle(context, color: const Color(0xFFE53935), fontSize: 14)),
+                        Text(
+                          _error!,
+                          style: ResponsiveUtils.getTextStyle(
+                            context,
+                            color: const Color(0xFFE53935),
+                            fontSize: 14,
+                          ),
+                        ),
                       ],
                       const SizedBox(height: 16),
                       if (_isLoading)
@@ -693,7 +809,15 @@ class _SignupScreenState extends State<SignupScreen> {
                               foregroundColor: Colors.white,
                               elevation: 0,
                             ),
-                            child: Text('회원가입 완료', style: ResponsiveUtils.getTextStyle(context, fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
+                            child: Text(
+                              '회원가입 완료',
+                              style: ResponsiveUtils.getTextStyle(
+                                context,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -707,4 +831,4 @@ class _SignupScreenState extends State<SignupScreen> {
       ),
     );
   }
-} 
+}

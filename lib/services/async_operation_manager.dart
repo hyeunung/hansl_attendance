@@ -5,17 +5,18 @@ import 'package:flutter/foundation.dart';
 /// Advanced async operation management with cancellation tokens
 /// Optimizes database queries, prevents memory leaks, and handles timeouts
 class AsyncOperationManager {
-  static final AsyncOperationManager _instance = AsyncOperationManager._internal();
+  static final AsyncOperationManager _instance =
+      AsyncOperationManager._internal();
   static AsyncOperationManager get instance => _instance;
   AsyncOperationManager._internal();
 
   // Active operations tracking
   final Map<String, CancellableOperation> _operations = {};
-  
+
   // Operation queues for sequential execution
   final Map<String, Queue<QueuedOperation>> _queues = {};
   final Map<String, bool> _queueProcessing = {};
-  
+
   // Statistics
   int _totalOperationsStarted = 0;
   int _totalOperationsCompleted = 0;
@@ -34,13 +35,13 @@ class AsyncOperationManager {
     if (cancelPrevious && _operations.containsKey(key)) {
       await cancelOperation(key);
     }
-    
+
     // Check for duplicate operation
     if (_operations.containsKey(key)) {
       if (kDebugMode) print('⚠️ Operation already running: $key');
       throw StateError('Operation already in progress: $key');
     }
-    
+
     final token = CancellationToken();
     final completer = Completer<T>();
     final cancellableOp = CancellableOperation(
@@ -50,17 +51,19 @@ class AsyncOperationManager {
       description: description,
       startTime: DateTime.now(),
     );
-    
+
     _operations[key] = cancellableOp;
     _totalOperationsStarted++;
-    
+
     if (kDebugMode) {
-      print('🚀 Starting operation: $key${description != null ? ' ($description)' : ''}');
+      print(
+        '🚀 Starting operation: $key${description != null ? ' ($description)' : ''}',
+      );
     }
-    
+
     // Execute with optional timeout
     Future<T> executionFuture = _executeWithCancellation(operation, token, key);
-    
+
     if (timeout != null) {
       executionFuture = executionFuture.timeout(
         timeout,
@@ -71,20 +74,20 @@ class AsyncOperationManager {
         },
       );
     }
-    
+
     try {
       final result = await executionFuture;
-      
+
       if (!token.isCancelled) {
         completer.complete(result);
         _totalOperationsCompleted++;
-        
+
         if (kDebugMode) {
           final duration = DateTime.now().difference(cancellableOp.startTime);
           print('✅ Operation completed: $key (${duration.inMilliseconds}ms)');
         }
       }
-      
+
       return result;
     } catch (e) {
       if (token.isCancelled) {
@@ -93,7 +96,7 @@ class AsyncOperationManager {
       } else {
         if (kDebugMode) print('❌ Operation failed: $key - $e');
       }
-      
+
       if (!completer.isCompleted) {
         completer.completeError(e);
       }
@@ -102,7 +105,7 @@ class AsyncOperationManager {
       _operations.remove(key);
     }
   }
-  
+
   /// Execute operation in a sequential queue
   Future<T> executeInQueue<T>({
     required String queueKey,
@@ -114,7 +117,7 @@ class AsyncOperationManager {
   }) async {
     final completer = Completer<T>();
     final token = CancellationToken();
-    
+
     final queuedOp = QueuedOperation(
       key: operationKey,
       operation: () async {
@@ -135,40 +138,42 @@ class AsyncOperationManager {
       token: token,
       description: description,
     );
-    
+
     // Add to queue
     final queue = _queues.putIfAbsent(queueKey, () => Queue<QueuedOperation>());
     queue.add(queuedOp);
-    
+
     // Sort queue by priority
     final items = queue.toList();
     items.sort((a, b) => b.priority.compareTo(a.priority));
     queue.clear();
     queue.addAll(items);
-    
+
     // Start processing queue if not already running
     _processQueue(queueKey);
-    
+
     return completer.future;
   }
-  
+
   /// Batch execute multiple operations with individual cancellation
   Future<Map<String, T?>> executeBatch<T>({
-    required Map<String, Future<T> Function(CancellationToken token)> operations,
+    required Map<String, Future<T> Function(CancellationToken token)>
+    operations,
     Duration? timeout,
     bool failFast = false,
     bool cancelPrevious = true,
   }) async {
     final results = <String, T?>{};
     final batchToken = CancellationToken();
-    
+
     try {
       if (failFast) {
         // Execute in parallel, fail on first error
         final futures = <String, Future<T>>{};
-        
+
         for (final entry in operations.entries) {
-          final key = 'batch_${entry.key}_${DateTime.now().millisecondsSinceEpoch}';
+          final key =
+              'batch_${entry.key}_${DateTime.now().millisecondsSinceEpoch}';
           futures[entry.key] = execute<T>(
             key: key,
             operation: entry.value,
@@ -176,7 +181,7 @@ class AsyncOperationManager {
             cancelPrevious: cancelPrevious,
           );
         }
-        
+
         final completedResults = await Future.wait(futures.values);
         int index = 0;
         for (final key in futures.keys) {
@@ -185,20 +190,23 @@ class AsyncOperationManager {
       } else {
         // Execute in parallel, capture individual errors
         final futures = <String, Future<T?>>{};
-        
+
         for (final entry in operations.entries) {
-          final key = 'batch_${entry.key}_${DateTime.now().millisecondsSinceEpoch}';
-          futures[entry.key] = execute<T>(
-            key: key,
-            operation: entry.value,
-            timeout: timeout,
-            cancelPrevious: cancelPrevious,
-          ).catchError((e) {
-            if (kDebugMode) print('⚠️ Batch operation failed: ${entry.key} - $e');
-            return null;
-          });
+          final key =
+              'batch_${entry.key}_${DateTime.now().millisecondsSinceEpoch}';
+          futures[entry.key] =
+              execute<T>(
+                key: key,
+                operation: entry.value,
+                timeout: timeout,
+                cancelPrevious: cancelPrevious,
+              ).catchError((e) {
+                if (kDebugMode)
+                  print('⚠️ Batch operation failed: ${entry.key} - $e');
+                return null;
+              });
         }
-        
+
         final settledResults = await Future.wait(futures.values);
         int index = 0;
         for (final key in futures.keys) {
@@ -209,75 +217,75 @@ class AsyncOperationManager {
       batchToken.cancel('Batch execution failed');
       rethrow;
     }
-    
+
     return results;
   }
-  
+
   /// Cancel a specific operation
   Future<bool> cancelOperation(String key) async {
     final operation = _operations[key];
     if (operation == null) return false;
-    
+
     operation.token.cancel('Operation cancelled by request');
-    
+
     try {
       await operation.completer.future.timeout(const Duration(seconds: 1));
     } catch (e) {
       // Expected for cancelled operations
     }
-    
+
     _operations.remove(key);
     return true;
   }
-  
+
   /// Cancel operations by prefix
   Future<int> cancelOperationsByPrefix(String prefix) async {
     final keysToCancel = _operations.keys
         .where((key) => key.startsWith(prefix))
         .toList();
-    
+
     int cancelledCount = 0;
     for (final key in keysToCancel) {
       if (await cancelOperation(key)) {
         cancelledCount++;
       }
     }
-    
+
     if (cancelledCount > 0 && kDebugMode) {
       print('❌ Cancelled $cancelledCount operations with prefix: $prefix');
     }
-    
+
     return cancelledCount;
   }
-  
+
   /// Cancel all active operations
   Future<int> cancelAllOperations() async {
     final keys = _operations.keys.toList();
     int cancelledCount = 0;
-    
+
     for (final key in keys) {
       if (await cancelOperation(key)) {
         cancelledCount++;
       }
     }
-    
+
     if (cancelledCount > 0 && kDebugMode) {
       print('❌ Cancelled all operations: $cancelledCount operations');
     }
-    
+
     return cancelledCount;
   }
-  
+
   /// Check if operation is active
   bool isOperationActive(String key) {
     return _operations.containsKey(key);
   }
-  
+
   /// Get active operation keys
   List<String> getActiveOperationKeys() {
     return List.unmodifiable(_operations.keys);
   }
-  
+
   /// Get operation statistics
   AsyncOperationStats getStats() {
     return AsyncOperationStats(
@@ -290,9 +298,9 @@ class AsyncOperationManager {
       activeOperationKeys: List.unmodifiable(_operations.keys),
     );
   }
-  
+
   // Private methods
-  
+
   Future<T> _executeWithCancellation<T>(
     Future<T> Function(CancellationToken token) operation,
     CancellationToken token,
@@ -300,51 +308,53 @@ class AsyncOperationManager {
   ) async {
     return await operation(token);
   }
-  
+
   Future<void> _processQueue(String queueKey) async {
     if (_queueProcessing[queueKey] == true) return;
-    
+
     _queueProcessing[queueKey] = true;
     final queue = _queues[queueKey];
-    
+
     if (queue == null) {
       _queueProcessing[queueKey] = false;
       return;
     }
-    
+
     try {
       while (queue.isNotEmpty) {
         final operation = queue.removeFirst();
-        
+
         if (operation.token.isCancelled) {
-          if (kDebugMode) print('⏭️ Skipping cancelled queued operation: ${operation.key}');
+          if (kDebugMode)
+            print('⏭️ Skipping cancelled queued operation: ${operation.key}');
           continue;
         }
-        
+
         if (kDebugMode) {
           print('🔄 Processing queued operation: ${operation.key}');
         }
-        
+
         try {
           await operation.operation();
         } catch (e) {
-          if (kDebugMode) print('❌ Queued operation failed: ${operation.key} - $e');
+          if (kDebugMode)
+            print('❌ Queued operation failed: ${operation.key} - $e');
         }
       }
     } finally {
       _queueProcessing[queueKey] = false;
-      
+
       // Clean up empty queue
       if (queue.isEmpty) {
         _queues.remove(queueKey);
       }
     }
   }
-  
+
   /// Dispose all resources
   Future<void> dispose() async {
     await cancelAllOperations();
-    
+
     // Clear queues
     for (final queue in _queues.values) {
       for (final operation in queue) {
@@ -354,7 +364,7 @@ class AsyncOperationManager {
     }
     _queues.clear();
     _queueProcessing.clear();
-    
+
     if (kDebugMode) print('🗑️ AsyncOperationManager disposed');
   }
 }
@@ -364,16 +374,16 @@ class CancellationToken {
   bool _isCancelled = false;
   String? _reason;
   final List<void Function()> _listeners = [];
-  
+
   bool get isCancelled => _isCancelled;
   String? get reason => _reason;
-  
+
   void cancel([String? reason]) {
     if (_isCancelled) return;
-    
+
     _isCancelled = true;
     _reason = reason;
-    
+
     // Notify all listeners
     for (final listener in _listeners) {
       try {
@@ -382,10 +392,10 @@ class CancellationToken {
         if (kDebugMode) print('⚠️ Error in cancellation listener: $e');
       }
     }
-    
+
     _listeners.clear();
   }
-  
+
   void onCancelled(void Function() listener) {
     if (_isCancelled) {
       listener();
@@ -393,7 +403,7 @@ class CancellationToken {
       _listeners.add(listener);
     }
   }
-  
+
   void throwIfCancelled() {
     if (_isCancelled) {
       throw OperationCancelledException(_reason ?? 'Operation was cancelled');
@@ -404,9 +414,9 @@ class CancellationToken {
 /// Exception thrown when operation is cancelled
 class OperationCancelledException implements Exception {
   final String message;
-  
+
   OperationCancelledException(this.message);
-  
+
   @override
   String toString() => 'OperationCancelledException: $message';
 }
@@ -420,7 +430,7 @@ class AsyncOperationStats {
   final int totalTimedOut;
   final int activeQueues;
   final List<String> activeOperationKeys;
-  
+
   const AsyncOperationStats({
     required this.activeOperations,
     required this.totalStarted,
@@ -430,18 +440,20 @@ class AsyncOperationStats {
     required this.activeQueues,
     required this.activeOperationKeys,
   });
-  
+
   int get totalFinished => totalCompleted + totalCancelled + totalTimedOut;
-  double get successRate => totalStarted > 0 ? totalCompleted / totalStarted : 0.0;
-  double get cancellationRate => totalStarted > 0 ? totalCancelled / totalStarted : 0.0;
-  
+  double get successRate =>
+      totalStarted > 0 ? totalCompleted / totalStarted : 0.0;
+  double get cancellationRate =>
+      totalStarted > 0 ? totalCancelled / totalStarted : 0.0;
+
   @override
   String toString() {
     return 'AsyncOperationStats(active: $activeOperations, started: $totalStarted, '
-           'completed: $totalCompleted, cancelled: $totalCancelled, '
-           'timedOut: $totalTimedOut, queues: $activeQueues)';
+        'completed: $totalCompleted, cancelled: $totalCancelled, '
+        'timedOut: $totalTimedOut, queues: $activeQueues)';
   }
-  
+
   Map<String, dynamic> toJson() {
     return {
       'active_operations': activeOperations,
@@ -465,7 +477,7 @@ class CancellableOperation {
   final Completer completer;
   final String? description;
   final DateTime startTime;
-  
+
   CancellableOperation({
     required this.key,
     required this.token,
@@ -482,7 +494,7 @@ class QueuedOperation {
   final int priority;
   final CancellationToken token;
   final String? description;
-  
+
   QueuedOperation({
     required this.key,
     required this.operation,
@@ -495,10 +507,11 @@ class QueuedOperation {
 /// Mixin for easy async operation management integration
 mixin AsyncOperationMixin {
   final AsyncOperationManager _asyncManager = AsyncOperationManager.instance;
-  
+
   /// Create a scoped operation key with object hash
-  String _scopedOperationKey(String key) => '${runtimeType.toString()}_${hashCode}_$key';
-  
+  String _scopedOperationKey(String key) =>
+      '${runtimeType.toString()}_${hashCode}_$key';
+
   /// Execute scoped async operation
   Future<T> executeScopedOperation<T>({
     required String key,
@@ -515,22 +528,26 @@ mixin AsyncOperationMixin {
       description: description,
     );
   }
-  
+
   /// Cancel a scoped operation
   Future<bool> cancelScopedOperation(String key) {
     return _asyncManager.cancelOperation(_scopedOperationKey(key));
   }
-  
+
   /// Cancel all operations for this object
   Future<int> cancelAllScopedOperations() {
-    return _asyncManager.cancelOperationsByPrefix('${runtimeType.toString()}_$hashCode');
+    return _asyncManager.cancelOperationsByPrefix(
+      '${runtimeType.toString()}_$hashCode',
+    );
   }
-  
+
   /// Dispose scoped operations (call from dispose method)
   Future<void> disposeScopedOperations() async {
     final cancelledCount = await cancelAllScopedOperations();
     if (kDebugMode && cancelledCount > 0) {
-      print('🗑️ Disposed $cancelledCount scoped operations for ${runtimeType.toString()}');
+      print(
+        '🗑️ Disposed $cancelledCount scoped operations for ${runtimeType.toString()}',
+      );
     }
   }
 }
@@ -538,9 +555,10 @@ mixin AsyncOperationMixin {
 class TimeoutException implements Exception {
   final String message;
   final Duration? duration;
-  
+
   TimeoutException(this.message, this.duration);
-  
+
   @override
-  String toString() => 'TimeoutException: $message${duration != null ? ' (${duration!.inMilliseconds}ms)' : ''}';
+  String toString() =>
+      'TimeoutException: $message${duration != null ? ' (${duration!.inMilliseconds}ms)' : ''}';
 }

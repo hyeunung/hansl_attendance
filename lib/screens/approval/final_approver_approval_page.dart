@@ -3,10 +3,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'po_preview_page.dart';
 
 class FinalApproverApprovalPage extends StatefulWidget {
-  const FinalApproverApprovalPage({Key? key}) : super(key: key);
+  const FinalApproverApprovalPage({super.key});
 
   @override
-  _FinalApproverApprovalPageState createState() => _FinalApproverApprovalPageState();
+  _FinalApproverApprovalPageState createState() =>
+      _FinalApproverApprovalPageState();
 }
 
 class _FinalApproverApprovalPageState extends State<FinalApproverApprovalPage> {
@@ -25,19 +26,21 @@ class _FinalApproverApprovalPageState extends State<FinalApproverApprovalPage> {
     try {
       final response = await supabase
           .from('purchase_requests')
-          .select('id, request_type, request_date, total_amount, currency, po_file_url')
+          .select(
+            'id, request_type, request_date, total_amount, currency, po_file_url',
+          )
           .eq('payment_status', '확인')
           .order('request_date', ascending: true);
-      
+
       setState(() {
         _confirmedRequests = response;
         _isLoading = false;
       });
     } catch (e) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('데이터 불러오기 실패: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('데이터 불러오기 실패: $e')));
     }
   }
 
@@ -58,7 +61,10 @@ class _FinalApproverApprovalPageState extends State<FinalApproverApprovalPage> {
                 final currency = pr['currency'] ?? '';
 
                 return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   child: ListTile(
                     title: Text('발주번호: #$id ($type)'),
                     subtitle: Text('$requestDate • $currency $totalAmount'),
@@ -109,4 +115,4 @@ class _FinalApproverApprovalPageState extends State<FinalApproverApprovalPage> {
             ),
     );
   }
-} 
+}

@@ -2,7 +2,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'database_optimization_service.dart';
 
 class SupabaseService {
-  final DatabaseOptimizationService _dbOptim = DatabaseOptimizationService.instance;
+  final DatabaseOptimizationService _dbOptim =
+      DatabaseOptimizationService.instance;
 
   /// Get employee name by email with optimized caching
   Future<String?> getEmployeeNameByEmail(String email) async {
@@ -38,14 +39,16 @@ class SupabaseService {
     }
 
     final roleData = await _dbOptim.getEmployeeRole(userId);
-    
-    if (roleData == null || roleData['role'] == null || roleData['is_admin'] == null) {
+
+    if (roleData == null ||
+        roleData['role'] == null ||
+        roleData['is_admin'] == null) {
       throw Exception('역할 조회 실패: 데이터가 없습니다.');
     }
-    
+
     return {
       'role': roleData['role'] as String,
       'isAdmin': roleData['is_admin'] as bool,
     };
   }
-} 
+}
