@@ -1296,6 +1296,7 @@ class AttendanceProvider extends ChangeNotifier
 
   /// 지각 통계 로드
   Future<void> fetchLateStatistics() async {
+    print('🔵 fetchLateStatistics called');
     try {
       final now = DateTime.now();
       final year = now.year;

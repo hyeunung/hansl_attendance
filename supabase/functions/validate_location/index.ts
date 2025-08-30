@@ -2,7 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 // 회사 위치 정보 (보안을 위해 서버에서 관리)
 const COMPANY_LAT = 35.844541;  // hansl 위도
-const COMPANY_LNG = 128.506440;  // hansl 경도
+const COMPANY_LNG = 128.506439;  // hansl 경도
 const ALLOWED_DISTANCE = 100.0;  // meters
 
 interface LocationValidationRequest {
@@ -67,17 +67,23 @@ Deno.serve(async (req: Request) => {
   try {
     const requestData: LocationValidationRequest = await req.json();
     
-    // 필수 필드 검증
-    if (!requestData.latitude || !requestData.longitude || !requestData.employeeId) {
+    // 필수 필드 검증 (더 관대하게)
+    if (!requestData.latitude || !requestData.longitude) {
       return new Response(
         JSON.stringify({ 
-          error: '위도, 경도, 직원 ID는 필수 항목입니다.' 
+          error: 'Request timestamp too old',
+          isValid: false,
+          distance: -1,
+          allowedDistance: 100,
+          message: '요청 시간이 너무 오래되었습니다. 다시 시도해주세요.',
+          reasonPhrase: 'Bad Request'
         }),
         { status: 400, headers }
       );
     }
-
-    const { latitude, longitude, employeeId, timestamp } = requestData;
+    
+    // employeeId나 timestamp가 없어도 계속 진행
+    const { latitude, longitude, employeeId = 'unknown', timestamp } = requestData;
 
     // 좌표 유효성 검사
     if (!isValidCoordinates(latitude, longitude)) {
@@ -89,18 +95,21 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // 시간 검증 (요청이 너무 오래된 경우 거부)
-    const now = new Date();
-    const requestTime = new Date(timestamp);
-    const timeDiff = now.getTime() - requestTime.getTime();
-    
-    if (timeDiff > 30000) { // 30초 이상 차이나면 거부
-      return new Response(
-        JSON.stringify({ 
-          error: '요청 시간이 너무 오래되었습니다.' 
-        }),
-        { status: 400, headers }
-      );
+    // 시간 검증 (timestamp가 있는 경우에만 검증)
+    if (timestamp) {
+      const now = new Date();
+      const requestTime = new Date(timestamp);
+      const timeDiff = now.getTime() - requestTime.getTime();
+      
+      // timestamp가 유효한 날짜인지 확인
+      if (!isNaN(timeDiff) && timeDiff > 60000) { // 60초 이상 차이나면 거부
+        return new Response(
+          JSON.stringify({ 
+            error: '요청 시간이 너무 오래되었습니다.' 
+          }),
+          { status: 400, headers }
+        );
+      }
     }
 
     // 거리 계산

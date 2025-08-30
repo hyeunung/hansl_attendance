@@ -170,7 +170,8 @@ async function sendFCMMessage(
           priority: 'high',
           notification: {
             sound: 'default',
-            priority: 'high',
+            // priority는 android.notification 레벨에서 지원하지 않음
+            // priority는 android 레벨에서만 설정
           },
         },
         apns: {
@@ -184,6 +185,11 @@ async function sendFCMMessage(
       },
     }
 
+    console.log(`📤 FCM 메시지 전송 시도:`)
+    console.log(`   토큰: ${fcmToken.substring(0, 30)}...`)
+    console.log(`   제목: ${title}`)
+    console.log(`   프로젝트: ${projectId}`)
+
     const response = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
       method: 'POST',
       headers: {
@@ -195,7 +201,29 @@ async function sendFCMMessage(
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error(`FCM API error: ${response.status} ${errorText}`)
+      console.error(`❌ FCM API 오류 [${response.status}]:`)
+      console.error(`   에러 메시지: ${errorText}`)
+      
+      // 오류 파싱 시도
+      try {
+        const errorJson = JSON.parse(errorText)
+        if (errorJson.error) {
+          console.error(`   에러 코드: ${errorJson.error.code}`)
+          console.error(`   에러 상태: ${errorJson.error.status}`)
+          console.error(`   에러 상세: ${errorJson.error.message}`)
+          
+          // 토큰 관련 오류 확인
+          if (errorJson.error.details) {
+            errorJson.error.details.forEach((detail: any) => {
+              console.error(`   상세 정보: ${JSON.stringify(detail)}`)
+            })
+          }
+        }
+      } catch (parseError) {
+        // JSON 파싱 실패 시 원본 텍스트 그대로 출력
+        console.error(`   원본 에러: ${errorText}`)
+      }
+      
       return false
     }
 
@@ -209,7 +237,7 @@ async function sendFCMMessage(
   }
 }
 
-async function getAdminAndManagerTokens(supabase: any, requesterDepartment?: string, requesterEmail?: string, isManagerRequest?: boolean): Promise<string[]> {
+async function getAdminAndManagerTokens(supabase: any, requesterDepartment?: string, requesterEmail?: string, isManagerRequest?: boolean): Promise<{tokens: string[], emails: string[]}> {
   try {
     console.log('📊 관리자 및 부서 관리자 FCM 토큰 조회 시작...')
     
@@ -224,39 +252,95 @@ async function getAdminAndManagerTokens(supabase: any, requesterDepartment?: str
       return []
     }
 
+    // 신청자 정보 조회
+    let requesterRoles: string[] = []
+    if (requesterEmail) {
+      const requester = allEmployees.find((emp: any) => emp.email === requesterEmail)
+      requesterRoles = requester?.attendance_role || []
+      console.log(`📋 신청자 역할: ${requesterEmail} → ${JSON.stringify(requesterRoles)}`)
+    }
+
     const tokens: string[] = []
+    const emails: string[] = []
     const processedEmails = new Set<string>()
+    
+    const isSuperAdminRequest = requesterRoles.includes('superadmin')
+    const isAdminRequest = requesterRoles.includes('admin')
 
-    // Admin 필터링
-    const adminList = allEmployees.filter((emp: any) => {
-      const attendanceRole = emp.attendance_role
-      if (attendanceRole && Array.isArray(attendanceRole)) {
-        return attendanceRole.includes('admin')
-      }
-      return false
-    })
-
-    if (isManagerRequest) {
-      // Manager 신청 → Admin에게만 알림
-      console.log('👑 Manager 신청이므로 Admin에게만 알림 전송')
+    // 신청자 역할에 따른 알림 대상 결정
+    if (isSuperAdminRequest) {
+      // SuperAdmin 신청 → SuperAdmin에게만 알림
+      console.log('👑 SuperAdmin 신청이므로 SuperAdmin에게만 알림 전송')
       
-      for (const admin of adminList) {
-        if (admin.fcm_token && !processedEmails.has(admin.email)) {
-          tokens.push(admin.fcm_token)
-          processedEmails.add(admin.email)
-          console.log(`📧 Admin: ${admin.name} (${admin.email})`)
+      const superAdminList = allEmployees.filter((emp: any) => {
+        const attendanceRole = emp.attendance_role
+        return attendanceRole && Array.isArray(attendanceRole) && attendanceRole.includes('superadmin')
+      })
+      
+      for (const superAdmin of superAdminList) {
+        // SuperAdmin이 신청한 경우 본인도 포함
+        if (superAdmin.fcm_token && !processedEmails.has(superAdmin.email)) {
+          tokens.push(superAdmin.fcm_token)
+          emails.push(superAdmin.email)
+          processedEmails.add(superAdmin.email)
+          console.log(`📧 SuperAdmin: ${superAdmin.name} (${superAdmin.email})`)
         }
       }
-    } else {
-      // 일반직원 신청 → Admin + 해당 부서 Manager 둘 다 알림
-      console.log('👤 일반직원 신청이므로 Admin + 해당 부서 Manager에게 알림 전송')
       
-      // Admin FCM 토큰 추가
+    } else if (isAdminRequest || isManagerRequest) {
+      // Admin/Manager 신청 → SuperAdmin + Admin에게만 알림
+      console.log('👑 Admin/Manager 신청이므로 SuperAdmin + Admin에게만 알림 전송')
+      
+      const adminList = allEmployees.filter((emp: any) => {
+        const attendanceRole = emp.attendance_role
+        if (attendanceRole && Array.isArray(attendanceRole)) {
+          return attendanceRole.includes('admin') || attendanceRole.includes('superadmin')
+        }
+        return false
+      })
+      
       for (const admin of adminList) {
+        // 신청자 본인은 제외
+        if (admin.email === requesterEmail) {
+          console.log(`⏩ 신청자 본인 제외: ${admin.name} (${admin.email})`)
+          continue
+        }
+        
         if (admin.fcm_token && !processedEmails.has(admin.email)) {
           tokens.push(admin.fcm_token)
+          emails.push(admin.email)
           processedEmails.add(admin.email)
-          console.log(`📧 Admin: ${admin.name} (${admin.email})`)
+          const roleLabel = admin.attendance_role.includes('superadmin') ? 'SuperAdmin' : 'Admin'
+          console.log(`📧 ${roleLabel}: ${admin.name} (${admin.email})`)
+        }
+      }
+      
+    } else {
+      // 일반직원 신청 → SuperAdmin + Admin + 해당 부서 Manager 모두 알림
+      console.log('👤 일반직원 신청이므로 SuperAdmin + Admin + 해당 부서 Manager에게 알림 전송')
+      
+      // SuperAdmin + Admin FCM 토큰 추가
+      const adminList = allEmployees.filter((emp: any) => {
+        const attendanceRole = emp.attendance_role
+        if (attendanceRole && Array.isArray(attendanceRole)) {
+          return attendanceRole.includes('admin') || attendanceRole.includes('superadmin')
+        }
+        return false
+      })
+      
+      for (const admin of adminList) {
+        // 신청자 본인은 제외
+        if (admin.email === requesterEmail) {
+          console.log(`⏩ 신청자 본인 제외: ${admin.name} (${admin.email})`)
+          continue
+        }
+        
+        if (admin.fcm_token && !processedEmails.has(admin.email)) {
+          tokens.push(admin.fcm_token)
+          emails.push(admin.email)
+          processedEmails.add(admin.email)
+          const roleLabel = admin.attendance_role.includes('superadmin') ? 'SuperAdmin' : 'Admin'
+          console.log(`📧 ${roleLabel}: ${admin.name} (${admin.email})`)
         }
       }
       
@@ -293,8 +377,15 @@ async function getAdminAndManagerTokens(supabase: any, requesterDepartment?: str
 
           // 부서 관리자 FCM 토큰 추가 (중복 제거)
           for (const manager of departmentManagers) {
+            // 신청자 본인은 제외 (매니저가 본인 신청한 경우)
+            if (manager.email === requesterEmail) {
+              console.log(`⏩ 신청자 본인 제외: ${manager.name} (${manager.email})`)
+              continue
+            }
+            
             if (manager.fcm_token && !processedEmails.has(manager.email)) {
               tokens.push(manager.fcm_token)
+              emails.push(manager.email)
               processedEmails.add(manager.email)
               console.log(`🏢 ${requesterDepartment} 관리자: ${manager.name} (${manager.email})`)
             }
@@ -304,11 +395,11 @@ async function getAdminAndManagerTokens(supabase: any, requesterDepartment?: str
     }
 
     console.log(`📊 총 ${tokens.length}명에게 알림 전송 예정`)
-    return tokens
+    return { tokens, emails }
 
   } catch (error) {
     console.error('Error getting admin and manager tokens:', error)
-    return []
+    return { tokens: [], emails: [] }
   }
 }
 
@@ -364,15 +455,19 @@ Deno.serve(async (req: Request) => {
     console.log('✅ Firebase access token 획득 완료')
 
     let targetTokens: string[] = []
+    let targetEmails: string[] = []
 
     if (type === 'admin') {
       // 관리자들에게 알림
-      targetTokens = await getAdminAndManagerTokens(supabase, requester_department, requester_email, is_manager_request)
+      const result = await getAdminAndManagerTokens(supabase, requester_department, requester_email, is_manager_request)
+      targetTokens = result.tokens
+      targetEmails = result.emails
     } else if (type === 'user' && user_email) {
       // 특정 사용자에게 알림
       const userToken = await getUserToken(supabase, user_email)
       if (userToken) {
         targetTokens = [userToken]
+        targetEmails = [user_email]
       }
     } else if (fcm_tokens && Array.isArray(fcm_tokens)) {
       // 직접 토큰 리스트 제공
@@ -390,6 +485,28 @@ Deno.serve(async (req: Request) => {
           status: 400 
         }
       )
+    }
+
+    // 데이터베이스에 알림 저장
+    if (targetEmails.length > 0) {
+      const notifications = targetEmails.map(email => ({
+        user_email: email,
+        title: title,
+        body: body,
+        type: data.type || type,
+        data: data,
+        is_read: false
+      }))
+      
+      const { error: insertError } = await supabase
+        .from('notifications')
+        .insert(notifications)
+      
+      if (insertError) {
+        console.error('❌ 알림 저장 실패:', insertError)
+      } else {
+        console.log(`💾 ${notifications.length}개의 알림을 데이터베이스에 저장`)
+      }
     }
 
     // 각 토큰에 대해 FCM 메시지 전송

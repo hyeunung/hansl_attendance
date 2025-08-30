@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Manual trigger installation via REST API
+
+# Edge Function을 통해 SQL 실행하는 방법
+curl -X POST \
+  "https://qvhbigvdfyvhoegkhvef.supabase.co/rest/v1/rpc/execute_sql" \
+  -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2aGJpZ3ZkZnl2aG9lZ2todmVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc4MTQzNjAsImV4cCI6MjA2MzM5MDM2MH0.kZK0_qcW6sC1THNRjlg6ww4n-gqvpJgjxKfNSzUjJj4" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2aGJpZ3ZkZnl2aG9lZ2todmVmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NzgxNDM2MCwiZXhwIjoyMDYzMzkwMzYwfQ.CTunNqWEcvsAo42kcKVSpSkHK66M1OIjlhdvIoCxn78" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "DROP TRIGGER IF EXISTS leave_notification_trigger ON leave; DROP FUNCTION IF EXISTS send_leave_notification(); CREATE OR REPLACE FUNCTION send_leave_notification() RETURNS TRIGGER AS $$ DECLARE requester_dept TEXT; requester_roles TEXT[]; is_manager_req BOOLEAN := FALSE; BEGIN SELECT department, attendance_role INTO requester_dept, requester_roles FROM employees WHERE email = NEW.user_email; IF requester_roles IS NOT NULL THEN is_manager_req := (\"admin\" = ANY(requester_roles) OR \"superadmin\" = ANY(requester_roles) OR \"개발3팀_manager\" = ANY(requester_roles) OR \"CAD_manager\" = ANY(requester_roles) OR \"개발팀_manager\" = ANY(requester_roles) OR \"경영지원팀_manager\" = ANY(requester_roles) OR \"연구소_manager\" = ANY(requester_roles)); END IF; PERFORM net.http_post(url := \"https://qvhbigvdfyvhoegkhvef.supabase.co/functions/v1/send_fcm_notification\", headers := jsonb_build_object(\"Content-Type\", \"application/json\", \"Authorization\", \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2aGJpZ3ZkZnl2aG9lZ2todmVmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NzgxNDM2MCwiZXhwIjoyMDYzMzkwMzYwfQ.CTunNqWEcvsAo42kcKVSpSkHK66M1OIjlhdvIoCxn78\"), body := jsonb_build_object(\"type\", \"admin\", \"title\", CASE WHEN NEW.type = \"annual\" THEN \"연차 신청\" WHEN NEW.type = \"biztrip\" THEN \"출장 신청\" ELSE \"휴가 신청\" END, \"body\", NEW.name || \"님이 \" || CASE WHEN NEW.type = \"annual\" THEN \"연차를\" WHEN NEW.type = \"biztrip\" THEN \"출장을\" ELSE \"휴가를\" END || \" 신청했습니다. (\" || NEW.start_date || \" ~ \" || NEW.end_date || \")\", \"data\", jsonb_build_object(\"leave_id\", NEW.id::text, \"user_email\", NEW.user_email, \"type\", NEW.type, \"start_date\", NEW.start_date::text, \"end_date\", NEW.end_date::text), \"requester_department\", requester_dept, \"requester_email\", NEW.user_email, \"is_manager_request\", is_manager_req)); RETURN NEW; END; $$ LANGUAGE plpgsql SECURITY DEFINER; CREATE TRIGGER leave_notification_trigger AFTER INSERT ON leave FOR EACH ROW EXECUTE FUNCTION send_leave_notification();"
+  }'

@@ -69,7 +69,6 @@ Deno.serve(async (req) => {
     const { data: newEmployees, error: employeeError } = await supabase
       .from('employees')
       .select('id, email, name, join_date')
-      .eq('join_date', `${targetYear}`)
       .gte('join_date', `${targetYear}-01-01`)
       .lte('join_date', `${targetYear}-12-31`);
 
@@ -229,12 +228,12 @@ async function getActualAttendanceDays(
   year: number,
   month: number
 ): Promise<number> {
-  // attendance 테이블에서 해당 직원의 해당 월 출근 기록 확인
+  // attendance_records 테이블에서 해당 직원의 해당 월 출근 기록 확인
   const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
   const endDate = `${year}-${month.toString().padStart(2, '0')}-${new Date(year, month, 0).getDate()}`;
 
   const { data: attendanceRecords, error } = await supabase
-    .from('attendance')
+    .from('attendance_records')
     .select('date, status, clock_in, clock_out')
     .eq('employee_id', employeeId)
     .gte('date', startDate)

@@ -1,0 +1,21 @@
+flutter_native_splash:
+  # 배경색만 설정 (텍스트는 Flutter에서 처리)
+  color: "#FFFFFF"
+  color_dark: "#FFFFFF"
+  
+  # 이미지 없이 배경색만 사용
+  # image 옵션 제거
+  # branding 옵션 제거
+  
+  # 플랫폼 설정
+  android: true
+  ios: true
+  web: true
+  
+  # Android 12+ 설정
+  android_12:
+    color: "#FFFFFF"
+    color_dark: "#FFFFFF"
+    
+  # 전체 화면 설정
+  fullscreen: true

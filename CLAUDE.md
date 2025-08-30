@@ -2,6 +2,31 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 📝 Code Modification Reporting Guidelines
+
+When making changes to the codebase, ALWAYS clearly indicate:
+
+### Required Information for Each Change
+1. **Layer**: Frontend (Flutter) or Backend (Supabase/Edge Functions)
+2. **File Path**: Full path to the modified file
+3. **Change Type**: Bug Fix, Feature Addition, Performance Optimization, etc.
+4. **Impact Scope**: UI, Business Logic, Database, API, etc.
+
+### Example Format
+```
+## 🔧 Changes Made
+
+### Frontend (Flutter)
+- **File**: `lib/providers/attendance_provider.dart`
+- **Change**: Added auto clock-out at midnight for missing clock-outs
+- **Impact**: Attendance tracking logic
+
+### Backend (Supabase)
+- **File**: `supabase/functions/validate_work_time/index.ts`
+- **Change**: Fixed time validation logic
+- **Impact**: API response for work time validation
+```
+
 ## Project Overview
 
 HANSL is a Flutter mobile application for attendance management and leave tracking for Korean company HANSL. The app integrates with Supabase for backend services, Firebase for push notifications, and Slack for team communication.

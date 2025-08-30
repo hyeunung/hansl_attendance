@@ -1,0 +1,3684 @@
+[
+  {
+    "name": "양승진",
+    "position": "이사",
+    "monthlyLeave": {
+      "3월": {
+        "raw": "27일(오전반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 27,
+            "type": "half_am"
+          }
+        ],
+        "days": 0.5
+      },
+      "4월": {
+        "raw": "2일, \r\n15일(오후반차)",
+        "dates": [
+          2
+        ],
+        "halfDays": [
+          {
+            "day": 15,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1.5
+      },
+      "5월": {
+        "raw": "02일",
+        "dates": [
+          2
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "7월": {
+        "raw": "15일(오후반차),\r\n18일,21일,\r\n22일,23일,24일,25일",
+        "dates": [
+          18,
+          21,
+          22,
+          23,
+          24,
+          25
+        ],
+        "halfDays": [
+          {
+            "day": 15,
+            "type": "half_pm"
+          }
+        ],
+        "days": 6.5
+      },
+      "8월": {
+        "raw": "1일",
+        "dates": [
+          1
+        ],
+        "halfDays": [],
+        "days": 1
+      }
+    },
+    "totalDays": 10.5,
+    "details": [
+      {
+        "month": "3월",
+        "day": 27,
+        "type": "half_am"
+      },
+      {
+        "month": "4월",
+        "day": 2,
+        "type": "annual"
+      },
+      {
+        "month": "4월",
+        "day": 15,
+        "type": "half_pm"
+      },
+      {
+        "month": "5월",
+        "day": 2,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 18,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 21,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 22,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 23,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 24,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 25,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 15,
+        "type": "half_pm"
+      },
+      {
+        "month": "8월",
+        "day": 1,
+        "type": "annual"
+      }
+    ]
+  },
+  {
+    "name": "최창열",
+    "position": "이사",
+    "monthlyLeave": {
+      "2월": {
+        "raw": "24일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 24,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      },
+      "3월": {
+        "raw": "28일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 28,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      },
+      "4월": {
+        "raw": "29일,30일",
+        "dates": [
+          29,
+          30
+        ],
+        "halfDays": [],
+        "days": 2
+      },
+      "5월": {
+        "raw": "28일",
+        "dates": [
+          28
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "6월": {
+        "raw": "13일(오후반차),\r\n16일,18일,\r\n20일(오후반차)",
+        "dates": [
+          16,
+          18
+        ],
+        "halfDays": [
+          {
+            "day": 13,
+            "type": "half_pm"
+          },
+          {
+            "day": 20,
+            "type": "half_pm"
+          }
+        ],
+        "days": 3
+      },
+      "7월": {
+        "raw": "08(오후반차),\r\n09일",
+        "dates": [
+          9
+        ],
+        "halfDays": [
+          {
+            "day": 8,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1.5
+      },
+      "8월": {
+        "raw": "5일(오후반차),\r\n20일",
+        "dates": [
+          20
+        ],
+        "halfDays": [
+          {
+            "day": 5,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1.5
+      }
+    },
+    "totalDays": 10,
+    "details": [
+      {
+        "month": "2월",
+        "day": 24,
+        "type": "half_pm"
+      },
+      {
+        "month": "3월",
+        "day": 28,
+        "type": "half_pm"
+      },
+      {
+        "month": "4월",
+        "day": 29,
+        "type": "annual"
+      },
+      {
+        "month": "4월",
+        "day": 30,
+        "type": "annual"
+      },
+      {
+        "month": "5월",
+        "day": 28,
+        "type": "annual"
+      },
+      {
+        "month": "6월",
+        "day": 16,
+        "type": "annual"
+      },
+      {
+        "month": "6월",
+        "day": 18,
+        "type": "annual"
+      },
+      {
+        "month": "6월",
+        "day": 13,
+        "type": "half_pm"
+      },
+      {
+        "month": "6월",
+        "day": 20,
+        "type": "half_pm"
+      },
+      {
+        "month": "7월",
+        "day": 9,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 8,
+        "type": "half_pm"
+      },
+      {
+        "month": "8월",
+        "day": 20,
+        "type": "annual"
+      },
+      {
+        "month": "8월",
+        "day": 5,
+        "type": "half_pm"
+      }
+    ]
+  },
+  {
+    "name": "김은정",
+    "position": "차장",
+    "monthlyLeave": {
+      "1월": {
+        "raw": "22일",
+        "dates": [
+          22
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "2월": {
+        "raw": "20일,27,28",
+        "dates": [
+          20,
+          27,
+          28
+        ],
+        "halfDays": [],
+        "days": 3
+      },
+      "3월": {
+        "raw": "05(오후반차),12",
+        "dates": [
+          12
+        ],
+        "halfDays": [
+          {
+            "day": 5,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1.5
+      },
+      "4월": {
+        "raw": "23일,\r\n28일(오후반차)",
+        "dates": [
+          23
+        ],
+        "halfDays": [
+          {
+            "day": 28,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1.5
+      },
+      "6월": {
+        "raw": "05일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 5,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      },
+      "7월": {
+        "raw": "07일,16일,\r\n17일(오후반차),\r\n30일,31일",
+        "dates": [
+          7,
+          16,
+          30,
+          31
+        ],
+        "halfDays": [
+          {
+            "day": 17,
+            "type": "half_pm"
+          }
+        ],
+        "days": 4.5
+      },
+      "8월": {
+        "raw": "1일,\r\n14일(오전반차)",
+        "dates": [
+          1
+        ],
+        "halfDays": [
+          {
+            "day": 14,
+            "type": "half_am"
+          }
+        ],
+        "days": 1.5
+      }
+    },
+    "totalDays": 13.5,
+    "details": [
+      {
+        "month": "1월",
+        "day": 22,
+        "type": "annual"
+      },
+      {
+        "month": "2월",
+        "day": 20,
+        "type": "annual"
+      },
+      {
+        "month": "2월",
+        "day": 27,
+        "type": "annual"
+      },
+      {
+        "month": "2월",
+        "day": 28,
+        "type": "annual"
+      },
+      {
+        "month": "3월",
+        "day": 12,
+        "type": "annual"
+      },
+      {
+        "month": "3월",
+        "day": 5,
+        "type": "half_pm"
+      },
+      {
+        "month": "4월",
+        "day": 23,
+        "type": "annual"
+      },
+      {
+        "month": "4월",
+        "day": 28,
+        "type": "half_pm"
+      },
+      {
+        "month": "6월",
+        "day": 5,
+        "type": "half_pm"
+      },
+      {
+        "month": "7월",
+        "day": 7,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 16,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 30,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 31,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 17,
+        "type": "half_pm"
+      },
+      {
+        "month": "8월",
+        "day": 1,
+        "type": "annual"
+      },
+      {
+        "month": "8월",
+        "day": 14,
+        "type": "half_am"
+      }
+    ]
+  },
+  {
+    "name": "이정화",
+    "position": "실장",
+    "monthlyLeave": {
+      "1월": {
+        "raw": "17일(오후반차),\r\n31일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 17,
+            "type": "half_pm"
+          },
+          {
+            "day": 31,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1
+      },
+      "2월": {
+        "raw": "7일(오후반차),\r\n21일,28일",
+        "dates": [
+          21,
+          28
+        ],
+        "halfDays": [
+          {
+            "day": 7,
+            "type": "half_pm"
+          }
+        ],
+        "days": 2.5
+      },
+      "3월": {
+        "raw": "14(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 14,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      },
+      "4월": {
+        "raw": "2일,25일",
+        "dates": [
+          2,
+          25
+        ],
+        "halfDays": [],
+        "days": 2
+      },
+      "5월": {
+        "raw": "2일,\r\n29일(오후반차)",
+        "dates": [
+          2
+        ],
+        "halfDays": [
+          {
+            "day": 29,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1.5
+      },
+      "6월": {
+        "raw": "20일",
+        "dates": [
+          20
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "7월": {
+        "raw": "18일,21일,\r\n22일,23일,24일,25일",
+        "dates": [
+          18,
+          21,
+          22,
+          23,
+          24,
+          25
+        ],
+        "halfDays": [],
+        "days": 6
+      },
+      "8월": {
+        "raw": "1일",
+        "dates": [
+          1
+        ],
+        "halfDays": [],
+        "days": 1
+      }
+    },
+    "totalDays": 15.5,
+    "details": [
+      {
+        "month": "1월",
+        "day": 17,
+        "type": "half_pm"
+      },
+      {
+        "month": "1월",
+        "day": 31,
+        "type": "half_pm"
+      },
+      {
+        "month": "2월",
+        "day": 21,
+        "type": "annual"
+      },
+      {
+        "month": "2월",
+        "day": 28,
+        "type": "annual"
+      },
+      {
+        "month": "2월",
+        "day": 7,
+        "type": "half_pm"
+      },
+      {
+        "month": "3월",
+        "day": 14,
+        "type": "half_pm"
+      },
+      {
+        "month": "4월",
+        "day": 2,
+        "type": "annual"
+      },
+      {
+        "month": "4월",
+        "day": 25,
+        "type": "annual"
+      },
+      {
+        "month": "5월",
+        "day": 2,
+        "type": "annual"
+      },
+      {
+        "month": "5월",
+        "day": 29,
+        "type": "half_pm"
+      },
+      {
+        "month": "6월",
+        "day": 20,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 18,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 21,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 22,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 23,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 24,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 25,
+        "type": "annual"
+      },
+      {
+        "month": "8월",
+        "day": 1,
+        "type": "annual"
+      }
+    ]
+  },
+  {
+    "name": "하치복",
+    "position": "부장",
+    "monthlyLeave": {
+      "1월": {
+        "raw": "10일",
+        "dates": [
+          10
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "2월": {
+        "raw": "21일",
+        "dates": [
+          21
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "3월": {
+        "raw": "28",
+        "dates": [
+          28
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "4월": {
+        "raw": "18일",
+        "dates": [
+          18
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "7월": {
+        "raw": "11일(오후반차),\r\n31일",
+        "dates": [
+          31
+        ],
+        "halfDays": [
+          {
+            "day": 11,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1.5
+      },
+      "8월": {
+        "raw": "1일",
+        "dates": [
+          1
+        ],
+        "halfDays": [],
+        "days": 1
+      }
+    },
+    "totalDays": 6.5,
+    "details": [
+      {
+        "month": "1월",
+        "day": 10,
+        "type": "annual"
+      },
+      {
+        "month": "2월",
+        "day": 21,
+        "type": "annual"
+      },
+      {
+        "month": "3월",
+        "day": 28,
+        "type": "annual"
+      },
+      {
+        "month": "4월",
+        "day": 18,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 31,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 11,
+        "type": "half_pm"
+      },
+      {
+        "month": "8월",
+        "day": 1,
+        "type": "annual"
+      }
+    ]
+  },
+  {
+    "name": "권혁진",
+    "position": "부장",
+    "monthlyLeave": {
+      "1월": {
+        "raw": "3일(오후반자),\r\n20일,31일",
+        "dates": [
+          20,
+          31
+        ],
+        "halfDays": [
+          {
+            "day": 3,
+            "type": "half_pm"
+          }
+        ],
+        "days": 2.5
+      },
+      "2월": {
+        "raw": "7일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 7,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      }
+    },
+    "totalDays": 3,
+    "details": [
+      {
+        "month": "1월",
+        "day": 20,
+        "type": "annual"
+      },
+      {
+        "month": "1월",
+        "day": 31,
+        "type": "annual"
+      },
+      {
+        "month": "1월",
+        "day": 3,
+        "type": "half_pm"
+      },
+      {
+        "month": "2월",
+        "day": 7,
+        "type": "half_pm"
+      }
+    ]
+  },
+  {
+    "name": "김경태",
+    "position": "과장",
+    "monthlyLeave": {
+      "1월": {
+        "raw": "10일(오후반차),\r\n31일",
+        "dates": [
+          31
+        ],
+        "halfDays": [
+          {
+            "day": 10,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1.5
+      },
+      "2월": {
+        "raw": "11일,12일,13일,19일",
+        "dates": [
+          11,
+          12,
+          13,
+          19
+        ],
+        "halfDays": [],
+        "days": 4
+      },
+      "3월": {
+        "raw": "4일",
+        "dates": [
+          4
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "4월": {
+        "raw": "7일,\r\n23일(오후반차)",
+        "dates": [
+          7
+        ],
+        "halfDays": [
+          {
+            "day": 23,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1.5
+      },
+      "7월": {
+        "raw": "11일,31일",
+        "dates": [
+          11,
+          31
+        ],
+        "halfDays": [],
+        "days": 2
+      },
+      "8월": {
+        "raw": "1일",
+        "dates": [
+          1
+        ],
+        "halfDays": [],
+        "days": 1
+      }
+    },
+    "totalDays": 11,
+    "details": [
+      {
+        "month": "1월",
+        "day": 31,
+        "type": "annual"
+      },
+      {
+        "month": "1월",
+        "day": 10,
+        "type": "half_pm"
+      },
+      {
+        "month": "2월",
+        "day": 11,
+        "type": "annual"
+      },
+      {
+        "month": "2월",
+        "day": 12,
+        "type": "annual"
+      },
+      {
+        "month": "2월",
+        "day": 13,
+        "type": "annual"
+      },
+      {
+        "month": "2월",
+        "day": 19,
+        "type": "annual"
+      },
+      {
+        "month": "3월",
+        "day": 4,
+        "type": "annual"
+      },
+      {
+        "month": "4월",
+        "day": 7,
+        "type": "annual"
+      },
+      {
+        "month": "4월",
+        "day": 23,
+        "type": "half_pm"
+      },
+      {
+        "month": "7월",
+        "day": 11,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 31,
+        "type": "annual"
+      },
+      {
+        "month": "8월",
+        "day": 1,
+        "type": "annual"
+      }
+    ]
+  },
+  {
+    "name": "조근일",
+    "position": "연구소장",
+    "monthlyLeave": {
+      "1월": {
+        "raw": "2일",
+        "dates": [
+          2
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "2월": {
+        "raw": "12일,13일,14일",
+        "dates": [
+          12,
+          13,
+          14
+        ],
+        "halfDays": [],
+        "days": 3
+      },
+      "3월": {
+        "raw": "27(오전반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 27,
+            "type": "half_am"
+          }
+        ],
+        "days": 0.5
+      },
+      "4월": {
+        "raw": "8일(오전반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 8,
+            "type": "half_am"
+          }
+        ],
+        "days": 0.5
+      },
+      "5월": {
+        "raw": "28일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 28,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      },
+      "7월": {
+        "raw": "2일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 2,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      },
+      "8월": {
+        "raw": "1일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 1,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      }
+    },
+    "totalDays": 6.5,
+    "details": [
+      {
+        "month": "1월",
+        "day": 2,
+        "type": "annual"
+      },
+      {
+        "month": "2월",
+        "day": 12,
+        "type": "annual"
+      },
+      {
+        "month": "2월",
+        "day": 13,
+        "type": "annual"
+      },
+      {
+        "month": "2월",
+        "day": 14,
+        "type": "annual"
+      },
+      {
+        "month": "3월",
+        "day": 27,
+        "type": "half_am"
+      },
+      {
+        "month": "4월",
+        "day": 8,
+        "type": "half_am"
+      },
+      {
+        "month": "5월",
+        "day": 28,
+        "type": "half_pm"
+      },
+      {
+        "month": "7월",
+        "day": 2,
+        "type": "half_pm"
+      },
+      {
+        "month": "8월",
+        "day": 1,
+        "type": "half_pm"
+      }
+    ]
+  },
+  {
+    "name": "이재형",
+    "position": "과장",
+    "monthlyLeave": {
+      "1월": {
+        "raw": "9일(오전반차),14일,\r\n20일(오후반차)",
+        "dates": [
+          14
+        ],
+        "halfDays": [
+          {
+            "day": 9,
+            "type": "half_am"
+          },
+          {
+            "day": 20,
+            "type": "half_pm"
+          }
+        ],
+        "days": 2
+      },
+      "2월": {
+        "raw": "28일",
+        "dates": [
+          28
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "3월": {
+        "raw": "24(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 24,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      },
+      "5월": {
+        "raw": "2일",
+        "dates": [
+          2
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "6월": {
+        "raw": "9일(오전반차),\r\n16일(오후반차),\r\n30일(오전)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 9,
+            "type": "half_am"
+          },
+          {
+            "day": 16,
+            "type": "half_pm"
+          },
+          {
+            "day": 30,
+            "type": "half_am"
+          }
+        ],
+        "days": 1.5
+      },
+      "7월": {
+        "raw": "7일,\r\n18일(오후반차)",
+        "dates": [
+          7
+        ],
+        "halfDays": [
+          {
+            "day": 18,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1.5
+      },
+      "8월": {
+        "raw": "12일,13일",
+        "dates": [
+          12,
+          13
+        ],
+        "halfDays": [],
+        "days": 2
+      }
+    },
+    "totalDays": 9.5,
+    "details": [
+      {
+        "month": "1월",
+        "day": 14,
+        "type": "annual"
+      },
+      {
+        "month": "1월",
+        "day": 9,
+        "type": "half_am"
+      },
+      {
+        "month": "1월",
+        "day": 20,
+        "type": "half_pm"
+      },
+      {
+        "month": "2월",
+        "day": 28,
+        "type": "annual"
+      },
+      {
+        "month": "3월",
+        "day": 24,
+        "type": "half_pm"
+      },
+      {
+        "month": "5월",
+        "day": 2,
+        "type": "annual"
+      },
+      {
+        "month": "6월",
+        "day": 9,
+        "type": "half_am"
+      },
+      {
+        "month": "6월",
+        "day": 16,
+        "type": "half_pm"
+      },
+      {
+        "month": "6월",
+        "day": 30,
+        "type": "half_am"
+      },
+      {
+        "month": "7월",
+        "day": 7,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 18,
+        "type": "half_pm"
+      },
+      {
+        "month": "8월",
+        "day": 12,
+        "type": "annual"
+      },
+      {
+        "month": "8월",
+        "day": 13,
+        "type": "annual"
+      }
+    ]
+  },
+  {
+    "name": "임소연",
+    "position": "과장",
+    "monthlyLeave": {
+      "1월": {
+        "raw": "2일,8일(오전반차),\r\n22일,31일",
+        "dates": [
+          2,
+          22,
+          31
+        ],
+        "halfDays": [
+          {
+            "day": 8,
+            "type": "half_am"
+          }
+        ],
+        "days": 3.5
+      },
+      "2월": {
+        "raw": "28일",
+        "dates": [
+          28
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "3월": {
+        "raw": "4,25(오후반차)",
+        "dates": [
+          4
+        ],
+        "halfDays": [
+          {
+            "day": 25,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1.5
+      },
+      "4월": {
+        "raw": "17일,18일23일,\r\n30일(오후반차)",
+        "dates": [
+          17,
+          18,
+          23
+        ],
+        "halfDays": [
+          {
+            "day": 30,
+            "type": "half_pm"
+          }
+        ],
+        "days": 3.5
+      },
+      "5월": {
+        "raw": "27일(오전반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 27,
+            "type": "half_am"
+          }
+        ],
+        "days": 0.5
+      },
+      "6월": {
+        "raw": "18일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 18,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      },
+      "7월": {
+        "raw": "30일,31일",
+        "dates": [
+          30,
+          31
+        ],
+        "halfDays": [],
+        "days": 2
+      },
+      "8월": {
+        "raw": "1일,4일",
+        "dates": [
+          1,
+          4
+        ],
+        "halfDays": [],
+        "days": 2
+      }
+    },
+    "totalDays": 14.5,
+    "details": [
+      {
+        "month": "1월",
+        "day": 2,
+        "type": "annual"
+      },
+      {
+        "month": "1월",
+        "day": 22,
+        "type": "annual"
+      },
+      {
+        "month": "1월",
+        "day": 31,
+        "type": "annual"
+      },
+      {
+        "month": "1월",
+        "day": 8,
+        "type": "half_am"
+      },
+      {
+        "month": "2월",
+        "day": 28,
+        "type": "annual"
+      },
+      {
+        "month": "3월",
+        "day": 4,
+        "type": "annual"
+      },
+      {
+        "month": "3월",
+        "day": 25,
+        "type": "half_pm"
+      },
+      {
+        "month": "4월",
+        "day": 17,
+        "type": "annual"
+      },
+      {
+        "month": "4월",
+        "day": 18,
+        "type": "annual"
+      },
+      {
+        "month": "4월",
+        "day": 23,
+        "type": "annual"
+      },
+      {
+        "month": "4월",
+        "day": 30,
+        "type": "half_pm"
+      },
+      {
+        "month": "5월",
+        "day": 27,
+        "type": "half_am"
+      },
+      {
+        "month": "6월",
+        "day": 18,
+        "type": "half_pm"
+      },
+      {
+        "month": "7월",
+        "day": 30,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 31,
+        "type": "annual"
+      },
+      {
+        "month": "8월",
+        "day": 1,
+        "type": "annual"
+      },
+      {
+        "month": "8월",
+        "day": 4,
+        "type": "annual"
+      }
+    ]
+  },
+  {
+    "name": "김지혜",
+    "position": "대리",
+    "monthlyLeave": {
+      "1월": {
+        "raw": "31일",
+        "dates": [
+          31
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "2월": {
+        "raw": "21일,28일",
+        "dates": [
+          21,
+          28
+        ],
+        "halfDays": [],
+        "days": 2
+      },
+      "6월": {
+        "raw": "18일(오후)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 18,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      },
+      "7월": {
+        "raw": "3일(오후반차),\r\n4일,\r\n17일(오후반차),\r\n28일,29일",
+        "dates": [
+          4,
+          28,
+          29
+        ],
+        "halfDays": [
+          {
+            "day": 3,
+            "type": "half_pm"
+          },
+          {
+            "day": 17,
+            "type": "half_pm"
+          }
+        ],
+        "days": 4
+      }
+    },
+    "totalDays": 7.5,
+    "details": [
+      {
+        "month": "1월",
+        "day": 31,
+        "type": "annual"
+      },
+      {
+        "month": "2월",
+        "day": 21,
+        "type": "annual"
+      },
+      {
+        "month": "2월",
+        "day": 28,
+        "type": "annual"
+      },
+      {
+        "month": "6월",
+        "day": 18,
+        "type": "half_pm"
+      },
+      {
+        "month": "7월",
+        "day": 4,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 28,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 29,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 3,
+        "type": "half_pm"
+      },
+      {
+        "month": "7월",
+        "day": 17,
+        "type": "half_pm"
+      }
+    ]
+  },
+  {
+    "name": "정승후",
+    "position": "주임연구원",
+    "monthlyLeave": {
+      "1월": {
+        "raw": "3일(오후반차),\r\n8일(오후반차),\r\n9일(오후반차),\r\n15일(오후반차),\r\n17일(오전반차),\r\n24일,\r\n31일(오후반차)",
+        "dates": [
+          24
+        ],
+        "halfDays": [
+          {
+            "day": 3,
+            "type": "half_pm"
+          },
+          {
+            "day": 8,
+            "type": "half_pm"
+          },
+          {
+            "day": 9,
+            "type": "half_pm"
+          },
+          {
+            "day": 15,
+            "type": "half_pm"
+          },
+          {
+            "day": 17,
+            "type": "half_am"
+          },
+          {
+            "day": 31,
+            "type": "half_pm"
+          }
+        ],
+        "days": 4
+      },
+      "2월": {
+        "raw": "14일(오전반차),\r\n19일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 14,
+            "type": "half_am"
+          },
+          {
+            "day": 19,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1
+      },
+      "3월": {
+        "raw": "14(오후반차),\r\n25(오전반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 14,
+            "type": "half_pm"
+          },
+          {
+            "day": 25,
+            "type": "half_am"
+          }
+        ],
+        "days": 1
+      },
+      "4월": {
+        "raw": "8일,\r\n18일(오후반차),\r\n22일(오후반차),\r\n23일(오전반차)",
+        "dates": [
+          8
+        ],
+        "halfDays": [
+          {
+            "day": 18,
+            "type": "half_pm"
+          },
+          {
+            "day": 22,
+            "type": "half_pm"
+          },
+          {
+            "day": 23,
+            "type": "half_am"
+          }
+        ],
+        "days": 2.5
+      },
+      "5월": {
+        "raw": "2일,\r\n9일(오후반차),\r\n19일(오후반차)",
+        "dates": [
+          2
+        ],
+        "halfDays": [
+          {
+            "day": 9,
+            "type": "half_pm"
+          },
+          {
+            "day": 19,
+            "type": "half_pm"
+          }
+        ],
+        "days": 2
+      },
+      "6월": {
+        "raw": "13일(오후반차),\r\n27일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 13,
+            "type": "half_pm"
+          },
+          {
+            "day": 27,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1
+      },
+      "7월": {
+        "raw": "15(오후반차),\r\n16(오전반차),\r\n18일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 15,
+            "type": "half_pm"
+          },
+          {
+            "day": 16,
+            "type": "half_am"
+          },
+          {
+            "day": 18,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1.5
+      },
+      "8월": {
+        "raw": "18일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 18,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      }
+    },
+    "totalDays": 13.5,
+    "details": [
+      {
+        "month": "1월",
+        "day": 24,
+        "type": "annual"
+      },
+      {
+        "month": "1월",
+        "day": 3,
+        "type": "half_pm"
+      },
+      {
+        "month": "1월",
+        "day": 8,
+        "type": "half_pm"
+      },
+      {
+        "month": "1월",
+        "day": 9,
+        "type": "half_pm"
+      },
+      {
+        "month": "1월",
+        "day": 15,
+        "type": "half_pm"
+      },
+      {
+        "month": "1월",
+        "day": 17,
+        "type": "half_am"
+      },
+      {
+        "month": "1월",
+        "day": 31,
+        "type": "half_pm"
+      },
+      {
+        "month": "2월",
+        "day": 14,
+        "type": "half_am"
+      },
+      {
+        "month": "2월",
+        "day": 19,
+        "type": "half_pm"
+      },
+      {
+        "month": "3월",
+        "day": 14,
+        "type": "half_pm"
+      },
+      {
+        "month": "3월",
+        "day": 25,
+        "type": "half_am"
+      },
+      {
+        "month": "4월",
+        "day": 8,
+        "type": "annual"
+      },
+      {
+        "month": "4월",
+        "day": 18,
+        "type": "half_pm"
+      },
+      {
+        "month": "4월",
+        "day": 22,
+        "type": "half_pm"
+      },
+      {
+        "month": "4월",
+        "day": 23,
+        "type": "half_am"
+      },
+      {
+        "month": "5월",
+        "day": 2,
+        "type": "annual"
+      },
+      {
+        "month": "5월",
+        "day": 9,
+        "type": "half_pm"
+      },
+      {
+        "month": "5월",
+        "day": 19,
+        "type": "half_pm"
+      },
+      {
+        "month": "6월",
+        "day": 13,
+        "type": "half_pm"
+      },
+      {
+        "month": "6월",
+        "day": 27,
+        "type": "half_pm"
+      },
+      {
+        "month": "7월",
+        "day": 15,
+        "type": "half_pm"
+      },
+      {
+        "month": "7월",
+        "day": 16,
+        "type": "half_am"
+      },
+      {
+        "month": "7월",
+        "day": 18,
+        "type": "half_pm"
+      },
+      {
+        "month": "8월",
+        "day": 18,
+        "type": "half_pm"
+      }
+    ]
+  },
+  {
+    "name": "나유성",
+    "position": "대리",
+    "monthlyLeave": {
+      "1월": {
+        "raw": "17일(오전반차),\r\n17일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 17,
+            "type": "half_am"
+          },
+          {
+            "day": 17,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1
+      },
+      "2월": {
+        "raw": "28",
+        "dates": [
+          28
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "3월": {
+        "raw": "4일,5일",
+        "dates": [
+          4,
+          5
+        ],
+        "halfDays": [],
+        "days": 2
+      },
+      "4월": {
+        "raw": "25일",
+        "dates": [
+          25
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "6월": {
+        "raw": "20일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 20,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      },
+      "8월": {
+        "raw": "1일(오전반차),\r\n14일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 1,
+            "type": "half_am"
+          },
+          {
+            "day": 14,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1
+      }
+    },
+    "totalDays": 6.5,
+    "details": [
+      {
+        "month": "1월",
+        "day": 17,
+        "type": "half_am"
+      },
+      {
+        "month": "1월",
+        "day": 17,
+        "type": "half_pm"
+      },
+      {
+        "month": "2월",
+        "day": 28,
+        "type": "annual"
+      },
+      {
+        "month": "3월",
+        "day": 4,
+        "type": "annual"
+      },
+      {
+        "month": "3월",
+        "day": 5,
+        "type": "annual"
+      },
+      {
+        "month": "4월",
+        "day": 25,
+        "type": "annual"
+      },
+      {
+        "month": "6월",
+        "day": 20,
+        "type": "half_pm"
+      },
+      {
+        "month": "8월",
+        "day": 1,
+        "type": "half_am"
+      },
+      {
+        "month": "8월",
+        "day": 14,
+        "type": "half_pm"
+      }
+    ]
+  },
+  {
+    "name": "정현웅",
+    "position": "주임연구원",
+    "monthlyLeave": {
+      "1월": {
+        "raw": "3일,9일(오전반차)",
+        "dates": [
+          3
+        ],
+        "halfDays": [
+          {
+            "day": 9,
+            "type": "half_am"
+          }
+        ],
+        "days": 1.5
+      }
+    },
+    "totalDays": 1.5,
+    "details": [
+      {
+        "month": "1월",
+        "day": 3,
+        "type": "annual"
+      },
+      {
+        "month": "1월",
+        "day": 9,
+        "type": "half_am"
+      }
+    ]
+  },
+  {
+    "name": "정희웅",
+    "position": "팀장",
+    "monthlyLeave": {
+      "1월": {
+        "raw": "17일,20일",
+        "dates": [
+          17,
+          20
+        ],
+        "halfDays": [],
+        "days": 2
+      },
+      "2월": {
+        "raw": "6일(오전반차),\r\n10일(오후반차)\r\n18일",
+        "dates": [
+          18
+        ],
+        "halfDays": [
+          {
+            "day": 6,
+            "type": "half_am"
+          },
+          {
+            "day": 10,
+            "type": "half_pm"
+          }
+        ],
+        "days": 2
+      },
+      "3월": {
+        "raw": "13(오전반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 13,
+            "type": "half_am"
+          }
+        ],
+        "days": 0.5
+      },
+      "4월": {
+        "raw": "9일(오후반차),\r\n17일",
+        "dates": [
+          17
+        ],
+        "halfDays": [
+          {
+            "day": 9,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1.5
+      },
+      "6월": {
+        "raw": "11일,26일,27일,30일",
+        "dates": [
+          11,
+          26,
+          27,
+          30
+        ],
+        "halfDays": [],
+        "days": 4
+      }
+    },
+    "totalDays": 10,
+    "details": [
+      {
+        "month": "1월",
+        "day": 17,
+        "type": "annual"
+      },
+      {
+        "month": "1월",
+        "day": 20,
+        "type": "annual"
+      },
+      {
+        "month": "2월",
+        "day": 18,
+        "type": "annual"
+      },
+      {
+        "month": "2월",
+        "day": 6,
+        "type": "half_am"
+      },
+      {
+        "month": "2월",
+        "day": 10,
+        "type": "half_pm"
+      },
+      {
+        "month": "3월",
+        "day": 13,
+        "type": "half_am"
+      },
+      {
+        "month": "4월",
+        "day": 17,
+        "type": "annual"
+      },
+      {
+        "month": "4월",
+        "day": 9,
+        "type": "half_pm"
+      },
+      {
+        "month": "6월",
+        "day": 11,
+        "type": "annual"
+      },
+      {
+        "month": "6월",
+        "day": 26,
+        "type": "annual"
+      },
+      {
+        "month": "6월",
+        "day": 27,
+        "type": "annual"
+      },
+      {
+        "month": "6월",
+        "day": 30,
+        "type": "annual"
+      }
+    ]
+  },
+  {
+    "name": "김희승",
+    "position": "대리",
+    "monthlyLeave": {
+      "1월": {
+        "raw": "3일(오후반차),\r\n20일,23일",
+        "dates": [
+          20,
+          23
+        ],
+        "halfDays": [
+          {
+            "day": 3,
+            "type": "half_pm"
+          }
+        ],
+        "days": 2.5
+      },
+      "2월": {
+        "raw": "14일(오후반차),\r\n19일(오전반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 14,
+            "type": "half_pm"
+          },
+          {
+            "day": 19,
+            "type": "half_am"
+          }
+        ],
+        "days": 1
+      },
+      "3월": {
+        "raw": "06(오전반차),\r\n25(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 6,
+            "type": "half_am"
+          },
+          {
+            "day": 25,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1
+      },
+      "4월": {
+        "raw": "14일(오후반차),\r\n21일(오후반차),\r\n22일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 14,
+            "type": "half_pm"
+          },
+          {
+            "day": 21,
+            "type": "half_pm"
+          },
+          {
+            "day": 22,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1.5
+      },
+      "5월": {
+        "raw": "9일(오후반차),\r\n16일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 9,
+            "type": "half_pm"
+          },
+          {
+            "day": 16,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1
+      },
+      "6월": {
+        "raw": "16일(오후반차),\r\n26일,27일",
+        "dates": [
+          26,
+          27
+        ],
+        "halfDays": [
+          {
+            "day": 16,
+            "type": "half_pm"
+          }
+        ],
+        "days": 2.5
+      },
+      "7월": {
+        "raw": "31일,1일",
+        "dates": [
+          31,
+          1
+        ],
+        "halfDays": [],
+        "days": 2
+      },
+      "8월": {
+        "raw": "18일(오전반차),\r\n11일,\r\n8일(오후반차)",
+        "dates": [
+          11
+        ],
+        "halfDays": [
+          {
+            "day": 18,
+            "type": "half_am"
+          },
+          {
+            "day": 8,
+            "type": "half_pm"
+          }
+        ],
+        "days": 2
+      }
+    },
+    "totalDays": 13.5,
+    "details": [
+      {
+        "month": "1월",
+        "day": 20,
+        "type": "annual"
+      },
+      {
+        "month": "1월",
+        "day": 23,
+        "type": "annual"
+      },
+      {
+        "month": "1월",
+        "day": 3,
+        "type": "half_pm"
+      },
+      {
+        "month": "2월",
+        "day": 14,
+        "type": "half_pm"
+      },
+      {
+        "month": "2월",
+        "day": 19,
+        "type": "half_am"
+      },
+      {
+        "month": "3월",
+        "day": 6,
+        "type": "half_am"
+      },
+      {
+        "month": "3월",
+        "day": 25,
+        "type": "half_pm"
+      },
+      {
+        "month": "4월",
+        "day": 14,
+        "type": "half_pm"
+      },
+      {
+        "month": "4월",
+        "day": 21,
+        "type": "half_pm"
+      },
+      {
+        "month": "4월",
+        "day": 22,
+        "type": "half_pm"
+      },
+      {
+        "month": "5월",
+        "day": 9,
+        "type": "half_pm"
+      },
+      {
+        "month": "5월",
+        "day": 16,
+        "type": "half_pm"
+      },
+      {
+        "month": "6월",
+        "day": 26,
+        "type": "annual"
+      },
+      {
+        "month": "6월",
+        "day": 27,
+        "type": "annual"
+      },
+      {
+        "month": "6월",
+        "day": 16,
+        "type": "half_pm"
+      },
+      {
+        "month": "7월",
+        "day": 31,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 1,
+        "type": "annual"
+      },
+      {
+        "month": "8월",
+        "day": 11,
+        "type": "annual"
+      },
+      {
+        "month": "8월",
+        "day": 18,
+        "type": "half_am"
+      },
+      {
+        "month": "8월",
+        "day": 8,
+        "type": "half_pm"
+      }
+    ]
+  },
+  {
+    "name": "곽병현",
+    "position": "대리",
+    "monthlyLeave": {
+      "1월": {
+        "raw": "10일",
+        "dates": [
+          10
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "2월": {
+        "raw": "28일",
+        "dates": [
+          28
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "3월": {
+        "raw": "4일,5일",
+        "dates": [
+          4,
+          5
+        ],
+        "halfDays": [],
+        "days": 2
+      },
+      "5월": {
+        "raw": "15일(오후반차),\r\n16일",
+        "dates": [
+          16
+        ],
+        "halfDays": [
+          {
+            "day": 15,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1.5
+      },
+      "6월": {
+        "raw": "30일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 30,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      },
+      "7월": {
+        "raw": "8일,9일,10일,11일",
+        "dates": [
+          8,
+          9,
+          10,
+          11
+        ],
+        "halfDays": [],
+        "days": 4
+      },
+      "8월": {
+        "raw": "13일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 13,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      }
+    },
+    "totalDays": 10.5,
+    "details": [
+      {
+        "month": "1월",
+        "day": 10,
+        "type": "annual"
+      },
+      {
+        "month": "2월",
+        "day": 28,
+        "type": "annual"
+      },
+      {
+        "month": "3월",
+        "day": 4,
+        "type": "annual"
+      },
+      {
+        "month": "3월",
+        "day": 5,
+        "type": "annual"
+      },
+      {
+        "month": "5월",
+        "day": 16,
+        "type": "annual"
+      },
+      {
+        "month": "5월",
+        "day": 15,
+        "type": "half_pm"
+      },
+      {
+        "month": "6월",
+        "day": 30,
+        "type": "half_pm"
+      },
+      {
+        "month": "7월",
+        "day": 8,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 9,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 10,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 11,
+        "type": "annual"
+      },
+      {
+        "month": "8월",
+        "day": 13,
+        "type": "half_pm"
+      }
+    ]
+  },
+  {
+    "name": "윤은호",
+    "position": "대리",
+    "monthlyLeave": {
+      "1월": {
+        "raw": "10일,\r\n17일(오후반차)",
+        "dates": [
+          10
+        ],
+        "halfDays": [
+          {
+            "day": 17,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1.5
+      },
+      "2월": {
+        "raw": "7일,\r\n14일(오후반차)",
+        "dates": [
+          7
+        ],
+        "halfDays": [
+          {
+            "day": 14,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1.5
+      },
+      "3월": {
+        "raw": "17,18,\r\n28(오후반차)",
+        "dates": [
+          17,
+          18
+        ],
+        "halfDays": [
+          {
+            "day": 28,
+            "type": "half_pm"
+          }
+        ],
+        "days": 2.5
+      },
+      "4월": {
+        "raw": "11일,\r\n22(오후반차)",
+        "dates": [
+          11
+        ],
+        "halfDays": [
+          {
+            "day": 22,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1.5
+      },
+      "5월": {
+        "raw": "22일",
+        "dates": [
+          22
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "6월": {
+        "raw": "10일(오후반차),\r\n23일(오후반차),\r\n27일",
+        "dates": [
+          27
+        ],
+        "halfDays": [
+          {
+            "day": 10,
+            "type": "half_pm"
+          },
+          {
+            "day": 23,
+            "type": "half_pm"
+          }
+        ],
+        "days": 2
+      },
+      "7월": {
+        "raw": "14일,\r\n15일(오후반차),\r\n18일,21일,\r\n22일,23일,24일,25일",
+        "dates": [
+          14,
+          18,
+          21,
+          22,
+          23,
+          24,
+          25
+        ],
+        "halfDays": [
+          {
+            "day": 15,
+            "type": "half_pm"
+          }
+        ],
+        "days": 7.5
+      }
+    },
+    "totalDays": 17.5,
+    "details": [
+      {
+        "month": "1월",
+        "day": 10,
+        "type": "annual"
+      },
+      {
+        "month": "1월",
+        "day": 17,
+        "type": "half_pm"
+      },
+      {
+        "month": "2월",
+        "day": 7,
+        "type": "annual"
+      },
+      {
+        "month": "2월",
+        "day": 14,
+        "type": "half_pm"
+      },
+      {
+        "month": "3월",
+        "day": 17,
+        "type": "annual"
+      },
+      {
+        "month": "3월",
+        "day": 18,
+        "type": "annual"
+      },
+      {
+        "month": "3월",
+        "day": 28,
+        "type": "half_pm"
+      },
+      {
+        "month": "4월",
+        "day": 11,
+        "type": "annual"
+      },
+      {
+        "month": "4월",
+        "day": 22,
+        "type": "half_pm"
+      },
+      {
+        "month": "5월",
+        "day": 22,
+        "type": "annual"
+      },
+      {
+        "month": "6월",
+        "day": 27,
+        "type": "annual"
+      },
+      {
+        "month": "6월",
+        "day": 10,
+        "type": "half_pm"
+      },
+      {
+        "month": "6월",
+        "day": 23,
+        "type": "half_pm"
+      },
+      {
+        "month": "7월",
+        "day": 14,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 18,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 21,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 22,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 23,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 24,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 25,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 15,
+        "type": "half_pm"
+      }
+    ]
+  },
+  {
+    "name": "김윤회",
+    "position": "주임연구원",
+    "monthlyLeave": {
+      "1월": {
+        "raw": "8일(오후반차),\r\n9일",
+        "dates": [
+          9
+        ],
+        "halfDays": [
+          {
+            "day": 8,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1.5
+      },
+      "2월": {
+        "raw": "14일",
+        "dates": [
+          14
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "3월": {
+        "raw": "7,\r\n20(오후반차),\r\n24",
+        "dates": [
+          7,
+          24
+        ],
+        "halfDays": [
+          {
+            "day": 20,
+            "type": "half_pm"
+          }
+        ],
+        "days": 2.5
+      },
+      "4월": {
+        "raw": "1일(오후반차),\r\n7일,8일,\r\n9일,10일,11일,21일",
+        "dates": [
+          7,
+          8,
+          9,
+          10,
+          11,
+          21
+        ],
+        "halfDays": [
+          {
+            "day": 1,
+            "type": "half_pm"
+          }
+        ],
+        "days": 6.5
+      },
+      "5월": {
+        "raw": "12일(오전반차),\r\n26일(오전반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 12,
+            "type": "half_am"
+          },
+          {
+            "day": 26,
+            "type": "half_am"
+          }
+        ],
+        "days": 1
+      },
+      "6월": {
+        "raw": "26일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 26,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      },
+      "8월": {
+        "raw": "1일(오후반차),\r\n18일(오전반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 1,
+            "type": "half_pm"
+          },
+          {
+            "day": 18,
+            "type": "half_am"
+          }
+        ],
+        "days": 1
+      }
+    },
+    "totalDays": 14,
+    "details": [
+      {
+        "month": "1월",
+        "day": 9,
+        "type": "annual"
+      },
+      {
+        "month": "1월",
+        "day": 8,
+        "type": "half_pm"
+      },
+      {
+        "month": "2월",
+        "day": 14,
+        "type": "annual"
+      },
+      {
+        "month": "3월",
+        "day": 7,
+        "type": "annual"
+      },
+      {
+        "month": "3월",
+        "day": 24,
+        "type": "annual"
+      },
+      {
+        "month": "3월",
+        "day": 20,
+        "type": "half_pm"
+      },
+      {
+        "month": "4월",
+        "day": 7,
+        "type": "annual"
+      },
+      {
+        "month": "4월",
+        "day": 8,
+        "type": "annual"
+      },
+      {
+        "month": "4월",
+        "day": 9,
+        "type": "annual"
+      },
+      {
+        "month": "4월",
+        "day": 10,
+        "type": "annual"
+      },
+      {
+        "month": "4월",
+        "day": 11,
+        "type": "annual"
+      },
+      {
+        "month": "4월",
+        "day": 21,
+        "type": "annual"
+      },
+      {
+        "month": "4월",
+        "day": 1,
+        "type": "half_pm"
+      },
+      {
+        "month": "5월",
+        "day": 12,
+        "type": "half_am"
+      },
+      {
+        "month": "5월",
+        "day": 26,
+        "type": "half_am"
+      },
+      {
+        "month": "6월",
+        "day": 26,
+        "type": "half_pm"
+      },
+      {
+        "month": "8월",
+        "day": 1,
+        "type": "half_pm"
+      },
+      {
+        "month": "8월",
+        "day": 18,
+        "type": "half_am"
+      }
+    ]
+  },
+  {
+    "name": "석진태",
+    "position": "반장",
+    "monthlyLeave": {
+      "1월": {
+        "raw": "3일,10일,14일",
+        "dates": [
+          3,
+          10,
+          14
+        ],
+        "halfDays": [],
+        "days": 3
+      },
+      "2월": {
+        "raw": "3일",
+        "dates": [
+          3
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "3월": {
+        "raw": "12(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 12,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      },
+      "5월": {
+        "raw": "19일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 19,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      },
+      "6월": {
+        "raw": "23일",
+        "dates": [
+          23
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "7월": {
+        "raw": "02일",
+        "dates": [
+          2
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "8월": {
+        "raw": "5일",
+        "dates": [
+          5
+        ],
+        "halfDays": [],
+        "days": 1
+      }
+    },
+    "totalDays": 8,
+    "details": [
+      {
+        "month": "1월",
+        "day": 3,
+        "type": "annual"
+      },
+      {
+        "month": "1월",
+        "day": 10,
+        "type": "annual"
+      },
+      {
+        "month": "1월",
+        "day": 14,
+        "type": "annual"
+      },
+      {
+        "month": "2월",
+        "day": 3,
+        "type": "annual"
+      },
+      {
+        "month": "3월",
+        "day": 12,
+        "type": "half_pm"
+      },
+      {
+        "month": "5월",
+        "day": 19,
+        "type": "half_pm"
+      },
+      {
+        "month": "6월",
+        "day": 23,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 2,
+        "type": "annual"
+      },
+      {
+        "month": "8월",
+        "day": 5,
+        "type": "annual"
+      }
+    ]
+  },
+  {
+    "name": "여도근",
+    "position": "사원",
+    "monthlyLeave": {
+      "1월": {
+        "raw": "6일(오후반차),\r\n9일(오전반차),\r\n24일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 6,
+            "type": "half_pm"
+          },
+          {
+            "day": 9,
+            "type": "half_am"
+          },
+          {
+            "day": 24,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1.5
+      },
+      "2월": {
+        "raw": "12일(오전반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 12,
+            "type": "half_am"
+          }
+        ],
+        "days": 0.5
+      },
+      "3월": {
+        "raw": "24(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 24,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      },
+      "4월": {
+        "raw": "1일(오전)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 1,
+            "type": "half_am"
+          }
+        ],
+        "days": 0.5
+      },
+      "5월": {
+        "raw": "16일",
+        "dates": [
+          16
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "6월": {
+        "raw": "25일(오전반차),\r\n30일",
+        "dates": [
+          30
+        ],
+        "halfDays": [
+          {
+            "day": 25,
+            "type": "half_am"
+          }
+        ],
+        "days": 1.5
+      },
+      "7월": {
+        "raw": "9일(오후반차),\r\n28일",
+        "dates": [
+          28
+        ],
+        "halfDays": [
+          {
+            "day": 9,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1.5
+      }
+    },
+    "totalDays": 7,
+    "details": [
+      {
+        "month": "1월",
+        "day": 6,
+        "type": "half_pm"
+      },
+      {
+        "month": "1월",
+        "day": 9,
+        "type": "half_am"
+      },
+      {
+        "month": "1월",
+        "day": 24,
+        "type": "half_pm"
+      },
+      {
+        "month": "2월",
+        "day": 12,
+        "type": "half_am"
+      },
+      {
+        "month": "3월",
+        "day": 24,
+        "type": "half_pm"
+      },
+      {
+        "month": "4월",
+        "day": 1,
+        "type": "half_am"
+      },
+      {
+        "month": "5월",
+        "day": 16,
+        "type": "annual"
+      },
+      {
+        "month": "6월",
+        "day": 30,
+        "type": "annual"
+      },
+      {
+        "month": "6월",
+        "day": 25,
+        "type": "half_am"
+      },
+      {
+        "month": "7월",
+        "day": 28,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 9,
+        "type": "half_pm"
+      }
+    ]
+  },
+  {
+    "name": "강영은",
+    "position": "사원",
+    "monthlyLeave": {
+      "1월": {
+        "raw": "9일(오후반차),\r\n15일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 9,
+            "type": "half_pm"
+          },
+          {
+            "day": 15,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1
+      },
+      "2월": {
+        "raw": "14일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 14,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      },
+      "3월": {
+        "raw": "17,\r\n25(오전반차)\r\n25(오후반차)",
+        "dates": [
+          17
+        ],
+        "halfDays": [
+          {
+            "day": 25,
+            "type": "half_am"
+          },
+          {
+            "day": 25,
+            "type": "half_pm"
+          }
+        ],
+        "days": 2
+      },
+      "6월": {
+        "raw": "18일(오전반차),\r\n18일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 18,
+            "type": "half_am"
+          },
+          {
+            "day": 18,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1
+      },
+      "7월": {
+        "raw": "8일(오전반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 8,
+            "type": "half_am"
+          }
+        ],
+        "days": 0.5
+      },
+      "8월": {
+        "raw": "18일",
+        "dates": [
+          18
+        ],
+        "halfDays": [],
+        "days": 1
+      }
+    },
+    "totalDays": 6,
+    "details": [
+      {
+        "month": "1월",
+        "day": 9,
+        "type": "half_pm"
+      },
+      {
+        "month": "1월",
+        "day": 15,
+        "type": "half_pm"
+      },
+      {
+        "month": "2월",
+        "day": 14,
+        "type": "half_pm"
+      },
+      {
+        "month": "3월",
+        "day": 17,
+        "type": "annual"
+      },
+      {
+        "month": "3월",
+        "day": 25,
+        "type": "half_am"
+      },
+      {
+        "month": "3월",
+        "day": 25,
+        "type": "half_pm"
+      },
+      {
+        "month": "6월",
+        "day": 18,
+        "type": "half_am"
+      },
+      {
+        "month": "6월",
+        "day": 18,
+        "type": "half_pm"
+      },
+      {
+        "month": "7월",
+        "day": 8,
+        "type": "half_am"
+      },
+      {
+        "month": "8월",
+        "day": 18,
+        "type": "annual"
+      }
+    ]
+  },
+  {
+    "name": "이한빈",
+    "position": "사원",
+    "monthlyLeave": {
+      "1월": {
+        "raw": "31일",
+        "dates": [
+          31
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "2월": {
+        "raw": "17일(오후반차),\r\n18일",
+        "dates": [
+          18
+        ],
+        "halfDays": [
+          {
+            "day": 17,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1.5
+      },
+      "3월": {
+        "raw": "21(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 21,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      },
+      "4월": {
+        "raw": "4일",
+        "dates": [
+          4
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "6월": {
+        "raw": "27일,30일",
+        "dates": [
+          27,
+          30
+        ],
+        "halfDays": [],
+        "days": 2
+      },
+      "7월": {
+        "raw": "28일,29일",
+        "dates": [
+          28,
+          29
+        ],
+        "halfDays": [],
+        "days": 2
+      },
+      "8월": {
+        "raw": "8일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 8,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      }
+    },
+    "totalDays": 8.5,
+    "details": [
+      {
+        "month": "1월",
+        "day": 31,
+        "type": "annual"
+      },
+      {
+        "month": "2월",
+        "day": 18,
+        "type": "annual"
+      },
+      {
+        "month": "2월",
+        "day": 17,
+        "type": "half_pm"
+      },
+      {
+        "month": "3월",
+        "day": 21,
+        "type": "half_pm"
+      },
+      {
+        "month": "4월",
+        "day": 4,
+        "type": "annual"
+      },
+      {
+        "month": "6월",
+        "day": 27,
+        "type": "annual"
+      },
+      {
+        "month": "6월",
+        "day": 30,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 28,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 29,
+        "type": "annual"
+      },
+      {
+        "month": "8월",
+        "day": 8,
+        "type": "half_pm"
+      }
+    ]
+  },
+  {
+    "name": "백현덕",
+    "position": "사원",
+    "monthlyLeave": {
+      "1월": {
+        "raw": "9일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 9,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      },
+      "2월": {
+        "raw": "28",
+        "dates": [
+          28
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "3월": {
+        "raw": "4,5",
+        "dates": [
+          4,
+          5
+        ],
+        "halfDays": [],
+        "days": 2
+      },
+      "6월": {
+        "raw": "24일(오후반차),\r\n30일(오전반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 24,
+            "type": "half_pm"
+          },
+          {
+            "day": 30,
+            "type": "half_am"
+          }
+        ],
+        "days": 1
+      },
+      "8월": {
+        "raw": "4일",
+        "dates": [
+          4
+        ],
+        "halfDays": [],
+        "days": 1
+      }
+    },
+    "totalDays": 5.5,
+    "details": [
+      {
+        "month": "1월",
+        "day": 9,
+        "type": "half_pm"
+      },
+      {
+        "month": "2월",
+        "day": 28,
+        "type": "annual"
+      },
+      {
+        "month": "3월",
+        "day": 4,
+        "type": "annual"
+      },
+      {
+        "month": "3월",
+        "day": 5,
+        "type": "annual"
+      },
+      {
+        "month": "6월",
+        "day": 24,
+        "type": "half_pm"
+      },
+      {
+        "month": "6월",
+        "day": 30,
+        "type": "half_am"
+      },
+      {
+        "month": "8월",
+        "day": 4,
+        "type": "annual"
+      }
+    ]
+  },
+  {
+    "name": "이종근",
+    "position": "사원",
+    "monthlyLeave": {
+      "4월": {
+        "raw": "4일",
+        "dates": [
+          4
+        ],
+        "halfDays": [],
+        "days": 1
+      },
+      "6월": {
+        "raw": "2일,27일",
+        "dates": [
+          2,
+          27
+        ],
+        "halfDays": [],
+        "days": 2
+      },
+      "7월": {
+        "raw": "21일,28일",
+        "dates": [
+          21,
+          28
+        ],
+        "halfDays": [],
+        "days": 2
+      },
+      "8월": {
+        "raw": "18일",
+        "dates": [
+          18
+        ],
+        "halfDays": [],
+        "days": 1
+      }
+    },
+    "totalDays": 6,
+    "details": [
+      {
+        "month": "4월",
+        "day": 4,
+        "type": "annual"
+      },
+      {
+        "month": "6월",
+        "day": 2,
+        "type": "annual"
+      },
+      {
+        "month": "6월",
+        "day": 27,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 21,
+        "type": "annual"
+      },
+      {
+        "month": "7월",
+        "day": 28,
+        "type": "annual"
+      },
+      {
+        "month": "8월",
+        "day": 18,
+        "type": "annual"
+      }
+    ]
+  },
+  {
+    "name": "이채령",
+    "position": "사원",
+    "monthlyLeave": {
+      "1월": {
+        "raw": "10일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 10,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      },
+      "2월": {
+        "raw": "7일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 7,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      },
+      "3월": {
+        "raw": "14(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 14,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      },
+      "8월": {
+        "raw": "7일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 7,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      }
+    },
+    "totalDays": 2,
+    "details": [
+      {
+        "month": "1월",
+        "day": 10,
+        "type": "half_pm"
+      },
+      {
+        "month": "2월",
+        "day": 7,
+        "type": "half_pm"
+      },
+      {
+        "month": "3월",
+        "day": 14,
+        "type": "half_pm"
+      },
+      {
+        "month": "8월",
+        "day": 7,
+        "type": "half_pm"
+      }
+    ]
+  },
+  {
+    "name": "최창진",
+    "position": "사원",
+    "monthlyLeave": {
+      "3월": {
+        "raw": "28(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 28,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      },
+      "4월": {
+        "raw": "4일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 4,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      },
+      "6월": {
+        "raw": "4일,\r\n12일(오후반차)",
+        "dates": [
+          4
+        ],
+        "halfDays": [
+          {
+            "day": 12,
+            "type": "half_pm"
+          }
+        ],
+        "days": 1.5
+      },
+      "8월": {
+        "raw": "14일(오후반차)",
+        "dates": [],
+        "halfDays": [
+          {
+            "day": 14,
+            "type": "half_pm"
+          }
+        ],
+        "days": 0.5
+      }
+    },
+    "totalDays": 3,
+    "details": [
+      {
+        "month": "3월",
+        "day": 28,
+        "type": "half_pm"
+      },
+      {
+        "month": "4월",
+        "day": 4,
+        "type": "half_pm"
+      },
+      {
+        "month": "6월",
+        "day": 4,
+        "type": "annual"
+      },
+      {
+        "month": "6월",
+        "day": 12,
+        "type": "half_pm"
+      },
+      {
+        "month": "8월",
+        "day": 14,
+        "type": "half_pm"
+      }
+    ]
+  }
+]

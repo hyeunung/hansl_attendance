@@ -20,5 +20,6 @@
   ],
   "[typescript]": {
     "editor.defaultFormatter": "denoland.vscode-deno"
-  }
+  },
+  "cmake.sourceDirectory": "/Users/scott/workspace/hansl/windows/runner"
 }
