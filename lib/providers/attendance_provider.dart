@@ -34,6 +34,10 @@ class AttendanceProvider extends ChangeNotifier
   List<AttendanceRecord> history = [];
 
   bool isLoading = true;
+  
+  // 지각 통계 추가
+  int _monthlyLateCount = 0;
+  int _yearlyLateCount = 0;
 
   // Cache service for performance optimization
   final CacheService _cache = CacheService.instance;
@@ -77,6 +81,10 @@ class AttendanceProvider extends ChangeNotifier
   bool get canClockOut =>
       status == AttendanceStatus.working || status == AttendanceStatus.late;
 
+  // 지각 통계 Getters
+  int get monthlyLateCount => _monthlyLateCount;
+  int get yearlyLateCount => _yearlyLateCount;
+
   AttendanceProvider({required this.userId, required this.userName}) {
     _initializeProvider();
   }
@@ -93,6 +101,8 @@ class AttendanceProvider extends ChangeNotifier
         await _initToday();
         token.throwIfCancelled();
         await fetchRecentHistory();
+        token.throwIfCancelled();
+        await fetchLateStatistics(); // 지각 통계 로드 추가
         return true;
       },
       timeout: const Duration(seconds: 30),
@@ -1282,6 +1292,55 @@ class AttendanceProvider extends ChangeNotifier
     await fetchRecentHistory();
 
     if (kDebugMode) print('🔄 Force refresh completed');
+  }
+
+  /// 지각 통계 로드
+  Future<void> fetchLateStatistics() async {
+    try {
+      final now = DateTime.now();
+      final year = now.year;
+      final month = now.month;
+      
+      // 이번 달 시작일과 종료일
+      final monthStart = DateTime(year, month, 1);
+      final monthEnd = DateTime(year, month + 1, 0);
+      
+      // 올해 시작일
+      final yearStart = DateTime(year, 1, 1);
+      
+      // 이번 달 지각 카운트
+      final monthlyRecords = await Supabase.instance.client
+          .from('attendance_records')
+          .select('status')
+          .eq('employee_id', userId)
+          .eq('status', '지각')
+          .gte('date', monthStart.toIso8601String().split('T')[0])
+          .lte('date', monthEnd.toIso8601String().split('T')[0]);
+      
+      // 올해 지각 카운트  
+      final yearlyRecords = await Supabase.instance.client
+          .from('attendance_records')
+          .select('status')
+          .eq('employee_id', userId)
+          .eq('status', '지각')
+          .gte('date', yearStart.toIso8601String().split('T')[0]);
+      
+      _monthlyLateCount = monthlyRecords.length;
+      _yearlyLateCount = yearlyRecords.length;
+      
+      if (kDebugMode) {
+        debugPrint('📊 Late Statistics - Monthly: $_monthlyLateCount, Yearly: $_yearlyLateCount');
+      }
+      
+      notifyListeners();
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Failed to fetch late statistics: $e');
+      }
+      // 실패해도 앱 동작에는 영향 없도록 에러를 삼킴
+      _monthlyLateCount = 0;
+      _yearlyLateCount = 0;
+    }
   }
 
   /// Get cache statistics for debugging

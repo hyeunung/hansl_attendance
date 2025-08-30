@@ -270,6 +270,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
 
               await Future.wait([
                 attendanceProvider.forceRefreshAll(),
+                attendanceProvider.fetchLateStatistics(), // 지각 통계 새로고침 추가
                 if (userProvider.email != null) ...[
                   leaveProvider.fetchAllLeaves(forceRefresh: true),
                   leaveProvider.fetchMyLeaves(
@@ -646,6 +647,56 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
                           ),
                         ),
                         SizedBox(height: ResponsiveUtils.spacing(context, 25)),
+                        // 지각 통계 카드
+                        Container(
+                          padding: EdgeInsets.all(
+                            ResponsiveUtils.spacing(context, 20),
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                const Color(0xFFF8F9FB),
+                                Colors.white,
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(
+                              ResponsiveUtils.spacing(context, 20),
+                            ),
+                            boxShadow: [AppShadows.card],
+                            border: Border.all(
+                              color: const Color(0xFFE9ECEF),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: _buildLateStatItem(
+                                  '이번 달 지각',
+                                  '${provider.monthlyLateCount}회',
+                                  const Color(0xFFFF6B6B),
+                                  Icons.calendar_month,
+                                ),
+                              ),
+                              Container(
+                                width: 1,
+                                height: ResponsiveUtils.spacing(context, 50),
+                                color: const Color(0xFFE9ECEF),
+                              ),
+                              Expanded(
+                                child: _buildLateStatItem(
+                                  '올해 지각',
+                                  '${provider.yearlyLateCount}회',
+                                  const Color(0xFF1777CB),
+                                  Icons.calendar_today,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: ResponsiveUtils.spacing(context, 25)),
                         // 최근 기록 카드
                         Container(
                           padding: EdgeInsets.all(
@@ -816,5 +867,43 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
 
   static String _formatTime(DateTime dt) {
     return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}:${dt.second.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildLateStatItem(
+    String label,
+    String value,
+    Color color,
+    IconData icon,
+  ) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          icon,
+          size: ResponsiveUtils.spacing(context, 28),
+          color: color.withValues(alpha: 0.8),
+        ),
+        SizedBox(height: ResponsiveUtils.spacing(context, 8)),
+        Text(
+          label,
+          style: ResponsiveUtils.getTextStyle(
+            context,
+            fontSize: 14,
+            color: const Color(0xFF6C757D),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        SizedBox(height: ResponsiveUtils.spacing(context, 4)),
+        Text(
+          value,
+          style: ResponsiveUtils.getTextStyle(
+            context,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ],
+    );
   }
 }
