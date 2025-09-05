@@ -54,17 +54,28 @@ class AttendanceStatusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<AttendanceProvider>(
       builder: (context, provider, _) {
-        return Container(
-          padding: EdgeInsets.symmetric(
-            vertical: ResponsiveUtils.spacing(context, 30),
-          ),
+        final isLate = provider.statusText == '지각';
+        
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 500),
+          padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 30)),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(
-              ResponsiveUtils.spacing(context, 20),
+            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
+            boxShadow: [
+              AppShadows.card,
+              if (isLate) 
+                BoxShadow(
+                  color: const Color(0xFFFF6B6B).withValues(alpha: 0.3),
+                  blurRadius: ResponsiveUtils.spacing(context, 20),
+                  spreadRadius: ResponsiveUtils.spacing(context, 2),
+                  offset: Offset(0, ResponsiveUtils.spacing(context, 4)),
+                ),
+            ],
+            border: Border.all(
+              color: isLate ? const Color(0xFFFF6B6B) : const Color(0xFFE9ECEF),
+              width: isLate ? 2.5 : 1,
             ),
-            boxShadow: [AppShadows.card],
-            border: Border.all(color: const Color(0xFFE9ECEF)),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -85,39 +96,70 @@ class AttendanceStatusCard extends StatelessWidget {
                 },
               ),
               SizedBox(height: ResponsiveUtils.spacing(context, 20)),
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: ResponsiveUtils.spacing(context, 24),
-                  vertical: ResponsiveUtils.spacing(context, 12),
-                ),
-                decoration: BoxDecoration(
-                  gradient: _getStatusGradient(provider.statusText),
-                  borderRadius: BorderRadius.circular(
-                    ResponsiveUtils.spacing(context, 25),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _getStatusShadowColor(provider.statusText),
-                      blurRadius: ResponsiveUtils.spacing(context, 15),
-                      offset: Offset(0, ResponsiveUtils.spacing(context, 4)),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: ResponsiveUtils.spacing(context, 24),
+                      vertical: ResponsiveUtils.spacing(context, 12),
                     ),
-                  ],
-                ),
-                child: Text(
-                  provider.statusText,
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                    decoration: BoxDecoration(
+                      gradient: _getStatusGradient(provider.statusText),
+                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 25)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _getStatusShadowColor(provider.statusText),
+                          blurRadius: ResponsiveUtils.spacing(context, 15),
+                          offset: Offset(0, ResponsiveUtils.spacing(context, 4)),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isLate) ...[
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.white,
+                            size: ResponsiveUtils.spacing(context, 20),
+                          ),
+                          SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                        ],
+                        Text(
+                          provider.statusText,
+                          style: ResponsiveUtils.getTextStyle(
+                            context,
+                            fontSize: isLate ? 18 : 17,
+                            fontWeight: isLate ? FontWeight.w700 : FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                  if (isLate)
+                    Positioned(
+                      top: -8,
+                      right: -8,
+                      child: Container(
+                        padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 4)),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFF0000),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.priority_high,
+                          color: Colors.white,
+                          size: ResponsiveUtils.spacing(context, 12),
+                        ),
+                      ),
+                    ),
+                ],
               ),
               SizedBox(height: ResponsiveUtils.spacing(context, 15)),
               Text(
-                provider.clockInTime == null
-                    ? '-'
-                    : '${provider.clockInStr} 부터',
+                provider.clockInTime == null ? '-' : '${provider.clockInStr} 부터',
                 style: ResponsiveUtils.getTextStyle(
                   context,
                   fontWeight: FontWeight.bold,

@@ -33,11 +33,7 @@ class TripInfoInputWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: [
-        _buildPlaceSection(),
-        const SizedBox(height: 16),
-        _buildPurposeSection(),
-      ],
+      children: [_buildPlaceSection(), const SizedBox(height: 16), _buildPurposeSection()],
     );
   }
 
@@ -91,12 +87,8 @@ class TripInfoInputWidget extends StatelessWidget {
                 _getDateDisplayText(),
                 style: TextStyle(
                   fontSize: 15,
-                  color: selectedDates.isNotEmpty
-                      ? AppColors.primary
-                      : Colors.grey,
-                  fontWeight: selectedDates.isNotEmpty
-                      ? FontWeight.w600
-                      : FontWeight.normal,
+                  color: selectedDates.isNotEmpty ? AppColors.primary : Colors.grey,
+                  fontWeight: selectedDates.isNotEmpty ? FontWeight.w600 : FontWeight.normal,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -150,10 +142,7 @@ class TripInfoInputWidget extends StatelessWidget {
       return DateFormat('yyyy.MM.dd').format(sortedDates.first);
     } else {
       // 불연속 날짜들
-      return sortedDates
-              .take(3)
-              .map((d) => DateFormat('MM.dd').format(d))
-              .join(', ') +
+      return sortedDates.take(3).map((d) => DateFormat('MM.dd').format(d)).join(', ') +
           (sortedDates.length > 3 ? ' 외 ${sortedDates.length - 3}일' : '');
     }
   }
@@ -178,10 +167,7 @@ class TripInfoInputWidget extends StatelessWidget {
             onDeleted: onRemoveDate != null ? () => onRemoveDate!(date) : null,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
-              side: BorderSide(
-                color: AppColors.primary.withValues(alpha: 0.3),
-                width: 1,
-              ),
+              side: BorderSide(color: AppColors.primary.withValues(alpha: 0.3), width: 1),
             ),
             padding: EdgeInsets.zero,
             visualDensity: VisualDensity.compact,
@@ -236,9 +222,7 @@ class TripInfoInputWidget extends StatelessWidget {
             children: [
               Icon(
                 Icons.location_on,
-                color: placeController.text.isNotEmpty
-                    ? AppColors.primary
-                    : Colors.grey,
+                color: placeController.text.isNotEmpty ? AppColors.primary : Colors.grey,
                 size: 20,
               ),
               const SizedBox(width: 8),
@@ -246,10 +230,7 @@ class TripInfoInputWidget extends StatelessWidget {
                 child: TextField(
                   controller: placeController,
                   focusNode: placeFocusNode,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFF222222),
-                  ),
+                  style: const TextStyle(fontSize: 16, color: Color(0xFF222222)),
                   decoration: const InputDecoration(
                     hintText: '출장지를 입력하세요',
                     hintStyle: TextStyle(fontSize: 15, color: Colors.grey),
@@ -258,26 +239,18 @@ class TripInfoInputWidget extends StatelessWidget {
                   ),
                   onChanged: onPlaceChanged,
                   maxLength: 100,
-                  buildCounter:
-                      (
-                        context, {
-                        required currentLength,
-                        required isFocused,
-                        maxLength,
-                      }) {
-                        if (isFocused && currentLength > 0) {
-                          return Text(
-                            '$currentLength / $maxLength',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: currentLength == maxLength
-                                  ? Colors.red
-                                  : Colors.grey,
-                            ),
-                          );
-                        }
-                        return null;
-                      },
+                  buildCounter: (context, {required currentLength, required isFocused, maxLength}) {
+                    if (isFocused && currentLength > 0) {
+                      return Text(
+                        '$currentLength / $maxLength',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: currentLength == maxLength ? Colors.red : Colors.grey,
+                        ),
+                      );
+                    }
+                    return null;
+                  },
                 ),
               ),
             ],
@@ -285,10 +258,7 @@ class TripInfoInputWidget extends StatelessWidget {
           if (placeError != null && placeController.text.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 4, left: 28),
-              child: Text(
-                placeError,
-                style: const TextStyle(color: Colors.red, fontSize: 12),
-              ),
+              child: Text(placeError, style: const TextStyle(color: Colors.red, fontSize: 12)),
             ),
         ],
       ),
@@ -341,58 +311,38 @@ class TripInfoInputWidget extends StatelessWidget {
             focusNode: purposeFocusNode,
             maxLines: 4,
             maxLength: 1000,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Color(0xFF222222),
-              height: 1.5,
-            ),
+            style: const TextStyle(fontSize: 16, color: Color(0xFF222222), height: 1.5),
             decoration: InputDecoration(
               hintText: '출장 업무 내용을 상세히 입력하세요\n(최소 10자 이상)',
-              hintStyle: TextStyle(
-                fontSize: 15,
-                color: Colors.grey[500],
-                height: 1.5,
-              ),
+              hintStyle: TextStyle(fontSize: 15, color: Colors.grey[500], height: 1.5),
               border: InputBorder.none,
               isDense: true,
               contentPadding: EdgeInsets.zero,
             ),
             onChanged: onPurposeChanged,
-            buildCounter:
-                (
-                  context, {
-                  required currentLength,
-                  required isFocused,
-                  maxLength,
-                }) {
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      if (purposeError != null &&
-                          purposeController.text.isNotEmpty)
-                        Expanded(
-                          child: Text(
-                            purposeError,
-                            style: const TextStyle(
-                              color: Colors.red,
-                              fontSize: 12,
-                            ),
-                          ),
-                        )
-                      else
-                        const Spacer(),
-                      Text(
-                        '$currentLength / $maxLength',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: currentLength == maxLength
-                              ? Colors.red
-                              : Colors.grey,
-                        ),
+            buildCounter: (context, {required currentLength, required isFocused, maxLength}) {
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  if (purposeError != null && purposeController.text.isNotEmpty)
+                    Expanded(
+                      child: Text(
+                        purposeError,
+                        style: const TextStyle(color: Colors.red, fontSize: 12),
                       ),
-                    ],
-                  );
-                },
+                    )
+                  else
+                    const Spacer(),
+                  Text(
+                    '$currentLength / $maxLength',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: currentLength == maxLength ? Colors.red : Colors.grey,
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -402,12 +352,8 @@ class TripInfoInputWidget extends StatelessWidget {
   Widget _buildSectionHeader(String title, {bool isRequired = false}) {
     return Row(
       children: [
-        Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-        ),
-        if (isRequired)
-          const Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
+        Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+        if (isRequired) const Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
       ],
     );
   }

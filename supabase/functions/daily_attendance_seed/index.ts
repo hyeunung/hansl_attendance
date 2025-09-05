@@ -86,9 +86,11 @@ async function createDailyAttendanceRecords() {
     }
 
     // 6. 각 직원에 대해 출근 기록 생성
+    const force8amNames = new Set<string>(['정영수', '황연순']);
     const attendanceRecords = employees.map((employee: Employee) => {
       const leave = leaveMap.get(employee.email)
       let status = '출근 전' // 기본 상태
+      let clockIn: string | null = null
       
       if (leave) {
         switch (leave.type) {
@@ -97,6 +99,8 @@ async function createDailyAttendanceRecords() {
             break
           case 'half_am':
             status = '오전반차'
+            // 오전반차는 13:30까지 출근 가능하도록 설정
+            clockIn = '13:30:00'  // 기본값으로 오후 1:30 설정
             break
           case 'half_pm':
             status = '오후반차'
@@ -110,14 +114,19 @@ async function createDailyAttendanceRecords() {
           default:
             status = '연차'
         }
+      } else if (force8amNames.has(employee.name)) {
+        // 휴가가 아닌 날, 특정 인원은 08:00 고정 기록
+        clockIn = '08:00:00'
+        status = '출근'  // DB 상태값과 일치하도록 수정
       }
 
       return {
         date: today,
         employee_id: employee.id,
         employee_name: employee.name,
+        user_email: employee.email,
         status: status,
-        clock_in: null,
+        clock_in: clockIn,
         clock_out: null,
         created_at: new Date().toISOString(),
       }

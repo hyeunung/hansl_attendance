@@ -46,8 +46,8 @@ ALTER TABLE monthly_attendance ENABLE ROW LEVEL SECURITY;
 
 -- 본인 데이터 조회 가능 (TEXT 타입으로 변환)
 CREATE POLICY "monthly_attendance_select_own" ON monthly_attendance FOR SELECT
-  USING (employee_id IN (
-    SELECT id::TEXT FROM employees WHERE email = auth.email()
+  USING (employee_id = (
+    SELECT id::TEXT FROM employees WHERE email = auth.email() LIMIT 1
   ));
 
 -- 관리자는 모든 데이터 조회 가능

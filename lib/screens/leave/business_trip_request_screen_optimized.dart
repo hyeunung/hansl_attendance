@@ -25,8 +25,7 @@ class BusinessTripRequestScreenOptimized extends StatefulWidget {
       _BusinessTripRequestScreenOptimizedState();
 }
 
-class _BusinessTripRequestScreenOptimizedState
-    extends State<BusinessTripRequestScreenOptimized>
+class _BusinessTripRequestScreenOptimizedState extends State<BusinessTripRequestScreenOptimized>
     with AutomaticKeepAliveClientMixin, BannerControllerMixin {
   // Controllers
   final TextEditingController _placeController = TextEditingController();
@@ -72,6 +71,7 @@ class _BusinessTripRequestScreenOptimizedState
     try {
       final service = SupabaseService();
       final response = await service.fetchEmployees();
+      if (!context.mounted) return;
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       String? myName = userProvider.name;
 
@@ -171,8 +171,7 @@ class _BusinessTripRequestScreenOptimizedState
             endDate: endDate,
             reason: [
               '출장자: $_selectedEmployee',
-              if (_selectedCompanions.isNotEmpty)
-                '동행: ${_selectedCompanions.join(', ')}',
+              if (_selectedCompanions.isNotEmpty) '동행: ${_selectedCompanions.join(', ')}',
               '장소: ${LeaveValidators.sanitizeInput(_placeController.text)}',
               '목적: ${LeaveValidators.sanitizeInput(_purposeController.text)}',
               '교통수단: $_selectedTransport',
@@ -191,11 +190,7 @@ class _BusinessTripRequestScreenOptimizedState
           ? '출장 신청이 완료되었습니다 (${totalDays}일, ${groupCount}건)'
           : '출장 신청이 완료되었습니다 (${totalDays}일)';
 
-      showBanner(
-        message,
-        type: BannerType.success,
-        duration: const Duration(seconds: 3),
-      );
+      showBanner(message, type: BannerType.success, duration: const Duration(seconds: 3));
 
       // 데이터는 이미 requestLeave에서 자동으로 새로고침됨 (fetchAllLeaves 포함)
 
@@ -248,9 +243,7 @@ class _BusinessTripRequestScreenOptimizedState
       return false;
     }
 
-    final purposeError = LeaveValidators.validatePurpose(
-      _purposeController.text,
-    );
+    final purposeError = LeaveValidators.validatePurpose(_purposeController.text);
     if (purposeError != null) {
       showBanner(purposeError, type: BannerType.error);
       return false;
@@ -333,9 +326,7 @@ class _BusinessTripRequestScreenOptimizedState
     final month = now.month;
     final year = now.year;
     // 현재 선택된 날짜 중 이번 달과 올해 카운트(간단 지표)
-    final monthTrips = _selectedDates
-        .where((d) => d.year == year && d.month == month)
-        .length;
+    final monthTrips = _selectedDates.where((d) => d.year == year && d.month == month).length;
     final yearTrips = _selectedDates.where((d) => d.year == year).length;
 
     return TripInfoCardWidget(
@@ -350,10 +341,7 @@ class _BusinessTripRequestScreenOptimizedState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '출장 날짜 선택',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
+        const Text('출장 날짜 선택', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
         TripCalendarWidget(
           selectedDates: _selectedDates,
@@ -371,15 +359,9 @@ class _BusinessTripRequestScreenOptimizedState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '선택된 날짜',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
+        const Text('선택된 날짜', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
-        TripDateChipsWidget(
-          selectedDates: _selectedDates,
-          onRemove: _handleDateRemove,
-        ),
+        TripDateChipsWidget(selectedDates: _selectedDates, onRemove: _handleDateRemove),
       ],
     );
   }
@@ -401,16 +383,7 @@ class _BusinessTripRequestScreenOptimizedState
   Widget _buildTransportSection() {
     return TransportSelectorWidget(
       selectedTransport: _selectedTransport,
-      transportOptions: const [
-        '펠리세이드',
-        '스타리아',
-        'GV80',
-        'GV90',
-        '자차',
-        'KTX(SRT)',
-        '버스',
-        '비행기',
-      ],
+      transportOptions: const ['펠리세이드', '스타리아', 'GV80', 'GV90', '자차', 'KTX(SRT)', '버스', '비행기'],
       onChanged: (value) {
         setState(() => _selectedTransport = value);
       },
@@ -429,7 +402,7 @@ class _BusinessTripRequestScreenOptimizedState
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -439,8 +412,7 @@ class _BusinessTripRequestScreenOptimizedState
         top: false,
         child: Row(
           children: [
-            if (MediaQuery.of(context).viewInsets.bottom > 0)
-              const SizedBox(width: 48),
+            if (MediaQuery.of(context).viewInsets.bottom > 0) const SizedBox(width: 48),
             Expanded(child: _buildSubmitButton()),
             const SizedBox(width: 8),
             if (MediaQuery.of(context).viewInsets.bottom > 0)
@@ -477,9 +449,7 @@ class _BusinessTripRequestScreenOptimizedState
         final result = await showDialog<List<String>>(
           context: context,
           builder: (_) => EmployeeSelectionDialog(
-            employeeList: _employeeList
-                .where((n) => n != _selectedEmployee)
-                .toList(),
+            employeeList: _employeeList.where((n) => n != _selectedEmployee).toList(),
             isMultiSelect: true,
             selectedEmployees: _selectedCompanions,
             title: '추가 인원 선택',
@@ -527,10 +497,7 @@ class _BusinessTripRequestScreenOptimizedState
             ? const SizedBox(
                 width: 24,
                 height: 24,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
+                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
               )
             : Text(
                 '출장 신청하기',

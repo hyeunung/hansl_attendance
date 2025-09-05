@@ -52,10 +52,7 @@ class EmployeeSelectorWidget extends StatelessWidget {
       children: [
         const Row(
           children: [
-            Text(
-              '출장자(신청자)',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-            ),
+            Text('출장자(신청자)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
             Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
           ],
         ),
@@ -121,15 +118,10 @@ class EmployeeSelectorWidget extends StatelessWidget {
                       width: 28,
                       height: 28,
                       margin: const EdgeInsets.only(right: 10),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
-                      ),
+                      decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
                       child: Center(
                         child: Text(
-                          selectedEmployee!.isNotEmpty
-                              ? selectedEmployee!.substring(0, 1)
-                              : '?',
+                          selectedEmployee!.isNotEmpty ? selectedEmployee!.substring(0, 1) : '?',
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -143,20 +135,14 @@ class EmployeeSelectorWidget extends StatelessWidget {
                       selectedEmployee ?? '출장자를 선택하세요',
                       style: TextStyle(
                         fontSize: 16,
-                        color: selectedEmployee != null
-                            ? AppColors.primary
-                            : Colors.grey,
-                        fontWeight: selectedEmployee != null
-                            ? FontWeight.bold
-                            : FontWeight.normal,
+                        color: selectedEmployee != null ? AppColors.primary : Colors.grey,
+                        fontWeight: selectedEmployee != null ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
                   ),
                   Icon(
                     Icons.arrow_drop_down,
-                    color: selectedEmployee != null
-                        ? AppColors.primary
-                        : Colors.grey,
+                    color: selectedEmployee != null ? AppColors.primary : Colors.grey,
                   ),
                 ],
               ),
@@ -172,11 +158,7 @@ class EmployeeSelectorWidget extends StatelessWidget {
         children: [
           Text(
             '동행자 (${selectedCompanions.length}명)',
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(fontSize: 13, color: Colors.grey[600], fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 8),
           Wrap(
@@ -188,15 +170,10 @@ class EmployeeSelectorWidget extends StatelessWidget {
                 backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                 deleteIcon: const Icon(Icons.close, size: 18),
                 deleteIconColor: AppColors.primary,
-                onDeleted: onRemoveCompanion != null
-                    ? () => onRemoveCompanion!(companion)
-                    : null,
+                onDeleted: onRemoveCompanion != null ? () => onRemoveCompanion!(companion) : null,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                    width: 1,
-                  ),
+                  side: BorderSide(color: AppColors.primary.withValues(alpha: 0.3), width: 1),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 4),
               );
@@ -226,8 +203,7 @@ class EmployeeSelectionDialog extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<EmployeeSelectionDialog> createState() =>
-      _EmployeeSelectionDialogState();
+  State<EmployeeSelectionDialog> createState() => _EmployeeSelectionDialogState();
 }
 
 class _EmployeeSelectionDialogState extends State<EmployeeSelectionDialog> {
@@ -253,9 +229,7 @@ class _EmployeeSelectionDialogState extends State<EmployeeSelectionDialog> {
   @override
   Widget build(BuildContext context) {
     final filteredList = widget.employeeList
-        .where(
-          (name) => name.toLowerCase().contains(_searchQuery.toLowerCase()),
-        )
+        .where((name) => name.toLowerCase().contains(_searchQuery.toLowerCase()))
         .toList();
 
     return Dialog(
@@ -282,15 +256,9 @@ class _EmployeeSelectionDialogState extends State<EmployeeSelectionDialog> {
   Widget _buildTitle() {
     return Row(
       children: [
-        Icon(
-          widget.isMultiSelect ? Icons.group_add : Icons.person,
-          color: AppColors.primary,
-        ),
+        Icon(widget.isMultiSelect ? Icons.group_add : Icons.person, color: AppColors.primary),
         const SizedBox(width: 8),
-        Text(
-          widget.title,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-        ),
+        Text(widget.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
         if (widget.isMultiSelect && _tempMultiSelection.isNotEmpty)
           Container(
             margin: const EdgeInsets.only(left: 8),
@@ -349,10 +317,7 @@ class _EmployeeSelectionDialogState extends State<EmployeeSelectionDialog> {
           children: [
             Icon(Icons.search_off, size: 48, color: Colors.grey[400]),
             const SizedBox(height: 8),
-            Text(
-              '검색 결과가 없습니다',
-              style: TextStyle(color: Colors.grey[600], fontSize: 16),
-            ),
+            Text('검색 결과가 없습니다', style: TextStyle(color: Colors.grey[600], fontSize: 16)),
           ],
         ),
       );
@@ -392,9 +357,7 @@ class _EmployeeSelectionDialogState extends State<EmployeeSelectionDialog> {
         margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary.withValues(alpha: 0.12)
-              : Colors.white,
+          color: isSelected ? AppColors.primary.withValues(alpha: 0.12) : Colors.white,
           border: Border.all(
             color: isSelected ? AppColors.primary : const Color(0xFFE0E0E0),
             width: isSelected ? 2 : 1,
@@ -405,9 +368,7 @@ class _EmployeeSelectionDialogState extends State<EmployeeSelectionDialog> {
           children: [
             CircleAvatar(
               radius: 16,
-              backgroundColor: isSelected
-                  ? AppColors.primary
-                  : const Color(0xFFE0E0E0),
+              backgroundColor: isSelected ? AppColors.primary : const Color(0xFFE0E0E0),
               child: Text(
                 name.isNotEmpty ? name.substring(0, 1) : '?',
                 style: const TextStyle(
@@ -443,19 +404,14 @@ class _EmployeeSelectionDialogState extends State<EmployeeSelectionDialog> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('취소'),
-        ),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
         if (widget.isMultiSelect) ...[
           const SizedBox(width: 8),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () => Navigator.pop(context, _tempMultiSelection),
             child: const Text('확인'),

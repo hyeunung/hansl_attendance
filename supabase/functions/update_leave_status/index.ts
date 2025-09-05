@@ -160,10 +160,29 @@ Deno.serve(async (req) => {
       console.log(`✅ ${targetDepartment} 관리자 승인 권한 확인`)
     }
 
-    // Service role로 leave 상태 업데이트 (RLS 우회) - status만 업데이트
+    // 승인자/반려자 이름 가져오기
+    const { data: approverData } = await supabase
+      .from('employees')
+      .select('name')
+      .eq('email', userEmail)
+      .single()
+    
+    const approverName = approverData?.name || userEmail.split('@')[0]
+    
+    // Service role로 leave 상태 업데이트 (RLS 우회) - status와 승인자 정보 업데이트
+    const updateData: any = { status: status }
+    
+    if (status === 'approved') {
+      updateData.approved_by = approverName
+      updateData.approved_at = new Date().toISOString()
+    } else if (status === 'rejected') {
+      updateData.rejected_by = approverName
+      updateData.rejected_at = new Date().toISOString()
+    }
+    
     const { data: updateResult, error: updateError } = await supabase
       .from('leave')
-      .update({ status: status })
+      .update(updateData)
       .eq('id', id)
       .select()
 

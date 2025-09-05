@@ -12,18 +12,26 @@ import '../notification/notification_center_screen.dart';
 import '../../services/timer_manager.dart';
 import '../../services/ui_optimization_service.dart';
 import '../../providers/leave_provider.dart';
+import '../../widgets/attendance/admin_attendance_dashboard.dart';
 
 class AttendanceScreen extends StatefulWidget {
-  const AttendanceScreen({super.key});
+  final bool autoShowCheckIn;
+  final bool autoShowCheckOut;
+
+  const AttendanceScreen({super.key, this.autoShowCheckIn = false, this.autoShowCheckOut = false});
 
   @override
   State<AttendanceScreen> createState() => _AttendanceScreenState();
 }
 
-class _AttendanceScreenState extends State<AttendanceScreen>
-    with AutomaticKeepAliveClientMixin {
+class _AttendanceScreenState extends State<AttendanceScreen> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true; // 화면 상태 유지
+
+  bool _isLateTime() {
+    final now = DateTime.now();
+    return now.hour > 8 || (now.hour == 8 && now.minute > 30);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,13 +39,21 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
     return Consumer<AttendanceProvider>(
       builder: (context, attendanceProvider, _) {
-        return _AttendanceScreenBody();
+        return _AttendanceScreenBody(
+          autoShowCheckIn: widget.autoShowCheckIn,
+          autoShowCheckOut: widget.autoShowCheckOut,
+        );
       },
     );
   }
 }
 
 class _AttendanceScreenBody extends StatefulWidget {
+  final bool autoShowCheckIn;
+  final bool autoShowCheckOut;
+
+  const _AttendanceScreenBody({this.autoShowCheckIn = false, this.autoShowCheckOut = false});
+
   @override
   State<_AttendanceScreenBody> createState() => _AttendanceScreenBodyState();
 }
@@ -49,10 +65,22 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
   bool _isClockInLoading = false;
   bool _isClockOutLoading = false;
 
+  bool _isLateTime() {
+    final now = DateTime.now();
+    return now.hour > 8 || (now.hour == 8 && now.minute > 30);
+  }
+
   @override
   void initState() {
     super.initState();
-    // No unnecessary timers
+    // 알림에서 왔을 때 자동으로 다이얼로그 표시
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.autoShowCheckIn) {
+        _showCheckInDialog();
+      } else if (widget.autoShowCheckOut) {
+        _showCheckOutDialog();
+      }
+    });
   }
 
   @override
@@ -82,14 +110,72 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
     );
   }
 
+  // 출근 다이얼로그 표시
+  void _showCheckInDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('출근하기'),
+        content: const Text('지금 출근 처리하시겠습니까?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('취소')),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              setState(() {
+                _isClockInLoading = true;
+              });
+              final provider = Provider.of<AttendanceProvider>(context, listen: false);
+              await provider.tryClockIn();
+              if (mounted) {
+                setState(() {
+                  _isClockInLoading = false;
+                });
+              }
+            },
+            child: const Text('출근'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 퇴근 다이얼로그 표시
+  void _showCheckOutDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('퇴근하기'),
+        content: const Text('지금 퇴근 처리하시겠습니까?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('취소')),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              setState(() {
+                _isClockOutLoading = true;
+              });
+              final provider = Provider.of<AttendanceProvider>(context, listen: false);
+              await provider.tryClockOut();
+              if (mounted) {
+                setState(() {
+                  _isClockOutLoading = false;
+                });
+              }
+            },
+            child: const Text('퇴근'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildBanner() {
     if (_bannerMessage == null) return const SizedBox.shrink();
     return Container(
       width: double.infinity,
       color: _bannerColor,
-      padding: EdgeInsets.symmetric(
-        vertical: ResponsiveUtils.spacing(context, 12),
-      ),
+      padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 12)),
       child: Center(
         child: Text(
           _bannerMessage!,
@@ -104,46 +190,30 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
     );
   }
 
-  LinearGradient _getStatusGradient(String statusText) {
-    switch (statusText) {
-      case '지각':
-        return const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFFF6B6B), Color(0xFFEE5A24)], // 빨강 그라데이션
-        );
-      case '정상 출근':
-        return const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF1777CB), Color(0xFF0D4F8C)], // 파랑 그라데이션
-        );
-      case '퇴근':
-        return const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF4CAF50), Color(0xFF45A049)], // 초록색 그라데이션
-        );
-      default: // 출근 전
-        return const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF9E9E9E), Color(0xFF757575)], // 회색 그라데이션
-        );
+
+  String _getClockInButtonText(AttendanceProvider provider) {
+    if (provider.status == AttendanceStatus.beforeWork) {
+      return '출근하기';
+    } else if (provider.status == AttendanceStatus.late) {
+      return '지각';
+    } else if (provider.status == AttendanceStatus.working) {
+      return '정상출근';
+    } else if (provider.status == AttendanceStatus.offWork) {
+      // 퇴근 후에는 출근 시간 기준으로 표시
+      if (provider.isLate) {
+        return '지각';
+      } else {
+        return '정상출근';
+      }
     }
+    return '출근하기';
   }
 
-  Color _getStatusShadowColor(String statusText) {
-    switch (statusText) {
-      case '지각':
-        return const Color(0xFFEE5A24).withValues(alpha: 0.3);
-      case '정상 출근':
-        return const Color(0xFF0D4F8C).withValues(alpha: 0.3);
-      case '퇴근':
-        return const Color(0xFF45A049).withValues(alpha: 0.3);
-      default:
-        return const Color(0xFF757575).withValues(alpha: 0.3);
+  String _getClockOutButtonText(AttendanceProvider provider) {
+    if (provider.status == AttendanceStatus.offWork) {
+      return '퇴근완료';
     }
+    return '퇴근하기';
   }
 
   @override
@@ -157,9 +227,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
             elevation: 0,
             centerTitle: true,
             flexibleSpace: Container(
-              decoration: const BoxDecoration(
-                gradient: AppColors.primaryGradient,
-              ),
+              decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
             ),
             title: Text('근무 기록', style: AppTextStyles.appBarTitle(context)),
             actions: [
@@ -169,16 +237,12 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
                   return Stack(
                     children: [
                       IconButton(
-                        icon: const Icon(
-                          Icons.notifications_outlined,
-                          color: Colors.white,
-                        ),
+                        icon: const Icon(Icons.notifications_outlined, color: Colors.white),
                         onPressed: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  const NotificationCenterScreen(),
+                              builder: (context) => const NotificationCenterScreen(),
                             ),
                           ).then((_) {
                             // 알림 센터에서 돌아오면 알림 개수 새로고침
@@ -196,16 +260,12 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
                               color: Colors.red,
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            constraints: const BoxConstraints(
-                              minWidth: 18,
-                              minHeight: 18,
-                            ),
+                            constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
                             child: Center(
                               child: Text(
                                 notificationProvider.unreadCount > 99
                                     ? '99+'
-                                    : notificationProvider.unreadCount
-                                          .toString(),
+                                    : notificationProvider.unreadCount.toString(),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 10,
@@ -222,14 +282,10 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
               ),
               // 사용자 이름
               Padding(
-                padding: EdgeInsets.only(
-                  right: ResponsiveUtils.spacing(context, 20),
-                ),
+                padding: EdgeInsets.only(right: ResponsiveUtils.spacing(context, 20)),
                 child: OptimizedConsumer<UserProvider>(
                   componentKey: 'user_name_header',
-                  throttleDuration: const Duration(
-                    seconds: 1,
-                  ), // Name rarely changes
+                  throttleDuration: const Duration(seconds: 1), // Name rarely changes
                   shouldRebuild: (provider) => provider.name != null,
                   builder: (context, userProvider, _) {
                     final name = userProvider.name ?? '-';
@@ -255,28 +311,16 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
             onRefresh: () async {
               // 모든 탭의 데이터 새로고침
               // 모든 데이터 새로고침
-              final attendanceProvider = Provider.of<AttendanceProvider>(
-                context,
-                listen: false,
-              );
-              final leaveProvider = Provider.of<LeaveProvider>(
-                context,
-                listen: false,
-              );
-              final userProvider = Provider.of<UserProvider>(
-                context,
-                listen: false,
-              );
+              final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
+              final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
+              final userProvider = Provider.of<UserProvider>(context, listen: false);
 
               await Future.wait([
                 attendanceProvider.forceRefreshAll(),
-                attendanceProvider.fetchLateStatistics(), // 지각 통계 새로고침 추가
+                attendanceProvider.fetchLateStatistics(), // 지각 통계 새로고침
                 if (userProvider.email != null) ...[
                   leaveProvider.fetchAllLeaves(forceRefresh: true),
-                  leaveProvider.fetchMyLeaves(
-                    email: userProvider.email!,
-                    forceRefresh: true,
-                  ),
+                  leaveProvider.fetchMyLeaves(email: userProvider.email!, forceRefresh: true),
                 ],
               ]);
             },
@@ -292,98 +336,8 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // 현재 상태 카드
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            vertical: ResponsiveUtils.spacing(context, 30),
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(
-                              ResponsiveUtils.spacing(context, 20),
-                            ),
-                            boxShadow: [AppShadows.card],
-                            border: Border.all(color: const Color(0xFFE9ECEF)),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                '현재 상태',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF343A40),
-                                ),
-                              ),
-                              SizedBox(
-                                height: ResponsiveUtils.spacing(context, 20),
-                              ),
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: ResponsiveUtils.spacing(
-                                    context,
-                                    24,
-                                  ),
-                                  vertical: ResponsiveUtils.spacing(
-                                    context,
-                                    12,
-                                  ),
-                                ),
-                                decoration: BoxDecoration(
-                                  gradient: _getStatusGradient(
-                                    provider.statusText,
-                                  ),
-                                  borderRadius: BorderRadius.circular(
-                                    ResponsiveUtils.spacing(context, 25),
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: _getStatusShadowColor(
-                                        provider.statusText,
-                                      ),
-                                      blurRadius: ResponsiveUtils.spacing(
-                                        context,
-                                        15,
-                                      ),
-                                      offset: Offset(
-                                        0,
-                                        ResponsiveUtils.spacing(context, 4),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                child: Text(
-                                  provider.statusText,
-                                  style: ResponsiveUtils.getTextStyle(
-                                    context,
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(
-                                height: ResponsiveUtils.spacing(context, 15),
-                              ),
-                              Text(
-                                provider.status == AttendanceStatus.offWork
-                                    ? '${provider.clockInStr} ~ ${provider.clockOutStr}'
-                                    : provider.clockInTime == null
-                                    ? '-'
-                                    : '${provider.clockInStr} 부터',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                  color: const Color(0xFF6C757D),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: ResponsiveUtils.spacing(context, 25)),
+                        // 관리자 대시보드 (관리자만 표시)
+                        const AdminAttendanceDashboard(),
                         // 출근/퇴근 버튼 (흰카드 없이 Row만)
                         Row(
                           children: [
@@ -392,8 +346,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
                                 height: ResponsiveUtils.spacing(context, 65),
                                 child: GestureDetector(
                                   onTap:
-                                      provider.status ==
-                                              AttendanceStatus.beforeWork &&
+                                      provider.status == AttendanceStatus.beforeWork &&
                                           !_isClockInLoading
                                       ? () async {
                                           setState(() {
@@ -405,29 +358,18 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
                                               _isClockInLoading = false;
                                             });
                                             if (provider.errorMessage != null) {
-                                              _showBanner(
-                                                provider.errorMessage!,
-                                                error: true,
-                                              );
+                                              _showBanner(provider.errorMessage!, error: true);
                                               provider.clearError();
                                             } else {
                                               // 출근 성공 메시지 표시
                                               final now = DateTime.now();
                                               final hour = now.hour;
                                               final isLate =
-                                                  hour >= 9 ||
-                                                  (hour == 8 &&
-                                                      now.minute > 30);
+                                                  hour >= 9 || (hour == 8 && now.minute > 30);
                                               if (isLate) {
-                                                _showBanner(
-                                                  '지각 처리되었습니다.',
-                                                  error: false,
-                                                );
+                                                _showBanner('지각 처리되었습니다.', error: false);
                                               } else {
-                                                _showBanner(
-                                                  '정상 출근 처리되었습니다.',
-                                                  error: false,
-                                                );
+                                                _showBanner('정상 출근 처리되었습니다.', error: false);
                                               }
                                             }
                                           }
@@ -435,37 +377,25 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
                                       : null,
                                   child: Container(
                                     decoration: BoxDecoration(
-                                      gradient:
-                                          provider.status ==
-                                              AttendanceStatus.beforeWork
+                                      gradient: provider.status == AttendanceStatus.beforeWork && !_isLateTime()
                                           ? AppColors.primaryGradient
                                           : null,
-                                      color:
-                                          provider.status ==
-                                              AttendanceStatus.beforeWork
-                                          ? null
-                                          : const Color(0xFFE9ECEF),
+                                      color: provider.status == AttendanceStatus.beforeWork
+                                          ? (_isLateTime()
+                                              ? const Color(0xFFE57373).withValues(alpha: 0.8)
+                                              : null)
+                                          : _getClockInButtonText(provider) == '지각'
+                                              ? const Color(0xFFE57373).withValues(alpha: 0.3)
+                                              : const Color(0xFFE9ECEF),
                                       borderRadius: BorderRadius.circular(
                                         ResponsiveUtils.spacing(context, 14),
                                       ),
                                       boxShadow: [
-                                        if (provider.status ==
-                                            AttendanceStatus.beforeWork)
+                                        if (provider.status == AttendanceStatus.beforeWork)
                                           BoxShadow(
-                                            color: Colors.black.withValues(
-                                              alpha: 0.32,
-                                            ),
-                                            blurRadius: ResponsiveUtils.spacing(
-                                              context,
-                                              7,
-                                            ),
-                                            offset: Offset(
-                                              0,
-                                              ResponsiveUtils.spacing(
-                                                context,
-                                                2,
-                                              ),
-                                            ),
+                                            color: Colors.black.withValues(alpha: 0.32),
+                                            blurRadius: ResponsiveUtils.spacing(context, 7),
+                                            offset: Offset(0, ResponsiveUtils.spacing(context, 2)),
                                           ),
                                       ],
                                     ),
@@ -480,15 +410,12 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
                                             ),
                                           )
                                         : Text(
-                                            '출근하기',
+                                            _getClockInButtonText(provider),
                                             style: ResponsiveUtils.getTextStyle(
                                               context,
                                               fontWeight: FontWeight.bold,
                                               fontSize: 21,
-                                              color:
-                                                  provider.status ==
-                                                      AttendanceStatus
-                                                          .beforeWork
+                                              color: provider.status == AttendanceStatus.beforeWork || _getClockInButtonText(provider) == '지각'
                                                   ? Colors.white
                                                   : const Color(0xFFB0B0B0),
                                             ),
@@ -497,16 +424,12 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
                                 ),
                               ),
                             ),
-                            SizedBox(
-                              width: ResponsiveUtils.spacing(context, 15),
-                            ),
+                            SizedBox(width: ResponsiveUtils.spacing(context, 15)),
                             Expanded(
                               child: SizedBox(
                                 height: ResponsiveUtils.spacing(context, 65),
                                 child: GestureDetector(
-                                  onTap:
-                                      provider.canClockOut &&
-                                          !_isClockOutLoading
+                                  onTap: provider.canClockOut && !_isClockOutLoading
                                       ? () async {
                                           setState(() {
                                             _isClockOutLoading = true;
@@ -517,10 +440,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
                                               _isClockOutLoading = false;
                                             });
                                             if (provider.errorMessage != null) {
-                                              _showBanner(
-                                                provider.errorMessage!,
-                                                error: true,
-                                              );
+                                              _showBanner(provider.errorMessage!, error: true);
                                               provider.clearError();
                                             }
                                           }
@@ -531,29 +451,16 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
                                       gradient: provider.canClockOut
                                           ? AppColors.primaryGradient
                                           : null,
-                                      color: provider.canClockOut
-                                          ? null
-                                          : const Color(0xFFE9ECEF),
+                                      color: provider.canClockOut ? null : const Color(0xFFE9ECEF),
                                       borderRadius: BorderRadius.circular(
                                         ResponsiveUtils.spacing(context, 14),
                                       ),
                                       boxShadow: [
                                         if (provider.canClockOut)
                                           BoxShadow(
-                                            color: Colors.black.withValues(
-                                              alpha: 0.32,
-                                            ),
-                                            blurRadius: ResponsiveUtils.spacing(
-                                              context,
-                                              7,
-                                            ),
-                                            offset: Offset(
-                                              0,
-                                              ResponsiveUtils.spacing(
-                                                context,
-                                                2,
-                                              ),
-                                            ),
+                                            color: Colors.black.withValues(alpha: 0.32),
+                                            blurRadius: ResponsiveUtils.spacing(context, 7),
+                                            offset: Offset(0, ResponsiveUtils.spacing(context, 2)),
                                           ),
                                       ],
                                     ),
@@ -568,7 +475,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
                                             ),
                                           )
                                         : Text(
-                                            '퇴근하기',
+                                            _getClockOutButtonText(provider),
                                             style: ResponsiveUtils.getTextStyle(
                                               context,
                                               fontWeight: FontWeight.bold,
@@ -587,9 +494,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
                         SizedBox(height: ResponsiveUtils.spacing(context, 25)),
                         // 오늘의 근무 요약 카드
                         Container(
-                          padding: EdgeInsets.all(
-                            ResponsiveUtils.spacing(context, 25),
-                          ),
+                          padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 25)),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(
@@ -604,20 +509,13 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
                               Row(
                                 children: [
                                   Container(
-                                    padding: EdgeInsets.all(
-                                      ResponsiveUtils.spacing(context, 2),
-                                    ),
+                                    padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 2)),
                                     child: Text(
                                       '💼',
-                                      style: ResponsiveUtils.getTextStyle(
-                                        context,
-                                        fontSize: 20,
-                                      ),
+                                      style: ResponsiveUtils.getTextStyle(context, fontSize: 20),
                                     ),
                                   ),
-                                  SizedBox(
-                                    width: ResponsiveUtils.spacing(context, 10),
-                                  ),
+                                  SizedBox(width: ResponsiveUtils.spacing(context, 10)),
                                   Text(
                                     '오늘의 근무 요약',
                                     style: ResponsiveUtils.getTextStyle(
@@ -629,69 +527,110 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
                                   ),
                                 ],
                               ),
-                              SizedBox(
-                                height: ResponsiveUtils.spacing(context, 20),
-                              ),
+                              SizedBox(height: ResponsiveUtils.spacing(context, 20)),
                               _buildSummaryItem('출근 시간', provider.clockInStr),
                               if (provider.status == AttendanceStatus.offWork)
-                                _buildSummaryItem(
-                                  '퇴근 시간',
-                                  provider.clockOutStr,
-                                ),
-                              _buildSummaryItem(
-                                '근무 시간',
-                                provider.todayWorkDuration,
-                                isLast: true,
-                              ),
+                                _buildSummaryItem('퇴근 시간', provider.clockOutStr),
+                              _buildSummaryItem('근무 시간', provider.todayWorkDuration, isLast: true),
                             ],
                           ),
                         ),
                         SizedBox(height: ResponsiveUtils.spacing(context, 25)),
                         // 지각 통계 카드
                         Container(
-                          padding: EdgeInsets.all(
-                            ResponsiveUtils.spacing(context, 20),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: ResponsiveUtils.spacing(context, 20),
+                            vertical: ResponsiveUtils.spacing(context, 16),
                           ),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
+                              colors: [const Color(0xFFFF6B6B), const Color(0xFFFF8787)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
-                              colors: [
-                                const Color(0xFFF8F9FB),
-                                Colors.white,
-                              ],
                             ),
                             borderRadius: BorderRadius.circular(
-                              ResponsiveUtils.spacing(context, 20),
+                              ResponsiveUtils.spacing(context, 16),
                             ),
-                            boxShadow: [AppShadows.card],
-                            border: Border.all(
-                              color: const Color(0xFFE9ECEF),
-                              width: 1,
-                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFFF6B6B).withValues(alpha: 0.25),
+                                blurRadius: ResponsiveUtils.spacing(context, 8),
+                                offset: Offset(0, ResponsiveUtils.spacing(context, 4)),
+                              ),
+                            ],
                           ),
                           child: Row(
                             children: [
-                              Expanded(
-                                child: _buildLateStatItem(
-                                  '이번 달 지각',
-                                  '${provider.monthlyLateCount}회',
-                                  const Color(0xFFFF6B6B),
-                                  Icons.calendar_month,
+                              Icon(
+                                Icons.warning_amber_rounded,
+                                color: Colors.white,
+                                size: ResponsiveUtils.spacing(context, 22),
+                              ),
+                              SizedBox(width: ResponsiveUtils.spacing(context, 12)),
+                              Text(
+                                '지각 통계',
+                                style: ResponsiveUtils.getTextStyle(
+                                  context,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 18,
+                                  color: Colors.white,
                                 ),
                               ),
-                              Container(
-                                width: 1,
-                                height: ResponsiveUtils.spacing(context, 50),
-                                color: const Color(0xFFE9ECEF),
-                              ),
-                              Expanded(
-                                child: _buildLateStatItem(
-                                  '올해 지각',
-                                  '${provider.yearlyLateCount}회',
-                                  const Color(0xFF1777CB),
-                                  Icons.calendar_today,
-                                ),
+                              Spacer(),
+                              Row(
+                                children: [
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        '이번달',
+                                        style: ResponsiveUtils.getTextStyle(
+                                          context,
+                                          fontSize: 12,
+                                          color: Colors.white.withValues(alpha: 0.8),
+                                        ),
+                                      ),
+                                      Text(
+                                        '${provider.monthlyLateCount}회',
+                                        style: ResponsiveUtils.getTextStyle(
+                                          context,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(width: ResponsiveUtils.spacing(context, 20)),
+                                  Container(
+                                    width: 1,
+                                    height: ResponsiveUtils.spacing(context, 35),
+                                    color: Colors.white.withValues(alpha: 0.3),
+                                  ),
+                                  SizedBox(width: ResponsiveUtils.spacing(context, 20)),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        '올해',
+                                        style: ResponsiveUtils.getTextStyle(
+                                          context,
+                                          fontSize: 12,
+                                          color: Colors.white.withValues(alpha: 0.8),
+                                        ),
+                                      ),
+                                      Text(
+                                        '${provider.yearlyLateCount}회',
+                                        style: ResponsiveUtils.getTextStyle(
+                                          context,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -699,9 +638,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
                         SizedBox(height: ResponsiveUtils.spacing(context, 25)),
                         // 최근 기록 카드
                         Container(
-                          padding: EdgeInsets.all(
-                            ResponsiveUtils.spacing(context, 25),
-                          ),
+                          padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 25)),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(
@@ -716,20 +653,13 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
                               Row(
                                 children: [
                                   Container(
-                                    padding: EdgeInsets.all(
-                                      ResponsiveUtils.spacing(context, 2),
-                                    ),
+                                    padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 2)),
                                     child: Text(
                                       '⏱️',
-                                      style: ResponsiveUtils.getTextStyle(
-                                        context,
-                                        fontSize: 20,
-                                      ),
+                                      style: ResponsiveUtils.getTextStyle(context, fontSize: 20),
                                     ),
                                   ),
-                                  SizedBox(
-                                    width: ResponsiveUtils.spacing(context, 10),
-                                  ),
+                                  SizedBox(width: ResponsiveUtils.spacing(context, 10)),
                                   Text(
                                     '최근 기록',
                                     style: ResponsiveUtils.getTextStyle(
@@ -741,16 +671,11 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
                                   ),
                                 ],
                               ),
-                              SizedBox(
-                                height: ResponsiveUtils.spacing(context, 15),
-                              ),
+                              SizedBox(height: ResponsiveUtils.spacing(context, 15)),
                               provider.recentHistory.isEmpty
                                   ? Container(
                                       padding: EdgeInsets.symmetric(
-                                        vertical: ResponsiveUtils.spacing(
-                                          context,
-                                          20,
-                                        ),
+                                        vertical: ResponsiveUtils.spacing(context, 20),
                                       ),
                                       alignment: Alignment.center,
                                       child: Text(
@@ -767,10 +692,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
                                           .map(
                                             (record) => Padding(
                                               padding: EdgeInsets.only(
-                                                bottom: ResponsiveUtils.spacing(
-                                                  context,
-                                                  8,
-                                                ),
+                                                bottom: ResponsiveUtils.spacing(context, 8),
                                               ),
                                               child: _buildHistoryRow(record),
                                             ),
@@ -835,9 +757,7 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
       ),
       decoration: BoxDecoration(
         color: const Color(0xFFF5F6F8),
-        borderRadius: BorderRadius.circular(
-          ResponsiveUtils.spacing(context, 10),
-        ),
+        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 10)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -867,43 +787,5 @@ class _AttendanceScreenBodyState extends State<_AttendanceScreenBody>
 
   static String _formatTime(DateTime dt) {
     return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}:${dt.second.toString().padLeft(2, '0')}';
-  }
-
-  Widget _buildLateStatItem(
-    String label,
-    String value,
-    Color color,
-    IconData icon,
-  ) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          icon,
-          size: ResponsiveUtils.spacing(context, 28),
-          color: color.withValues(alpha: 0.8),
-        ),
-        SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-        Text(
-          label,
-          style: ResponsiveUtils.getTextStyle(
-            context,
-            fontSize: 14,
-            color: const Color(0xFF6C757D),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        SizedBox(height: ResponsiveUtils.spacing(context, 4)),
-        Text(
-          value,
-          style: ResponsiveUtils.getTextStyle(
-            context,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-      ],
-    );
   }
 }

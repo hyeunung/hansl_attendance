@@ -21,7 +21,7 @@ class PerformanceMonitor {
 
     // 개발 모드에서는 콘솔에도 출력
     if (kDebugMode) {
-      print('📊 Screen Load: $screenName - ${loadTime.inMilliseconds}ms');
+      if (kDebugMode) print('📊 Screen Load: $screenName - ${loadTime.inMilliseconds}ms');
     }
   }
 
@@ -31,10 +31,7 @@ class PerformanceMonitor {
 
     // 느린 액션 경고
     if (duration.inMilliseconds > 1000) {
-      AppLogger.warning('느린 사용자 액션 감지', {
-        'action': action,
-        'duration_ms': duration.inMilliseconds,
-      });
+      AppLogger.warning('느린 사용자 액션 감지', {'action': action, 'duration_ms': duration.inMilliseconds});
     }
   }
 
@@ -55,10 +52,7 @@ class PerformanceMonitor {
       return null;
     }
 
-    final totalMs = durations.fold<int>(
-      0,
-      (sum, duration) => sum + duration.inMilliseconds,
-    );
+    final totalMs = durations.fold<int>(0, (sum, duration) => sum + duration.inMilliseconds);
 
     return Duration(milliseconds: totalMs ~/ durations.length);
   }
@@ -76,12 +70,8 @@ class PerformanceMonitor {
       report[key] = {
         'count': durations.length,
         'average_ms': getAverageDuration(key)?.inMilliseconds ?? 0,
-        'min_ms': durations
-            .map((d) => d.inMilliseconds)
-            .reduce((a, b) => a < b ? a : b),
-        'max_ms': durations
-            .map((d) => d.inMilliseconds)
-            .reduce((a, b) => a > b ? a : b),
+        'min_ms': durations.map((d) => d.inMilliseconds).reduce((a, b) => a < b ? a : b),
+        'max_ms': durations.map((d) => d.inMilliseconds).reduce((a, b) => a > b ? a : b),
       };
     }
 

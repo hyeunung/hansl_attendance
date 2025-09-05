@@ -53,7 +53,7 @@ class NotificationProvider with ChangeNotifier {
   void _updateUnreadCount() {
     _unreadCount = _notifications.where((n) => n['is_read'] == false).length;
     if (kDebugMode) {
-      print('🔔 읽지 않은 알림: $_unreadCount개');
+      if (kDebugMode) print('🔔 읽지 않은 알림: $_unreadCount개');
     }
   }
 
@@ -62,10 +62,7 @@ class NotificationProvider with ChangeNotifier {
     try {
       await _supabase
           .from('notifications')
-          .update({
-            'is_read': true,
-            'read_at': DateTime.now().toIso8601String(),
-          })
+          .update({'is_read': true, 'read_at': DateTime.now().toIso8601String()})
           .eq('id', notificationId);
 
       // 로컬 상태 업데이트
@@ -78,7 +75,7 @@ class NotificationProvider with ChangeNotifier {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ 읽음 처리 실패: $e');
+        if (kDebugMode) print('❌ 읽음 처리 실패: $e');
       }
     }
   }
@@ -91,10 +88,7 @@ class NotificationProvider with ChangeNotifier {
 
       await _supabase
           .from('notifications')
-          .update({
-            'is_read': true,
-            'read_at': DateTime.now().toIso8601String(),
-          })
+          .update({'is_read': true, 'read_at': DateTime.now().toIso8601String()})
           .eq('user_email', user.email!)
           .eq('is_read', false);
 
@@ -110,11 +104,11 @@ class NotificationProvider with ChangeNotifier {
       notifyListeners();
 
       if (kDebugMode) {
-        print('✅ 모든 알림을 읽음으로 표시');
+        if (kDebugMode) print('✅ 모든 알림을 읽음으로 표시');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ 모두 읽음 처리 실패: $e');
+        if (kDebugMode) print('❌ 모두 읽음 처리 실패: $e');
       }
     }
   }
@@ -129,11 +123,11 @@ class NotificationProvider with ChangeNotifier {
       notifyListeners();
 
       if (kDebugMode) {
-        print('✅ 알림 삭제 완료');
+        if (kDebugMode) print('✅ 알림 삭제 완료');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ 알림 삭제 실패: $e');
+        if (kDebugMode) print('❌ 알림 삭제 실패: $e');
       }
     }
   }
@@ -157,7 +151,7 @@ class NotificationProvider with ChangeNotifier {
             ),
             callback: (payload) {
               if (kDebugMode) {
-                print('🔔 새 알림 수신: ${payload.newRecord}');
+                if (kDebugMode) print('🔔 새 알림 수신: ${payload.newRecord}');
               }
               // 새 알림을 목록 맨 앞에 추가
               _notifications.insert(0, payload.newRecord);

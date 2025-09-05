@@ -3,9 +3,7 @@ import '../../models/leave_request.dart';
 /// 연차/출장 신청 관련 검증 로직
 class LeaveValidators {
   // 이메일 검증 정규식
-  static final RegExp _emailRegExp = RegExp(
-    r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-  );
+  static final RegExp _emailRegExp = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
 
   // SQL Injection 방지를 위한 특수문자 패턴
   static final RegExp _sqlInjectionPattern = RegExp(

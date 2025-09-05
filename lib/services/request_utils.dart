@@ -23,10 +23,7 @@ class RequestUtils with TimerManagementMixin {
 
   /// Execute request with deduplication
   /// Multiple identical requests will return the same result
-  Future<T> dedupedRequest<T>({
-    required String key,
-    required Future<T> Function() request,
-  }) async {
+  Future<T> dedupedRequest<T>({required String key, required Future<T> Function() request}) async {
     // Check if there's already a pending request
     if (_pendingRequests.containsKey(key)) {
       if (kDebugMode) print('🔄 Deduplicating request: $key');
@@ -61,15 +58,10 @@ class RequestUtils with TimerManagementMixin {
 
     // Get or create batch group
     _BatchGroup<T> group =
-        _batchGroups.putIfAbsent(groupKey, () => _BatchGroup<T>())
-            as _BatchGroup<T>;
+        _batchGroups.putIfAbsent(groupKey, () => _BatchGroup<T>()) as _BatchGroup<T>;
 
     // Create batch item
-    final batchItem = _BatchItem<T>(
-      key: requestKey,
-      request: request,
-      completer: Completer<T>(),
-    );
+    final batchItem = _BatchItem<T>(key: requestKey, request: request, completer: Completer<T>());
 
     group.items.add(batchItem);
 
@@ -104,7 +96,7 @@ class RequestUtils with TimerManagementMixin {
     if (group.items.isEmpty) return;
 
     if (kDebugMode)
-      print('📦 Executing batch: $groupKey (${group.items.length} requests)');
+      if (kDebugMode) print('📦 Executing batch: $groupKey (${group.items.length} requests)');
 
     // Execute all requests in parallel
     final futures = group.items.map((item) async {
@@ -165,11 +157,7 @@ class _BatchItem<T> {
   final Future<T> Function() request;
   final Completer<T> completer;
 
-  _BatchItem({
-    required this.key,
-    required this.request,
-    required this.completer,
-  });
+  _BatchItem({required this.key, required this.request, required this.completer});
 }
 
 /// Request queue for sequential execution
@@ -279,10 +267,7 @@ class RequestAggregator {
         futures[entry.key] = entry.value();
       }
 
-      final completedFutures = await Future.wait(
-        futures.values,
-        eagerError: true,
-      );
+      final completedFutures = await Future.wait(futures.values, eagerError: true);
 
       int index = 0;
       for (final key in futures.keys) {
@@ -316,10 +301,7 @@ class RequestAggregator {
     if (timeout != null) {
       return await Future.any([
         Future.value(results),
-        Future.delayed(
-          timeout,
-          () => throw TimeoutException('Aggregate timeout', timeout),
-        ),
+        Future.delayed(timeout, () => throw TimeoutException('Aggregate timeout', timeout)),
       ]);
     }
 
@@ -338,7 +320,7 @@ class ConditionalRequests {
   }) async {
     if (!condition) {
       if (kDebugMode && conditionDescription != null) {
-        print('⏭️ Skipping request due to condition: $conditionDescription');
+        if (kDebugMode) print('⏭️ Skipping request due to condition: $conditionDescription');
       }
       return fallback;
     }

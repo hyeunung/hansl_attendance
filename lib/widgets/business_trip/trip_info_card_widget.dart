@@ -89,11 +89,7 @@ class TripInfoCardWidget extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             frequency,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -149,13 +145,7 @@ class TripInfoCardWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '월간 진행률',
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.8),
-            fontSize: 12,
-          ),
-        ),
+        Text('월간 진행률', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12)),
         const SizedBox(height: 8),
         Container(
           width: 120,
@@ -178,10 +168,7 @@ class TripInfoCardWidget extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           '${(monthTrips / 10 * 100).toInt()}%',
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
-            fontSize: 11,
-          ),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 11),
         ),
       ],
     );
@@ -206,11 +193,7 @@ class TripInfoCardWidget extends StatelessWidget {
             ),
             const Text(
               '회',
-              style: TextStyle(
-                fontSize: 24,
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -242,11 +225,7 @@ class TripInfoCardWidget extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Icon(
-              Icons.calendar_today,
-              color: Colors.white,
-              size: 20,
-            ),
+            child: const Icon(Icons.calendar_today, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -255,10 +234,7 @@ class TripInfoCardWidget extends StatelessWidget {
               children: [
                 Text(
                   '$currentYear년 누적',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 13),
                 ),
                 const SizedBox(height: 2),
                 Row(
@@ -314,11 +290,7 @@ class TripInfoCardWidget extends StatelessWidget {
           const SizedBox(width: 2),
           Text(
             trend,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -336,20 +308,10 @@ class TripInfoCardWidget extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(
-            '월평균',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.8),
-              fontSize: 11,
-            ),
-          ),
+          Text('월평균', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 11)),
           Text(
             avgMonthly.toStringAsFixed(1),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -357,20 +319,7 @@ class TripInfoCardWidget extends StatelessWidget {
   }
 
   String _getMonthName(int month) {
-    const months = [
-      '1월',
-      '2월',
-      '3월',
-      '4월',
-      '5월',
-      '6월',
-      '7월',
-      '8월',
-      '9월',
-      '10월',
-      '11월',
-      '12월',
-    ];
+    const months = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
     return months[month - 1];
   }
 }

@@ -99,14 +99,8 @@ class ErrorHandler {
           title: const Text('네트워크 오류'),
           content: const Text('인터넷 연결을 확인해주세요.'),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('취소'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('재시도'),
-            ),
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('취소')),
+            TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('재시도')),
           ],
         ),
       );
@@ -154,9 +148,7 @@ class ErrorHandler {
           children: [
             const Icon(Icons.error_outline, color: Colors.white, size: 20),
             const SizedBox(width: 8),
-            Expanded(
-              child: Text(message, style: const TextStyle(fontSize: 14)),
-            ),
+            Expanded(child: Text(message, style: const TextStyle(fontSize: 14))),
           ],
         ),
         backgroundColor: Colors.red.shade600,

@@ -16,8 +16,7 @@ class BusinessTripRequestScreen extends StatefulWidget {
   const BusinessTripRequestScreen({super.key});
 
   @override
-  State<BusinessTripRequestScreen> createState() =>
-      _BusinessTripRequestScreenState();
+  State<BusinessTripRequestScreen> createState() => _BusinessTripRequestScreenState();
 }
 
 class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
@@ -31,19 +30,21 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
   List<String> _employeeList = [];
   bool _isLoadingEmployees = false;
   List<String> _selectedCompanions = [];
-  final List<String> _transports = [
-    '펠리세이드',
-    '스타리아',
-    'GV80',
-    'GV90',
-    'KTX(SRT)',
-    '버스',
-    '자차',
-    '비행기',
-  ];
+  final List<String> _transports = ['펠리세이드', '스타리아', 'GV80', 'GV90', 'KTX(SRT)', '버스', '자차', '비행기'];
   final TextEditingController _searchController = TextEditingController();
   String? _bannerMessage;
   Color _bannerColor = AppColors.primary;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchEmployees();
+    // 공휴일 데이터 로드
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
+      leaveProvider.fetchHolidays();
+    });
+  }
 
   @override
   void dispose() {
@@ -55,16 +56,11 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
     super.dispose();
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _fetchEmployees();
-  }
-
   Future<void> _fetchEmployees() async {
     setState(() => _isLoadingEmployees = true);
     final service = SupabaseService();
     final response = await service.fetchEmployees();
+    if (!context.mounted) return;
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     String? myName = userProvider.name;
     setState(() {
@@ -96,13 +92,9 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            final filtered = candidates
-                .where((name) => name.contains(search))
-                .toList();
+            final filtered = candidates.where((name) => name.contains(search)).toList();
             return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 curve: Curves.easeInOut,
@@ -113,10 +105,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                   children: [
                     const Text(
                       '추가 인원 선택',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
                     ),
                     const SizedBox(height: 12),
                     if (tempSelected.isNotEmpty)
@@ -129,9 +118,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                                 (name) => Chip(
                                   label: Text(name),
                                   onDeleted: () {
-                                    setModalState(
-                                      () => tempSelected.remove(name),
-                                    );
+                                    setModalState(() => tempSelected.remove(name));
                                   },
                                 ),
                               )
@@ -173,18 +160,14 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                                     });
                                   },
                                   child: Container(
-                                    margin: const EdgeInsets.symmetric(
-                                      vertical: 4,
-                                    ),
+                                    margin: const EdgeInsets.symmetric(vertical: 4),
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 14,
                                       vertical: 12,
                                     ),
                                     decoration: BoxDecoration(
                                       color: selected
-                                          ? AppColors.primary.withValues(
-                                              alpha: 0.12,
-                                            )
+                                          ? AppColors.primary.withValues(alpha: 0.12)
                                           : Colors.white,
                                       border: Border.all(
                                         color: selected
@@ -202,9 +185,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                                               : const Color(0xFFE0E0E0),
                                           child: Text(
                                             name.characters.first,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                            ),
+                                            style: const TextStyle(color: Colors.white),
                                           ),
                                         ),
                                         const SizedBox(width: 12),
@@ -213,18 +194,13 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                                             name,
                                             style: TextStyle(
                                               fontWeight: FontWeight.bold,
-                                              color: selected
-                                                  ? AppColors.primary
-                                                  : Colors.black87,
+                                              color: selected ? AppColors.primary : Colors.black87,
                                               fontSize: 16,
                                             ),
                                           ),
                                         ),
                                         if (selected)
-                                          Icon(
-                                            Icons.check_circle,
-                                            color: AppColors.primary,
-                                          ),
+                                          Icon(Icons.check_circle, color: AppColors.primary),
                                       ],
                                     ),
                                   ),
@@ -240,9 +216,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         onPressed: () {
                           setState(() => _selectedCompanions = tempSelected);
@@ -250,10 +224,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                         },
                         child: const Text(
                           '확인',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -278,13 +249,9 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            final filtered = candidates
-                .where((name) => name.contains(search))
-                .toList();
+            final filtered = candidates.where((name) => name.contains(search)).toList();
             return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 curve: Curves.easeInOut,
@@ -295,10 +262,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                   children: [
                     const Text(
                       '출장자(신청자) 선택',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
                     ),
                     const SizedBox(height: 12),
                     TextField(
@@ -334,18 +298,14 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                                     Navigator.pop(context);
                                   },
                                   child: Container(
-                                    margin: const EdgeInsets.symmetric(
-                                      vertical: 4,
-                                    ),
+                                    margin: const EdgeInsets.symmetric(vertical: 4),
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 14,
                                       vertical: 12,
                                     ),
                                     decoration: BoxDecoration(
                                       color: selected
-                                          ? AppColors.primary.withValues(
-                                              alpha: 0.12,
-                                            )
+                                          ? AppColors.primary.withValues(alpha: 0.12)
                                           : Colors.white,
                                       border: Border.all(
                                         color: selected
@@ -363,9 +323,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                                               : const Color(0xFFE0E0E0),
                                           child: Text(
                                             name.characters.first,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                            ),
+                                            style: const TextStyle(color: Colors.white),
                                           ),
                                         ),
                                         const SizedBox(width: 12),
@@ -374,18 +332,13 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                                             name,
                                             style: TextStyle(
                                               fontWeight: FontWeight.bold,
-                                              color: selected
-                                                  ? AppColors.primary
-                                                  : Colors.black87,
+                                              color: selected ? AppColors.primary : Colors.black87,
                                               fontSize: 16,
                                             ),
                                           ),
                                         ),
                                         if (selected)
-                                          Icon(
-                                            Icons.check_circle,
-                                            color: AppColors.primary,
-                                          ),
+                                          Icon(Icons.check_circle, color: AppColors.primary),
                                       ],
                                     ),
                                   ),
@@ -425,9 +378,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
           final now = DateTime.now();
           final thisMonth = now.month;
           final thisYear = now.year;
-          final myBiztrips = leaveProvider.myLeaves
-              .where((l) => l['type'] == 'biztrip')
-              .toList();
+          final myBiztrips = leaveProvider.myLeaves.where((l) => l['type'] == 'biztrip').toList();
           final monthBiztrips = myBiztrips
               .where(
                 (l) =>
@@ -450,10 +401,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                     gradient: AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 16,
-                    horizontal: 20,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -501,10 +449,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [AppShadows.card],
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 6,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -515,18 +460,9 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                             children: [
                               const Text(
                                 '출장자(신청자)',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 17,
-                                ),
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
                               ),
-                              const Text(
-                                '  *',
-                                style: TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 17,
-                                ),
-                              ),
+                              const Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
                             ],
                           ),
                           GestureDetector(
@@ -552,18 +488,11 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                             color: const Color(0xFFF4F5F7),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 10,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                           child: _isLoadingEmployees
                               ? const SizedBox(
                                   height: 40,
-                                  child: Center(
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
+                                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
                                 )
                               : Row(
                                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -592,9 +521,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                                 .map(
                                   (m) => Chip(
                                     label: Text(m),
-                                    onDeleted: () => setState(
-                                      () => _selectedCompanions.remove(m),
-                                    ),
+                                    onDeleted: () => setState(() => _selectedCompanions.remove(m)),
                                   ),
                                 )
                                 .toList(),
@@ -613,10 +540,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [AppShadows.card],
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 6,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -624,46 +548,59 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                         children: [
                           const Text(
                             '날짜 선택',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 17,
-                            ),
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
                           ),
-                          const Text(
-                            '  *',
-                            style: TextStyle(color: Colors.red, fontSize: 17),
-                          ),
+                          const Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
                         ],
                       ),
                       const SizedBox(height: 4),
                       SizedBox(
                         height: 210, // 캘린더 높이 더 줄임 (overflow 방지)
                         child: TableCalendar(
+                          locale: 'ko_KR',
                           firstDay: DateTime(now.year, 1, 1),
                           lastDay: DateTime(now.year + 1, 12, 31),
                           focusedDay: DateTime.now(),
                           selectedDayPredicate: (day) =>
                               _selectedDates.any((d) => isSameDay(d, day)),
                           onDaySelected: (selectedDay, _) {
+                            // 주말 체크
+                            if (selectedDay.weekday == DateTime.saturday ||
+                                selectedDay.weekday == DateTime.sunday) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('주말은 선택할 수 없습니다.'),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                              return;
+                            }
+
+                            // 공휴일 체크
+                            if (leaveProvider.isHoliday(selectedDay)) {
+                              final holidayInfo = leaveProvider.getHolidayInfo(selectedDay);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('${holidayInfo?['name'] ?? '공휴일'}은 선택할 수 없습니다.'),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                              return;
+                            }
+
                             final disabledDates = leaveProvider.myLeaves
                                 .map((l) {
                                   final start = DateTime.parse(l['start_date']);
                                   final end = DateTime.parse(l['end_date']);
                                   return List.generate(
                                     end.difference(start).inDays + 1,
-                                    (i) => DateTime(
-                                      start.year,
-                                      start.month,
-                                      start.day + i,
-                                    ),
+                                    (i) => DateTime(start.year, start.month, start.day + i),
                                   );
                                 })
                                 .expand((x) => x)
                                 .toSet();
 
-                            if (disabledDates.any(
-                              (d) => isSameDay(d, selectedDay),
-                            )) {
+                            if (disabledDates.any((d) => isSameDay(d, selectedDay))) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text('이미 신청된 날짜입니다.'),
@@ -674,12 +611,8 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                             }
 
                             setState(() {
-                              if (_selectedDates.any(
-                                (d) => isSameDay(d, selectedDay),
-                              )) {
-                                _selectedDates.removeWhere(
-                                  (d) => isSameDay(d, selectedDay),
-                                );
+                              if (_selectedDates.any((d) => isSameDay(d, selectedDay))) {
+                                _selectedDates.removeWhere((d) => isSameDay(d, selectedDay));
                               } else {
                                 _selectedDates.add(selectedDay);
                               }
@@ -695,34 +628,57 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                               color: Colors.blue.withValues(alpha: 0.2),
                               shape: BoxShape.circle,
                             ),
-                            disabledTextStyle: TextStyle(
-                              color: Colors.grey.shade400,
-                            ),
+                            disabledTextStyle: TextStyle(color: Colors.grey.shade400),
                             cellMargin: const EdgeInsets.all(2),
                             cellPadding: const EdgeInsets.all(0),
                           ),
                           enabledDayPredicate: (day) {
+                            // 주말 체크 (토요일, 일요일)
+                            if (day.weekday == DateTime.saturday ||
+                                day.weekday == DateTime.sunday) {
+                              return false;
+                            }
+
+                            // 공휴일 체크
+                            if (leaveProvider.isHoliday(day)) {
+                              return false;
+                            }
+
                             final disabledDates = leaveProvider.myLeaves
                                 .map((l) {
                                   final start = DateTime.parse(l['start_date']);
                                   final end = DateTime.parse(l['end_date']);
                                   return List.generate(
                                     end.difference(start).inDays + 1,
-                                    (i) => DateTime(
-                                      start.year,
-                                      start.month,
-                                      start.day + i,
-                                    ),
+                                    (i) => DateTime(start.year, start.month, start.day + i),
                                   );
                                 })
                                 .expand((x) => x)
                                 .toSet();
                             return !disabledDates.any((d) => isSameDay(d, day));
                           },
-                          headerStyle: const HeaderStyle(
+                          headerStyle: HeaderStyle(
                             formatButtonVisible: false,
                             titleCentered: true,
-                            headerPadding: EdgeInsets.symmetric(vertical: 4),
+                            headerPadding: const EdgeInsets.symmetric(vertical: 4),
+                            titleTextFormatter: (date, locale) {
+                              // 완전 하드코딩으로 한글 월 표시
+                              const months = [
+                                '1월',
+                                '2월',
+                                '3월',
+                                '4월',
+                                '5월',
+                                '6월',
+                                '7월',
+                                '8월',
+                                '9월',
+                                '10월',
+                                '11월',
+                                '12월',
+                              ];
+                              return '${date.year}년 ${months[date.month - 1]}';
+                            },
                           ),
                           calendarFormat: CalendarFormat.month,
                           // 좌우 스와이프만 허용, 상하는 전체 화면 스크롤로 전달
@@ -742,6 +698,104 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                               fontSize: 13,
                             ),
                           ),
+                          calendarBuilders: CalendarBuilders(
+                            dowBuilder: (context, day) {
+                              final weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+                              final text = weekdays[day.weekday % 7];
+
+                              return Center(
+                                child: Text(
+                                  text,
+                                  style: TextStyle(
+                                    color: day.weekday == DateTime.sunday
+                                        ? Colors.red
+                                        : day.weekday == DateTime.saturday
+                                        ? Colors.blue
+                                        : Colors.black87,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              );
+                            },
+                            defaultBuilder: (context, day, focusedDay) {
+                              // 공휴일인 경우 빨간색으로 표시
+                              if (leaveProvider.isHoliday(day)) {
+                                return Container(
+                                  margin: const EdgeInsets.all(4),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    '${day.day}',
+                                    style: TextStyle(
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                );
+                              }
+                              // 주말인 경우 색상 구분
+                              if (day.weekday == DateTime.sunday) {
+                                return Container(
+                                  margin: const EdgeInsets.all(4),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    '${day.day}',
+                                    style: TextStyle(
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                );
+                              }
+                              if (day.weekday == DateTime.saturday) {
+                                return Container(
+                                  margin: const EdgeInsets.all(4),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    '${day.day}',
+                                    style: TextStyle(
+                                      color: Colors.blue,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                );
+                              }
+                              return null;
+                            },
+                            disabledBuilder: (context, day, focusedDay) {
+                              // 비활성화된 날짜 스타일 (주말, 공휴일, 이미 신청된 날짜)
+                              Color textColor = Colors.grey.shade400;
+
+                              // 공휴일은 빨간색으로 유지
+                              if (leaveProvider.isHoliday(day)) {
+                                textColor = Colors.red.shade300;
+                              }
+                              // 일요일
+                              else if (day.weekday == DateTime.sunday) {
+                                textColor = Colors.red.shade300;
+                              }
+                              // 토요일
+                              else if (day.weekday == DateTime.saturday) {
+                                textColor = Colors.blue.shade300;
+                              }
+
+                              return Container(
+                                margin: const EdgeInsets.all(4),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  '${day.day}',
+                                  style: TextStyle(
+                                    color: textColor,
+                                    fontWeight: FontWeight.w400,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
                       if (_selectedDates.isNotEmpty)
@@ -749,26 +803,19 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                           padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
                           child: Wrap(
                             spacing: 8,
-                            children:
-                                (_selectedDates.toList()
-                                      ..sort((a, b) => a.compareTo(b)))
-                                    .map(
-                                      (d) => Chip(
-                                        label: Text(
-                                          DateFormat('yyyy.MM.dd').format(d),
-                                        ),
-                                        backgroundColor: AppColors.primary
-                                            .withValues(alpha: 0.12),
-                                        labelStyle: TextStyle(
-                                          color: AppColors.primary,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        onDeleted: () => setState(
-                                          () => _selectedDates.remove(d),
-                                        ),
-                                      ),
-                                    )
-                                    .toList(),
+                            children: (_selectedDates.toList()..sort((a, b) => a.compareTo(b)))
+                                .map(
+                                  (d) => Chip(
+                                    label: Text(DateFormat('yyyy.MM.dd').format(d)),
+                                    backgroundColor: AppColors.primary.withValues(alpha: 0.12),
+                                    labelStyle: TextStyle(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    onDeleted: () => setState(() => _selectedDates.remove(d)),
+                                  ),
+                                )
+                                .toList(),
                           ),
                         ),
                       const SizedBox(height: 4),
@@ -784,10 +831,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [AppShadows.card],
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 6,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -795,15 +839,9 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                         children: [
                           const Text(
                             '출장지',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 17,
-                            ),
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
                           ),
-                          const Text(
-                            '  *',
-                            style: TextStyle(color: Colors.red, fontSize: 17),
-                          ),
+                          const Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
                         ],
                       ),
                       const SizedBox(height: 10),
@@ -812,23 +850,14 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                           color: const Color(0xFFF4F5F7),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                         child: TextField(
                           controller: _placeController,
                           focusNode: _placeFocusNode,
-                          style: const TextStyle(
-                            fontSize: 17,
-                            color: Color(0xFF222222),
-                          ),
+                          style: const TextStyle(fontSize: 17, color: Color(0xFF222222)),
                           decoration: const InputDecoration(
                             hintText: '출장지를 입력하세요',
-                            hintStyle: TextStyle(
-                              fontSize: 17,
-                              color: Colors.grey,
-                            ),
+                            hintStyle: TextStyle(fontSize: 17, color: Colors.grey),
                             border: InputBorder.none,
                           ),
                         ),
@@ -846,10 +875,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [AppShadows.card],
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 6,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -857,15 +883,9 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                         children: [
                           const Text(
                             '교통',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 17,
-                            ),
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
                           ),
-                          const Text(
-                            '  *',
-                            style: TextStyle(color: Colors.red, fontSize: 17),
-                          ),
+                          const Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
                         ],
                       ),
                       const SizedBox(height: 10),
@@ -874,25 +894,16 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                           color: const Color(0xFFF4F5F7),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 2,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
                             value: _selectedTransport,
                             hint: const Text('교통수단을 선택하세요'),
                             isExpanded: true,
                             items: _transports
-                                .map(
-                                  (t) => DropdownMenuItem(
-                                    value: t,
-                                    child: Text(t),
-                                  ),
-                                )
+                                .map((t) => DropdownMenuItem(value: t, child: Text(t)))
                                 .toList(),
-                            onChanged: (v) =>
-                                setState(() => _selectedTransport = v),
+                            onChanged: (v) => setState(() => _selectedTransport = v),
                           ),
                         ),
                       ),
@@ -909,10 +920,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [AppShadows.card],
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 6,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -920,15 +928,9 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                         children: [
                           const Text(
                             '업무',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 17,
-                            ),
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
                           ),
-                          const Text(
-                            '  *',
-                            style: TextStyle(color: Colors.red, fontSize: 17),
-                          ),
+                          const Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
                         ],
                       ),
                       const SizedBox(height: 10),
@@ -937,24 +939,15 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                           color: const Color(0xFFF4F5F7),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         child: TextField(
                           controller: _purposeController,
                           focusNode: _purposeFocusNode,
                           maxLines: 3,
-                          style: const TextStyle(
-                            fontSize: 17,
-                            color: Color(0xFF222222),
-                          ),
+                          style: const TextStyle(fontSize: 17, color: Color(0xFF222222)),
                           decoration: const InputDecoration(
                             hintText: '업무를 입력하세요',
-                            hintStyle: TextStyle(
-                              fontSize: 17,
-                              color: Color(0xFF888888),
-                            ),
+                            hintStyle: TextStyle(fontSize: 17, color: Color(0xFF888888)),
                             border: InputBorder.none,
                           ),
                           onChanged: (_) => setState(() {}),
@@ -972,19 +965,12 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
       ),
       bottomNavigationBar: SafeArea(
         child: AnimatedPadding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
           child: Container(
             color: Colors.white,
-            padding: const EdgeInsets.only(
-              top: 12,
-              bottom: 12,
-              left: 20,
-              right: 20,
-            ),
+            padding: const EdgeInsets.only(top: 12, bottom: 12, left: 20, right: 20),
             child: Row(
               children: [
                 if (MediaQuery.of(context).viewInsets.bottom > 0)
@@ -997,10 +983,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                               context,
                               listen: false,
                             );
-                            final userProvider = Provider.of<UserProvider>(
-                              context,
-                              listen: false,
-                            );
+                            final userProvider = Provider.of<UserProvider>(context, listen: false);
                             final userEmail = userProvider.email;
                             if (userEmail == null) {
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -1012,13 +995,11 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                               return;
                             }
                             bool hasError = false;
-                            final selectedDates = _selectedDates.toList()
-                              ..sort();
+                            final selectedDates = _selectedDates.toList()..sort();
                             // 연속 구간별로 묶기
                             List<List<DateTime>> ranges = [];
                             for (final d in selectedDates) {
-                              if (ranges.isEmpty ||
-                                  d.difference(ranges.last.last).inDays > 1) {
+                              if (ranges.isEmpty || d.difference(ranges.last.last).inDays > 1) {
                                 ranges.add([d]);
                               } else {
                                 ranges.last.add(d);
@@ -1042,9 +1023,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                             }
                             if (!hasError) {
                               // 캐시 무효화 및 데이터 새로고침
-                              await leaveProvider.fetchAllLeaves(
-                                forceRefresh: true,
-                              );
+                              await leaveProvider.fetchAllLeaves(forceRefresh: true);
                               await leaveProvider.fetchMyLeaves(
                                 email: userEmail,
                                 forceRefresh: true,
@@ -1059,10 +1038,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                                 );
                                 Navigator.pushAndRemoveUntil(
                                   context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        const MainTab(initialIndex: 1),
-                                  ),
+                                  MaterialPageRoute(builder: (_) => const MainTab(initialIndex: 1)),
                                   (route) => false,
                                 );
                               }
@@ -1092,9 +1068,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: _canSubmit
-                              ? Colors.white
-                              : const Color(0xFFB0B0B0),
+                          color: _canSubmit ? Colors.white : const Color(0xFFB0B0B0),
                         ),
                       ),
                     ),
@@ -1104,8 +1078,7 @@ class _BusinessTripRequestScreenState extends State<BusinessTripRequestScreen> {
                 if (MediaQuery.of(context).viewInsets.bottom > 0)
                   IconButton(
                     icon: const Icon(Icons.keyboard_arrow_down),
-                    onPressed: () =>
-                        FocusScope.of(context).unfocus(), // 키보드 내리기
+                    onPressed: () => FocusScope.of(context).unfocus(), // 키보드 내리기
                   ),
               ],
             ),

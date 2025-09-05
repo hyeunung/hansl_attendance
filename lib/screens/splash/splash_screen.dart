@@ -14,8 +14,7 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   bool _isNavigating = false;
@@ -37,9 +36,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _checkAuthStatus() async {
-    await Future.delayed(
-      const Duration(milliseconds: 800),
-    ); // 스플래시 표시 시간 0.8초로 단축
+    await Future.delayed(const Duration(milliseconds: 800)); // 스플래시 표시 시간 0.8초로 단축
 
     if (_isNavigating || !mounted) return;
 
@@ -60,11 +57,10 @@ class _SplashScreenState extends State<SplashScreen>
           if (employee != null) {
             // UserProvider에 사용자 정보 설정
             if (mounted) {
-              Provider.of<UserProvider>(context, listen: false).setUser(
-                id: employee['id'],
-                name: employee['name'],
-                email: employee['email'],
-              );
+              Provider.of<UserProvider>(
+                context,
+                listen: false,
+              ).setUser(id: employee['id'], name: employee['name'], email: employee['email']);
               _navigateToMainTab();
               return;
             }
@@ -84,18 +80,14 @@ class _SplashScreenState extends State<SplashScreen>
     if (_isNavigating || !mounted) return;
     _isNavigating = true;
 
-    Navigator.of(
-      context,
-    ).pushReplacement(MaterialPageRoute(builder: (_) => const MainTab()));
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const MainTab()));
   }
 
   void _navigateToLogin() {
     if (_isNavigating || !mounted) return;
     _isNavigating = true;
 
-    Navigator.of(
-      context,
-    ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
   }
 
   @override

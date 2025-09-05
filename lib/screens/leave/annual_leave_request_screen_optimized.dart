@@ -27,8 +27,7 @@ class AnnualLeaveRequestScreenOptimized extends StatefulWidget {
       _AnnualLeaveRequestScreenOptimizedState();
 }
 
-class _AnnualLeaveRequestScreenOptimizedState
-    extends State<AnnualLeaveRequestScreenOptimized>
+class _AnnualLeaveRequestScreenOptimizedState extends State<AnnualLeaveRequestScreenOptimized>
     with BannerControllerMixin, AutomaticKeepAliveClientMixin {
   // Controllers
   final TextEditingController _memoController = TextEditingController();
@@ -79,10 +78,7 @@ class _AnnualLeaveRequestScreenOptimizedState
       if (userProvider.email != null) {
         final stopwatch = Stopwatch()..start();
 
-        await leaveProvider.fetchMyLeaves(
-          email: userProvider.email!,
-          forceRefresh: true,
-        );
+        await leaveProvider.fetchMyLeaves(email: userProvider.email!, forceRefresh: true);
 
         stopwatch.stop();
         AppLogger.performance('연차 정보 로드', stopwatch.elapsed);
@@ -125,18 +121,13 @@ class _AnnualLeaveRequestScreenOptimizedState
   void _onDayTapped(DateTime day) {
     // 캐시된 비활성화 날짜 사용
     if (_cachedDisabledDates?.any((d) => isSameDay(d, day)) ?? false) {
-      showBanner(
-        '이미 신청된 날짜입니다.',
-        type: BannerType.error,
-        duration: const Duration(seconds: 2),
-      );
+      showBanner('이미 신청된 날짜입니다.', type: BannerType.error, duration: const Duration(seconds: 2));
       return;
     }
 
     // 다른 휴가 유형으로 선택된 날짜 체크
     for (final type in LeaveType.values) {
-      if (type != _selectedType &&
-          _selectedDatesMap[type]?.any((d) => isSameDay(d, day)) == true) {
+      if (type != _selectedType && _selectedDatesMap[type]?.any((d) => isSameDay(d, day)) == true) {
         showBanner(
           '다른 유형으로 이미 선택된 날짜입니다.',
           type: BannerType.warning,
@@ -176,8 +167,7 @@ class _AnnualLeaveRequestScreenOptimizedState
   double get _usedDaysSum {
     double sum = 0;
     for (final type in LeaveType.values) {
-      if (_selectedDatesMap.containsKey(type) &&
-          _selectedDatesMap[type] != null) {
+      if (_selectedDatesMap.containsKey(type) && _selectedDatesMap[type] != null) {
         sum += _selectedDatesMap[type]!.length * type.days;
       }
     }
@@ -186,9 +176,7 @@ class _AnnualLeaveRequestScreenOptimizedState
 
   /// 제출 가능 여부
   bool get _canSubmit {
-    return !_isSubmitting &&
-        _usedDaysSum > 0 &&
-        _memoController.text.trim().isNotEmpty;
+    return !_isSubmitting && _usedDaysSum > 0 && _memoController.text.trim().isNotEmpty;
   }
 
   /// 신청 처리 (검증 포함)
@@ -198,21 +186,13 @@ class _AnnualLeaveRequestScreenOptimizedState
     // 입력 검증
     final memoError = LeaveValidators.validateMemo(_memoController.text);
     if (memoError != null) {
-      showBanner(
-        memoError,
-        type: BannerType.error,
-        duration: const Duration(seconds: 3),
-      );
+      showBanner(memoError, type: BannerType.error, duration: const Duration(seconds: 3));
       return;
     }
 
     final dateError = LeaveValidators.validateDates(_selectedDatesMap);
     if (dateError != null) {
-      showBanner(
-        dateError,
-        type: BannerType.error,
-        duration: const Duration(seconds: 3),
-      );
+      showBanner(dateError, type: BannerType.error, duration: const Duration(seconds: 3));
       return;
     }
 
@@ -226,11 +206,7 @@ class _AnnualLeaveRequestScreenOptimizedState
       // 이메일 검증
       final emailError = LeaveValidators.validateEmail(userEmail);
       if (emailError != null) {
-        showBanner(
-          emailError,
-          type: BannerType.error,
-          duration: const Duration(seconds: 3),
-        );
+        showBanner(emailError, type: BannerType.error, duration: const Duration(seconds: 3));
         return;
       }
 
@@ -240,11 +216,7 @@ class _AnnualLeaveRequestScreenOptimizedState
         _usedDaysSum,
       );
       if (remainError != null) {
-        showBanner(
-          remainError,
-          type: BannerType.warning,
-          duration: const Duration(seconds: 3),
-        );
+        showBanner(remainError, type: BannerType.warning, duration: const Duration(seconds: 3));
         return;
       }
 
@@ -291,11 +263,7 @@ class _AnnualLeaveRequestScreenOptimizedState
       }
 
       if (!hasError) {
-        showBanner(
-          '신청이 완료되었습니다.',
-          type: BannerType.success,
-          duration: const Duration(seconds: 3),
-        );
+        showBanner('신청이 완료되었습니다.', type: BannerType.success, duration: const Duration(seconds: 3));
 
         // 즉시 화면 전환 (출장 신청과 동일하게)
         if (mounted) {
@@ -335,9 +303,7 @@ class _AnnualLeaveRequestScreenOptimizedState
     return Scaffold(
       appBar: _buildAppBar(),
       backgroundColor: const Color(0xFFF6F7FA),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _buildBody(),
+      body: _isLoading ? const Center(child: CircularProgressIndicator()) : _buildBody(),
       bottomNavigationBar: _buildBottomBar(),
     );
   }
@@ -350,10 +316,7 @@ class _AnnualLeaveRequestScreenOptimizedState
         buildBanner(),
 
         // 연차 유형 선택
-        LeaveTypeSelectorWidget(
-          selectedType: _selectedType,
-          onTypeChanged: _onTypeChanged,
-        ),
+        LeaveTypeSelectorWidget(selectedType: _selectedType, onTypeChanged: _onTypeChanged),
         const SizedBox(height: 18),
 
         // 연차 정보 카드 (Provider 사용 최소화)
@@ -362,12 +325,8 @@ class _AnnualLeaveRequestScreenOptimizedState
             'remain': provider.remainAnnual,
             'granted': provider.currentGrantedAnnual,
             'used': provider.usedAnnual,
-            'currentYear': provider.getGrantedAnnualForYear(
-              DateTime.now().year,
-            ),
-            'nextYear': provider.getGrantedAnnualForYear(
-              DateTime.now().year + 1,
-            ),
+            'currentYear': provider.getGrantedAnnualForYear(DateTime.now().year),
+            'nextYear': provider.getGrantedAnnualForYear(DateTime.now().year + 1),
           },
           builder: (context, data, _) {
             final now = DateTime.now();
@@ -403,10 +362,7 @@ class _AnnualLeaveRequestScreenOptimizedState
         ),
 
         // 선택된 날짜 칩들
-        LeaveDateChipsWidget(
-          selectedDatesMap: _selectedDatesMap,
-          onDateRemoved: _onDateRemoved,
-        ),
+        LeaveDateChipsWidget(selectedDatesMap: _selectedDatesMap, onDateRemoved: _onDateRemoved),
         const SizedBox(height: 16),
 
         // 메모 입력
@@ -439,9 +395,7 @@ class _AnnualLeaveRequestScreenOptimizedState
   Widget _buildBottomBar() {
     return SafeArea(
       child: AnimatedPadding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOut,
         child: Container(
@@ -449,8 +403,7 @@ class _AnnualLeaveRequestScreenOptimizedState
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              if (MediaQuery.of(context).viewInsets.bottom > 0)
-                const SizedBox(width: 48),
+              if (MediaQuery.of(context).viewInsets.bottom > 0) const SizedBox(width: 48),
               Expanded(child: _buildSubmitButton()),
               const SizedBox(width: 8),
               if (MediaQuery.of(context).viewInsets.bottom > 0)
@@ -490,10 +443,7 @@ class _AnnualLeaveRequestScreenOptimizedState
             ? const SizedBox(
                 width: 24,
                 height: 24,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
+                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
               )
             : Text(
                 '신청하기',

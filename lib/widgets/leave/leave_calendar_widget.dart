@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../models/leave_request.dart';
+import '../../providers/leave_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 
@@ -39,7 +41,7 @@ class LeaveCalendarWidget extends StatelessWidget {
         children: [
           _buildHeader(),
           const SizedBox(height: 8),
-          _buildCalendar(now, disabledDates),
+          _buildCalendar(context, now, disabledDates),
         ],
       ),
     );
@@ -56,40 +58,62 @@ class LeaveCalendarWidget extends StatelessWidget {
 
     return Row(
       children: [
-        const Text(
-          '날짜',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-        ),
+        const Text('날짜', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
         const Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
         const SizedBox(width: 12),
         Text(
           '선택된 일수: ${usedDaysSum % 1 == 0 ? usedDaysSum.toInt() : usedDaysSum}일',
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: AppColors.primary,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
         ),
       ],
     );
   }
 
-  Widget _buildCalendar(DateTime now, Set<DateTime> disabledDates) {
+  Widget _buildCalendar(BuildContext context, DateTime now, Set<DateTime> disabledDates) {
     return TableCalendar(
+      locale: 'ko_KR',
       firstDay: DateTime(now.year, 1, 1),
       lastDay: DateTime(now.year + 1, 12, 31),
       focusedDay: DateTime.now(),
       selectedDayPredicate: (day) => _isSelectedDay(day),
       onDaySelected: (selectedDay, _) => onDayTapped(selectedDay),
       calendarStyle: _getCalendarStyle(),
-      enabledDayPredicate: (day) => _isEnabledDay(day, disabledDates),
-      headerStyle: const HeaderStyle(
+      enabledDayPredicate: (day) => _isEnabledDay(context, day, disabledDates),
+      daysOfWeekStyle: const DaysOfWeekStyle(
+        weekdayStyle: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600, fontSize: 13),
+        weekendStyle: TextStyle(
+          color: Colors.black87, // 요일 헤더는 기본 색상으로
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+        ),
+      ),
+      daysOfWeekHeight: 28,
+      headerStyle: HeaderStyle(
         formatButtonVisible: false,
         titleCentered: true,
+        titleTextFormatter: (date, locale) {
+          // 강제로 한글 월 표시
+          const months = [
+            '1월',
+            '2월',
+            '3월',
+            '4월',
+            '5월',
+            '6월',
+            '7월',
+            '8월',
+            '9월',
+            '10월',
+            '11월',
+            '12월',
+          ];
+          return '${date.year}년 ${months[date.month - 1]}';
+        },
       ),
       calendarFormat: CalendarFormat.month,
       pageJumpingEnabled: false,
       availableGestures: AvailableGestures.none,
-      calendarBuilders: _getCalendarBuilders(),
+      calendarBuilders: _getCalendarBuilders(context),
     );
   }
 
@@ -102,14 +126,158 @@ class LeaveCalendarWidget extends StatelessWidget {
         shape: BoxShape.circle,
       ),
       disabledTextStyle: TextStyle(color: Colors.grey.shade400),
+      // 주말 스타일 설정 제거 - defaultBuilder에서 처리
+      weekendTextStyle: const TextStyle(
+        color: Colors.black87, // 기본 색상으로 설정
+      ),
+      defaultTextStyle: const TextStyle(color: Colors.black87),
     );
   }
 
-  CalendarBuilders _getCalendarBuilders() {
+  CalendarBuilders _getCalendarBuilders(BuildContext context) {
+    final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
+
     return CalendarBuilders(
-      defaultBuilder: (context, day, focusedDay) => _buildDayWidget(day),
+      defaultBuilder: (context, day, focusedDay) {
+        // 선택된 날짜가 있으면 그것을 우선 표시
+        final selectedWidget = _buildDayWidget(day);
+        if (selectedWidget != null) return selectedWidget;
+
+        // 공휴일인 경우 빨간색으로 표시 (심플하게)
+        if (leaveProvider.isHoliday(day)) {
+          return Container(
+            margin: const EdgeInsets.all(4),
+            alignment: Alignment.center,
+            child: Text(
+              '${day.day}',
+              style: const TextStyle(
+                color: Color(0xFFFF5252), // 밝은 빨간색
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+              ),
+            ),
+          );
+        }
+
+        // 일요일 - 빨간색
+        if (day.weekday == DateTime.sunday) {
+          return Container(
+            margin: const EdgeInsets.all(4),
+            alignment: Alignment.center,
+            child: Text(
+              '${day.day}',
+              style: const TextStyle(
+                color: Color(0xFFEF5350), // 밝은 빨간색
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
+            ),
+          );
+        }
+
+        // 토요일 - 파란색
+        if (day.weekday == DateTime.saturday) {
+          return Container(
+            margin: const EdgeInsets.all(4),
+            alignment: Alignment.center,
+            child: Text(
+              '${day.day}',
+              style: const TextStyle(
+                color: Color(0xFF2196F3), // 밝은 파란색
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
+            ),
+          );
+        }
+
+        return null; // 평일은 기본 스타일 사용
+      },
       selectedBuilder: (context, day, focusedDay) => _buildDayWidget(day),
       todayBuilder: (context, day, focusedDay) => _buildTodayWidget(day),
+      disabledBuilder: (context, day, focusedDay) {
+        // 비활성화된 날짜의 색상 처리
+
+        // 공휴일 - 밝은 빨간색
+        if (leaveProvider.isHoliday(day)) {
+          return Container(
+            margin: const EdgeInsets.all(4),
+            alignment: Alignment.center,
+            child: Text(
+              '${day.day}',
+              style: TextStyle(
+                color: const Color(0xFFFF5252).withValues(alpha: 0.7), // 밝은 빨간색 70%
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          );
+        }
+        // 일요일 - 밝은 빨간색
+        else if (day.weekday == DateTime.sunday) {
+          return Container(
+            margin: const EdgeInsets.all(4),
+            alignment: Alignment.center,
+            child: Text(
+              '${day.day}',
+              style: TextStyle(
+                color: const Color(0xFFEF5350).withValues(alpha: 0.7), // 밝은 빨간색 70%
+                fontWeight: FontWeight.w500,
+                fontSize: 12,
+              ),
+            ),
+          );
+        }
+        // 토요일 - 밝은 파란색
+        else if (day.weekday == DateTime.saturday) {
+          return Container(
+            margin: const EdgeInsets.all(4),
+            alignment: Alignment.center,
+            child: Text(
+              '${day.day}',
+              style: TextStyle(
+                color: const Color(0xFF2196F3).withValues(alpha: 0.7), // 밝은 파란색 70%
+                fontWeight: FontWeight.w500,
+                fontSize: 12,
+              ),
+            ),
+          );
+        }
+
+        // 평일 비활성화
+        return Container(
+          margin: const EdgeInsets.all(4),
+          alignment: Alignment.center,
+          child: Text(
+            '${day.day}',
+            style: TextStyle(
+              color: Colors.grey.shade400,
+              fontWeight: FontWeight.w400,
+              fontSize: 12,
+            ),
+          ),
+        );
+      },
+      dowBuilder: (context, day) {
+        // 요일을 한글로 표시
+        final weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+        final text = weekdays[day.weekday % 7];
+
+        return Center(
+          child: Text(
+            text,
+            style: TextStyle(
+              color: day.weekday == DateTime.sunday
+                  ? const Color(0xFFEF5350) // 일요일은 밝은 빨간색
+                  : day.weekday == DateTime.saturday
+                  ? const Color(0xFF2196F3) // 토요일은 밝은 파란색
+                  : Colors.black87,
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -157,17 +325,11 @@ class LeaveCalendarWidget extends StatelessWidget {
         child: Container(
           width: 36,
           height: 36,
-          decoration: BoxDecoration(
-            color: _getTypeColor(type),
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: _getTypeColor(type), shape: BoxShape.circle),
           alignment: Alignment.center,
           child: Text(
             '${day.day}',
-            style: const TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
           ),
         ),
       ),
@@ -185,10 +347,7 @@ class LeaveCalendarWidget extends StatelessWidget {
           child: Center(
             child: Text(
               '${day.day}',
-              style: const TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
             ),
           ),
         ),
@@ -237,7 +396,18 @@ class LeaveCalendarWidget extends StatelessWidget {
     return false;
   }
 
-  bool _isEnabledDay(DateTime day, Set<DateTime> disabledDates) {
+  bool _isEnabledDay(BuildContext context, DateTime day, Set<DateTime> disabledDates) {
+    // 주말(토요일, 일요일)은 비활성화
+    if (day.weekday == DateTime.saturday || day.weekday == DateTime.sunday) {
+      return false;
+    }
+
+    // 공휴일은 비활성화
+    final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
+    if (leaveProvider.isHoliday(day)) {
+      return false;
+    }
+
     // 이미 신청된 날짜는 비활성화
     if (disabledDates.any((d) => isSameDay(d, day))) return false;
 

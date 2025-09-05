@@ -54,7 +54,7 @@ class PerformanceInitialization {
       _initialized = true;
 
       if (kDebugMode) {
-        print('🎉 All performance services initialized successfully');
+        if (kDebugMode) print('🎉 All performance services initialized successfully');
         _logInitialStats();
       }
     } catch (e) {
@@ -75,11 +75,9 @@ class PerformanceInitialization {
       'async_stats': AsyncOperationManager.instance.getStats().toJson(),
       'cache_stats': CacheService.instance.getStats(),
       'request_stats': RequestUtils.instance.getStats(),
-      'database_stats': DatabaseOptimizationService.instance
-          .getPerformanceStats(),
+      'database_stats': DatabaseOptimizationService.instance.getPerformanceStats(),
       'ui_stats': UIOptimizationService.instance.getUIPerformanceStats(),
-      'performance_monitoring': PerformanceMonitoringService.instance
-          .getCurrentStatus(),
+      'performance_monitoring': PerformanceMonitoringService.instance.getCurrentStatus(),
       'timestamp': DateTime.now().toIso8601String(),
     };
   }
@@ -124,8 +122,7 @@ class PerformanceInitialization {
 
       _initialized = false;
 
-      if (kDebugMode)
-        print('🎉 All performance services disposed successfully');
+      if (kDebugMode) if (kDebugMode) print('🎉 All performance services disposed successfully');
     } catch (e) {
       if (kDebugMode) print('❌ Failed to dispose performance services: $e');
     }
@@ -138,23 +135,16 @@ class PerformanceInitialization {
   static void _logInitialStats() {
     if (!kDebugMode) return;
 
-    print('📊 Initial Performance Stats:');
+    if (kDebugMode) print('📊 Initial Performance Stats:');
     final stats = getPerformanceStats();
 
-    print('  📦 Cache: ${stats['cache_stats']['memory_total']} memory entries');
-    print('  ⏱️ Timers: ${stats['timer_stats']['active_timers']} active');
-    print(
-      '  🔄 Operations: ${stats['async_stats']['active_operations']} active',
-    );
-    print(
-      '  📡 Requests: ${stats['request_stats']['pending_requests']} pending',
-    );
-    print(
-      '  🗃️ Database: ${stats['database_stats']['total_queries']} total queries',
-    );
-    print(
-      '  🎨 UI: ${stats['ui_stats']['active_components']} active components',
-    );
+    if (kDebugMode) print('  📦 Cache: ${stats['cache_stats']['memory_total']} memory entries');
+    if (kDebugMode) print('  ⏱️ Timers: ${stats['timer_stats']['active_timers']} active');
+    if (kDebugMode) print('  🔄 Operations: ${stats['async_stats']['active_operations']} active');
+    if (kDebugMode) print('  📡 Requests: ${stats['request_stats']['pending_requests']} pending');
+    if (kDebugMode)
+      print('  🗃️ Database: ${stats['database_stats']['total_queries']} total queries');
+    if (kDebugMode) print('  🎨 UI: ${stats['ui_stats']['active_components']} active components');
   }
 
   /// Log periodic performance statistics
@@ -170,46 +160,50 @@ class PerformanceInitialization {
     final databaseStats = stats['database_stats'];
     final uiStats = stats['ui_stats'];
 
-    print('📊 Performance Stats:');
-    print(
-      '  ⏱️ Timers: ${timerStats['active_timers']} active, ${timerStats['net_timers']} net created',
-    );
-    print(
-      '  🔄 Operations: ${asyncStats['active_operations']} active, ${(asyncStats['success_rate'] * 100).toStringAsFixed(1)}% success rate',
-    );
-    print(
-      '  📦 Cache: ${cacheStats['memory_valid']}/${cacheStats['memory_total']} valid entries',
-    );
-    print(
-      '  📡 Requests: ${requestStats['pending_requests']} pending, ${requestStats['batch_groups']} batch groups',
-    );
-    print(
-      '  🗃️ Database: ${databaseStats['total_queries']} queries, ${(databaseStats['cache_hit_rate'] * 100).toStringAsFixed(1)}% cache hit rate',
-    );
-    print(
-      '  🎨 UI: ${uiStats['active_components']} components, ${(uiStats['rebuild_savings_percentage']).toStringAsFixed(1)}% rebuilds saved',
-    );
+    if (kDebugMode) print('📊 Performance Stats:');
+    if (kDebugMode)
+      print(
+        '  ⏱️ Timers: ${timerStats['active_timers']} active, ${timerStats['net_timers']} net created',
+      );
+    if (kDebugMode)
+      print(
+        '  🔄 Operations: ${asyncStats['active_operations']} active, ${(asyncStats['success_rate'] * 100).toStringAsFixed(1)}% success rate',
+      );
+    if (kDebugMode)
+      print(
+        '  📦 Cache: ${cacheStats['memory_valid']}/${cacheStats['memory_total']} valid entries',
+      );
+    if (kDebugMode)
+      print(
+        '  📡 Requests: ${requestStats['pending_requests']} pending, ${requestStats['batch_groups']} batch groups',
+      );
+    if (kDebugMode)
+      print(
+        '  🗃️ Database: ${databaseStats['total_queries']} queries, ${(databaseStats['cache_hit_rate'] * 100).toStringAsFixed(1)}% cache hit rate',
+      );
+    if (kDebugMode)
+      print(
+        '  🎨 UI: ${uiStats['active_components']} components, ${(uiStats['rebuild_savings_percentage']).toStringAsFixed(1)}% rebuilds saved',
+      );
 
     // Show comprehensive monitoring status
     final monitoringStats = stats['performance_monitoring'];
     if (monitoringStats != null && monitoringStats['monitoring'] == true) {
-      print(
-        '  📊 Monitoring: ${monitoringStats['snapshots_collected']} snapshots collected',
-      );
-      print(
-        '  📈 Current: ${monitoringStats['memory_mb']}MB RAM, ${monitoringStats['fps']} FPS, ${monitoringStats['cache_hit_rate']} cache',
-      );
+      if (kDebugMode)
+        print('  📊 Monitoring: ${monitoringStats['snapshots_collected']} snapshots collected');
+      if (kDebugMode)
+        print(
+          '  📈 Current: ${monitoringStats['memory_mb']}MB RAM, ${monitoringStats['fps']} FPS, ${monitoringStats['cache_hit_rate']} cache',
+        );
     }
   }
 
   /// Enable comprehensive performance monitoring
   /// Includes both periodic logging and detailed metrics collection
-  static void enablePerformanceMonitoring({
-    Duration interval = const Duration(minutes: 10),
-  }) {
+  static void enablePerformanceMonitoring({Duration interval = const Duration(minutes: 10)}) {
     if (!_initialized) {
       if (kDebugMode)
-        print('⚠️ Cannot enable monitoring: services not initialized');
+        if (kDebugMode) print('⚠️ Cannot enable monitoring: services not initialized');
       return;
     }
 
@@ -226,10 +220,9 @@ class PerformanceInitialization {
     );
 
     if (kDebugMode) {
-      print(
-        '📈 Comprehensive performance monitoring enabled (interval: ${interval.inMinutes}m)',
-      );
-      print('📊 Real-time monitoring: snapshots every 30s');
+      if (kDebugMode)
+        print('📈 Comprehensive performance monitoring enabled (interval: ${interval.inMinutes}m)');
+      if (kDebugMode) print('📊 Real-time monitoring: snapshots every 30s');
     }
   }
 
@@ -243,7 +236,7 @@ class PerformanceInitialization {
     }
 
     if (kDebugMode) {
-      print('📈 Comprehensive performance monitoring disabled');
+      if (kDebugMode) print('📈 Comprehensive performance monitoring disabled');
     }
   }
 
@@ -267,10 +260,9 @@ class PerformanceInitialization {
 
     // Generate performance report before cleanup
     if (PerformanceMonitoringService.instance.isMonitoring) {
-      final report = PerformanceMonitoringService.instance
-          .generatePerformanceReport();
+      final report = PerformanceMonitoringService.instance.generatePerformanceReport();
       if (kDebugMode && report.containsKey('performance_score')) {
-        print('📊 Performance Score: ${report['performance_score']}/100');
+        if (kDebugMode) print('📊 Performance Score: ${report['performance_score']}/100');
       }
     }
 
@@ -283,10 +275,10 @@ class PerformanceInitialization {
       final operationsBefore = statsBefore['async_stats']['active_operations'];
       final operationsAfter = statsAfter['async_stats']['active_operations'];
 
-      print('🧹 Maintenance completed:');
-      print('  ⏱️ Timers: $timersBefore → $timersAfter');
-      print('  🔄 Operations: $operationsBefore → $operationsAfter');
-      print('  📦 Cache: cleared all entries');
+      if (kDebugMode) print('🧹 Maintenance completed:');
+      if (kDebugMode) print('  ⏱️ Timers: $timersBefore → $timersAfter');
+      if (kDebugMode) print('  🔄 Operations: $operationsBefore → $operationsAfter');
+      if (kDebugMode) print('  📦 Cache: cleared all entries');
     }
   }
 
@@ -298,8 +290,7 @@ class PerformanceInitialization {
     }
 
     final baseStats = getPerformanceStats();
-    final monitoringReport = PerformanceMonitoringService.instance
-        .generatePerformanceReport();
+    final monitoringReport = PerformanceMonitoringService.instance.generatePerformanceReport();
 
     return {
       'base_stats': baseStats,
@@ -324,12 +315,8 @@ class PerformanceInitialization {
       final hitRate = (cacheStats['hit_rate'] as double?) ?? 0.0;
       if (hitRate < 0.7) {
         score -= 25 * (0.7 - hitRate) / 0.7;
-        issues.add(
-          'Low cache hit rate: ${(hitRate * 100).toStringAsFixed(1)}%',
-        );
-        recommendations.add(
-          'Consider optimizing cache strategy and TTL values',
-        );
+        issues.add('Low cache hit rate: ${(hitRate * 100).toStringAsFixed(1)}%');
+        recommendations.add('Consider optimizing cache strategy and TTL values');
       }
     }
 
@@ -352,9 +339,7 @@ class PerformanceInitialization {
 
       if (successRate < 0.95) {
         score -= 10 * (0.95 - successRate) / 0.05;
-        issues.add(
-          'Low async success rate: ${(successRate * 100).toStringAsFixed(1)}%',
-        );
+        issues.add('Low async success rate: ${(successRate * 100).toStringAsFixed(1)}%');
         recommendations.add('Investigate and handle async operation failures');
       }
 
@@ -373,9 +358,7 @@ class PerformanceInitialization {
 
       if (dbHitRate < 0.8) {
         score -= 10 * (0.8 - dbHitRate) / 0.8;
-        issues.add(
-          'Low DB cache hit rate: ${(dbHitRate * 100).toStringAsFixed(1)}%',
-        );
+        issues.add('Low DB cache hit rate: ${(dbHitRate * 100).toStringAsFixed(1)}%');
         recommendations.add('Optimize database query caching strategy');
       }
 
@@ -388,8 +371,7 @@ class PerformanceInitialization {
 
     // Performance monitoring health (15% weight)
     if (monitoringReport.containsKey('performance_score')) {
-      final perfScore =
-          monitoringReport['performance_score'] as double? ?? 100.0;
+      final perfScore = monitoringReport['performance_score'] as double? ?? 100.0;
       score = score * 0.85 + perfScore * 0.15;
     }
 

@@ -8,11 +8,8 @@ class LeaveDateChipsWidget extends StatelessWidget {
   final Map<LeaveType, Set<DateTime>> selectedDatesMap;
   final Function(LeaveType, DateTime)? onDateRemoved;
 
-  const LeaveDateChipsWidget({
-    Key? key,
-    required this.selectedDatesMap,
-    this.onDateRemoved,
-  }) : super(key: key);
+  const LeaveDateChipsWidget({Key? key, required this.selectedDatesMap, this.onDateRemoved})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -54,18 +51,11 @@ class LeaveDateChipsWidget extends StatelessWidget {
             width: 8,
             height: 8,
             margin: const EdgeInsets.only(right: 6),
-            decoration: BoxDecoration(
-              color: _getTypeColor(type),
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: _getTypeColor(type), shape: BoxShape.circle),
           ),
           Text(
             DateFormat('yyyy.MM.dd').format(date),
-            style: TextStyle(
-              color: _getTypeColor(type),
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-            ),
+            style: TextStyle(color: _getTypeColor(type), fontWeight: FontWeight.bold, fontSize: 13),
           ),
           if (type.days > 0 && type.days < 1)
             Container(
@@ -89,15 +79,10 @@ class LeaveDateChipsWidget extends StatelessWidget {
       backgroundColor: _getTypeColor(type).withValues(alpha: 0.15),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
-        side: BorderSide(
-          color: _getTypeColor(type).withValues(alpha: 0.3),
-          width: 1,
-        ),
+        side: BorderSide(color: _getTypeColor(type).withValues(alpha: 0.3), width: 1),
       ),
       deleteIcon: Icon(Icons.close, size: 18, color: _getTypeColor(type)),
-      onDeleted: onDateRemoved != null
-          ? () => onDateRemoved!(type, date)
-          : null,
+      onDeleted: onDateRemoved != null ? () => onDateRemoved!(type, date) : null,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     );
   }

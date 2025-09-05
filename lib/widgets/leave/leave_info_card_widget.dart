@@ -62,11 +62,7 @@ class LeaveInfoCardWidget extends StatelessWidget {
           ),
           child: const Text(
             '신청 가능',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
           ),
         ),
         const Spacer(),
@@ -76,23 +72,17 @@ class LeaveInfoCardWidget extends StatelessWidget {
   }
 
   Widget _buildUsedIndicator() {
-    final double usedPercentage = grantedAnnual > 0
-        ? (usedAnnual / grantedAnnual * 100)
-        : 0.0;
+    final double usedPercentage = grantedAnnual > 0 ? (usedAnnual / grantedAnnual * 100) : 0.0;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: _getUsedColor(usedPercentage).withOpacity(0.2),
+        color: _getUsedColor(usedPercentage).withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         '사용률 ${usedPercentage.toStringAsFixed(0)}%',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-        ),
+        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -120,14 +110,12 @@ class LeaveInfoCardWidget extends StatelessWidget {
               height: 4,
               width: 100,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2),
               ),
               child: FractionallySizedBox(
                 alignment: Alignment.centerLeft,
-                widthFactor: grantedAnnual > 0
-                    ? (usedAnnual / grantedAnnual).clamp(0.0, 1.0)
-                    : 0,
+                widthFactor: grantedAnnual > 0 ? (usedAnnual / grantedAnnual).clamp(0.0, 1.0) : 0,
                 child: Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -156,11 +144,7 @@ class LeaveInfoCardWidget extends StatelessWidget {
                 ),
                 const Text(
                   '일',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
                 ),
               ],
             ),

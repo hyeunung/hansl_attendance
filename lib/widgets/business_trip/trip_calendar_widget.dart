@@ -26,7 +26,7 @@ class TripCalendarWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -50,27 +50,15 @@ class TripCalendarWidget extends StatelessWidget {
         ),
         calendarStyle: CalendarStyle(
           outsideDaysVisible: false,
-          defaultTextStyle: const TextStyle(
-            color: Colors.black87,
-            fontSize: 15,
-          ),
+          defaultTextStyle: const TextStyle(color: Colors.black87, fontSize: 15),
           weekendTextStyle: TextStyle(color: Colors.red.shade400, fontSize: 15),
           todayDecoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             shape: BoxShape.circle,
           ),
-          selectedDecoration: const BoxDecoration(
-            color: AppColors.primary,
-            shape: BoxShape.circle,
-          ),
-          todayTextStyle: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-          selectedTextStyle: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          selectedDecoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+          todayTextStyle: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          selectedTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         daysOfWeekStyle: DaysOfWeekStyle(
           weekdayStyle: const TextStyle(
@@ -98,15 +86,29 @@ class TripCalendarWidget extends StatelessWidget {
             return Container(
               margin: const EdgeInsets.all(4.0),
               alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-              ),
+              decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
               child: Text(
                 '${day.day}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            );
+          },
+          dowBuilder: (context, day) {
+            // 요일을 한글로 표시
+            final weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+            final text = weekdays[day.weekday % 7];
+
+            return Center(
+              child: Text(
+                text,
+                style: TextStyle(
+                  color: day.weekday == DateTime.sunday
+                      ? Colors.red
+                      : day.weekday == DateTime.saturday
+                      ? Colors.blue
+                      : Colors.black87,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
                 ),
               ),
             );

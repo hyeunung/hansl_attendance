@@ -7,8 +7,7 @@ class NotificationCenterScreen extends StatefulWidget {
   const NotificationCenterScreen({super.key});
 
   @override
-  State<NotificationCenterScreen> createState() =>
-      _NotificationCenterScreenState();
+  State<NotificationCenterScreen> createState() => _NotificationCenterScreenState();
 }
 
 class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
@@ -57,17 +56,12 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
     try {
       await _supabase
           .from('notifications')
-          .update({
-            'is_read': true,
-            'read_at': DateTime.now().toIso8601String(),
-          })
+          .update({'is_read': true, 'read_at': DateTime.now().toIso8601String()})
           .eq('id', notificationId);
 
       // 로컬 상태 업데이트
       setState(() {
-        final index = _notifications.indexWhere(
-          (n) => n['id'] == notificationId,
-        );
+        final index = _notifications.indexWhere((n) => n['id'] == notificationId);
         if (index != -1) {
           _notifications[index]['is_read'] = true;
           _notifications[index]['read_at'] = DateTime.now().toIso8601String();
@@ -85,10 +79,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
 
       await _supabase
           .from('notifications')
-          .update({
-            'is_read': true,
-            'read_at': DateTime.now().toIso8601String(),
-          })
+          .update({'is_read': true, 'read_at': DateTime.now().toIso8601String()})
           .eq('user_email', user.email!)
           .eq('is_read', false);
 
@@ -102,6 +93,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
         }
       });
 
+      if (!context.mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('모든 알림을 읽음으로 표시했습니다')));
@@ -118,9 +110,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
         _notifications.removeWhere((n) => n['id'] == notificationId);
       });
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('알림을 삭제했습니다')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('알림을 삭제했습니다')));
     } catch (e) {
       print('알림 삭제 실패: $e');
     }
@@ -176,17 +166,12 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final unreadCount = _notifications
-        .where((n) => n['is_read'] == false)
-        .length;
+    final unreadCount = _notifications.where((n) => n['is_read'] == false).length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text(
-          '알림',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-        ),
+        title: const Text('알림', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -205,16 +190,9 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.notifications_none,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
+                  Icon(Icons.notifications_none, size: 64, color: Colors.grey[400]),
                   const SizedBox(height: 16),
-                  Text(
-                    '알림이 없습니다',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                  ),
+                  Text('알림이 없습니다', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
                 ],
               ),
             )
@@ -261,14 +239,12 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                     decoration: BoxDecoration(
                                       color: _getNotificationColor(
                                         notification['type'] ?? '',
-                                      ).withOpacity(0.1),
+                                      ).withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: Center(
                                       child: Text(
-                                        _getNotificationIcon(
-                                          notification['type'] ?? '',
-                                        ),
+                                        _getNotificationIcon(notification['type'] ?? ''),
                                         style: const TextStyle(fontSize: 20),
                                       ),
                                     ),
@@ -276,8 +252,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Row(
                                           children: [
@@ -289,9 +264,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                                   fontWeight: isRead
                                                       ? FontWeight.w500
                                                       : FontWeight.w600,
-                                                  color: isRead
-                                                      ? Colors.grey[700]
-                                                      : Colors.black,
+                                                  color: isRead ? Colors.grey[700] : Colors.black,
                                                 ),
                                               ),
                                             ),
@@ -301,8 +274,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                                 height: 8,
                                                 decoration: BoxDecoration(
                                                   color: AppColors.primary,
-                                                  borderRadius:
-                                                      BorderRadius.circular(4),
+                                                  borderRadius: BorderRadius.circular(4),
                                                 ),
                                               ),
                                           ],
@@ -312,22 +284,15 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                           notification['body'] ?? '',
                                           style: TextStyle(
                                             fontSize: 14,
-                                            color: isRead
-                                                ? Colors.grey[600]
-                                                : Colors.grey[700],
+                                            color: isRead ? Colors.grey[600] : Colors.grey[700],
                                           ),
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          _formatDate(
-                                            notification['created_at'],
-                                          ),
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey[500],
-                                          ),
+                                          _formatDate(notification['created_at']),
+                                          style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                                         ),
                                       ],
                                     ),
@@ -356,19 +321,11 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
       case 'leave_request':
       case 'business_trip':
         // 승인 탭으로 이동
-        Navigator.pushReplacementNamed(
-          context,
-          '/main',
-          arguments: {'initialIndex': 2},
-        );
+        Navigator.pushReplacementNamed(context, '/main', arguments: {'initialIndex': 2});
         break;
       case 'leave_result':
         // 연차 현황 탭으로 이동
-        Navigator.pushReplacementNamed(
-          context,
-          '/main',
-          arguments: {'initialIndex': 1},
-        );
+        Navigator.pushReplacementNamed(context, '/main', arguments: {'initialIndex': 1});
         break;
       default:
         // 홈으로 이동

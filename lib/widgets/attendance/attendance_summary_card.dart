@@ -55,9 +55,7 @@ class AttendanceSummaryCard extends StatelessWidget {
           padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 25)),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(
-              ResponsiveUtils.spacing(context, 20),
-            ),
+            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
             boxShadow: [AppShadows.card],
             border: Border.all(color: const Color(0xFFE9ECEF)),
           ),
@@ -67,16 +65,8 @@ class AttendanceSummaryCard extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: EdgeInsets.all(
-                      ResponsiveUtils.spacing(context, 2),
-                    ),
-                    child: Text(
-                      '💼',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 20,
-                      ),
-                    ),
+                    padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 2)),
+                    child: Text('💼', style: ResponsiveUtils.getTextStyle(context, fontSize: 20)),
                   ),
                   SizedBox(width: ResponsiveUtils.spacing(context, 10)),
                   Text(
@@ -92,12 +82,7 @@ class AttendanceSummaryCard extends StatelessWidget {
               ),
               SizedBox(height: ResponsiveUtils.spacing(context, 20)),
               _buildSummaryItem(context, '출근 시간', provider.clockInStr),
-              _buildSummaryItem(
-                context,
-                '근무 시간',
-                provider.todayWorkDuration,
-                isLast: true,
-              ),
+              _buildSummaryItem(context, '근무 시간', provider.todayWorkDuration, isLast: true),
             ],
           ),
         );

@@ -157,9 +157,7 @@ class CacheService with TimerManagementMixin {
     await _ensureInitialized();
 
     // Remove from memory cache
-    final memoryKeys = _memoryCache.keys
-        .where((k) => k.contains(pattern))
-        .toList();
+    final memoryKeys = _memoryCache.keys.where((k) => k.contains(pattern)).toList();
     for (final key in memoryKeys) {
       _memoryCache.remove(key);
     }
@@ -175,9 +173,10 @@ class CacheService with TimerManagementMixin {
     }
 
     if (kDebugMode)
-      print(
-        '🗑️ Cache pattern invalidated: $pattern (${memoryKeys.length + persistentKeys.length} entries)',
-      );
+      if (kDebugMode)
+        print(
+          '🗑️ Cache pattern invalidated: $pattern (${memoryKeys.length + persistentKeys.length} entries)',
+        );
   }
 
   /// Clear all cache
@@ -189,16 +188,14 @@ class CacheService with TimerManagementMixin {
 
     // Clear persistent cache
     final allKeys = _prefs?.getKeys() ?? <String>{};
-    final cacheKeys = allKeys
-        .where((k) => k.startsWith(_persistentPrefix))
-        .toList();
+    final cacheKeys = allKeys.where((k) => k.startsWith(_persistentPrefix)).toList();
 
     for (final key in cacheKeys) {
       await _prefs?.remove(key);
     }
 
     if (kDebugMode)
-      print('🗑️ All cache cleared (${cacheKeys.length} persistent entries)');
+      if (kDebugMode) print('🗑️ All cache cleared (${cacheKeys.length} persistent entries)');
   }
 
   /// Get cache statistics
@@ -263,16 +260,11 @@ class CacheService with TimerManagementMixin {
     return item.data as T?;
   }
 
-  Future<T?> _getFromPersistent<T>(
-    String key,
-    T Function(Map<String, dynamic>)? fromJson,
-  ) async {
+  Future<T?> _getFromPersistent<T>(String key, T Function(Map<String, dynamic>)? fromJson) async {
     if (_prefs == null || fromJson == null) return null;
 
     try {
-      final expiresAtStr = _prefs!.getString(
-        '${_persistentPrefix}${key}_expires',
-      );
+      final expiresAtStr = _prefs!.getString('${_persistentPrefix}${key}_expires');
       if (expiresAtStr == null) return null;
 
       final expiresAt = DateTime.parse(expiresAtStr);
@@ -319,19 +311,13 @@ class CacheService with TimerManagementMixin {
       final expiresAt = DateTime.now().add(ttl);
 
       await _prefs!.setString('$_persistentPrefix$key', dataStr);
-      await _prefs!.setString(
-        '${_persistentPrefix}${key}_expires',
-        expiresAt.toIso8601String(),
-      );
+      await _prefs!.setString('${_persistentPrefix}${key}_expires', expiresAt.toIso8601String());
     } catch (e) {
       if (kDebugMode) print('⚠️ Error storing persistent cache for $key: $e');
     }
   }
 
-  Future<T> _executeFallback<T>(
-    String key,
-    Future<T> Function() fallback,
-  ) async {
+  Future<T> _executeFallback<T>(String key, Future<T> Function() fallback) async {
     try {
       final result = await fallback();
       return result;
@@ -381,7 +367,7 @@ class CacheService with TimerManagementMixin {
     }
 
     if (expiredKeys.isNotEmpty && kDebugMode) {
-      print('🧹 Cleanup: removed ${expiredKeys.length} expired entries');
+      if (kDebugMode) print('🧹 Cleanup: removed ${expiredKeys.length} expired entries');
     }
   }
 
@@ -455,21 +441,18 @@ class NetworkUtils {
       } catch (e) {
         attempt++;
 
-        if (attempt >= config.maxAttempts ||
-            (shouldRetry != null && !shouldRetry(e))) {
+        if (attempt >= config.maxAttempts || (shouldRetry != null && !shouldRetry(e))) {
           rethrow;
         }
 
         if (kDebugMode)
-          print(
-            '⚠️ Retry attempt $attempt/${config.maxAttempts} after ${delay.inMilliseconds}ms: $e',
-          );
+          if (kDebugMode)
+            print(
+              '⚠️ Retry attempt $attempt/${config.maxAttempts} after ${delay.inMilliseconds}ms: $e',
+            );
 
         await Future.delayed(delay);
-        delay = Duration(
-          milliseconds: (delay.inMilliseconds * config.backoffMultiplier)
-              .round(),
-        );
+        delay = Duration(milliseconds: (delay.inMilliseconds * config.backoffMultiplier).round());
         if (delay > config.maxDelay) {
           delay = config.maxDelay;
         }

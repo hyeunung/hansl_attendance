@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart';
 import 'theme/app_theme.dart';
 import 'screens/auth/login_screen.dart';
@@ -14,12 +16,18 @@ import 'providers/leave_provider.dart';
 import 'providers/font_provider.dart';
 import 'providers/attendance_provider.dart';
 import 'providers/notification_provider.dart';
+import 'providers/purchase_provider.dart';
 import 'services/notification_service.dart';
 import 'services/performance_initialization.dart';
 import 'services/environment_service.dart';
 import 'services/secure_storage_service.dart';
 import 'services/feature_flag_service.dart';
 import 'utils/asset_manager.dart';
+import 'services/attendance_notification_service.dart';
+import 'screens/attendance/attendance_screen.dart';
+
+// 글로벌 네비게이터 키 (알림에서 네비게이션용)
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -56,7 +64,22 @@ Future<void> _initializeServices() async {
 
     // 나머지 초기화는 순차적으로 (빠르게 처리됨)
     try {
-      await EnvironmentService.initialize();
+      // .env 파일 직접 로드
+      await dotenv.load(fileName: ".env");
+      if (kDebugMode) {
+        print('✅ .env file loaded');
+      }
+
+      // EnvironmentService는 선택적으로 초기화
+      try {
+        await EnvironmentService.initialize();
+      } catch (e) {
+        // EnvironmentService 에러는 무시하고 계속 진행
+        if (kDebugMode) {
+          print('⚠️ EnvironmentService init failed, but continuing: $e');
+        }
+      }
+
       await SecureStorageService.migrateFromSharedPreferences();
     } catch (e) {
       if (kDebugMode) {
@@ -69,6 +92,13 @@ Future<void> _initializeServices() async {
 
     // Feature Flag 서비스 초기화
     await FeatureFlagService().initialize();
+
+    // 출퇴근 알림 서비스 초기화
+    await AttendanceNotificationService.initialize();
+    // 위치 기반 출근 알림 시작
+    await AttendanceNotificationService.startLocationBasedCheckInReminder();
+    // 시간 기반 퇴근 알림 예약
+    await AttendanceNotificationService.scheduleCheckOutReminder();
   } catch (e) {
     if (kDebugMode) {
       print('❌ Critical initialization error: $e');
@@ -213,23 +243,50 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
         ChangeNotifierProvider(create: (_) => LeaveProvider()),
         ChangeNotifierProvider(create: (_) => FontProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider(create: (_) => PurchaseProvider()),
         ChangeNotifierProxyProvider<UserProvider, AttendanceProvider>(
           create: (_) => AttendanceProvider(userId: '', userName: ''),
           update: (context, userProvider, attendanceProvider) {
             if (userProvider.id != null && userProvider.name != null) {
-              return AttendanceProvider(
+              final provider = AttendanceProvider(
                 userId: userProvider.id!,
                 userName: userProvider.name!,
               );
+              // email도 설정
+              if (userProvider.email != null) {
+                provider.setUserEmail(userProvider.email!);
+              }
+              return provider;
             }
-            return attendanceProvider ??
-                AttendanceProvider(userId: '', userName: '');
+            return attendanceProvider ?? AttendanceProvider(userId: '', userName: '');
           },
         ),
       ],
       child: MaterialApp(
         title: 'HANSL',
         theme: AppTheme.lightTheme,
+        navigatorKey: navigatorKey, // 글로벌 네비게이터 키 추가
+        locale: const Locale('ko', 'KR'),
+        supportedLocales: const [Locale('ko', 'KR'), Locale('en', 'US')],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        routes: {'/attendance': (context) => const AttendanceScreen()},
+        onGenerateRoute: (settings) {
+          // 알림에서 전달받은 arguments 처리
+          if (settings.name == '/attendance') {
+            final args = settings.arguments as Map<String, dynamic>?;
+            return MaterialPageRoute(
+              builder: (context) => AttendanceScreen(
+                autoShowCheckIn: args?['autoShowCheckIn'] ?? false,
+                autoShowCheckOut: args?['autoShowCheckOut'] ?? false,
+              ),
+            );
+          }
+          return null;
+        },
         home:
             _initialScreen ??
             const Scaffold(
@@ -277,7 +334,6 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
                 ),
               ),
             ),
-        navigatorKey: NotificationService.navigatorKey, // 알림 클릭 네비게이션을 위한 키 설정
         debugShowCheckedModeBanner: false,
       ),
     );

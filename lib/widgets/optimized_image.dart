@@ -159,10 +159,7 @@ class _OptimizedImageState extends State<OptimizedImage> {
     return Container(
       width: widget.width,
       height: widget.height,
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(8),
-      ),
+      decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(8)),
       child: const Center(
         child: CircularProgressIndicator(
           strokeWidth: 2,
@@ -180,10 +177,7 @@ class _OptimizedImageState extends State<OptimizedImage> {
     return Container(
       width: widget.width,
       height: widget.height,
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
-      ),
+      decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(8)),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -196,11 +190,7 @@ class _OptimizedImageState extends State<OptimizedImage> {
             const SizedBox(height: 8),
             Text(
               '이미지를 불러올 수 없습니다',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-                fontFamily: 'NotoSans',
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600], fontFamily: 'NotoSans'),
               textAlign: TextAlign.center,
             ),
           ],
@@ -247,10 +237,7 @@ class ImagePreloader {
 
   /// Preload critical assets (splash, icons, etc.)
   static Future<void> preloadCriticalAssets(BuildContext context) async {
-    final criticalAssets = [
-      'assets/images/splash_logo.jpeg',
-      'assets/icons/icon_1024.png',
-    ];
+    final criticalAssets = ['assets/images/splash_logo.jpeg', 'assets/icons/icon_1024.png'];
 
     for (final asset in criticalAssets) {
       if (!_preloadedAssets.contains(asset)) {

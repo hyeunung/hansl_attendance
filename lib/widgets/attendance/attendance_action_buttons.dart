@@ -8,6 +8,13 @@ class AttendanceActionButtons extends StatelessWidget {
   final Function(String msg, {bool error}) onShowBanner;
 
   const AttendanceActionButtons({super.key, required this.onShowBanner});
+  
+  
+  // 지각 여부 체크
+  bool _isLateTime() {
+    final now = DateTime.now();
+    return now.hour > 8 || (now.hour == 8 && now.minute > 30);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,43 +39,34 @@ class AttendanceActionButtons extends StatelessWidget {
                       : null,
                   child: Container(
                     decoration: BoxDecoration(
-                      gradient: provider.status == AttendanceStatus.beforeWork
+                      gradient: provider.status == AttendanceStatus.beforeWork && !_isLateTime()
                           ? AppColors.primaryGradient
                           : null,
                       color: provider.status == AttendanceStatus.beforeWork
-                          ? null
+                          ? (_isLateTime() 
+                              ? const Color(0xFFE57373).withValues(alpha: 0.8)
+                              : null)
                           : const Color(0xFFE9ECEF),
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveUtils.spacing(context, 14),
-                      ),
+                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 14)),
                       boxShadow: [
                         if (provider.status == AttendanceStatus.beforeWork)
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.32),
                             blurRadius: ResponsiveUtils.spacing(context, 7),
-                            offset: Offset(
-                              0,
-                              ResponsiveUtils.spacing(context, 2),
-                            ),
+                            offset: Offset(0, ResponsiveUtils.spacing(context, 2)),
                           ),
                       ],
                     ),
                     alignment: Alignment.center,
-                    child:
-                        provider.isLoading &&
-                            provider.status == AttendanceStatus.beforeWork
-                        ? const CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          )
+                    child: provider.isLoading && provider.status == AttendanceStatus.beforeWork
+                        ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
                         : Text(
                             '출근하기',
                             style: ResponsiveUtils.getTextStyle(
                               context,
                               fontWeight: FontWeight.bold,
                               fontSize: 21,
-                              color:
-                                  provider.status == AttendanceStatus.beforeWork
+                              color: provider.status == AttendanceStatus.beforeWork
                                   ? Colors.white
                                   : const Color(0xFFB0B0B0),
                             ),
@@ -95,42 +93,28 @@ class AttendanceActionButtons extends StatelessWidget {
                       : null,
                   child: Container(
                     decoration: BoxDecoration(
-                      gradient: provider.canClockOut
-                          ? AppColors.primaryGradient
-                          : null,
-                      color: provider.canClockOut
-                          ? null
-                          : const Color(0xFFE9ECEF),
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveUtils.spacing(context, 14),
-                      ),
+                      gradient: provider.canClockOut ? AppColors.primaryGradient : null,
+                      color: provider.canClockOut ? null : const Color(0xFFE9ECEF),
+                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 14)),
                       boxShadow: [
                         if (provider.canClockOut)
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.32),
                             blurRadius: ResponsiveUtils.spacing(context, 7),
-                            offset: Offset(
-                              0,
-                              ResponsiveUtils.spacing(context, 2),
-                            ),
+                            offset: Offset(0, ResponsiveUtils.spacing(context, 2)),
                           ),
                       ],
                     ),
                     alignment: Alignment.center,
                     child: provider.isLoading && provider.canClockOut
-                        ? const CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          )
+                        ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
                         : Text(
                             '퇴근하기',
                             style: ResponsiveUtils.getTextStyle(
                               context,
                               fontWeight: FontWeight.bold,
                               fontSize: 21,
-                              color: provider.canClockOut
-                                  ? Colors.white
-                                  : const Color(0xFFB0B0B0),
+                              color: provider.canClockOut ? Colors.white : const Color(0xFFB0B0B0),
                             ),
                           ),
                   ),

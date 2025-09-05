@@ -10,21 +10,17 @@ class LeaveService {
   final String table = 'leave';
 
   // leave 전체 조회 - 달력용(approved) 또는 관리자용(전체)
-  Future<List<Map<String, dynamic>>> fetchAllLeavesRaw({
-    bool approvedOnly = false,
-  }) async {
+  Future<List<Map<String, dynamic>>> fetchAllLeavesRaw({bool approvedOnly = false}) async {
     try {
       if (kDebugMode) {
-        print(
-          '🔍 fetchAllLeavesRaw 시작 - 최적화된 조회 (approvedOnly: $approvedOnly)',
-        );
+        if (kDebugMode) print('🔍 fetchAllLeavesRaw 시작 - 최적화된 조회 (approvedOnly: $approvedOnly)');
       }
 
       // 현재 사용자의 이메일 가져오기
       final currentUser = _client.auth.currentUser;
       if (currentUser == null) {
         if (kDebugMode) {
-          print('❌ 인증되지 않은 사용자');
+          if (kDebugMode) print('❌ 인증되지 않은 사용자');
         }
         return [];
       }
@@ -32,13 +28,13 @@ class LeaveService {
       final userEmail = currentUser.email;
       if (userEmail == null) {
         if (kDebugMode) {
-          print('❌ 사용자 이메일이 없음');
+          if (kDebugMode) print('❌ 사용자 이메일이 없음');
         }
         return [];
       }
 
       if (kDebugMode) {
-        print('👤 현재 사용자: $userEmail');
+        if (kDebugMode) print('👤 현재 사용자: $userEmail');
       }
 
       // 달력용 승인된 데이터는 Edge Function으로 전체 조회 (RLS 우회)
@@ -50,7 +46,7 @@ class LeaveService {
       return await _fetchAllLeavesForApprovalViaEdgeFunction();
     } catch (e) {
       if (kDebugMode) {
-        print('❌ fetchAllLeavesRaw error: $e');
+        if (kDebugMode) print('❌ fetchAllLeavesRaw error: $e');
       }
       // 오류 발생 시 fallback 방식 사용
       return await _fetchAllLeavesRawFallback();
@@ -58,16 +54,14 @@ class LeaveService {
   }
 
   // Edge Function으로 승인 화면용 전체 leave 조회 (RLS 우회)
-  Future<List<Map<String, dynamic>>>
-  _fetchAllLeavesForApprovalViaEdgeFunction() async {
+  Future<List<Map<String, dynamic>>> _fetchAllLeavesForApprovalViaEdgeFunction() async {
     try {
       if (kDebugMode) {
-        print('🚀 Edge Function으로 승인 화면용 전체 leave 조회 시작');
+        if (kDebugMode) print('🚀 Edge Function으로 승인 화면용 전체 leave 조회 시작');
       }
 
       const projectId = 'qvhbigvdfyvhoegkhvef';
-      final functionUrl =
-          'https://$projectId.supabase.co/functions/v1/get_all_leaves_for_approval';
+      final functionUrl = 'https://$projectId.supabase.co/functions/v1/get_all_leaves_for_approval';
 
       final response = await http.post(
         Uri.parse(functionUrl),
@@ -80,19 +74,15 @@ class LeaveService {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         if (responseData['success'] == true) {
-          final leaves = List<Map<String, dynamic>>.from(
-            responseData['data'] ?? [],
-          );
+          final leaves = List<Map<String, dynamic>>.from(responseData['data'] ?? []);
 
           if (kDebugMode) {
-            print('✅ Edge Function 성공 - 전체 leave: ${leaves.length}개');
-            final pendingCount = leaves
-                .where((l) => l['status'] == 'pending')
-                .length;
-            print('  - Pending: $pendingCount개');
+            if (kDebugMode) print('✅ Edge Function 성공 - 전체 leave: ${leaves.length}개');
+            final pendingCount = leaves.where((l) => l['status'] == 'pending').length;
+            if (kDebugMode) print('  - Pending: $pendingCount개');
             // 몇 명의 직원 데이터가 있는지 확인
             final uniqueEmails = leaves.map((l) => l['user_email']).toSet();
-            print('  - 총 ${uniqueEmails.length}명의 직원 데이터 포함');
+            if (kDebugMode) print('  - 총 ${uniqueEmails.length}명의 직원 데이터 포함');
           }
 
           return leaves;
@@ -100,29 +90,27 @@ class LeaveService {
       }
 
       if (kDebugMode) {
-        print('⚠️ Edge Function 실패, fallback 사용');
+        if (kDebugMode) print('⚠️ Edge Function 실패, fallback 사용');
       }
       // Edge Function 실패 시 기존 방식 사용
       return await _fetchAllLeavesRawFallback();
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Edge Function 오류: $e, fallback 사용');
+        if (kDebugMode) print('❌ Edge Function 오류: $e, fallback 사용');
       }
       return await _fetchAllLeavesRawFallback();
     }
   }
 
   // Edge Function으로 전체 승인된 leave 조회 (RLS 우회)
-  Future<List<Map<String, dynamic>>>
-  _fetchAllApprovedLeavesViaEdgeFunction() async {
+  Future<List<Map<String, dynamic>>> _fetchAllApprovedLeavesViaEdgeFunction() async {
     try {
       if (kDebugMode) {
-        print('🚀 Edge Function으로 전체 승인된 leave 조회 시작');
+        if (kDebugMode) print('🚀 Edge Function으로 전체 승인된 leave 조회 시작');
       }
 
       const projectId = 'qvhbigvdfyvhoegkhvef';
-      final functionUrl =
-          'https://$projectId.supabase.co/functions/v1/get_all_approved_leaves';
+      final functionUrl = 'https://$projectId.supabase.co/functions/v1/get_all_approved_leaves';
 
       final response = await http.post(
         Uri.parse(functionUrl),
@@ -135,15 +123,13 @@ class LeaveService {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         if (responseData['success'] == true) {
-          final leaves = List<Map<String, dynamic>>.from(
-            responseData['data'] ?? [],
-          );
+          final leaves = List<Map<String, dynamic>>.from(responseData['data'] ?? []);
 
           if (kDebugMode) {
-            print('✅ Edge Function 성공 - 전체 직원 승인된 연차/출장: ${leaves.length}개');
+            if (kDebugMode) print('✅ Edge Function 성공 - 전체 직원 승인된 연차/출장: ${leaves.length}개');
             // 몇 명의 직원 데이터가 있는지 확인
             final uniqueEmails = leaves.map((l) => l['user_email']).toSet();
-            print('  - 총 ${uniqueEmails.length}명의 직원 데이터 포함');
+            if (kDebugMode) print('  - 총 ${uniqueEmails.length}명의 직원 데이터 포함');
           }
 
           return leaves;
@@ -151,13 +137,13 @@ class LeaveService {
       }
 
       if (kDebugMode) {
-        print('⚠️ Edge Function 실패, fallback 사용');
+        if (kDebugMode) print('⚠️ Edge Function 실패, fallback 사용');
       }
       // Edge Function 실패 시 기존 방식 사용
       return await _fetchAllLeavesRawFallback();
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Edge Function 오류: $e, fallback 사용');
+        if (kDebugMode) print('❌ Edge Function 오류: $e, fallback 사용');
       }
       return await _fetchAllLeavesRawFallback();
     }
@@ -167,7 +153,7 @@ class LeaveService {
   Future<List<Map<String, dynamic>>> _fetchAllLeavesRawFallback() async {
     try {
       if (kDebugMode) {
-        print('🔍 fetchAllLeavesRaw Fallback 시작');
+        if (kDebugMode) print('🔍 fetchAllLeavesRaw Fallback 시작');
       }
 
       // 1. leave 데이터 조회
@@ -179,7 +165,7 @@ class LeaveService {
       final List<Map<String, dynamic>> leaveList = (leaveResponse as List)
           .cast<Map<String, dynamic>>();
       if (kDebugMode) {
-        print('📋 leave 테이블에서 조회된 데이터 수: ${leaveList.length}');
+        if (kDebugMode) print('📋 leave 테이블에서 조회된 데이터 수: ${leaveList.length}');
       }
 
       // 2. employees 데이터 조회
@@ -187,10 +173,10 @@ class LeaveService {
           .from('employees')
           .select('email, name, role, is_admin, department');
 
-      final List<Map<String, dynamic>> employeesList =
-          (employeesResponse as List).cast<Map<String, dynamic>>();
+      final List<Map<String, dynamic>> employeesList = (employeesResponse as List)
+          .cast<Map<String, dynamic>>();
       if (kDebugMode) {
-        print('👥 employees 테이블에서 조회된 데이터 수: ${employeesList.length}');
+        if (kDebugMode) print('👥 employees 테이블에서 조회된 데이터 수: ${employeesList.length}');
       }
 
       // 3. 이메일을 기준으로 데이터 결합
@@ -219,14 +205,12 @@ class LeaveService {
       }
 
       if (kDebugMode) {
-        print(
-          '✅ fetchAllLeavesRaw Fallback 완료 - 반환할 데이터 수: ${leaveList.length}',
-        );
+        if (kDebugMode) print('✅ fetchAllLeavesRaw Fallback 완료 - 반환할 데이터 수: ${leaveList.length}');
       }
       return leaveList;
     } catch (e) {
       if (kDebugMode) {
-        print('❌ fetchAllLeavesRaw Fallback error: $e');
+        if (kDebugMode) print('❌ fetchAllLeavesRaw Fallback error: $e');
       }
       rethrow;
     }
@@ -234,10 +218,7 @@ class LeaveService {
 
   // 내 leave 내역 조회
   Future<List<Map<String, dynamic>>> fetchMyLeavesRaw(String userEmail) async {
-    final response = await _client
-        .from(table)
-        .select('*')
-        .eq('user_email', userEmail);
+    final response = await _client.from(table).select('*').eq('user_email', userEmail);
     return (response as List).cast<Map<String, dynamic>>();
   }
 
@@ -249,7 +230,7 @@ class LeaveService {
     final dbOptim = DatabaseOptimizationService.instance;
     await dbOptim.invalidateCache(patterns: ['leave']);
     if (kDebugMode) {
-      print('✅ Leave 신청 완료 및 캐시 무효화: ${data['type']} - ${data['name']}');
+      if (kDebugMode) print('✅ Leave 신청 완료 및 캐시 무효화: ${data['type']} - ${data['name']}');
     }
   }
 
@@ -257,10 +238,10 @@ class LeaveService {
   Future<void> updateLeaveStatus(int id, String status) async {
     try {
       if (kDebugMode) {
-        print('🔄 Leave 상태 업데이트 시작: ID=$id, Status=$status');
+        if (kDebugMode) print('🔄 Leave 상태 업데이트 시작: ID=$id, Status=$status');
         final currentUser = _client.auth.currentUser;
-        print('📱 현재 사용자: ${currentUser?.email}');
-        print('🔑 세션 존재: ${_client.auth.currentSession != null}');
+        if (kDebugMode) print('📱 현재 사용자: ${currentUser?.email}');
+        if (kDebugMode) print('🔑 세션 존재: ${_client.auth.currentSession != null}');
       }
 
       // Edge Function 호출 (Service Role로 RLS 우회)
@@ -277,8 +258,8 @@ class LeaveService {
       }
 
       if (kDebugMode) {
-        print('✅ Edge Function 응답: ${responseData['message']}');
-        print('✅ DB 업데이트 결과: ${responseData['data']}');
+        if (kDebugMode) print('✅ Edge Function 응답: ${responseData['message']}');
+        if (kDebugMode) print('✅ DB 업데이트 결과: ${responseData['data']}');
       }
 
       // 캐시 무효화 - 상태 변경 시 관련된 모든 캐시를 클리어
@@ -286,11 +267,11 @@ class LeaveService {
       await dbOptim.invalidateCache(patterns: ['leave']);
 
       if (kDebugMode) {
-        print('✅ Leave 상태 변경 완료 및 캐시 무효화: ID=$id, Status=$status');
+        if (kDebugMode) print('✅ Leave 상태 변경 완료 및 캐시 무효화: ID=$id, Status=$status');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Leave 상태 업데이트 오류: $e');
+        if (kDebugMode) print('❌ Leave 상태 업데이트 오류: $e');
       }
       rethrow;
     }
@@ -327,17 +308,13 @@ class LeaveService {
       'created_at': DateTime.now().toIso8601String(),
     };
 
-    final inserted = await _client
-        .from(table)
-        .insert(data)
-        .select()
-        .maybeSingle();
+    final inserted = await _client.from(table).insert(data).select().maybeSingle();
 
     // 캐시 무효화 - 출장 신청 후에도 캐시를 클리어해야 관리자 탭에 즉시 반영됨
     final dbOptim = DatabaseOptimizationService.instance;
     await dbOptim.invalidateCache(patterns: ['leave']);
     if (kDebugMode) {
-      print('✅ 출장 신청 완료 및 캐시 무효화: ${data['type']} - ${data['name']}');
+      if (kDebugMode) print('✅ 출장 신청 완료 및 캐시 무효화: ${data['type']} - ${data['name']}');
     }
 
     if (inserted is Map<String, dynamic>) {
@@ -366,16 +343,12 @@ class LeaveService {
   }) async {
     try {
       if (kDebugMode) {
-        print('🗑️ Edge Function을 통한 leave 삭제: ID=$leaveId, isAdmin=$isAdmin');
+        if (kDebugMode) print('🗑️ Edge Function을 통한 leave 삭제: ID=$leaveId, isAdmin=$isAdmin');
       }
 
       final response = await _client.functions.invoke(
         'delete_leave',
-        body: {
-          'leaveId': leaveId,
-          'userEmail': userEmail,
-          'isAdmin': isAdmin,
-        },
+        body: {'leaveId': leaveId, 'userEmail': userEmail, 'isAdmin': isAdmin},
       );
 
       if (response.status != 200) {
@@ -383,9 +356,9 @@ class LeaveService {
       }
 
       final data = response.data as Map<String, dynamic>;
-      
+
       if (kDebugMode) {
-        print('✅ Edge Function 삭제 응답: $data');
+        if (kDebugMode) print('✅ Edge Function 삭제 응답: $data');
       }
 
       if (data['success'] != true) {
@@ -395,7 +368,7 @@ class LeaveService {
       return data;
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Edge Function 삭제 에러: $e');
+        if (kDebugMode) print('❌ Edge Function 삭제 에러: $e');
       }
       rethrow;
     }

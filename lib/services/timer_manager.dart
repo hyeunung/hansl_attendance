@@ -47,7 +47,7 @@ class TimerManager {
     _totalTimersCreated++;
 
     if (kDebugMode)
-      print('✅ Created periodic timer: $key (${interval.inMilliseconds}ms)');
+      if (kDebugMode) print('✅ Created periodic timer: $key (${interval.inMilliseconds}ms)');
     return timer;
   }
 
@@ -87,7 +87,7 @@ class TimerManager {
     _totalTimersCreated++;
 
     if (kDebugMode)
-      print('✅ Created one-time timer: $key (${delay.inMilliseconds}ms)');
+      if (kDebugMode) print('✅ Created one-time timer: $key (${delay.inMilliseconds}ms)');
     return timer;
   }
 
@@ -105,9 +105,7 @@ class TimerManager {
 
   /// Cancel multiple timers by prefix
   int cancelTimersByPrefix(String prefix) {
-    final keysToCancel = _activeTimers.keys
-        .where((key) => key.startsWith(prefix))
-        .toList();
+    final keysToCancel = _activeTimers.keys.where((key) => key.startsWith(prefix)).toList();
 
     int cancelledCount = 0;
     for (final key in keysToCancel) {
@@ -117,7 +115,7 @@ class TimerManager {
     }
 
     if (cancelledCount > 0 && kDebugMode) {
-      print('❌ Cancelled $cancelledCount timers with prefix: $prefix');
+      if (kDebugMode) print('❌ Cancelled $cancelledCount timers with prefix: $prefix');
     }
 
     return cancelledCount;
@@ -135,7 +133,7 @@ class TimerManager {
     _totalTimersDestroyed += count;
 
     if (count > 0 && kDebugMode) {
-      print('❌ Cancelled all timers: $count timers');
+      if (kDebugMode) print('❌ Cancelled all timers: $count timers');
     }
 
     return count;
@@ -201,11 +199,7 @@ class TimerManager {
 
   /// Create a debounced timer that delays execution
   /// Automatically cancels previous timer if called again within the delay
-  void debounce({
-    required String key,
-    required Duration delay,
-    required void Function() callback,
-  }) {
+  void debounce({required String key, required Duration delay, required void Function() callback}) {
     // Cancel existing debounce timer
     cancelTimer(key);
 
@@ -247,7 +241,7 @@ class TimerManager {
     cancelAllTimers();
 
     if (pausedKeys.isNotEmpty && kDebugMode) {
-      print('⏸️ Paused ${pausedKeys.length} timers');
+      if (kDebugMode) print('⏸️ Paused ${pausedKeys.length} timers');
     }
 
     return pausedKeys;
@@ -271,10 +265,11 @@ class TimerManager {
     final stats = getStats(); // This also cleans up inactive timers
 
     if (kDebugMode) {
-      print(
-        '🧹 Timer maintenance: ${stats.activeTimers} active, '
-        '${stats.totalCreated - stats.totalDestroyed} net created',
-      );
+      if (kDebugMode)
+        print(
+          '🧹 Timer maintenance: ${stats.activeTimers} active, '
+          '${stats.totalCreated - stats.totalDestroyed} net created',
+        );
     }
   }
 
@@ -361,11 +356,7 @@ mixin TimerManagementMixin {
     required Duration delay,
     required void Function() callback,
   }) {
-    _timerManager.debounce(
-      key: _scopedKey(key),
-      delay: delay,
-      callback: callback,
-    );
+    _timerManager.debounce(key: _scopedKey(key), delay: delay, callback: callback);
   }
 
   /// Throttle with object scope
@@ -374,11 +365,7 @@ mixin TimerManagementMixin {
     required Duration cooldown,
     required void Function() callback,
   }) {
-    return _timerManager.throttle(
-      key: _scopedKey(key),
-      cooldown: cooldown,
-      callback: callback,
-    );
+    return _timerManager.throttle(key: _scopedKey(key), cooldown: cooldown, callback: callback);
   }
 
   /// Cancel a scoped timer
@@ -388,18 +375,15 @@ mixin TimerManagementMixin {
 
   /// Cancel all timers for this object
   int cancelAllScopedTimers() {
-    return _timerManager.cancelTimersByPrefix(
-      '${runtimeType.toString()}_$hashCode',
-    );
+    return _timerManager.cancelTimersByPrefix('${runtimeType.toString()}_$hashCode');
   }
 
   /// Dispose scoped timers (call from dispose method)
   void disposeScopedTimers() {
     final cancelledCount = cancelAllScopedTimers();
     if (kDebugMode && cancelledCount > 0) {
-      print(
-        '🗑️ Disposed $cancelledCount scoped timers for ${runtimeType.toString()}',
-      );
+      if (kDebugMode)
+        print('🗑️ Disposed $cancelledCount scoped timers for ${runtimeType.toString()}');
     }
   }
 }

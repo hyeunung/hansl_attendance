@@ -26,9 +26,7 @@ class _LeaveScreenRouterState extends State<LeaveScreenRouter> {
     _stopwatch.start();
 
     // 어떤 버전을 사용할지 결정
-    _screenVersion = FeatureFlags.useRefactoredLeaveScreen
-        ? 'optimized'
-        : 'original';
+    _screenVersion = FeatureFlags.useRefactoredLeaveScreen ? 'optimized' : 'original';
 
     AppLogger.info('연차 신청 화면 라우팅: $_screenVersion');
   }
@@ -39,10 +37,7 @@ class _LeaveScreenRouterState extends State<LeaveScreenRouter> {
 
     // 성능 메트릭 기록
     if (FeatureFlags.performanceMonitoring) {
-      PerformanceMonitor.trackScreenLoad(
-        'leave_request_$_screenVersion',
-        _stopwatch.elapsed,
-      );
+      PerformanceMonitor.trackScreenLoad('leave_request_$_screenVersion', _stopwatch.elapsed);
     }
 
     super.dispose();
@@ -61,7 +56,7 @@ class _LeaveScreenRouterState extends State<LeaveScreenRouter> {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.7),
+                color: Colors.black.withValues(alpha: 0.7),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -93,8 +88,7 @@ class BusinessTripScreenRouter extends StatefulWidget {
   const BusinessTripScreenRouter({Key? key}) : super(key: key);
 
   @override
-  State<BusinessTripScreenRouter> createState() =>
-      _BusinessTripScreenRouterState();
+  State<BusinessTripScreenRouter> createState() => _BusinessTripScreenRouterState();
 }
 
 class _BusinessTripScreenRouterState extends State<BusinessTripScreenRouter> {
@@ -107,9 +101,7 @@ class _BusinessTripScreenRouterState extends State<BusinessTripScreenRouter> {
     _stopwatch.start();
 
     // 어떤 버전을 사용할지 결정
-    _screenVersion = FeatureFlags.useRefactoredBusinessTripScreen
-        ? 'refactored'
-        : 'original';
+    _screenVersion = FeatureFlags.useRefactoredBusinessTripScreen ? 'refactored' : 'original';
 
     AppLogger.info('출장 신청 화면 라우팅: $_screenVersion');
   }
@@ -120,10 +112,7 @@ class _BusinessTripScreenRouterState extends State<BusinessTripScreenRouter> {
 
     // 성능 메트릭 기록
     if (FeatureFlags.performanceMonitoring) {
-      PerformanceMonitor.trackScreenLoad(
-        'business_trip_$_screenVersion',
-        _stopwatch.elapsed,
-      );
+      PerformanceMonitor.trackScreenLoad('business_trip_$_screenVersion', _stopwatch.elapsed);
     }
 
     super.dispose();
@@ -142,7 +131,7 @@ class _BusinessTripScreenRouterState extends State<BusinessTripScreenRouter> {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.7),
+                color: Colors.black.withValues(alpha: 0.7),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(

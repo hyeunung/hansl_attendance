@@ -20,15 +20,13 @@ class KeepAlive extends StatefulWidget {
   final Widget child;
   final bool keepAlive;
 
-  const KeepAlive({Key? key, required this.child, this.keepAlive = true})
-    : super(key: key);
+  const KeepAlive({Key? key, required this.child, this.keepAlive = true}) : super(key: key);
 
   @override
   State<KeepAlive> createState() => _KeepAliveState();
 }
 
-class _KeepAliveState extends State<KeepAlive>
-    with AutomaticKeepAliveClientMixin {
+class _KeepAliveState extends State<KeepAlive> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => widget.keepAlive;
 
@@ -82,17 +80,14 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
 
       // NotificationProvider 초기화
       try {
-        final notificationProvider = Provider.of<NotificationProvider>(
-          context,
-          listen: false,
-        );
+        final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
         await notificationProvider.initialize();
         if (kDebugMode) {
-          print('✅ NotificationProvider 초기화 완료');
+          if (kDebugMode) print('✅ NotificationProvider 초기화 완료');
         }
       } catch (e) {
         if (kDebugMode) {
-          print('❌ NotificationProvider 초기화 실패: $e');
+          if (kDebugMode) print('❌ NotificationProvider 초기화 실패: $e');
         }
       }
 
@@ -100,11 +95,11 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
       try {
         await NotificationService.refreshTokenAfterLogin();
         if (kDebugMode) {
-          print('✅ FCM 토큰 자동 갱신 완료');
+          if (kDebugMode) print('✅ FCM 토큰 자동 갱신 완료');
         }
       } catch (e) {
         if (kDebugMode) {
-          print('❌ FCM 토큰 갱신 실패: $e');
+          if (kDebugMode) print('❌ FCM 토큰 갱신 실패: $e');
         }
       }
     });
@@ -132,7 +127,7 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('직원 정보 로드 중 오류: $e');
+        if (kDebugMode) print('직원 정보 로드 중 오류: $e');
       }
     }
   }
@@ -141,10 +136,7 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
   static Future<void> refreshAllData(BuildContext context) async {
     try {
       // Provider들 가져오기
-      final attendanceProvider = Provider.of<AttendanceProvider>(
-        context,
-        listen: false,
-      );
+      final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
       final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
       final userProvider = Provider.of<UserProvider>(context, listen: false);
 
@@ -155,24 +147,18 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
         // 연차 데이터
         if (userProvider.email != null) ...[
           leaveProvider.fetchAllLeaves(forceRefresh: true),
-          leaveProvider.fetchMyLeaves(
-            email: userProvider.email!,
-            forceRefresh: true,
-          ),
+          leaveProvider.fetchMyLeaves(email: userProvider.email!, forceRefresh: true),
         ],
       ]);
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('모든 데이터가 새로고침되었습니다'),
-            duration: Duration(seconds: 1),
-          ),
+          const SnackBar(content: Text('모든 데이터가 새로고침되었습니다'), duration: Duration(seconds: 1)),
         );
       }
     } catch (e) {
       if (kDebugMode) {
-        print('데이터 새로고침 중 오류: $e');
+        if (kDebugMode) print('데이터 새로고침 중 오류: $e');
       }
     }
   }
@@ -211,8 +197,7 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
 
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final employee = userProvider.employee;
-    final List<dynamic> attendanceRoles =
-        (employee?['attendance_role'] as List<dynamic>?) ?? [];
+    final List<dynamic> attendanceRoles = (employee?['attendance_role'] as List<dynamic>?) ?? [];
 
     // 승인관리 탭을 볼 수 있는 역할 확인
     final approvalRoles = [
@@ -225,15 +210,13 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
       '연구소_manager',
     ];
 
-    final showApprovalTab = attendanceRoles.any(
-      (role) => approvalRoles.contains(role),
-    );
+    final showApprovalTab = attendanceRoles.any((role) => approvalRoles.contains(role));
 
     // 디버깅 정보 출력
     if (kDebugMode) {
-      print('🔍 Employee info: $employee');
-      print('🔍 Attendance roles: $attendanceRoles');
-      print('🔍 Show approval tab: $showApprovalTab');
+      if (kDebugMode) print('🔍 Employee info: $employee');
+      if (kDebugMode) print('🔍 Attendance roles: $attendanceRoles');
+      if (kDebugMode) print('🔍 Show approval tab: $showApprovalTab');
     }
 
     setState(() {
@@ -268,8 +251,7 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
 
   Widget _buildMainContent(UserProvider userProvider) {
     final employee = userProvider.employee;
-    final List<dynamic> attendanceRoles =
-        (employee?['attendance_role'] as List<dynamic>?) ?? [];
+    final List<dynamic> attendanceRoles = (employee?['attendance_role'] as List<dynamic>?) ?? [];
 
     // 승인관리 탭을 볼 수 있는 역할 확인 (초기화와 동일하게)
     final approvalRoles = [
@@ -281,9 +263,7 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
       '경영지원팀_manager',
     ];
 
-    final showApprovalTab = attendanceRoles.any(
-      (role) => approvalRoles.contains(role),
-    );
+    final showApprovalTab = attendanceRoles.any((role) => approvalRoles.contains(role));
 
     final List<BottomNavigationBarItem> items = [];
 
@@ -291,9 +271,7 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
     items.add(
       BottomNavigationBarItem(
         icon: Padding(
-          padding: EdgeInsets.symmetric(
-            vertical: ResponsiveUtils.spacing(context, 6),
-          ),
+          padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 6)),
           child: Icon(
             Icons.access_time,
             color: _currentIndex == 0 ? const Color(0xFFFF9500) : Colors.grey,
@@ -341,9 +319,7 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Icon(
             Icons.calendar_today,
-            color: _currentIndex == calendarIndex
-                ? const Color(0xFFFF3B30)
-                : Colors.grey,
+            color: _currentIndex == calendarIndex ? const Color(0xFFFF3B30) : Colors.grey,
           ),
         ),
         label: '',
@@ -358,9 +334,7 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Icon(
             Icons.settings,
-            color: _currentIndex == settingsIndex
-                ? const Color(0xFF8E8E93)
-                : Colors.grey,
+            color: _currentIndex == settingsIndex ? const Color(0xFF8E8E93) : Colors.grey,
           ),
         ),
         label: '',
@@ -387,9 +361,7 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
       bottomNavigationBar: RepaintBoundary(
         child: Container(
           decoration: const BoxDecoration(
-            border: Border(
-              top: BorderSide(color: Color(0xFFE0E0E0), width: 1.5),
-            ),
+            border: Border(top: BorderSide(color: Color(0xFFE0E0E0), width: 1.5)),
             color: Colors.white,
           ),
           child: BottomNavigationBar(
@@ -401,12 +373,8 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
             unselectedFontSize: 14,
             selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
             unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
-            selectedIconTheme: IconThemeData(
-              size: ResponsiveUtils.iconSize(context, 30),
-            ),
-            unselectedIconTheme: IconThemeData(
-              size: ResponsiveUtils.iconSize(context, 30),
-            ),
+            selectedIconTheme: IconThemeData(size: ResponsiveUtils.iconSize(context, 30)),
+            unselectedIconTheme: IconThemeData(size: ResponsiveUtils.iconSize(context, 30)),
             items: items,
             elevation: 0, // 그림자 제거로 성능 향상
           ),

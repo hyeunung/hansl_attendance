@@ -1,0 +1,53 @@
+name: Sync Korean Holidays
+
+on:
+  schedule:
+    # 매년 1월 1일 오전 9시 (한국시간)
+    - cron: '0 0 1 1 *'
+    # 매년 12월 1일 오전 9시 (한국시간)
+    - cron: '0 0 1 12 *'
+  workflow_dispatch: # 수동 실행도 가능
+
+jobs:
+  sync-holidays:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      run: |
+        npm install @supabase/supabase-js
+        npm install dotenv
+    
+    - name: Sync holidays
+      env:
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      run: |
+        node -e "
+        const { createClient } = require('@supabase/supabase-js');
+        
+        const supabase = createClient(
+          process.env.SUPABASE_URL,
+          process.env.SUPABASE_SERVICE_KEY
+        );
+        
+        // Edge Function 호출
+        fetch(process.env.SUPABASE_URL + '/functions/v1/sync-holidays', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + process.env.SUPABASE_SERVICE_KEY,
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(res => res.json())
+        .then(data => console.log('Holidays synced:', data))
+        .catch(err => console.error('Error:', err));
+        "

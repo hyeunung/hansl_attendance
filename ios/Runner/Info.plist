@@ -19,11 +19,11 @@
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
 			<key>CFBundleShortVersionString</key>
-	<string>2.0.3</string>
+	<string>2.1.0</string>
 		<key>CFBundleSignature</key>
 		<string>????</string>
 			<key>CFBundleVersion</key>
-	<string>7</string>
+	<string>8</string>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>NSAppTransportSecurity</key>
@@ -46,11 +46,17 @@
 		<key>FirebaseAppDelegateProxyEnabled</key>
 		<true/>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-		<string>이 앱에서 정확한 출근 위치 확인을 위해 위치 정보에 접근합니다. 이는 근태 관리 시스템의 핵심 기능으로, 사용자의 출근 위치를 확인하여 정확한 근무 시간을 기록하기 위해 필요합니다.</string>
+		<string>회사 근처에 도착하면 자동으로 출근 알림을 받기 위해 백그라운드 위치 권한이 필요합니다. 이는 출퇴근을 잊지 않도록 도와드리는 편의 기능입니다.</string>
 		<key>NSLocationAlwaysUsageDescription</key>
-		<string>출근 위치 확인을 위해 위치 권한이 필요합니다.</string>
+		<string>회사 근처 도착시 출근 알림을 위해 백그라운드 위치 권한이 필요합니다.</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>출근 위치 확인을 위해 위치 권한이 필요합니다.</string>
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>location</string>
+			<string>fetch</string>
+			<string>remote-notification</string>
+		</array>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
 		<key>UILaunchStoryboardName</key>

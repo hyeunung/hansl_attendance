@@ -19,10 +19,7 @@ class AttendanceScreenRouter extends StatelessWidget {
       // 리팩토링된 화면 사용
       screen = const AttendanceScreenOptimized();
 
-      PerformanceMonitor.trackScreenLoad(
-        'AttendanceScreenOptimized',
-        stopwatch.elapsed,
-      );
+      PerformanceMonitor.trackScreenLoad('AttendanceScreenOptimized', stopwatch.elapsed);
     } else {
       // 기존 화면 사용
       screen = const AttendanceScreen();

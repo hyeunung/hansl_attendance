@@ -16,9 +16,7 @@ class AttendanceHistoryCard extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: const Color(0xFFF5F6F8),
-        borderRadius: BorderRadius.circular(
-          ResponsiveUtils.spacing(context, 10),
-        ),
+        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 10)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -58,9 +56,7 @@ class AttendanceHistoryCard extends StatelessWidget {
           padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 25)),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(
-              ResponsiveUtils.spacing(context, 20),
-            ),
+            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
             boxShadow: [AppShadows.card],
             border: Border.all(color: const Color(0xFFE9ECEF)),
           ),
@@ -70,16 +66,8 @@ class AttendanceHistoryCard extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: EdgeInsets.all(
-                      ResponsiveUtils.spacing(context, 2),
-                    ),
-                    child: Text(
-                      '⏱️',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 20,
-                      ),
-                    ),
+                    padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 2)),
+                    child: Text('⏱️', style: ResponsiveUtils.getTextStyle(context, fontSize: 20)),
                   ),
                   SizedBox(width: ResponsiveUtils.spacing(context, 10)),
                   Text(
@@ -96,9 +84,7 @@ class AttendanceHistoryCard extends StatelessWidget {
               SizedBox(height: ResponsiveUtils.spacing(context, 15)),
               provider.recentHistory.isEmpty
                   ? Container(
-                      padding: EdgeInsets.symmetric(
-                        vertical: ResponsiveUtils.spacing(context, 20),
-                      ),
+                      padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 20)),
                       alignment: Alignment.center,
                       child: Text(
                         '아직 기록이 없습니다',
@@ -113,9 +99,7 @@ class AttendanceHistoryCard extends StatelessWidget {
                       children: provider.recentHistory
                           .map(
                             (record) => Padding(
-                              padding: EdgeInsets.only(
-                                bottom: ResponsiveUtils.spacing(context, 8),
-                              ),
+                              padding: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 8)),
                               child: _buildHistoryRow(context, record),
                             ),
                           )

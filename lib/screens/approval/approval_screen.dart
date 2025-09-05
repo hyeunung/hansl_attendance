@@ -2,12 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/leave_provider.dart';
+import '../../providers/purchase_provider.dart';
 import 'package:intl/intl.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
 import '../../providers/user_provider.dart';
+import '../../widgets/purchase/purchase_approval_widget.dart';
 
 class ApprovalScreen extends StatefulWidget {
   const ApprovalScreen({super.key});
@@ -17,15 +19,28 @@ class ApprovalScreen extends StatefulWidget {
 }
 
 class _ApprovalScreenState extends State<ApprovalScreen>
-    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-  late TabController _tabController;
+  late TabController _mainTabController; // 메인 탭 (연차/출장, 발주승인)
+  late TabController _subTabController; // 서브 탭 (대기중, 처리완료)
+  bool _hasPurchaseApprovalAuth = false; // 발주 승인 권한 여부
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    // 초기값은 1개 탭으로 설정, build에서 권한 확인 후 조정
+    _mainTabController = TabController(length: 1, vsync: this);
+    _subTabController = TabController(length: 2, vsync: this);
+
+    // TabController 리스너 추가 - 탭 변경시 UI 업데이트
+    _mainTabController.addListener(() {
+      if (mounted) setState(() {});
+    });
+    _subTabController.addListener(() {
+      if (mounted) setState(() {});
+    });
+
     _loadData();
   }
 
@@ -38,24 +53,48 @@ class _ApprovalScreenState extends State<ApprovalScreen>
   }
 
   void _loadData() {
-    // 첫 빌드 후에 데이터 로드
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
+    // 첫 빌드 후에 데이터 로드 - 비동기로 변경하여 UI 블로킹 방지
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        final provider = Provider.of<LeaveProvider>(context, listen: false);
+        final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
+        final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-        if (kDebugMode) debugPrint('🔄 승인 화면 새로고침 시작');
+        if (kDebugMode) {
+          debugPrint('🔄 승인 화면 새로고침 시작');
+          debugPrint('📋 현재 사용자 employee 데이터: ${userProvider.employee}');
+          debugPrint('📋 purchase_role: ${userProvider.employee?['purchase_role']}');
+          debugPrint('📋 _hasPurchaseApprovalAuth: $_hasPurchaseApprovalAuth');
+        }
 
-        // forceRefreshAll 대신 필요한 데이터만 새로고침 (성능 개선)
-        await provider.fetchAllLeaves(forceRefresh: true);
-
-        if (kDebugMode) debugPrint('✅ 승인 화면 새로고침 완료');
+        // 연차 데이터 비동기 로드 (await 제거로 UI 즉시 렌더링)
+        leaveProvider.fetchAllLeaves(forceRefresh: true).then((_) {
+          if (kDebugMode) debugPrint('✅ 연차 데이터 로드 완료');
+        }).catchError((e) {
+          if (kDebugMode) debugPrint('❌ 연차 데이터 로드 실패: $e');
+        });
+        
+        // 발주 데이터 비동기 로드 (권한이 있는 경우)
+        if (_hasPurchaseApprovalAuth) {
+          if (kDebugMode) debugPrint('🔐 발주 데이터 로드 시작');
+          purchaseProvider.fetchPendingPurchases(
+            employee: userProvider.employee,
+          ).then((_) {
+            if (kDebugMode) debugPrint('✅ 발주 데이터 로드 완료');
+          }).catchError((e) {
+            if (kDebugMode) debugPrint('❌ 발주 데이터 로드 실패: $e');
+          });
+        } else {
+          if (kDebugMode) debugPrint('⚠️ 발주 승인 권한 없음');
+        }
       }
     });
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _mainTabController.dispose();
+    _subTabController.dispose();
     super.dispose();
   }
 
@@ -67,41 +106,77 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     final role = employee?['role'];
     final name = employee?['name'];
     final department = employee?['department'];
-    final attendanceRoles =
-        employee?['attendance_role'] as List<dynamic>? ?? [];
+    final attendanceRoles = employee?['attendance_role'] as List<dynamic>? ?? [];
+    final purchaseRoles = employee?['purchase_role'] as List<dynamic>? ?? [];
+
+    // purchase_role에 따른 발주 승인 권한 확인
+    if (kDebugMode) {
+      debugPrint('🔍 ApprovalScreen build - purchaseRoles 체크');
+      debugPrint('📋 purchaseRoles: $purchaseRoles');
+      debugPrint('📋 purchaseRoles 타입: ${purchaseRoles.runtimeType}');
+      debugPrint('📋 purchaseRoles isEmpty: ${purchaseRoles.isEmpty}');
+    }
+    
+    final bool hasPurchaseApproval = purchaseRoles.contains('middle_manager') ||
+        purchaseRoles.contains('final_approver') ||
+        purchaseRoles.contains('raw_material_manager') ||
+        purchaseRoles.contains('consumable_manager') ||
+        purchaseRoles.contains('app_admin');
+    
+    if (kDebugMode) {
+      debugPrint('📋 hasPurchaseApproval: $hasPurchaseApproval');
+    }
+    
+    // 탭 개수 조정 (초기화 시점과 다른 경우)
+    if (_hasPurchaseApprovalAuth != hasPurchaseApproval) {
+      _hasPurchaseApprovalAuth = hasPurchaseApproval;
+      final tabCount = hasPurchaseApproval ? 2 : 1;
+      
+      if (kDebugMode) {
+        debugPrint('🔄 탭 개수 조정 필요: $tabCount개 탭으로 변경');
+      }
+      
+      // TabController 재생성 필요
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _mainTabController.dispose();
+            _mainTabController = TabController(length: tabCount, vsync: this);
+            _mainTabController.addListener(() {
+              if (mounted) setState(() {});
+            });
+          });
+          // 발주 데이터 로드 (setState 밖에서 실행)
+          if (hasPurchaseApproval) {
+            if (kDebugMode) debugPrint('🔐 권한 확인 후 발주 데이터 로드 시작');
+            final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
+            final userProvider = Provider.of<UserProvider>(context, listen: false);
+            purchaseProvider.fetchPendingPurchases(
+              employee: userProvider.employee,
+            );
+          }
+        }
+      });
+    }
 
     // attendance_role에 따른 권한 확인
     final bool isAdmin = attendanceRoles.contains('admin');
     final bool isSuperAdmin = attendanceRoles.contains('superadmin');
     final bool isAdminOrSuper = isAdmin || isSuperAdmin;
     final bool isDev3Manager = attendanceRoles.contains('개발3팀_manager');
-    final bool isCadManager = attendanceRoles.contains(
-      'CAD_manager',
-    ); // 대문자로 수정!
+    final bool isCadManager = attendanceRoles.contains('CAD_manager'); // 대문자로 수정!
     final bool isDevManager = attendanceRoles.contains('개발팀_manager');
     final bool isSupportManager = attendanceRoles.contains('경영지원팀_manager');
     final bool isLabManager = attendanceRoles.contains('연구소_manager');
     final bool isManager =
-        isDev3Manager ||
-        isCadManager ||
-        isDevManager ||
-        isSupportManager ||
-        isLabManager;
+        isDev3Manager || isCadManager || isDevManager || isSupportManager || isLabManager;
     final bool hasApprovalRole = isAdminOrSuper || isManager;
 
     // attendance_role에 따른 승인 가능 부서 매핑
     final List<String> approvalDepartments = [];
     if (isAdminOrSuper) {
       // admin/superadmin은 모든 부서 승인 가능
-      approvalDepartments.addAll([
-        '개발1팀',
-        '개발2팀',
-        '개발3팀',
-        'CAD',
-        '경영지원팀',
-        '연구소',
-        '개발팀',
-      ]);
+      approvalDepartments.addAll(['개발1팀', '개발2팀', '개발3팀', 'CAD', '경영지원팀', '연구소', '개발팀']);
     } else {
       if (isDev3Manager) approvalDepartments.add('개발3팀');
       if (isCadManager) approvalDepartments.add('CAD');
@@ -124,10 +199,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              isAdminOrSuper ? '연차/출장 관리' : '팀원 승인',
-              style: AppTextStyles.appBarTitle(context),
-            ),
+            Text('승인 관리', style: AppTextStyles.appBarTitle(context)),
             if (isAdminOrSuper) ...[
               SizedBox(width: ResponsiveUtils.spacing(context, 8)),
               Container(
@@ -137,12 +209,8 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                 ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(
-                    ResponsiveUtils.spacing(context, 12),
-                  ),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.3),
-                  ),
+                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -189,10 +257,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       ),
       body: Consumer<LeaveProvider>(
         builder: (context, provider, _) {
-          if (kDebugMode)
-            debugPrint(
-              '🔄 Consumer 빌드 - allLeaves 수: ${provider.allLeaves.length}',
-            );
+          if (kDebugMode) debugPrint('🔄 Consumer 빌드 - allLeaves 수: ${provider.allLeaves.length}');
           List<Map<String, dynamic>> allLeaves = provider.allLeaves;
 
           if (kDebugMode) {
@@ -208,11 +273,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             // 처음 몇 개 데이터의 상태 출력
             if (allLeaves.isNotEmpty) {
               debugPrint('📋 전체 데이터 샘플:');
-              for (
-                int i = 0;
-                i < (allLeaves.length > 5 ? 5 : allLeaves.length);
-                i++
-              ) {
+              for (int i = 0; i < (allLeaves.length > 5 ? 5 : allLeaves.length); i++) {
                 final leave = allLeaves[i];
                 final emp = leave['employees'];
                 debugPrint(
@@ -228,8 +289,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
 
             if (attendanceRoles.contains('superadmin')) {
               // SuperAdmin: 모든 직원의 신청 표시 (필터링 없음)
-              if (kDebugMode)
-                debugPrint('👑 SuperAdmin: 모든 직원의 신청 표시 ($beforeFilter개)');
+              if (kDebugMode) debugPrint('👑 SuperAdmin: 모든 직원의 신청 표시 ($beforeFilter개)');
             } else if (attendanceRoles.contains('admin')) {
               // Admin: superadmin을 제외한 모든 신청 표시
               allLeaves = allLeaves.where((l) {
@@ -264,8 +324,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
 
                 // 자신의 연차는 제외 (스스로 승인 불가)
                 if (leaveEmail == userProvider.email) {
-                  if (kDebugMode && leaveEmail == 'test@hansl.com')
-                    debugPrint('  ❌ 자신의 연차라서 제외');
+                  if (kDebugMode && leaveEmail == 'test@hansl.com') debugPrint('  ❌ 자신의 연차라서 제외');
                   return false;
                 }
 
@@ -278,8 +337,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
 
                 // admin의 연차도 제외 (부서 매니저가 승인 불가)
                 if (leaveAttendanceRoles.contains('admin')) {
-                  if (kDebugMode && leaveEmail == 'test@hansl.com')
-                    debugPrint('  ❌ admin이라서 제외');
+                  if (kDebugMode && leaveEmail == 'test@hansl.com') debugPrint('  ❌ admin이라서 제외');
                   return false;
                 }
 
@@ -288,15 +346,12 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                   (role) => leaveAttendanceRoles.contains(role),
                 );
                 if (hasManagerRole) {
-                  if (kDebugMode && leaveEmail == 'test@hansl.com')
-                    debugPrint('  ❌ 매니저라서 제외');
+                  if (kDebugMode && leaveEmail == 'test@hansl.com') debugPrint('  ❌ 매니저라서 제외');
                   return false;
                 }
 
                 // 해당 부서 일반 직원만 표시
-                final shouldShow =
-                    leaveDept != null &&
-                    approvalDepartments.contains(leaveDept);
+                final shouldShow = leaveDept != null && approvalDepartments.contains(leaveDept);
                 if (kDebugMode && leaveEmail == 'test@hansl.com') {
                   debugPrint('  - shouldShow: $shouldShow');
                   if (shouldShow) {
@@ -318,27 +373,21 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             if (kDebugMode) debugPrint('⚠️ 승인 권한 없음 - 데이터 표시 안 함');
           }
 
-          final pending = allLeaves
-              .where((l) => l['status'] == 'pending')
-              .toList();
-          
+          final pending = allLeaves.where((l) => l['status'] == 'pending').toList();
+
           // Admin/SuperAdmin은 전체 직원의 처리완료 건을 보여줌
           List<Map<String, dynamic>> done;
           if (isAdminOrSuper) {
             // Admin/SuperAdmin: 전체 직원의 처리완료 건을 보여줌
-            done = provider.allLeaves
-                .where((l) => l['status'] != 'pending')
-                .toList();
+            done = provider.allLeaves.where((l) => l['status'] != 'pending').toList();
             if (kDebugMode) {
               debugPrint('👑 Admin/SuperAdmin: 전체 처리완료 건 표시 (${done.length}개)');
             }
           } else {
             // Manager: 현재 필터링된 데이터에서만 처리완료 건 표시
-            done = allLeaves
-                .where((l) => l['status'] != 'pending')
-                .toList();
+            done = allLeaves.where((l) => l['status'] != 'pending').toList();
           }
-          
+
           final now = DateTime.now();
           final thisMonth = now.month;
           final thisYear = now.year;
@@ -370,306 +419,424 @@ class _ApprovalScreenState extends State<ApprovalScreen>
 
           return Column(
             children: [
-              // Tab Navigation with updated design
+              // 통합된 탭 디자인 - Segmented Control 스타일
               Container(
                 margin: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
+                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 4)),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(
-                    ResponsiveUtils.spacing(context, 12),
-                  ),
-                  boxShadow: [AppShadows.card],
+                  color: const Color(0xFFF2F3F5),
+                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                 ),
-                child: TabBar(
-                  controller: _tabController,
-                  tabs: [
-                    Tab(
-                      height: ResponsiveUtils.spacing(context, 50),
-                      child: Container(
-                        alignment: Alignment.center,
-                        child: const Text('대기중'),
-                      ),
-                    ),
-                    Tab(
-                      height: ResponsiveUtils.spacing(context, 50),
-                      child: Container(
-                        alignment: Alignment.center,
-                        child: const Text('처리완료'),
-                      ),
-                    ),
-                  ],
-                  labelColor: Colors.white,
-                  unselectedLabelColor: const Color(0xFF8E8E93),
-                  indicator: BoxDecoration(
-                    gradient: AppColors.primaryGradient,
-                    borderRadius: BorderRadius.circular(
-                      ResponsiveUtils.spacing(context, 12),
-                    ),
-                  ),
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  dividerColor: Colors.transparent,
-                  labelStyle: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    height: 1.2,
-                  ),
-                  unselectedLabelStyle: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    height: 1.2,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
+                child: Row(
                   children: [
-                    // 대기중 탭
-                    RefreshIndicator(
-                      onRefresh: () async {
-                        // 승인 대기 데이터 새로고침
-                        await Provider.of<LeaveProvider>(
-                          context,
-                          listen: false,
-                        ).fetchAllLeaves(forceRefresh: true);
-                      },
-                      child: SingleChildScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: ResponsiveUtils.spacing(context, 20),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Summary Cards
-                            Row(
-                              children: [
-                                _statCard('승인 대기', pending.length),
-                                SizedBox(
-                                  width: ResponsiveUtils.spacing(context, 12),
+                    // 연차/출장 탭
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          _mainTabController.animateTo(0);
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: EdgeInsets.symmetric(
+                            vertical: ResponsiveUtils.spacing(context, 14),
+                          ),
+                          decoration: BoxDecoration(
+                            color: _mainTabController.index == 0
+                                ? Colors.white
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(
+                              ResponsiveUtils.spacing(context, 10),
+                            ),
+                            boxShadow: _mainTabController.index == 0
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.08),
+                                      blurRadius: 3,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.event_available,
+                                size: ResponsiveUtils.iconSize(context, 18),
+                                color: _mainTabController.index == 0
+                                    ? AppColors.primary
+                                    : const Color(0xFF8E8E93),
+                              ),
+                              SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+                              Text(
+                                '연차/출장',
+                                style: ResponsiveUtils.getTextStyle(
+                                  context,
+                                  fontSize: 15,
+                                  fontWeight: _mainTabController.index == 0
+                                      ? FontWeight.w600
+                                      : FontWeight.w500,
+                                  color: _mainTabController.index == 0
+                                      ? const Color(0xFF1C1C1E)
+                                      : const Color(0xFF8E8E93),
                                 ),
-                                _statCard('이번 달 처리', thisMonthDone.length),
+                              ),
+                              if (_mainTabController.index == 0 && pending.isNotEmpty) ...[
+                                SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: ResponsiveUtils.spacing(context, 6),
+                                    vertical: ResponsiveUtils.spacing(context, 2),
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFF3B30),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    '${pending.length}',
+                                    style: ResponsiveUtils.getTextStyle(
+                                      context,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    // 발주 탭 (권한이 있는 경우만 표시)
+                    if (_hasPurchaseApprovalAuth)
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            _mainTabController.animateTo(1);
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: EdgeInsets.symmetric(
+                              vertical: ResponsiveUtils.spacing(context, 14),
+                            ),
+                            decoration: BoxDecoration(
+                              color: _mainTabController.index == 1
+                                  ? Colors.white
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(
+                                ResponsiveUtils.spacing(context, 10),
+                              ),
+                              boxShadow: _mainTabController.index == 1
+                                  ? [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.08),
+                                        blurRadius: 3,
+                                        offset: const Offset(0, 1),
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.shopping_bag_outlined,
+                                  size: ResponsiveUtils.iconSize(context, 18),
+                                  color: _mainTabController.index == 1
+                                      ? AppColors.primary
+                                      : const Color(0xFF8E8E93),
+                                ),
+                                SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+                                Text(
+                                  '발주승인',
+                                  style: ResponsiveUtils.getTextStyle(
+                                    context,
+                                    fontSize: 15,
+                                    fontWeight: _mainTabController.index == 1
+                                        ? FontWeight.w600
+                                        : FontWeight.w500,
+                                    color: _mainTabController.index == 1
+                                        ? const Color(0xFF1C1C1E)
+                                        : const Color(0xFF8E8E93),
+                                  ),
+                                ),
                               ],
                             ),
-                            SizedBox(
-                              height: ResponsiveUtils.spacing(context, 20),
-                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
 
-                            // Pending Requests Container
-                            Container(
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(
-                                  ResponsiveUtils.spacing(context, 12),
-                                ),
-                                boxShadow: [AppShadows.card],
-                              ),
-                              child: Padding(
-                                padding: EdgeInsets.all(
-                                  ResponsiveUtils.spacing(context, 20),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '승인 대기 목록',
-                                      style: ResponsiveUtils.getTextStyle(
-                                        context,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 22,
-                                        color: const Color(0xFF1C1C1E),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      height: ResponsiveUtils.spacing(
-                                        context,
-                                        8,
-                                      ),
-                                    ),
-                                    Divider(
-                                      thickness: 2,
-                                      color: const Color(0xFFE0E3E8),
-                                    ),
-                                    SizedBox(
-                                      height: ResponsiveUtils.spacing(
-                                        context,
-                                        16,
-                                      ),
-                                    ),
-                                    if (pending.isEmpty)
+              Expanded(
+                child: TabBarView(
+                  controller: _mainTabController,
+                  children: [
+                    // 연차/출장 탭 콘텐츠
+                    Column(
+                      children: [
+                        // 심플한 필터 칩 스타일의 서브 탭
+                        Container(
+                          height: ResponsiveUtils.spacing(context, 40),
+                          margin: EdgeInsets.fromLTRB(
+                            ResponsiveUtils.spacing(context, 20),
+                            ResponsiveUtils.spacing(context, 0),
+                            ResponsiveUtils.spacing(context, 20),
+                            ResponsiveUtils.spacing(context, 15),
+                          ),
+                          child: Row(
+                            children: [
+                              // 대기중 칩
+                              GestureDetector(
+                                onTap: () {
+                                  _subTabController.animateTo(0);
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: ResponsiveUtils.spacing(context, 16),
+                                    vertical: ResponsiveUtils.spacing(context, 8),
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _subTabController.index == 0
+                                        ? AppColors.primary
+                                        : const Color(0xFFF2F3F5),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Row(
+                                    children: [
                                       Text(
-                                        '승인 대기 내역이 없습니다.',
+                                        '대기중',
                                         style: ResponsiveUtils.getTextStyle(
                                           context,
                                           fontSize: 14,
-                                          color: const Color(0xFF8E8E93),
+                                          fontWeight: FontWeight.w600,
+                                          color: _subTabController.index == 0
+                                              ? Colors.white
+                                              : const Color(0xFF1C1C1E),
                                         ),
                                       ),
-                                    ...pending.map((l) {
-                                      // superadmin의 연차는 superadmin만 승인 가능
-                                      final emp = l['employees'];
-                                      final leaveAttendanceRoles = emp is Map
-                                          ? (emp['attendance_role']
-                                                    as List<dynamic>? ??
-                                                [])
-                                          : [];
-                                      final isLeaveSuperAdmin =
-                                          leaveAttendanceRoles.contains(
+                                      if (pending.isNotEmpty) ...[
+                                        SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+                                        Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: ResponsiveUtils.spacing(context, 5),
+                                            vertical: ResponsiveUtils.spacing(context, 1),
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: _subTabController.index == 0
+                                                ? Colors.white.withValues(alpha: 0.3)
+                                                : const Color(0xFFFF3B30),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            '${pending.length}',
+                                            style: ResponsiveUtils.getTextStyle(
+                                              context,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w700,
+                                              color: _subTabController.index == 0
+                                                  ? Colors.white
+                                                  : Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: ResponsiveUtils.spacing(context, 10)),
+                              // 처리완료 칩
+                              GestureDetector(
+                                onTap: () {
+                                  _subTabController.animateTo(1);
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: ResponsiveUtils.spacing(context, 16),
+                                    vertical: ResponsiveUtils.spacing(context, 8),
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _subTabController.index == 1
+                                        ? AppColors.primary
+                                        : const Color(0xFFF2F3F5),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    '처리완료',
+                                    style: ResponsiveUtils.getTextStyle(
+                                      context,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: _subTabController.index == 1
+                                          ? Colors.white
+                                          : const Color(0xFF1C1C1E),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // 연차/출장 탭 콘텐츠
+                        Expanded(
+                          child: TabBarView(
+                            controller: _subTabController,
+                            children: [
+                              // 대기중 탭
+                              RefreshIndicator(
+                                onRefresh: () async {
+                                  // 승인 대기 데이터 새로고침
+                                  await Provider.of<LeaveProvider>(
+                                    context,
+                                    listen: false,
+                                  ).fetchAllLeaves(forceRefresh: true);
+                                },
+                                child: pending.isEmpty
+                                    ? Center(
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.check_circle_outline,
+                                              size: ResponsiveUtils.iconSize(context, 80),
+                                              color: const Color(0xFFE0E0E0),
+                                            ),
+                                            SizedBox(height: ResponsiveUtils.spacing(context, 20)),
+                                            Text(
+                                              '승인 대기 중인 항목이 없습니다',
+                                              style: ResponsiveUtils.getTextStyle(
+                                                context,
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w600,
+                                                color: const Color(0xFF8E8E93),
+                                              ),
+                                            ),
+                                            SizedBox(height: ResponsiveUtils.spacing(context, 8)),
+                                            Text(
+                                              '새로운 신청이 들어오면 여기에 표시됩니다',
+                                              style: ResponsiveUtils.getTextStyle(
+                                                context,
+                                                fontSize: 14,
+                                                color: const Color(0xFFB0B0B0),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    : ListView.builder(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: ResponsiveUtils.spacing(context, 20),
+                                          vertical: ResponsiveUtils.spacing(context, 20),
+                                        ),
+                                        itemCount: pending.length,
+                                        itemBuilder: (context, index) {
+                                          final l = pending[index];
+                                          // superadmin의 연차는 superadmin만 승인 가능
+                                          final emp = l['employees'];
+                                          final leaveAttendanceRoles = emp is Map
+                                              ? (emp['attendance_role'] as List<dynamic>? ?? [])
+                                              : [];
+                                          final isLeaveSuperAdmin = leaveAttendanceRoles.contains(
                                             'superadmin',
                                           );
 
-                                      // 승인 가능 여부 판단
-                                      bool canApprove = false;
-                                      if (isLeaveSuperAdmin) {
-                                        // superadmin의 연차는 superadmin만 승인 가능
-                                        canApprove = isSuperAdmin;
-                                      } else {
-                                        // 그 외의 경우 기존 규칙 적용
-                                        canApprove = hasApprovalRole;
-                                      }
+                                          // 승인 가능 여부 판단
+                                          bool canApprove = false;
+                                          if (isLeaveSuperAdmin) {
+                                            // superadmin의 연차는 superadmin만 승인 가능
+                                            canApprove = isSuperAdmin;
+                                          } else {
+                                            // 그 외의 경우 기존 규칙 적용
+                                            canApprove = hasApprovalRole;
+                                          }
 
-                                      return _approvalCard(
-                                        context,
-                                        l,
-                                        provider,
-                                        canApprove: canApprove,
-                                      );
-                                    }),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            SizedBox(
-                              height: ResponsiveUtils.spacing(context, 100),
-                            ), // Bottom padding for navigation
-                          ],
-                        ),
-                      ),
-                    ),
-                    // 처리완료 탭
-                    RefreshIndicator(
-                      onRefresh: () async {
-                        // 승인 대기 데이터 새로고침
-                        await Provider.of<LeaveProvider>(
-                          context,
-                          listen: false,
-                        ).fetchAllLeaves(forceRefresh: true);
-                      },
-                      child: SingleChildScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: ResponsiveUtils.spacing(context, 20),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(
-                                  ResponsiveUtils.spacing(context, 12),
-                                ),
-                                boxShadow: [AppShadows.card],
-                              ),
-                              child: Padding(
-                                padding: EdgeInsets.all(
-                                  ResponsiveUtils.spacing(context, 20),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '처리 완료 내역',
-                                      style: ResponsiveUtils.getTextStyle(
-                                        context,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16,
-                                        color: const Color(0xFF1C1C1E),
+                                          return _approvalCard(
+                                            context,
+                                            l,
+                                            provider,
+                                            canApprove: canApprove,
+                                          );
+                                        },
                                       ),
-                                    ),
-                                    SizedBox(
-                                      height: ResponsiveUtils.spacing(
-                                        context,
-                                        16,
-                                      ),
-                                    ),
-                                    if (thisMonthDone.isEmpty)
-                                      Text(
-                                        '이번 달 처리 완료 내역이 없습니다.',
-                                        style: ResponsiveUtils.getTextStyle(
-                                          context,
-                                          fontSize: 14,
-                                          color: const Color(0xFF8E8E93),
+                              ),
+                              // 처리완료 탭
+                              RefreshIndicator(
+                                onRefresh: () async {
+                                  // 승인 대기 데이터 새로고침
+                                  await Provider.of<LeaveProvider>(
+                                    context,
+                                    listen: false,
+                                  ).fetchAllLeaves(forceRefresh: true);
+                                },
+                                child: thisMonthDone.isEmpty
+                                    ? Center(
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.history,
+                                              size: ResponsiveUtils.iconSize(context, 80),
+                                              color: const Color(0xFFE0E0E0),
+                                            ),
+                                            SizedBox(height: ResponsiveUtils.spacing(context, 20)),
+                                            Text(
+                                              '이번 달 처리 완료 내역이 없습니다',
+                                              style: ResponsiveUtils.getTextStyle(
+                                                context,
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w600,
+                                                color: const Color(0xFF8E8E93),
+                                              ),
+                                            ),
+                                            SizedBox(height: ResponsiveUtils.spacing(context, 8)),
+                                            Text(
+                                              '승인하거나 반려한 항목이 여기에 표시됩니다',
+                                              style: ResponsiveUtils.getTextStyle(
+                                                context,
+                                                fontSize: 14,
+                                                color: const Color(0xFFB0B0B0),
+                                              ),
+                                            ),
+                                          ],
                                         ),
+                                      )
+                                    : ListView.builder(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: ResponsiveUtils.spacing(context, 20),
+                                          vertical: ResponsiveUtils.spacing(context, 20),
+                                        ),
+                                        itemCount: thisMonthDone.length,
+                                        itemBuilder: (context, index) {
+                                          return _approvalCard(
+                                            context,
+                                            thisMonthDone[index],
+                                            provider,
+                                            showButtons: false,
+                                            canApprove: false,
+                                            showDeleteButton:
+                                                hasApprovalRole, // 승인 권한이 있으면 삭제 버튼 표시
+                                          );
+                                        },
                                       ),
-                                    ...thisMonthDone.map(
-                                      (l) => _approvalCard(
-                                        context,
-                                        l,
-                                        provider,
-                                        showButtons: false,
-                                        canApprove: false,
-                                        showDeleteButton: hasApprovalRole, // 승인 권한이 있으면 삭제 버튼 표시
-                                      ),
-                                    ),
-                                  ],
-                                ),
                               ),
-                            ),
-                            SizedBox(
-                              height: ResponsiveUtils.spacing(context, 100),
-                            ), // Bottom padding for navigation
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
+                      ],
                     ),
+                    // 발주승인 탭
+                    const PurchaseApprovalWidget(),
                   ],
                 ),
               ),
             ],
           );
         },
-      ),
-    );
-  }
-
-  Widget _statCard(String label, int value) {
-    return Expanded(
-      child: Container(
-        padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(
-            ResponsiveUtils.spacing(context, 12),
-          ),
-          boxShadow: [AppShadows.card],
-        ),
-        child: Column(
-          children: [
-            Text(
-              '$value',
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontWeight: FontWeight.w700,
-                fontSize: 28,
-                color: const Color(0xFF1E90FF),
-              ),
-            ),
-            SizedBox(height: ResponsiveUtils.spacing(context, 4)),
-            Text(
-              label,
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                color: const Color(0xFF8E8E93),
-                fontSize: 15,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -737,9 +904,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
           '${DateFormat('yyyy.MM.dd').format(start)} ~ ${DateFormat('yyyy.MM.dd').format(end)} ($days일)';
     }
 
-    final createdAt = DateFormat(
-      'yyyy.MM.dd',
-    ).format(DateTime.parse(l['created_at']));
+    final createdAt = DateFormat('yyyy.MM.dd').format(DateTime.parse(l['created_at']));
     final reason = l['reason'] ?? '-';
     final status = l['status'];
     final dest = l['destination'] ?? '';
@@ -748,9 +913,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 18)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(
-          ResponsiveUtils.spacing(context, 14),
-        ),
+        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 14)),
         boxShadow: [AppShadows.card],
       ),
       child: Column(
@@ -782,9 +945,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                 ),
                 decoration: BoxDecoration(
                   color: typeBgColor,
-                  borderRadius: BorderRadius.circular(
-                    ResponsiveUtils.spacing(context, 8),
-                  ),
+                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                 ),
                 child: Text(
                   typeLabel,
@@ -805,6 +966,13 @@ class _ApprovalScreenState extends State<ApprovalScreen>
           _infoRow(Icons.date_range, '기간', period),
           if (isBiztrip && dest.isNotEmpty) _infoRow(Icons.place, '목적지', dest),
           _infoRow(Icons.calendar_today, '신청일', createdAt),
+          // 최종 승인자 정보 표시 (처리완료 탭에서만)
+          if (!showButtons && status != 'pending') ...[
+            if (l['approved_by'] != null && l['approved_by'].isNotEmpty)
+              _infoRow(Icons.check_circle, '최종승인', l['approved_by'])
+            else if (l['rejected_by'] != null && l['rejected_by'].isNotEmpty)
+              _infoRow(Icons.cancel, '반려처리', l['rejected_by']),
+          ],
           SizedBox(height: ResponsiveUtils.spacing(context, 14)),
           // 사유
           Container(
@@ -812,9 +980,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 14)),
             decoration: BoxDecoration(
               color: const Color(0xFFF8F9FA),
-              borderRadius: BorderRadius.circular(
-                ResponsiveUtils.spacing(context, 10),
-              ),
+              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 10)),
             ),
             child: Text(
               reason,
@@ -832,21 +998,15 @@ class _ApprovalScreenState extends State<ApprovalScreen>
               width: double.infinity,
               decoration: BoxDecoration(
                 boxShadow: [AppShadows.button],
-                borderRadius: BorderRadius.circular(
-                  ResponsiveUtils.spacing(context, 8),
-                ),
+                borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
               ),
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF3B30),
                   foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(
-                    vertical: ResponsiveUtils.spacing(context, 14),
-                  ),
+                  padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 14)),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(
-                      ResponsiveUtils.spacing(context, 8),
-                    ),
+                    borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                   ),
                 ),
                 onPressed: () async {
@@ -880,9 +1040,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                   child: Container(
                     decoration: BoxDecoration(
                       boxShadow: [AppShadows.button],
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveUtils.spacing(context, 8),
-                      ),
+                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                     ),
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -892,15 +1050,11 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                           vertical: ResponsiveUtils.spacing(context, 18),
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            ResponsiveUtils.spacing(context, 8),
-                          ),
+                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                         ),
                       ),
                       onPressed: () async {
-                        final groupedCountMsg = groupedCount > 1
-                            ? ' (연속 ${groupedCount}건)'
-                            : '';
+                        final groupedCountMsg = groupedCount > 1 ? ' (연속 ${groupedCount}건)' : '';
                         final confirmed = await _showConfirmationDialog(
                           context,
                           '반려 확인',
@@ -915,16 +1069,13 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                             for (int i = 0; i < groupedIds.length; i++) {
                               final isFirstItem = i == 0;
                               await provider.updateLeaveStatus(
-                                groupedIds[i], 
+                                groupedIds[i],
                                 'rejected',
                                 skipNotification: !isFirstItem, // 첫 번째만 알림
                               );
                             }
                           } else {
-                            await provider.updateLeaveStatus(
-                              l['id'],
-                              'rejected',
-                            );
+                            await provider.updateLeaveStatus(l['id'], 'rejected');
                           }
                         }
                       },
@@ -944,9 +1095,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                   child: Container(
                     decoration: BoxDecoration(
                       boxShadow: [AppShadows.button],
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveUtils.spacing(context, 8),
-                      ),
+                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                     ),
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -956,15 +1105,11 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                           vertical: ResponsiveUtils.spacing(context, 18),
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            ResponsiveUtils.spacing(context, 8),
-                          ),
+                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                         ),
                       ),
                       onPressed: () async {
-                        final groupedCountMsg = groupedCount > 1
-                            ? ' (연속 ${groupedCount}건)'
-                            : '';
+                        final groupedCountMsg = groupedCount > 1 ? ' (연속 ${groupedCount}건)' : '';
                         final confirmed = await _showConfirmationDialog(
                           context,
                           '승인 확인',
@@ -979,16 +1124,13 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                             for (int i = 0; i < groupedIds.length; i++) {
                               final isFirstItem = i == 0;
                               await provider.updateLeaveStatus(
-                                groupedIds[i], 
+                                groupedIds[i],
                                 'approved',
                                 skipNotification: !isFirstItem, // 첫 번째만 알림
                               );
                             }
                           } else {
-                            await provider.updateLeaveStatus(
-                              l['id'],
-                              'approved',
-                            );
+                            await provider.updateLeaveStatus(l['id'], 'approved');
                           }
                         }
                       },
@@ -1010,14 +1152,10 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             Container(
               width: double.infinity,
               alignment: Alignment.center,
-              padding: EdgeInsets.symmetric(
-                vertical: ResponsiveUtils.spacing(context, 12),
-              ),
+              padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 12)),
               decoration: BoxDecoration(
                 color: const Color(0xFFFFA726).withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(
-                  ResponsiveUtils.spacing(context, 8),
-                ),
+                borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1045,24 +1183,18 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             Container(
               width: double.infinity,
               alignment: Alignment.center,
-              padding: EdgeInsets.symmetric(
-                vertical: ResponsiveUtils.spacing(context, 10),
-              ),
+              padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 10)),
               decoration: BoxDecoration(
                 color: status == 'approved'
                     ? const Color(0xFF34C759).withValues(alpha: 0.12)
                     : const Color(0xFFFF3B30).withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(
-                  ResponsiveUtils.spacing(context, 8),
-                ),
+                borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
               ),
               child: Text(
                 status == 'approved' ? '승인 완료' : '반려',
                 style: ResponsiveUtils.getTextStyle(
                   context,
-                  color: status == 'approved'
-                      ? const Color(0xFF34C759)
-                      : const Color(0xFFFF3B30),
+                  color: status == 'approved' ? const Color(0xFF34C759) : const Color(0xFFFF3B30),
                   fontWeight: FontWeight.w700,
                   fontSize: 18,
                 ),
@@ -1074,18 +1206,13 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     );
   }
 
-  Future<void> _deleteApprovedLeave(
-    Map<String, dynamic> leave,
-    LeaveProvider provider,
-  ) async {
+  Future<void> _deleteApprovedLeave(Map<String, dynamic> leave, LeaveProvider provider) async {
     try {
       // 로딩 표시
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(),
-        ),
+        builder: (context) => const Center(child: CircularProgressIndicator()),
       );
 
       // 그룹화된 항목이면 모든 ID에 대해 처리
@@ -1120,10 +1247,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       // 성공 메시지
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('삭제가 완료되었습니다.'),
-            backgroundColor: Colors.green,
-          ),
+          const SnackBar(content: Text('삭제가 완료되었습니다.'), backgroundColor: Colors.green),
         );
       }
     } catch (e) {
@@ -1132,12 +1256,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
 
       // 에러 메시지
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('삭제 중 오류가 발생했습니다: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('삭제 중 오류가 발생했습니다: $e'), backgroundColor: Colors.red));
       }
     }
   }
@@ -1147,11 +1268,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       padding: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 6)),
       child: Row(
         children: [
-          Icon(
-            icon,
-            color: const Color(0xFFB0B0B0),
-            size: ResponsiveUtils.iconSize(context, 18),
-          ),
+          Icon(icon, color: const Color(0xFFB0B0B0), size: ResponsiveUtils.iconSize(context, 18)),
           SizedBox(width: ResponsiveUtils.spacing(context, 8)),
           Text(
             label,
@@ -1200,9 +1317,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       ),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(
-          ResponsiveUtils.spacing(context, 8),
-        ),
+        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
       ),
       child: Text(
         label,
@@ -1228,17 +1343,11 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       builder: (BuildContext context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveUtils.spacing(context, 14),
-            ),
+            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 14)),
           ),
           title: Text(
             title,
-            style: ResponsiveUtils.getTextStyle(
-              context,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
+            style: ResponsiveUtils.getTextStyle(context, fontSize: 18, fontWeight: FontWeight.w600),
             textAlign: TextAlign.center,
           ),
           content: Text(
@@ -1271,13 +1380,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                     style: TextButton.styleFrom(
                       backgroundColor: const Color(0xFFF2F2F7),
                       foregroundColor: const Color(0xFF1C1C1E),
-                      padding: EdgeInsets.symmetric(
-                        vertical: ResponsiveUtils.spacing(context, 12),
-                      ),
+                      padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 12)),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveUtils.spacing(context, 8),
-                        ),
+                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                       ),
                     ),
                     onPressed: () => Navigator.of(context).pop(false),
@@ -1297,13 +1402,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                     style: TextButton.styleFrom(
                       backgroundColor: confirmColor,
                       foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(
-                        vertical: ResponsiveUtils.spacing(context, 12),
-                      ),
+                      padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 12)),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveUtils.spacing(context, 8),
-                        ),
+                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                       ),
                     ),
                     onPressed: () => Navigator.of(context).pop(true),
@@ -1319,6 +1420,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                 ),
               ],
             ),
+            // (불필요) 확인 다이얼로그 내 위젯 렌더 제거
           ],
         );
       },

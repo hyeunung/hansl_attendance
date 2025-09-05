@@ -7,11 +7,8 @@ class AppShadows {
     offset: Offset(0, 4),
   );
 
-  static BoxShadow get button => BoxShadow(
-    color: Colors.black.withValues(alpha: 0.36),
-    blurRadius: 6,
-    offset: Offset(0, 2),
-  );
+  static BoxShadow get button =>
+      BoxShadow(color: Colors.black.withValues(alpha: 0.36), blurRadius: 6, offset: Offset(0, 2));
 
   static const BoxShadow light = BoxShadow(
     color: Color(0x0D000000), // 검정, 5% opacity

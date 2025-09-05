@@ -106,9 +106,7 @@ class LeaveRequest {
       id: map['id'] as int,
       userEmail: map['user_email'] as String,
       type: LeaveType.values.firstWhere(
-        (e) =>
-            e.toString().split('.').last ==
-            (map['type'] as String).replaceAll('_', ''),
+        (e) => e.toString().split('.').last == (map['type'] as String).replaceAll('_', ''),
       ),
       startDate: DateTime.parse(map['start_date'] as String),
       endDate: DateTime.parse(map['end_date'] as String),

@@ -4,13 +4,9 @@ import 'database_optimization_service.dart';
 
 class AttendanceService {
   final supabase = Supabase.instance.client;
-  final DatabaseOptimizationService _dbOptim =
-      DatabaseOptimizationService.instance;
+  final DatabaseOptimizationService _dbOptim = DatabaseOptimizationService.instance;
 
-  Future<void> recordClockIn({
-    required String employeeId,
-    required String employeeName,
-  }) async {
+  Future<void> recordClockIn({required String employeeId, required String employeeName}) async {
     final today = DateTime.now().toIso8601String().substring(0, 10);
     final now = DateTime.now().toIso8601String().substring(11, 19);
 
@@ -24,18 +20,15 @@ class AttendanceService {
           'status': '출근',
           'clock_in': now,
         },
-        invalidateCachePatterns: [
-          'attendance_${employeeId}_$today',
-          'attendance_${employeeId}_',
-        ],
+        invalidateCachePatterns: ['attendance_${employeeId}_$today', 'attendance_${employeeId}_'],
       );
 
       if (kDebugMode) {
-        print('✅ recordClockIn completed with cache invalidation');
+        if (kDebugMode) print('✅ recordClockIn completed with cache invalidation');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ recordClockIn error: $e');
+        if (kDebugMode) print('❌ recordClockIn error: $e');
       }
       rethrow;
     }
@@ -50,18 +43,15 @@ class AttendanceService {
         table: 'attendance_records',
         data: {'status': '퇴근', 'clock_out': now},
         match: {'date': today, 'employee_id': employeeId},
-        invalidateCachePatterns: [
-          'attendance_${employeeId}_$today',
-          'attendance_${employeeId}_',
-        ],
+        invalidateCachePatterns: ['attendance_${employeeId}_$today', 'attendance_${employeeId}_'],
       );
 
       if (kDebugMode) {
-        print('✅ recordClockOut completed with cache invalidation');
+        if (kDebugMode) print('✅ recordClockOut completed with cache invalidation');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ recordClockOut error: $e');
+        if (kDebugMode) print('❌ recordClockOut error: $e');
       }
       rethrow;
     }
@@ -83,11 +73,7 @@ class AttendanceService {
 
   /// Get today's attendance record with optimized caching
   Future<Map<String, dynamic>?> getTodayAttendance(String employeeId) async {
-    final records = await _dbOptim.getAttendanceRecords(
-      employeeId,
-      date: DateTime.now(),
-      limit: 1,
-    );
+    final records = await _dbOptim.getAttendanceRecords(employeeId, date: DateTime.now(), limit: 1);
     return records.isNotEmpty ? records.first : null;
   }
 }
