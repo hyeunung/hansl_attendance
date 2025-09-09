@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hansl/services/feature_flag_service.dart';
 import 'package:hansl/services/performance_monitor.dart';
-import 'attendance_screen.dart';
 import 'attendance_screen_optimized.dart';
 
 /// 출석 화면 라우터
@@ -13,19 +11,13 @@ class AttendanceScreenRouter extends StatelessWidget {
   Widget build(BuildContext context) {
     final stopwatch = Stopwatch()..start();
 
-    Widget screen;
+    // 리팩토링된 화면만 사용 (기존 화면 삭제됨)
+    Widget screen = const AttendanceScreenOptimized();
 
-    if (FeatureFlags.useRefactoredAttendanceScreen) {
-      // 리팩토링된 화면 사용
-      screen = const AttendanceScreenOptimized();
-
-      PerformanceMonitor.trackScreenLoad('AttendanceScreenOptimized', stopwatch.elapsed);
-    } else {
-      // 기존 화면 사용
-      screen = const AttendanceScreen();
-
-      PerformanceMonitor.trackScreenLoad('AttendanceScreen', stopwatch.elapsed);
-    }
+    PerformanceMonitor.trackScreenLoad(
+      'AttendanceScreenOptimized',
+      stopwatch.elapsed,
+    );
 
     return screen;
   }

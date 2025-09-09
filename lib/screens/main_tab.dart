@@ -20,13 +20,14 @@ class KeepAlive extends StatefulWidget {
   final Widget child;
   final bool keepAlive;
 
-  const KeepAlive({Key? key, required this.child, this.keepAlive = true}) : super(key: key);
+  const KeepAlive({super.key, required this.child, this.keepAlive = true});
 
   @override
   State<KeepAlive> createState() => _KeepAliveState();
 }
 
-class _KeepAliveState extends State<KeepAlive> with AutomaticKeepAliveClientMixin {
+class _KeepAliveState extends State<KeepAlive>
+    with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => widget.keepAlive;
 
@@ -40,7 +41,17 @@ class _KeepAliveState extends State<KeepAlive> with AutomaticKeepAliveClientMixi
 class MainTab extends StatefulWidget {
   final int initialIndex;
   final Map<String, dynamic>? initialEmployee;
-  const MainTab({super.key, this.initialIndex = 0, this.initialEmployee});
+  final int? approvalSubTab; // 승인관리 화면의 서브탭 (0: 연차/출장, 1: 발주승인)
+
+  // initialIndex를 안전하게 제한
+  const MainTab({
+    super.key,
+    int initialIndex = 0,
+    this.initialEmployee,
+    this.approvalSubTab,
+  }) : initialIndex = (initialIndex < 0
+           ? 0
+           : (initialIndex > 4 ? 0 : initialIndex));
 
   @override
   State<MainTab> createState() => _MainTabState();
@@ -54,22 +65,33 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.initialIndex;
+    // 초기 인덱스는 나중에 권한 확인 후 설정
+    _currentIndex = 0; // 일단 0으로 초기화
     _pageController = PageController(
-      initialPage: _currentIndex,
+      initialPage: 0, // 일단 0으로 초기화
       keepPage: true, // 페이지 상태 유지
     );
 
-    // 자동 로그인으로 넘어온 경우 바로 설정
+    // 자동 로그인이나 알림에서 넘어온 경우 바로 설정
     if (widget.initialEmployee != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
-        userProvider.setUser(
-          id: widget.initialEmployee!['id'],
-          name: widget.initialEmployee!['name'],
-          email: widget.initialEmployee!['email'],
-        );
-        userProvider.setEmployee(widget.initialEmployee!);
+
+        // 알림에서 넘어온 경우 attendance_role만 있을 수 있음
+        if (widget.initialEmployee!.containsKey('attendance_role')) {
+          userProvider.setEmployee(widget.initialEmployee!);
+        } else {
+          // 자동 로그인인 경우
+          userProvider.setUser(
+            id: widget.initialEmployee!['id'],
+            name: widget.initialEmployee!['name'],
+            email: widget.initialEmployee!['email'],
+          );
+          userProvider.setEmployee(widget.initialEmployee!);
+        }
+
+        // employee 정보가 설정되면 화면 다시 초기화
+        _initializeScreens();
       });
     }
 
@@ -80,7 +102,10 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
 
       // NotificationProvider 초기화
       try {
-        final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
+        final notificationProvider = Provider.of<NotificationProvider>(
+          context,
+          listen: false,
+        );
         await notificationProvider.initialize();
         if (kDebugMode) {
           if (kDebugMode) print('✅ NotificationProvider 초기화 완료');
@@ -132,11 +157,15 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
     }
   }
 
-  // 모든 데이터를 새로고침하는 공통 함수
+  // 모든 데이터를 새로고침하는 공통 함수 (현재 미사용 - 추후 활용 가능)
+  // ignore: unused_element
   static Future<void> refreshAllData(BuildContext context) async {
     try {
       // Provider들 가져오기
-      final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
+      final attendanceProvider = Provider.of<AttendanceProvider>(
+        context,
+        listen: false,
+      );
       final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
       final userProvider = Provider.of<UserProvider>(context, listen: false);
 
@@ -147,13 +176,19 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
         // 연차 데이터
         if (userProvider.email != null) ...[
           leaveProvider.fetchAllLeaves(forceRefresh: true),
-          leaveProvider.fetchMyLeaves(email: userProvider.email!, forceRefresh: true),
+          leaveProvider.fetchMyLeaves(
+            email: userProvider.email!,
+            forceRefresh: true,
+          ),
         ],
       ]);
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('모든 데이터가 새로고침되었습니다'), duration: Duration(seconds: 1)),
+          const SnackBar(
+            content: Text('모든 데이터가 새로고침되었습니다'),
+            duration: Duration(seconds: 1),
+          ),
         );
       }
     } catch (e) {
@@ -180,12 +215,16 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     // 화면이 초기화되지 않았으면 로딩 표시
     if (_screens == null) {
-      return Scaffold(
-        body: Container(
-          color: const Color(0xFFF8F9FA),
-          child: const Center(child: CircularProgressIndicator()),
-        ),
-      );
+      // 초기화가 안 된 경우 여기서 즉시 초기화
+      _initializeScreens();
+      if (_screens == null) {
+        return Scaffold(
+          body: Container(
+            color: const Color(0xFFF8F9FA),
+            child: const Center(child: CircularProgressIndicator()),
+          ),
+        );
+      }
     }
 
     final userProvider = Provider.of<UserProvider>(context);
@@ -197,7 +236,8 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
 
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final employee = userProvider.employee;
-    final List<dynamic> attendanceRoles = (employee?['attendance_role'] as List<dynamic>?) ?? [];
+    final List<dynamic> attendanceRoles =
+        (employee?['attendance_role'] as List<dynamic>?) ?? [];
 
     // 승인관리 탭을 볼 수 있는 역할 확인
     final approvalRoles = [
@@ -210,13 +250,18 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
       '연구소_manager',
     ];
 
-    final showApprovalTab = attendanceRoles.any((role) => approvalRoles.contains(role));
+    final showApprovalTab = attendanceRoles.any(
+      (role) => approvalRoles.contains(role),
+    );
 
     // 디버깅 정보 출력
     if (kDebugMode) {
       if (kDebugMode) print('🔍 Employee info: $employee');
       if (kDebugMode) print('🔍 Attendance roles: $attendanceRoles');
       if (kDebugMode) print('🔍 Show approval tab: $showApprovalTab');
+      if (kDebugMode) {
+        print('🔍 Requested initialIndex: ${widget.initialIndex}');
+      }
     }
 
     setState(() {
@@ -225,10 +270,16 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
         _screens = [
           const AttendanceScreenRouter(), // 출석
           const LeaveStatusScreen(), // 연차/출장신청
-          const ApprovalScreen(), // 승인관리
+          ApprovalScreen(initialMainTab: widget.approvalSubTab), // 승인관리
           const CalendarScreen(), // 달력
           const SettingsScreen(), // 설정
         ];
+
+        // 권한이 있으면 요청된 인덱스 사용
+        _currentIndex = widget.initialIndex;
+        if (_currentIndex >= _screens!.length) {
+          _currentIndex = 0;
+        }
       } else {
         // 승인 권한이 없는 사용자는 4개 탭만 표시
         _screens = [
@@ -237,21 +288,41 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
           const CalendarScreen(), // 달력
           const SettingsScreen(), // 설정
         ];
+
+        // 권한이 없으면 인덱스 조정
+        if (widget.initialIndex == 2) {
+          // 승인 탭을 요청했지만 권한이 없으면 홈으로
+          _currentIndex = 0;
+        } else if (widget.initialIndex > 2) {
+          // 인덱스 조정 (승인 탭이 없으므로 -1)
+          _currentIndex = widget.initialIndex - 1;
+        } else {
+          _currentIndex = widget.initialIndex;
+        }
+
+        // 범위 체크
+        if (_currentIndex >= _screens!.length) {
+          _currentIndex = 0;
+        }
       }
     });
 
-    // 현재 인덱스가 화면 수를 초과하면 조정
-    if (_currentIndex >= _screens!.length) {
-      _currentIndex = 0;
-      if (_pageController.hasClients) {
-        _pageController.jumpToPage(_currentIndex);
-      }
+    // PageController 업데이트
+    if (_pageController.hasClients) {
+      _pageController.jumpToPage(_currentIndex);
+    } else {
+      // PageController 재생성
+      _pageController = PageController(
+        initialPage: _currentIndex,
+        keepPage: true,
+      );
     }
   }
 
   Widget _buildMainContent(UserProvider userProvider) {
     final employee = userProvider.employee;
-    final List<dynamic> attendanceRoles = (employee?['attendance_role'] as List<dynamic>?) ?? [];
+    final List<dynamic> attendanceRoles =
+        (employee?['attendance_role'] as List<dynamic>?) ?? [];
 
     // 승인관리 탭을 볼 수 있는 역할 확인 (초기화와 동일하게)
     final approvalRoles = [
@@ -263,7 +334,9 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
       '경영지원팀_manager',
     ];
 
-    final showApprovalTab = attendanceRoles.any((role) => approvalRoles.contains(role));
+    final showApprovalTab = attendanceRoles.any(
+      (role) => approvalRoles.contains(role),
+    );
 
     final List<BottomNavigationBarItem> items = [];
 
@@ -271,7 +344,9 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
     items.add(
       BottomNavigationBarItem(
         icon: Padding(
-          padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 6)),
+          padding: EdgeInsets.symmetric(
+            vertical: ResponsiveUtils.spacing(context, 6),
+          ),
           child: Icon(
             Icons.access_time,
             color: _currentIndex == 0 ? const Color(0xFFFF9500) : Colors.grey,
@@ -319,7 +394,9 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Icon(
             Icons.calendar_today,
-            color: _currentIndex == calendarIndex ? const Color(0xFFFF3B30) : Colors.grey,
+            color: _currentIndex == calendarIndex
+                ? const Color(0xFFFF3B30)
+                : Colors.grey,
           ),
         ),
         label: '',
@@ -334,7 +411,9 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Icon(
             Icons.settings,
-            color: _currentIndex == settingsIndex ? const Color(0xFF8E8E93) : Colors.grey,
+            color: _currentIndex == settingsIndex
+                ? const Color(0xFF8E8E93)
+                : Colors.grey,
           ),
         ),
         label: '',
@@ -361,7 +440,9 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
       bottomNavigationBar: RepaintBoundary(
         child: Container(
           decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: Color(0xFFE0E0E0), width: 1.5)),
+            border: Border(
+              top: BorderSide(color: Color(0xFFE0E0E0), width: 1.5),
+            ),
             color: Colors.white,
           ),
           child: BottomNavigationBar(
@@ -373,8 +454,12 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
             unselectedFontSize: 14,
             selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
             unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
-            selectedIconTheme: IconThemeData(size: ResponsiveUtils.iconSize(context, 30)),
-            unselectedIconTheme: IconThemeData(size: ResponsiveUtils.iconSize(context, 30)),
+            selectedIconTheme: IconThemeData(
+              size: ResponsiveUtils.iconSize(context, 30),
+            ),
+            unselectedIconTheme: IconThemeData(
+              size: ResponsiveUtils.iconSize(context, 30),
+            ),
             items: items,
             elevation: 0, // 그림자 제거로 성능 향상
           ),

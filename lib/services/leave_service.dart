@@ -10,10 +10,16 @@ class LeaveService {
   final String table = 'leave';
 
   // leave 전체 조회 - 달력용(approved) 또는 관리자용(전체)
-  Future<List<Map<String, dynamic>>> fetchAllLeavesRaw({bool approvedOnly = false}) async {
+  Future<List<Map<String, dynamic>>> fetchAllLeavesRaw({
+    bool approvedOnly = false,
+  }) async {
     try {
       if (kDebugMode) {
-        if (kDebugMode) print('🔍 fetchAllLeavesRaw 시작 - 최적화된 조회 (approvedOnly: $approvedOnly)');
+        if (kDebugMode) {
+          print(
+            '🔍 fetchAllLeavesRaw 시작 - 최적화된 조회 (approvedOnly: $approvedOnly)',
+          );
+        }
       }
 
       // 현재 사용자의 이메일 가져오기
@@ -54,14 +60,16 @@ class LeaveService {
   }
 
   // Edge Function으로 승인 화면용 전체 leave 조회 (RLS 우회)
-  Future<List<Map<String, dynamic>>> _fetchAllLeavesForApprovalViaEdgeFunction() async {
+  Future<List<Map<String, dynamic>>>
+  _fetchAllLeavesForApprovalViaEdgeFunction() async {
     try {
       if (kDebugMode) {
         if (kDebugMode) print('🚀 Edge Function으로 승인 화면용 전체 leave 조회 시작');
       }
 
       const projectId = 'qvhbigvdfyvhoegkhvef';
-      final functionUrl = 'https://$projectId.supabase.co/functions/v1/get_all_leaves_for_approval';
+      final functionUrl =
+          'https://$projectId.supabase.co/functions/v1/get_all_leaves_for_approval';
 
       final response = await http.post(
         Uri.parse(functionUrl),
@@ -74,11 +82,17 @@ class LeaveService {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         if (responseData['success'] == true) {
-          final leaves = List<Map<String, dynamic>>.from(responseData['data'] ?? []);
+          final leaves = List<Map<String, dynamic>>.from(
+            responseData['data'] ?? [],
+          );
 
           if (kDebugMode) {
-            if (kDebugMode) print('✅ Edge Function 성공 - 전체 leave: ${leaves.length}개');
-            final pendingCount = leaves.where((l) => l['status'] == 'pending').length;
+            if (kDebugMode) {
+              print('✅ Edge Function 성공 - 전체 leave: ${leaves.length}개');
+            }
+            final pendingCount = leaves
+                .where((l) => l['status'] == 'pending')
+                .length;
             if (kDebugMode) print('  - Pending: $pendingCount개');
             // 몇 명의 직원 데이터가 있는지 확인
             final uniqueEmails = leaves.map((l) => l['user_email']).toSet();
@@ -103,14 +117,16 @@ class LeaveService {
   }
 
   // Edge Function으로 전체 승인된 leave 조회 (RLS 우회)
-  Future<List<Map<String, dynamic>>> _fetchAllApprovedLeavesViaEdgeFunction() async {
+  Future<List<Map<String, dynamic>>>
+  _fetchAllApprovedLeavesViaEdgeFunction() async {
     try {
       if (kDebugMode) {
         if (kDebugMode) print('🚀 Edge Function으로 전체 승인된 leave 조회 시작');
       }
 
       const projectId = 'qvhbigvdfyvhoegkhvef';
-      final functionUrl = 'https://$projectId.supabase.co/functions/v1/get_all_approved_leaves';
+      final functionUrl =
+          'https://$projectId.supabase.co/functions/v1/get_all_approved_leaves';
 
       final response = await http.post(
         Uri.parse(functionUrl),
@@ -123,10 +139,14 @@ class LeaveService {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         if (responseData['success'] == true) {
-          final leaves = List<Map<String, dynamic>>.from(responseData['data'] ?? []);
+          final leaves = List<Map<String, dynamic>>.from(
+            responseData['data'] ?? [],
+          );
 
           if (kDebugMode) {
-            if (kDebugMode) print('✅ Edge Function 성공 - 전체 직원 승인된 연차/출장: ${leaves.length}개');
+            if (kDebugMode) {
+              print('✅ Edge Function 성공 - 전체 직원 승인된 연차/출장: ${leaves.length}개');
+            }
             // 몇 명의 직원 데이터가 있는지 확인
             final uniqueEmails = leaves.map((l) => l['user_email']).toSet();
             if (kDebugMode) print('  - 총 ${uniqueEmails.length}명의 직원 데이터 포함');
@@ -173,10 +193,12 @@ class LeaveService {
           .from('employees')
           .select('email, name, role, is_admin, department');
 
-      final List<Map<String, dynamic>> employeesList = (employeesResponse as List)
-          .cast<Map<String, dynamic>>();
+      final List<Map<String, dynamic>> employeesList =
+          (employeesResponse as List).cast<Map<String, dynamic>>();
       if (kDebugMode) {
-        if (kDebugMode) print('👥 employees 테이블에서 조회된 데이터 수: ${employeesList.length}');
+        if (kDebugMode) {
+          print('👥 employees 테이블에서 조회된 데이터 수: ${employeesList.length}');
+        }
       }
 
       // 3. 이메일을 기준으로 데이터 결합
@@ -205,7 +227,11 @@ class LeaveService {
       }
 
       if (kDebugMode) {
-        if (kDebugMode) print('✅ fetchAllLeavesRaw Fallback 완료 - 반환할 데이터 수: ${leaveList.length}');
+        if (kDebugMode) {
+          print(
+            '✅ fetchAllLeavesRaw Fallback 완료 - 반환할 데이터 수: ${leaveList.length}',
+          );
+        }
       }
       return leaveList;
     } catch (e) {
@@ -218,7 +244,10 @@ class LeaveService {
 
   // 내 leave 내역 조회
   Future<List<Map<String, dynamic>>> fetchMyLeavesRaw(String userEmail) async {
-    final response = await _client.from(table).select('*').eq('user_email', userEmail);
+    final response = await _client
+        .from(table)
+        .select('*')
+        .eq('user_email', userEmail);
     return (response as List).cast<Map<String, dynamic>>();
   }
 
@@ -230,7 +259,9 @@ class LeaveService {
     final dbOptim = DatabaseOptimizationService.instance;
     await dbOptim.invalidateCache(patterns: ['leave']);
     if (kDebugMode) {
-      if (kDebugMode) print('✅ Leave 신청 완료 및 캐시 무효화: ${data['type']} - ${data['name']}');
+      if (kDebugMode) {
+        print('✅ Leave 신청 완료 및 캐시 무효화: ${data['type']} - ${data['name']}');
+      }
     }
   }
 
@@ -241,7 +272,9 @@ class LeaveService {
         if (kDebugMode) print('🔄 Leave 상태 업데이트 시작: ID=$id, Status=$status');
         final currentUser = _client.auth.currentUser;
         if (kDebugMode) print('📱 현재 사용자: ${currentUser?.email}');
-        if (kDebugMode) print('🔑 세션 존재: ${_client.auth.currentSession != null}');
+        if (kDebugMode) {
+          print('🔑 세션 존재: ${_client.auth.currentSession != null}');
+        }
       }
 
       // Edge Function 호출 (Service Role로 RLS 우회)
@@ -267,7 +300,9 @@ class LeaveService {
       await dbOptim.invalidateCache(patterns: ['leave']);
 
       if (kDebugMode) {
-        if (kDebugMode) print('✅ Leave 상태 변경 완료 및 캐시 무효화: ID=$id, Status=$status');
+        if (kDebugMode) {
+          print('✅ Leave 상태 변경 완료 및 캐시 무효화: ID=$id, Status=$status');
+        }
       }
     } catch (e) {
       if (kDebugMode) {
@@ -291,10 +326,10 @@ class LeaveService {
     String? companions,
   }) async {
     final String summarizedReason = [
-      '장소: ' + place,
-      '목적: ' + purpose,
-      '교통수단: ' + transport,
-      if ((companions ?? '').trim().isNotEmpty) '동행: ' + (companions ?? ''),
+      '장소: $place',
+      '목적: $purpose',
+      '교통수단: $transport',
+      if ((companions ?? '').trim().isNotEmpty) '동행: ${companions ?? ''}',
     ].join('\n');
 
     final Map<String, dynamic> data = {
@@ -308,13 +343,19 @@ class LeaveService {
       'created_at': DateTime.now().toIso8601String(),
     };
 
-    final inserted = await _client.from(table).insert(data).select().maybeSingle();
+    final inserted = await _client
+        .from(table)
+        .insert(data)
+        .select()
+        .maybeSingle();
 
     // 캐시 무효화 - 출장 신청 후에도 캐시를 클리어해야 관리자 탭에 즉시 반영됨
     final dbOptim = DatabaseOptimizationService.instance;
     await dbOptim.invalidateCache(patterns: ['leave']);
     if (kDebugMode) {
-      if (kDebugMode) print('✅ 출장 신청 완료 및 캐시 무효화: ${data['type']} - ${data['name']}');
+      if (kDebugMode) {
+        print('✅ 출장 신청 완료 및 캐시 무효화: ${data['type']} - ${data['name']}');
+      }
     }
 
     if (inserted is Map<String, dynamic>) {
@@ -343,7 +384,11 @@ class LeaveService {
   }) async {
     try {
       if (kDebugMode) {
-        if (kDebugMode) print('🗑️ Edge Function을 통한 leave 삭제: ID=$leaveId, isAdmin=$isAdmin');
+        if (kDebugMode) {
+          print(
+            '🗑️ Edge Function을 통한 leave 삭제: ID=$leaveId, isAdmin=$isAdmin',
+          );
+        }
       }
 
       final response = await _client.functions.invoke(

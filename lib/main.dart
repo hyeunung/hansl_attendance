@@ -23,8 +23,8 @@ import 'services/environment_service.dart';
 import 'services/secure_storage_service.dart';
 import 'services/feature_flag_service.dart';
 import 'utils/asset_manager.dart';
-import 'services/attendance_notification_service.dart';
-import 'screens/attendance/attendance_screen.dart';
+// import 'services/attendance_notification_service.dart'; // 백그라운드 위치 기능 제거
+import 'screens/attendance/attendance_screen_optimized.dart';
 
 // 글로벌 네비게이터 키 (알림에서 네비게이션용)
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -93,12 +93,10 @@ Future<void> _initializeServices() async {
     // Feature Flag 서비스 초기화
     await FeatureFlagService().initialize();
 
-    // 출퇴근 알림 서비스 초기화
-    await AttendanceNotificationService.initialize();
-    // 위치 기반 출근 알림 시작
-    await AttendanceNotificationService.startLocationBasedCheckInReminder();
-    // 시간 기반 퇴근 알림 예약
-    await AttendanceNotificationService.scheduleCheckOutReminder();
+    // 출퇴근 알림 서비스 비활성화 (백그라운드 위치 기능 제거)
+    // await AttendanceNotificationService.initialize();
+    // await AttendanceNotificationService.startLocationBasedCheckInReminder();
+    // await AttendanceNotificationService.scheduleCheckOutReminder();
   } catch (e) {
     if (kDebugMode) {
       print('❌ Critical initialization error: $e');
@@ -258,7 +256,8 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
               }
               return provider;
             }
-            return attendanceProvider ?? AttendanceProvider(userId: '', userName: '');
+            return attendanceProvider ??
+                AttendanceProvider(userId: '', userName: '');
           },
         ),
       ],
@@ -273,13 +272,13 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        routes: {'/attendance': (context) => const AttendanceScreen()},
+        routes: {'/attendance': (context) => const AttendanceScreenOptimized()},
         onGenerateRoute: (settings) {
           // 알림에서 전달받은 arguments 처리
           if (settings.name == '/attendance') {
             final args = settings.arguments as Map<String, dynamic>?;
             return MaterialPageRoute(
-              builder: (context) => AttendanceScreen(
+              builder: (context) => AttendanceScreenOptimized(
                 autoShowCheckIn: args?['autoShowCheckIn'] ?? false,
                 autoShowCheckOut: args?['autoShowCheckOut'] ?? false,
               ),

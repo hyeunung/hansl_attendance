@@ -62,7 +62,10 @@ class NotificationProvider with ChangeNotifier {
     try {
       await _supabase
           .from('notifications')
-          .update({'is_read': true, 'read_at': DateTime.now().toIso8601String()})
+          .update({
+            'is_read': true,
+            'read_at': DateTime.now().toIso8601String(),
+          })
           .eq('id', notificationId);
 
       // 로컬 상태 업데이트
@@ -88,7 +91,10 @@ class NotificationProvider with ChangeNotifier {
 
       await _supabase
           .from('notifications')
-          .update({'is_read': true, 'read_at': DateTime.now().toIso8601String()})
+          .update({
+            'is_read': true,
+            'read_at': DateTime.now().toIso8601String(),
+          })
           .eq('user_email', user.email!)
           .eq('is_read', false);
 

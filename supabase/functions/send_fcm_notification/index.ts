@@ -179,6 +179,7 @@ async function sendFCMMessage(
             aps: {
               sound: 'default',
               'content-available': 1,
+              badge: 1, // iOS 배지 표시 (증가)
             },
           },
         },

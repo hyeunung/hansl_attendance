@@ -14,7 +14,7 @@ class LeaveMemoInputWidget extends StatelessWidget {
   final String? errorText;
 
   const LeaveMemoInputWidget({
-    Key? key,
+    super.key,
     required this.controller,
     this.focusNode,
     this.hintText = '사유를 입력하세요',
@@ -22,7 +22,7 @@ class LeaveMemoInputWidget extends StatelessWidget {
     this.isRequired = true,
     this.onChanged,
     this.errorText,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -48,8 +48,12 @@ class LeaveMemoInputWidget extends StatelessWidget {
   Widget _buildHeader() {
     return Row(
       children: [
-        const Text('사유', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-        if (isRequired) const Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
+        const Text(
+          '사유',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+        ),
+        if (isRequired)
+          const Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
         const Spacer(),
         if (controller.text.isNotEmpty)
           Text(

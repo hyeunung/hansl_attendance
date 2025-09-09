@@ -7,7 +7,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SecureStorageService {
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
-    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock_this_device),
+    iOptions: IOSOptions(
+      accessibility: KeychainAccessibility.first_unlock_this_device,
+    ),
   );
 
   // 민감한 데이터 키들 (암호화 저장)
@@ -22,7 +24,10 @@ class SecureStorageService {
   };
 
   /// 데이터 저장 (자동으로 민감도에 따라 저장소 결정)
-  static Future<void> write({required String key, required String value}) async {
+  static Future<void> write({
+    required String key,
+    required String value,
+  }) async {
     try {
       if (_sensitiveKeys.contains(key)) {
         // 민감한 데이터 → 보안 저장소
@@ -33,7 +38,9 @@ class SecureStorageService {
         await prefs.setString(key, value);
       }
     } catch (e) {
-      if (kDebugMode) debugPrint('❌ SecureStorageService write error for key "$key": $e');
+      if (kDebugMode) {
+        debugPrint('❌ SecureStorageService write error for key "$key": $e');
+      }
       rethrow;
     }
   }
@@ -50,7 +57,9 @@ class SecureStorageService {
         return prefs.getString(key);
       }
     } catch (e) {
-      if (kDebugMode) debugPrint('❌ SecureStorageService read error for key "$key": $e');
+      if (kDebugMode) {
+        debugPrint('❌ SecureStorageService read error for key "$key": $e');
+      }
       return null;
     }
   }
@@ -67,7 +76,9 @@ class SecureStorageService {
         await prefs.remove(key);
       }
     } catch (e) {
-      if (kDebugMode) debugPrint('❌ SecureStorageService delete error for key "$key": $e');
+      if (kDebugMode) {
+        debugPrint('❌ SecureStorageService delete error for key "$key": $e');
+      }
     }
   }
 

@@ -58,13 +58,18 @@ class SlackService {
       };
 
       if (kDebugMode) {
-        if (kDebugMode) print('📮 Edge Function 호출: send_slack_notification_attendance');
+        if (kDebugMode) {
+          print('📮 Edge Function 호출: send_slack_notification_attendance');
+        }
       }
 
       final response = await http
           .post(
             Uri.parse(functionUrl),
-            headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $accessToken'},
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $accessToken',
+            },
             body: jsonEncode(requestData),
           )
           .timeout(
@@ -78,18 +83,26 @@ class SlackService {
         final responseData = jsonDecode(response.body);
         if (responseData['success'] == true) {
           if (kDebugMode) {
-            if (kDebugMode) print('✅ 근태앱 문의 메시지 슬랙 전송 성공: ${responseData['message']}');
+            if (kDebugMode) {
+              print('✅ 근태앱 문의 메시지 슬랙 전송 성공: ${responseData['message']}');
+            }
           }
           return true;
         } else {
           if (kDebugMode) {
-            if (kDebugMode) print('❌ 근태앱 문의 메시지 슬랙 전송 실패: ${responseData['message']}');
+            if (kDebugMode) {
+              print('❌ 근태앱 문의 메시지 슬랙 전송 실패: ${responseData['message']}');
+            }
           }
           return false;
         }
       } else {
         if (kDebugMode) {
-          if (kDebugMode) print('❌ Edge Function 호출 실패: ${response.statusCode} - ${response.body}');
+          if (kDebugMode) {
+            print(
+              '❌ Edge Function 호출 실패: ${response.statusCode} - ${response.body}',
+            );
+          }
         }
         return false;
       }

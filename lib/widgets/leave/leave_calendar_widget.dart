@@ -15,12 +15,12 @@ class LeaveCalendarWidget extends StatelessWidget {
   final Function(DateTime) onDayTapped;
 
   const LeaveCalendarWidget({
-    Key? key,
+    super.key,
     required this.selectedDatesMap,
     required this.selectedType,
     required this.myLeaves,
     required this.onDayTapped,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -58,18 +58,28 @@ class LeaveCalendarWidget extends StatelessWidget {
 
     return Row(
       children: [
-        const Text('날짜', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+        const Text(
+          '날짜',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+        ),
         const Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
         const SizedBox(width: 12),
         Text(
           '선택된 일수: ${usedDaysSum % 1 == 0 ? usedDaysSum.toInt() : usedDaysSum}일',
-          style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppColors.primary,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildCalendar(BuildContext context, DateTime now, Set<DateTime> disabledDates) {
+  Widget _buildCalendar(
+    BuildContext context,
+    DateTime now,
+    Set<DateTime> disabledDates,
+  ) {
     return TableCalendar(
       locale: 'ko_KR',
       firstDay: DateTime(now.year, 1, 1),
@@ -80,7 +90,11 @@ class LeaveCalendarWidget extends StatelessWidget {
       calendarStyle: _getCalendarStyle(),
       enabledDayPredicate: (day) => _isEnabledDay(context, day, disabledDates),
       daysOfWeekStyle: const DaysOfWeekStyle(
-        weekdayStyle: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600, fontSize: 13),
+        weekdayStyle: TextStyle(
+          color: Colors.black87,
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+        ),
         weekendStyle: TextStyle(
           color: Colors.black87, // 요일 헤더는 기본 색상으로
           fontWeight: FontWeight.w600,
@@ -206,7 +220,9 @@ class LeaveCalendarWidget extends StatelessWidget {
             child: Text(
               '${day.day}',
               style: TextStyle(
-                color: const Color(0xFFFF5252).withValues(alpha: 0.7), // 밝은 빨간색 70%
+                color: const Color(
+                  0xFFFF5252,
+                ).withValues(alpha: 0.7), // 밝은 빨간색 70%
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
               ),
@@ -221,7 +237,9 @@ class LeaveCalendarWidget extends StatelessWidget {
             child: Text(
               '${day.day}',
               style: TextStyle(
-                color: const Color(0xFFEF5350).withValues(alpha: 0.7), // 밝은 빨간색 70%
+                color: const Color(
+                  0xFFEF5350,
+                ).withValues(alpha: 0.7), // 밝은 빨간색 70%
                 fontWeight: FontWeight.w500,
                 fontSize: 12,
               ),
@@ -236,7 +254,9 @@ class LeaveCalendarWidget extends StatelessWidget {
             child: Text(
               '${day.day}',
               style: TextStyle(
-                color: const Color(0xFF2196F3).withValues(alpha: 0.7), // 밝은 파란색 70%
+                color: const Color(
+                  0xFF2196F3,
+                ).withValues(alpha: 0.7), // 밝은 파란색 70%
                 fontWeight: FontWeight.w500,
                 fontSize: 12,
               ),
@@ -325,11 +345,17 @@ class LeaveCalendarWidget extends StatelessWidget {
         child: Container(
           width: 36,
           height: 36,
-          decoration: BoxDecoration(color: _getTypeColor(type), shape: BoxShape.circle),
+          decoration: BoxDecoration(
+            color: _getTypeColor(type),
+            shape: BoxShape.circle,
+          ),
           alignment: Alignment.center,
           child: Text(
             '${day.day}',
-            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ),
@@ -347,7 +373,10 @@ class LeaveCalendarWidget extends StatelessWidget {
           child: Center(
             child: Text(
               '${day.day}',
-              style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ),
@@ -396,7 +425,11 @@ class LeaveCalendarWidget extends StatelessWidget {
     return false;
   }
 
-  bool _isEnabledDay(BuildContext context, DateTime day, Set<DateTime> disabledDates) {
+  bool _isEnabledDay(
+    BuildContext context,
+    DateTime day,
+    Set<DateTime> disabledDates,
+  ) {
     // 주말(토요일, 일요일)은 비활성화
     if (day.weekday == DateTime.saturday || day.weekday == DateTime.sunday) {
       return false;

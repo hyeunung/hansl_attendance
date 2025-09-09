@@ -7,6 +7,21 @@ class PerformanceMonitor {
   static final Map<String, List<Duration>> _metrics = {};
   static final Map<String, DateTime> _activeTrackers = {};
 
+  /// 시간 추적 시작
+  static void startTracking(String key) {
+    _activeTrackers[key] = DateTime.now();
+  }
+
+  /// 시간 추적 종료 및 기록
+  static Duration? stopTracking(String key) {
+    final startTime = _activeTrackers.remove(key);
+    if (startTime == null) return null;
+    
+    final duration = DateTime.now().difference(startTime);
+    _recordMetric(key, duration);
+    return duration;
+  }
+
   /// 화면 로드 시간 추적
   static void trackScreenLoad(String screenName, Duration loadTime) {
     _recordMetric('screen_load_$screenName', loadTime);
@@ -21,7 +36,9 @@ class PerformanceMonitor {
 
     // 개발 모드에서는 콘솔에도 출력
     if (kDebugMode) {
-      if (kDebugMode) print('📊 Screen Load: $screenName - ${loadTime.inMilliseconds}ms');
+      if (kDebugMode) {
+        print('📊 Screen Load: $screenName - ${loadTime.inMilliseconds}ms');
+      }
     }
   }
 
@@ -31,7 +48,10 @@ class PerformanceMonitor {
 
     // 느린 액션 경고
     if (duration.inMilliseconds > 1000) {
-      AppLogger.warning('느린 사용자 액션 감지', {'action': action, 'duration_ms': duration.inMilliseconds});
+      AppLogger.warning('느린 사용자 액션 감지', {
+        'action': action,
+        'duration_ms': duration.inMilliseconds,
+      });
     }
   }
 
@@ -52,7 +72,10 @@ class PerformanceMonitor {
       return null;
     }
 
-    final totalMs = durations.fold<int>(0, (sum, duration) => sum + duration.inMilliseconds);
+    final totalMs = durations.fold<int>(
+      0,
+      (sum, duration) => sum + duration.inMilliseconds,
+    );
 
     return Duration(milliseconds: totalMs ~/ durations.length);
   }
@@ -70,8 +93,12 @@ class PerformanceMonitor {
       report[key] = {
         'count': durations.length,
         'average_ms': getAverageDuration(key)?.inMilliseconds ?? 0,
-        'min_ms': durations.map((d) => d.inMilliseconds).reduce((a, b) => a < b ? a : b),
-        'max_ms': durations.map((d) => d.inMilliseconds).reduce((a, b) => a > b ? a : b),
+        'min_ms': durations
+            .map((d) => d.inMilliseconds)
+            .reduce((a, b) => a < b ? a : b),
+        'max_ms': durations
+            .map((d) => d.inMilliseconds)
+            .reduce((a, b) => a > b ? a : b),
       };
     }
 

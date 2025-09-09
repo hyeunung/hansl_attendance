@@ -55,16 +55,20 @@ class AttendanceStatusCard extends StatelessWidget {
     return Consumer<AttendanceProvider>(
       builder: (context, provider, _) {
         final isLate = provider.statusText == '지각';
-        
+
         return AnimatedContainer(
           duration: const Duration(milliseconds: 500),
-          padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 30)),
+          padding: EdgeInsets.symmetric(
+            vertical: ResponsiveUtils.spacing(context, 30),
+          ),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
+            borderRadius: BorderRadius.circular(
+              ResponsiveUtils.spacing(context, 20),
+            ),
             boxShadow: [
               AppShadows.card,
-              if (isLate) 
+              if (isLate)
                 BoxShadow(
                   color: const Color(0xFFFF6B6B).withValues(alpha: 0.3),
                   blurRadius: ResponsiveUtils.spacing(context, 20),
@@ -106,12 +110,17 @@ class AttendanceStatusCard extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       gradient: _getStatusGradient(provider.statusText),
-                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 25)),
+                      borderRadius: BorderRadius.circular(
+                        ResponsiveUtils.spacing(context, 25),
+                      ),
                       boxShadow: [
                         BoxShadow(
                           color: _getStatusShadowColor(provider.statusText),
                           blurRadius: ResponsiveUtils.spacing(context, 15),
-                          offset: Offset(0, ResponsiveUtils.spacing(context, 4)),
+                          offset: Offset(
+                            0,
+                            ResponsiveUtils.spacing(context, 4),
+                          ),
                         ),
                       ],
                     ),
@@ -131,7 +140,9 @@ class AttendanceStatusCard extends StatelessWidget {
                           style: ResponsiveUtils.getTextStyle(
                             context,
                             fontSize: isLate ? 18 : 17,
-                            fontWeight: isLate ? FontWeight.w700 : FontWeight.w600,
+                            fontWeight: isLate
+                                ? FontWeight.w700
+                                : FontWeight.w600,
                             color: Colors.white,
                           ),
                         ),
@@ -143,7 +154,9 @@ class AttendanceStatusCard extends StatelessWidget {
                       top: -8,
                       right: -8,
                       child: Container(
-                        padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 4)),
+                        padding: EdgeInsets.all(
+                          ResponsiveUtils.spacing(context, 4),
+                        ),
                         decoration: const BoxDecoration(
                           color: Color(0xFFFF0000),
                           shape: BoxShape.circle,
@@ -159,7 +172,9 @@ class AttendanceStatusCard extends StatelessWidget {
               ),
               SizedBox(height: ResponsiveUtils.spacing(context, 15)),
               Text(
-                provider.clockInTime == null ? '-' : '${provider.clockInStr} 부터',
+                provider.clockInTime == null
+                    ? '-'
+                    : '${provider.clockInStr} 부터',
                 style: ResponsiveUtils.getTextStyle(
                   context,
                   fontWeight: FontWeight.bold,

@@ -80,14 +80,15 @@ class ResponsiveTextStyles {
     height: 1.25,
   );
 
-  static TextStyle subtitle(BuildContext context) => ResponsiveUtils.getTextStyle(
-    context,
-    fontSize: 21,
-    fontWeight: FontWeight.w700,
-    color: const Color(0xFF222222),
-    letterSpacing: 0.1,
-    height: 1.25,
-  );
+  static TextStyle subtitle(BuildContext context) =>
+      ResponsiveUtils.getTextStyle(
+        context,
+        fontSize: 21,
+        fontWeight: FontWeight.w700,
+        color: const Color(0xFF222222),
+        letterSpacing: 0.1,
+        height: 1.25,
+      );
 
   static TextStyle body(BuildContext context) => ResponsiveUtils.getTextStyle(
     context,
@@ -96,26 +97,29 @@ class ResponsiveTextStyles {
     color: const Color(0xFF1C1C1E),
   );
 
-  static TextStyle bodyLarge(BuildContext context) => ResponsiveUtils.getTextStyle(
-    context,
-    fontSize: 18,
-    fontWeight: FontWeight.w500,
-    color: const Color(0xFF1C1C1E),
-  );
+  static TextStyle bodyLarge(BuildContext context) =>
+      ResponsiveUtils.getTextStyle(
+        context,
+        fontSize: 18,
+        fontWeight: FontWeight.w500,
+        color: const Color(0xFF1C1C1E),
+      );
 
-  static TextStyle bodySmall(BuildContext context) => ResponsiveUtils.getTextStyle(
-    context,
-    fontSize: 14,
-    fontWeight: FontWeight.normal,
-    color: const Color(0xFF6C757D),
-  );
+  static TextStyle bodySmall(BuildContext context) =>
+      ResponsiveUtils.getTextStyle(
+        context,
+        fontSize: 14,
+        fontWeight: FontWeight.normal,
+        color: const Color(0xFF6C757D),
+      );
 
-  static TextStyle caption(BuildContext context) => ResponsiveUtils.getTextStyle(
-    context,
-    fontSize: 12,
-    fontWeight: FontWeight.normal,
-    color: const Color(0xFF8E8E93),
-  );
+  static TextStyle caption(BuildContext context) =>
+      ResponsiveUtils.getTextStyle(
+        context,
+        fontSize: 12,
+        fontWeight: FontWeight.normal,
+        color: const Color(0xFF8E8E93),
+      );
 
   static TextStyle button(BuildContext context) => ResponsiveUtils.getTextStyle(
     context,
@@ -124,18 +128,20 @@ class ResponsiveTextStyles {
     color: Colors.white,
   );
 
-  static TextStyle appBarTitle(BuildContext context) => ResponsiveUtils.getTextStyle(
-    context,
-    fontSize: 22,
-    fontWeight: FontWeight.w700,
-    color: Colors.white,
-  );
+  static TextStyle appBarTitle(BuildContext context) =>
+      ResponsiveUtils.getTextStyle(
+        context,
+        fontSize: 22,
+        fontWeight: FontWeight.w700,
+        color: Colors.white,
+      );
 
-  static TextStyle logoTitle(BuildContext context) => ResponsiveUtils.getTextStyle(
-    context,
-    fontSize: 40,
-    fontWeight: FontWeight.w700,
-    color: const Color(0xFF1777CB),
-    letterSpacing: 4,
-  );
+  static TextStyle logoTitle(BuildContext context) =>
+      ResponsiveUtils.getTextStyle(
+        context,
+        fontSize: 40,
+        fontWeight: FontWeight.w700,
+        color: const Color(0xFF1777CB),
+        letterSpacing: 4,
+      );
 }

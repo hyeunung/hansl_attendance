@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
 import '../../providers/attendance_provider.dart';
-import '../../providers/user_provider.dart';
 import '../../providers/notification_provider.dart';
 import '../../utils/responsive_utils.dart';
 import '../../services/timer_manager.dart';
@@ -15,14 +14,25 @@ import '../../widgets/attendance/attendance_history_card.dart';
 import '../notification/notification_center_screen.dart';
 
 class AttendanceScreenOptimized extends StatefulWidget {
-  const AttendanceScreenOptimized({super.key});
+  final bool autoShowCheckIn;
+  final bool autoShowCheckOut;
+
+  const AttendanceScreenOptimized({
+    super.key,
+    this.autoShowCheckIn = false,
+    this.autoShowCheckOut = false,
+  });
 
   @override
-  State<AttendanceScreenOptimized> createState() => _AttendanceScreenOptimizedState();
+  State<AttendanceScreenOptimized> createState() =>
+      _AttendanceScreenOptimizedState();
 }
 
 class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
-    with AutomaticKeepAliveClientMixin, TimerManagementMixin, UIOptimizationMixin {
+    with
+        AutomaticKeepAliveClientMixin,
+        TimerManagementMixin,
+        UIOptimizationMixin {
   String? _bannerMessage;
   Color _bannerColor = const Color(0xFF357AE8);
 
@@ -48,7 +58,10 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
         if (mounted && _shouldUpdateUI) {
           setState(() {
             // Only update if there are active working states that need time updates
-            final provider = Provider.of<AttendanceProvider>(context, listen: false);
+            final provider = Provider.of<AttendanceProvider>(
+              context,
+              listen: false,
+            );
             _shouldUpdateUI =
                 provider.status == AttendanceStatus.working ||
                 provider.status == AttendanceStatus.late;
@@ -69,7 +82,10 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
       callback: (timer) {
         if (!mounted) return;
 
-        final provider = Provider.of<AttendanceProvider>(context, listen: false);
+        final provider = Provider.of<AttendanceProvider>(
+          context,
+          listen: false,
+        );
 
         // Increase frequency when actively working, decrease when idle
         if (provider.status == AttendanceStatus.working ||
@@ -118,7 +134,9 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
       duration: const Duration(milliseconds: 300),
       width: double.infinity,
       color: _bannerColor,
-      padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 12)),
+      padding: EdgeInsets.symmetric(
+        vertical: ResponsiveUtils.spacing(context, 12),
+      ),
       child: Center(
         child: Text(
           _bannerMessage!,
@@ -132,7 +150,6 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
       ),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -150,7 +167,9 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
             elevation: 0,
             centerTitle: true,
             flexibleSpace: Container(
-              decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+              decoration: const BoxDecoration(
+                gradient: AppColors.primaryGradient,
+              ),
             ),
             title: Text('근무 기록', style: AppTextStyles.appBarTitle(context)),
             actions: [
@@ -158,16 +177,22 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
               Consumer<NotificationProvider>(
                 builder: (context, notificationProvider, _) {
                   return Padding(
-                    padding: EdgeInsets.only(right: ResponsiveUtils.spacing(context, 16)),
+                    padding: EdgeInsets.only(
+                      right: ResponsiveUtils.spacing(context, 16),
+                    ),
                     child: Stack(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+                          icon: const Icon(
+                            Icons.notifications_outlined,
+                            color: Colors.white,
+                          ),
                           onPressed: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const NotificationCenterScreen(),
+                                builder: (context) =>
+                                    const NotificationCenterScreen(),
                               ),
                             ).then((_) {
                               // 알림 센터에서 돌아오면 알림 개수 새로고침
@@ -185,12 +210,16 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
                                 color: Colors.red,
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                              constraints: const BoxConstraints(
+                                minWidth: 18,
+                                minHeight: 18,
+                              ),
                               child: Center(
                                 child: Text(
                                   notificationProvider.unreadCount > 99
                                       ? '99+'
-                                      : notificationProvider.unreadCount.toString(),
+                                      : notificationProvider.unreadCount
+                                            .toString(),
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 10,

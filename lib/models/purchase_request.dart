@@ -69,8 +69,8 @@ class PurchaseRequest {
     return PurchaseRequest(
       id: json['id'] ?? 0,
       purchaseOrderNumber: json['purchase_order_number']?.toString(),
-      requestDate: json['request_date'] != null 
-          ? DateTime.parse(json['request_date']) 
+      requestDate: json['request_date'] != null
+          ? DateTime.parse(json['request_date'])
           : DateTime.now(),
       deliveryRequestDate: json['delivery_request_date'] != null
           ? DateTime.parse(json['delivery_request_date'])
@@ -86,15 +86,15 @@ class PurchaseRequest {
       itemName: json['item_name']?.toString() ?? '',
       specification: json['specification']?.toString() ?? '',
       quantity: json['quantity'] ?? 0,
-      unitPriceValue: json['unit_price_value'] != null 
-          ? (json['unit_price_value'] is String 
-              ? double.tryParse(json['unit_price_value']) ?? 0.0
-              : (json['unit_price_value'] as num).toDouble())
+      unitPriceValue: json['unit_price_value'] != null
+          ? (json['unit_price_value'] is String
+                ? double.tryParse(json['unit_price_value']) ?? 0.0
+                : (json['unit_price_value'] as num).toDouble())
           : 0.0,
       amountValue: json['amount_value'] != null
           ? (json['amount_value'] is String
-              ? double.tryParse(json['amount_value']) ?? 0.0
-              : (json['amount_value'] as num).toDouble())
+                ? double.tryParse(json['amount_value']) ?? 0.0
+                : (json['amount_value'] as num).toDouble())
           : 0.0,
       remark: json['remark']?.toString(),
       projectVendor: json['project_vendor']?.toString(),
@@ -104,15 +104,15 @@ class PurchaseRequest {
       contactName: json['contact_name']?.toString(),
       middleManagerStatus: json['middle_manager_status']?.toString(),
       finalManagerStatus: json['final_manager_status']?.toString(),
-      paymentCompletedAt: json['payment_completed_at'] != null 
-          ? DateTime.parse(json['payment_completed_at']) 
+      paymentCompletedAt: json['payment_completed_at'] != null
+          ? DateTime.parse(json['payment_completed_at'])
           : null,
       isReceived: json['is_received'] ?? false,
-      receivedAt: json['received_at'] != null 
-          ? DateTime.parse(json['received_at']) 
+      receivedAt: json['received_at'] != null
+          ? DateTime.parse(json['received_at'])
           : null,
-      finalManagerApprovedAt: json['final_manager_approved_at'] != null 
-          ? DateTime.parse(json['final_manager_approved_at']) 
+      finalManagerApprovedAt: json['final_manager_approved_at'] != null
+          ? DateTime.parse(json['final_manager_approved_at'])
           : null,
       isPoDownload: json['is_po_download'],
       link: json['link']?.toString(),
@@ -189,7 +189,7 @@ class PurchaseOrderGroup {
       return items.first;
     }
   }
-  
+
   // 추가 아이템 개수 (헤더 제외)
   int get additionalItemCount => items.length - 1;
 }

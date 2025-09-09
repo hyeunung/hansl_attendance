@@ -67,11 +67,17 @@ class _LoginScreenState extends State<LoginScreen> {
           const begin = Offset(1.0, 0.0);
           const end = Offset.zero;
           const curve = Curves.ease;
-          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          var tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
           var fadeTween = Tween<double>(begin: 0.0, end: 1.0);
           return SlideTransition(
             position: animation.drive(tween),
-            child: FadeTransition(opacity: animation.drive(fadeTween), child: child),
+            child: FadeTransition(
+              opacity: animation.drive(fadeTween),
+              child: child,
+            ),
           );
         },
         transitionDuration: const Duration(milliseconds: 350),
@@ -109,7 +115,9 @@ class _LoginScreenState extends State<LoginScreen> {
             .ilike('email', email) // 대소문자 무시하고 이메일 매칭
             .maybeSingle();
 
-        if (kDebugMode) print('👤 직원 정보 조회 결과: ${employee != null ? "찾음" : "없음"}');
+        if (kDebugMode) {
+          print('👤 직원 정보 조회 결과: ${employee != null ? "찾음" : "없음"}');
+        }
         if (employee != null) {
           if (kDebugMode) print('👤 직원 데이터: $employee');
         }
@@ -119,7 +127,11 @@ class _LoginScreenState extends State<LoginScreen> {
         // UserProvider에 사용자 정보와 직원 정보 모두 설정
         if (!context.mounted) return;
         final userProvider = Provider.of<UserProvider>(context, listen: false);
-        userProvider.setUser(id: employee['id'], name: employee['name'], email: employee['email']);
+        userProvider.setUser(
+          id: employee['id'],
+          name: employee['name'],
+          email: employee['email'],
+        );
         userProvider.setEmployee(employee);
 
         if (kDebugMode) print('✅ UserProvider 설정 완료');
@@ -129,7 +141,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
         // 세션 지속성 확인
         final currentSession = Supabase.instance.client.auth.currentSession;
-        if (kDebugMode) print('🔒 현재 세션 상태: ${currentSession != null ? "유지됨" : "없음"}');
+        if (kDebugMode) {
+          print('🔒 현재 세션 상태: ${currentSession != null ? "유지됨" : "없음"}');
+        }
 
         // 자동 로그인 설정 저장 (보안상 비밀번호는 저장하지 않음)
         final prefs = await SharedPreferences.getInstance();
@@ -141,7 +155,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
 
         if (kDebugMode) print('✅ 로그인 완료 - 메인 화면으로 이동');
-        _navigateWithTransition(const MainTab());
+        _navigateWithTransition(MainTab());
         NotificationService.refreshTokenAfterLogin();
       } else {
         setState(() {
@@ -207,10 +221,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       }
                       // 입력된 이메일을 그대로 사용
                       try {
-                        await Supabase.instance.client.auth.resetPasswordForEmail(
-                          email,
-                          redirectTo: 'com.hansl.attendance.v2://reset-password',
-                        );
+                        await Supabase.instance.client.auth
+                            .resetPasswordForEmail(
+                              email,
+                              redirectTo:
+                                  'com.hansl.attendance.v2://reset-password',
+                            );
                         setState(() {
                           sent = true;
                           errorMsg = null;
@@ -222,7 +238,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                     child: const Text('메일 전송'),
                   ),
-                TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('닫기')),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('닫기'),
+                ),
               ],
             );
           },
@@ -240,7 +259,9 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: kIsWeb ? null : (Platform.isAndroid ? BackButton(color: Colors.black) : null),
+        leading: kIsWeb
+            ? null
+            : (Platform.isAndroid ? BackButton(color: Colors.black) : null),
       ),
       body: SafeArea(
         child: Center(
@@ -284,7 +305,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       TextField(
                         controller: _emailController,
-                        style: const TextStyle(fontFamily: 'NotoSans', fontSize: 16),
+                        style: const TextStyle(
+                          fontFamily: 'NotoSans',
+                          fontSize: 16,
+                        ),
                         decoration: InputDecoration(
                           labelText: '이메일',
                           labelStyle: const TextStyle(
@@ -313,7 +337,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 14),
                       TextField(
                         controller: _passwordController,
-                        style: const TextStyle(fontFamily: 'NotoSans', fontSize: 16),
+                        style: const TextStyle(
+                          fontFamily: 'NotoSans',
+                          fontSize: 16,
+                        ),
                         decoration: InputDecoration(
                           labelText: '비밀번호',
                           labelStyle: const TextStyle(
@@ -393,7 +420,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             onPressed: _login,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF1777CB),
-                              shape: RoundedRectangleBorder(borderRadius: boxRadius),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: boxRadius,
+                              ),
                               textStyle: const TextStyle(
                                 fontFamily: 'NotoSans',
                                 fontWeight: FontWeight.bold,
@@ -423,7 +452,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 if (Platform.isIOS) {
                                   Navigator.of(context).push(
                                     CupertinoPageRoute(
-                                      builder: (_) => SignupScreen(onSignupSuccess: (email) {}),
+                                      builder: (_) => SignupScreen(
+                                        onSignupSuccess: (email) {},
+                                      ),
                                     ),
                                   );
                                 } else {
@@ -444,7 +475,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             const Text(
                               '|',
-                              style: TextStyle(fontSize: 16, color: Color(0xFFB0B8C1)),
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFFB0B8C1),
+                              ),
                             ),
                             TextButton(
                               onPressed: _showResetPasswordDialog,
@@ -534,24 +568,31 @@ class _SignupScreenState extends State<SignupScreen> {
       );
       if (response.user != null) {
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('회원가입이 완료되었습니다. 로그인 해주세요.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('회원가입이 완료되었습니다. 로그인 해주세요.')),
+        );
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
                 LoginScreen(initialEmail: _emailController.text.trim()),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              const begin = Offset(-1.0, 0.0); // 왼쪽에서 슬라이드
-              const end = Offset.zero;
-              const curve = Curves.ease;
-              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-              var fadeTween = Tween<double>(begin: 0.0, end: 1.0);
-              return SlideTransition(
-                position: animation.drive(tween),
-                child: FadeTransition(opacity: animation.drive(fadeTween), child: child),
-              );
-            },
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  const begin = Offset(-1.0, 0.0); // 왼쪽에서 슬라이드
+                  const end = Offset.zero;
+                  const curve = Curves.ease;
+                  var tween = Tween(
+                    begin: begin,
+                    end: end,
+                  ).chain(CurveTween(curve: curve));
+                  var fadeTween = Tween<double>(begin: 0.0, end: 1.0);
+                  return SlideTransition(
+                    position: animation.drive(tween),
+                    child: FadeTransition(
+                      opacity: animation.drive(fadeTween),
+                      child: child,
+                    ),
+                  );
+                },
             transitionDuration: const Duration(milliseconds: 350),
           ),
         );
@@ -619,7 +660,10 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 40),
                 Container(
                   width: 340,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 28,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: boxRadius,
@@ -636,7 +680,10 @@ class _SignupScreenState extends State<SignupScreen> {
                     children: [
                       TextField(
                         controller: _nameController,
-                        style: const TextStyle(fontFamily: 'NotoSans', fontSize: 16),
+                        style: const TextStyle(
+                          fontFamily: 'NotoSans',
+                          fontSize: 16,
+                        ),
                         decoration: InputDecoration(
                           labelText: '이름',
                           labelStyle: const TextStyle(
@@ -656,7 +703,10 @@ class _SignupScreenState extends State<SignupScreen> {
                       const SizedBox(height: 14),
                       TextField(
                         controller: _emailController,
-                        style: const TextStyle(fontFamily: 'NotoSans', fontSize: 16),
+                        style: const TextStyle(
+                          fontFamily: 'NotoSans',
+                          fontSize: 16,
+                        ),
                         decoration: InputDecoration(
                           labelText: '이메일',
                           labelStyle: const TextStyle(
@@ -682,7 +732,10 @@ class _SignupScreenState extends State<SignupScreen> {
                       const SizedBox(height: 14),
                       TextField(
                         controller: _passwordController,
-                        style: const TextStyle(fontFamily: 'NotoSans', fontSize: 16),
+                        style: const TextStyle(
+                          fontFamily: 'NotoSans',
+                          fontSize: 16,
+                        ),
                         decoration: InputDecoration(
                           labelText: '비밀번호',
                           labelStyle: const TextStyle(
@@ -705,7 +758,10 @@ class _SignupScreenState extends State<SignupScreen> {
                       const SizedBox(height: 14),
                       TextField(
                         controller: _passwordConfirmController,
-                        style: const TextStyle(fontFamily: 'NotoSans', fontSize: 16),
+                        style: const TextStyle(
+                          fontFamily: 'NotoSans',
+                          fontSize: 16,
+                        ),
                         decoration: InputDecoration(
                           labelText: '비밀번호 확인',
                           labelStyle: const TextStyle(
@@ -746,7 +802,9 @@ class _SignupScreenState extends State<SignupScreen> {
                             onPressed: _signup,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF1777CB),
-                              shape: RoundedRectangleBorder(borderRadius: boxRadius),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: boxRadius,
+                              ),
                               textStyle: const TextStyle(
                                 fontFamily: 'NotoSans',
                                 fontWeight: FontWeight.bold,

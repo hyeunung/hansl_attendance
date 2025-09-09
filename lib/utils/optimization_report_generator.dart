@@ -36,9 +36,15 @@ class OptimizationReportGenerator {
 
     // Removed fonts
     report.writeln('### Removed Font Files:');
-    report.writeln('1. **NotoSans-Thin.otf** (392KB) - FontWeight.w100 (not used)');
-    report.writeln('2. **NotoSans-Light.otf** (388KB) - FontWeight.w300 (not used)');
-    report.writeln('3. **NotoSans-DemiLight.otf** (388KB) - FontWeight.w350 (not used)');
+    report.writeln(
+      '1. **NotoSans-Thin.otf** (392KB) - FontWeight.w100 (not used)',
+    );
+    report.writeln(
+      '2. **NotoSans-Light.otf** (388KB) - FontWeight.w300 (not used)',
+    );
+    report.writeln(
+      '3. **NotoSans-DemiLight.otf** (388KB) - FontWeight.w350 (not used)',
+    );
     report.writeln();
 
     // Kept fonts
@@ -53,13 +59,20 @@ class OptimizationReportGenerator {
     final removedSize = 392 + 388 + 388; // KB
     final totalOriginalSize = 396 + 390 + 388 + 387 + 385 + 384 + 382; // KB
     final remainingSize = 394 + 387 + 382 + 384; // KB
-    final savingsPercent = (removedSize / totalOriginalSize * 100).toStringAsFixed(1);
+    final savingsPercent = (removedSize / totalOriginalSize * 100)
+        .toStringAsFixed(1);
 
     report.writeln('### Font Optimization Savings:');
-    report.writeln('- **Original total**: ${_formatSize(totalOriginalSize * 1024)}');
-    report.writeln('- **Removed**: ${_formatSize(removedSize * 1024)} ($savingsPercent%)');
+    report.writeln(
+      '- **Original total**: ${_formatSize(totalOriginalSize * 1024)}',
+    );
+    report.writeln(
+      '- **Removed**: ${_formatSize(removedSize * 1024)} ($savingsPercent%)',
+    );
     report.writeln('- **New total**: ${_formatSize(remainingSize * 1024)}');
-    report.writeln('- **Bundle size reduction**: ${_formatSize(removedSize * 1024)}');
+    report.writeln(
+      '- **Bundle size reduction**: ${_formatSize(removedSize * 1024)}',
+    );
     report.writeln();
   }
 
@@ -69,7 +82,9 @@ class OptimizationReportGenerator {
 
     report.writeln('### Current Image Assets:');
     report.writeln('- **splash_logo.jpeg**: 63KB (used in splash screen)');
-    report.writeln('- **App icons**: 13 PNG files (20px - 1024px) = ~75KB total');
+    report.writeln(
+      '- **App icons**: 13 PNG files (20px - 1024px) = ~75KB total',
+    );
     report.writeln();
 
     report.writeln('### Optimization Implemented:');
@@ -81,16 +96,26 @@ class OptimizationReportGenerator {
     report.writeln();
 
     report.writeln('### Image Loading Features:');
-    report.writeln('- **OptimizedImage widget**: Progressive loading + error handling');
-    report.writeln('- **CachedAssetImage widget**: Memory-efficient asset caching');
+    report.writeln(
+      '- **OptimizedImage widget**: Progressive loading + error handling',
+    );
+    report.writeln(
+      '- **CachedAssetImage widget**: Memory-efficient asset caching',
+    );
     report.writeln('- **ImagePreloader**: Critical asset preloading');
     report.writeln('- **AssetManager**: Centralized asset management');
     report.writeln();
 
     report.writeln('### Potential Further Optimizations:');
-    report.writeln('- 🔄 Convert JPEG splash logo to WebP (potential 20-30% size reduction)');
-    report.writeln('- 🔄 Compress PNG icons without quality loss (potential 10-15% reduction)');
-    report.writeln('- 🔄 Consider using vector icons (SVG) for scalable assets');
+    report.writeln(
+      '- 🔄 Convert JPEG splash logo to WebP (potential 20-30% size reduction)',
+    );
+    report.writeln(
+      '- 🔄 Compress PNG icons without quality loss (potential 10-15% reduction)',
+    );
+    report.writeln(
+      '- 🔄 Consider using vector icons (SVG) for scalable assets',
+    );
     report.writeln();
   }
 
@@ -119,17 +144,31 @@ class OptimizationReportGenerator {
     report.writeln();
 
     report.writeln('### Loading Performance:');
-    report.writeln('- **Critical asset preloading**: Splash and icons loaded before first frame');
-    report.writeln('- **Progressive image loading**: Smooth loading experience with placeholders');
-    report.writeln('- **Font weight optimization**: Faster font loading with only needed weights');
-    report.writeln('- **Memory-efficient caching**: Reduced redundant asset loading');
+    report.writeln(
+      '- **Critical asset preloading**: Splash and icons loaded before first frame',
+    );
+    report.writeln(
+      '- **Progressive image loading**: Smooth loading experience with placeholders',
+    );
+    report.writeln(
+      '- **Font weight optimization**: Faster font loading with only needed weights',
+    );
+    report.writeln(
+      '- **Memory-efficient caching**: Reduced redundant asset loading',
+    );
     report.writeln();
 
     report.writeln('### Rendering Performance:');
-    report.writeln('- **FilterQuality.medium**: Balance between quality and performance');
-    report.writeln('- **Fade animations**: 300ms smooth transitions for better UX');
+    report.writeln(
+      '- **FilterQuality.medium**: Balance between quality and performance',
+    );
+    report.writeln(
+      '- **Fade animations**: 300ms smooth transitions for better UX',
+    );
     report.writeln('- **Error handling**: No blocking on failed asset loads');
-    report.writeln('- **Semantic labels**: Improved accessibility without performance cost');
+    report.writeln(
+      '- **Semantic labels**: Improved accessibility without performance cost',
+    );
     report.writeln();
   }
 
@@ -146,10 +185,18 @@ class OptimizationReportGenerator {
     report.writeln();
 
     report.writeln('### Future Optimizations:');
-    report.writeln('1. 🔄 **WebP Conversion**: Convert JPEG/PNG assets to WebP format');
-    report.writeln('2. 🔄 **Image Compression**: Use tools like TinyPNG for PNG optimization');
-    report.writeln('3. 🔄 **Vector Icons**: Replace PNG icons with SVG where possible');
-    report.writeln('4. 🔄 **Asset Bundling**: Consider asset bundling strategies for web builds');
+    report.writeln(
+      '1. 🔄 **WebP Conversion**: Convert JPEG/PNG assets to WebP format',
+    );
+    report.writeln(
+      '2. 🔄 **Image Compression**: Use tools like TinyPNG for PNG optimization',
+    );
+    report.writeln(
+      '3. 🔄 **Vector Icons**: Replace PNG icons with SVG where possible',
+    );
+    report.writeln(
+      '4. 🔄 **Asset Bundling**: Consider asset bundling strategies for web builds',
+    );
     report.writeln(
       '5. 🔄 **CDN Integration**: For network images, implement CDN with optimization',
     );
@@ -226,7 +273,8 @@ class OptimizationSummary {
   double get fontReductionPercentage =>
       ((totalFontsBefore - totalFontsAfter) / totalFontsBefore) * 100;
 
-  String get fontSavingsFormatted => (fontSavings / (1024 * 1024)).toStringAsFixed(2);
+  String get fontSavingsFormatted =>
+      (fontSavings / (1024 * 1024)).toStringAsFixed(2);
 
   @override
   String toString() {
@@ -234,7 +282,7 @@ class OptimizationSummary {
 Optimization Summary:
 - Font bundle reduction: $fontSavingsFormatted MB (${fontReductionPercentage.toStringAsFixed(1)}%)
 - Font files: $totalFontsBefore → $totalFontsAfter
-- Image cache: ${imageCacheCount} images, ${(imageCacheSize / (1024 * 1024)).toStringAsFixed(0)}MB limit
+- Image cache: $imageCacheCount images, ${(imageCacheSize / (1024 * 1024)).toStringAsFixed(0)}MB limit
 - Optimizations applied: $optimizationsApplied
 - Performance improvements: ${performanceImprovements.length}
 ''';

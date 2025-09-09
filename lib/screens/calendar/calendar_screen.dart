@@ -14,7 +14,8 @@ class CalendarScreen extends StatefulWidget {
   State<CalendarScreen> createState() => _CalendarScreenState();
 }
 
-class _CalendarScreenState extends State<CalendarScreen> with AutomaticKeepAliveClientMixin {
+class _CalendarScreenState extends State<CalendarScreen>
+    with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
   DateTime _focusedMonth = DateTime(DateTime.now().year, DateTime.now().month);
@@ -40,7 +41,9 @@ class _CalendarScreenState extends State<CalendarScreen> with AutomaticKeepAlive
         // 디버그 로그
         if (kDebugMode) {
           print('📅 CalendarScreen initState - 전체 데이터 로드 시도');
-          print('📅 현재 달력용 승인된 leave 개수: ${provider.approvedLeavesForCalendar.length}');
+          print(
+            '📅 현재 달력용 승인된 leave 개수: ${provider.approvedLeavesForCalendar.length}',
+          );
           print('🎆 공휴일 데이터: ${provider.holidays.length}개');
         }
       }
@@ -49,10 +52,16 @@ class _CalendarScreenState extends State<CalendarScreen> with AutomaticKeepAlive
 
   List<DateTime> _daysInMonth(DateTime month) {
     final last = DateTime(month.year, month.month + 1, 0);
-    return List.generate(last.day, (i) => DateTime(month.year, month.month, i + 1));
+    return List.generate(
+      last.day,
+      (i) => DateTime(month.year, month.month, i + 1),
+    );
   }
 
-  List<Map<String, dynamic>> _getEventsForDay(DateTime day, List<Map<String, dynamic>> allLeaves) {
+  List<Map<String, dynamic>> _getEventsForDay(
+    DateTime day,
+    List<Map<String, dynamic>> allLeaves,
+  ) {
     return allLeaves.where((l) {
       final start = DateTime.parse(l['start_date']);
       final end = DateTime.parse(l['end_date']);
@@ -62,7 +71,13 @@ class _CalendarScreenState extends State<CalendarScreen> with AutomaticKeepAlive
 
   bool _hasAnnual(List<Map<String, dynamic>> events) {
     return events.any(
-      (e) => ['annual', 'halfAm', 'half_am', 'halfPm', 'half_pm'].contains(e['type']),
+      (e) => [
+        'annual',
+        'halfAm',
+        'half_am',
+        'halfPm',
+        'half_pm',
+      ].contains(e['type']),
     );
   }
 
@@ -98,14 +113,16 @@ class _CalendarScreenState extends State<CalendarScreen> with AutomaticKeepAlive
         final firstWeekday = days.first.weekday % 7; // 일요일=0
         final totalCells = days.length + firstWeekday;
         final rows = (totalCells / 7).ceil();
-        final today = DateTime.now();
+        // final today = DateTime.now(); // 미사용 변수 주석 처리
         return Scaffold(
           appBar: AppBar(
             title: Text('달력', style: AppTextStyles.appBarTitle(context)),
             backgroundColor: Colors.transparent,
             elevation: 0,
             flexibleSpace: Container(
-              decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+              decoration: const BoxDecoration(
+                gradient: AppColors.primaryGradient,
+              ),
             ),
             centerTitle: true,
             iconTheme: const IconThemeData(color: Colors.white),
@@ -116,25 +133,36 @@ class _CalendarScreenState extends State<CalendarScreen> with AutomaticKeepAlive
               : RefreshIndicator(
                   onRefresh: () async {
                     // 달력 데이터 새로고침
-                    await provider.fetchApprovedLeavesForCalendar(forceRefresh: true);
+                    await provider.fetchApprovedLeavesForCalendar(
+                      forceRefresh: true,
+                    );
                   },
                   child: ListView(
-                    padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
+                    padding: EdgeInsets.all(
+                      ResponsiveUtils.spacing(context, 20),
+                    ),
                     children: [
                       // 달력
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveUtils.spacing(context, 12),
+                          ),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withValues(alpha: 0.08),
                               blurRadius: ResponsiveUtils.spacing(context, 3),
-                              offset: Offset(0, ResponsiveUtils.spacing(context, 1)),
+                              offset: Offset(
+                                0,
+                                ResponsiveUtils.spacing(context, 1),
+                              ),
                             ),
                           ],
                         ),
-                        padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
+                        padding: EdgeInsets.all(
+                          ResponsiveUtils.spacing(context, 16),
+                        ),
                         child: Column(
                           children: [
                             Row(
@@ -155,7 +183,9 @@ class _CalendarScreenState extends State<CalendarScreen> with AutomaticKeepAlive
                                     });
                                   },
                                 ),
-                                SizedBox(width: ResponsiveUtils.spacing(context, 4)),
+                                SizedBox(
+                                  width: ResponsiveUtils.spacing(context, 4),
+                                ),
                                 Text(
                                   '📅  ${_focusedMonth.year}년 ${_focusedMonth.month}월',
                                   style: ResponsiveUtils.getTextStyle(
@@ -165,7 +195,9 @@ class _CalendarScreenState extends State<CalendarScreen> with AutomaticKeepAlive
                                     color: const Color(0xFF1C1C1E),
                                   ),
                                 ),
-                                SizedBox(width: ResponsiveUtils.spacing(context, 4)),
+                                SizedBox(
+                                  width: ResponsiveUtils.spacing(context, 4),
+                                ),
                                 IconButton(
                                   icon: Icon(
                                     Icons.chevron_right,
@@ -183,7 +215,9 @@ class _CalendarScreenState extends State<CalendarScreen> with AutomaticKeepAlive
                                 ),
                               ],
                             ),
-                            SizedBox(height: ResponsiveUtils.spacing(context, 8)),
+                            SizedBox(
+                              height: ResponsiveUtils.spacing(context, 8),
+                            ),
                             Row(
                               children: [
                                 Expanded(
@@ -279,7 +313,9 @@ class _CalendarScreenState extends State<CalendarScreen> with AutomaticKeepAlive
                                 ),
                               ],
                             ),
-                            SizedBox(height: ResponsiveUtils.spacing(context, 4)),
+                            SizedBox(
+                              height: ResponsiveUtils.spacing(context, 4),
+                            ),
                             Column(
                               children: List.generate(rows, (rowIdx) {
                                 return Row(
@@ -289,12 +325,18 @@ class _CalendarScreenState extends State<CalendarScreen> with AutomaticKeepAlive
                                         cellIdx - firstWeekday >= days.length) {
                                       return Expanded(
                                         child: Container(
-                                          height: ResponsiveUtils.spacing(context, 54),
+                                          height: ResponsiveUtils.spacing(
+                                            context,
+                                            54,
+                                          ),
                                         ),
                                       );
                                     }
                                     final day = days[cellIdx - firstWeekday];
-                                    final events = _getEventsForDay(day, allLeaves);
+                                    final events = _getEventsForDay(
+                                      day,
+                                      allLeaves,
+                                    );
                                     final isSelected =
                                         _selectedDay != null &&
                                         day.year == _selectedDay!.year &&
@@ -319,53 +361,96 @@ class _CalendarScreenState extends State<CalendarScreen> with AutomaticKeepAlive
                                           ),
                                           decoration: BoxDecoration(
                                             color: isSelected
-                                                ? const Color(0xFF1E90FF).withValues(alpha: 0.1)
+                                                ? const Color(
+                                                    0xFF1E90FF,
+                                                  ).withValues(alpha: 0.1)
                                                 : null,
                                             border: isSelected
                                                 ? Border.all(
-                                                    color: const Color(0xFF1E90FF),
+                                                    color: const Color(
+                                                      0xFF1E90FF,
+                                                    ),
                                                     width: 1.5,
                                                   )
                                                 : null,
                                             borderRadius: BorderRadius.circular(
-                                              ResponsiveUtils.spacing(context, 8),
+                                              ResponsiveUtils.spacing(
+                                                context,
+                                                8,
+                                              ),
                                             ),
                                           ),
-                                          height: ResponsiveUtils.spacing(context, 54),
+                                          height: ResponsiveUtils.spacing(
+                                            context,
+                                            54,
+                                          ),
                                           child: Column(
-                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
                                             children: [
                                               // 막대기(연차/출장) - 숫자 위에
                                               if (_hasAnnual(events))
                                                 Container(
-                                                  width: ResponsiveUtils.spacing(context, 18),
-                                                  height: ResponsiveUtils.spacing(context, 4),
+                                                  width:
+                                                      ResponsiveUtils.spacing(
+                                                        context,
+                                                        18,
+                                                      ),
+                                                  height:
+                                                      ResponsiveUtils.spacing(
+                                                        context,
+                                                        4,
+                                                      ),
                                                   margin: EdgeInsets.only(
-                                                    bottom: ResponsiveUtils.spacing(context, 2),
+                                                    bottom:
+                                                        ResponsiveUtils.spacing(
+                                                          context,
+                                                          2,
+                                                        ),
                                                   ),
                                                   decoration: BoxDecoration(
                                                     color: const Color(
                                                       0xFF34C759,
                                                     ).withValues(alpha: 0.8),
-                                                    borderRadius: BorderRadius.circular(
-                                                      ResponsiveUtils.spacing(context, 2),
-                                                    ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          ResponsiveUtils.spacing(
+                                                            context,
+                                                            2,
+                                                          ),
+                                                        ),
                                                   ),
                                                 ),
                                               if (_hasBiztrip(events))
                                                 Container(
-                                                  width: ResponsiveUtils.spacing(context, 18),
-                                                  height: ResponsiveUtils.spacing(context, 4),
+                                                  width:
+                                                      ResponsiveUtils.spacing(
+                                                        context,
+                                                        18,
+                                                      ),
+                                                  height:
+                                                      ResponsiveUtils.spacing(
+                                                        context,
+                                                        4,
+                                                      ),
                                                   margin: EdgeInsets.only(
-                                                    bottom: ResponsiveUtils.spacing(context, 2),
+                                                    bottom:
+                                                        ResponsiveUtils.spacing(
+                                                          context,
+                                                          2,
+                                                        ),
                                                   ),
                                                   decoration: BoxDecoration(
                                                     color: const Color(
                                                       0xFF1976D2,
                                                     ).withValues(alpha: 0.8),
-                                                    borderRadius: BorderRadius.circular(
-                                                      ResponsiveUtils.spacing(context, 2),
-                                                    ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          ResponsiveUtils.spacing(
+                                                            context,
+                                                            2,
+                                                          ),
+                                                        ),
                                                   ),
                                                 ),
                                               // 날짜 숫자 (공휴일은 빨간색)
@@ -373,30 +458,50 @@ class _CalendarScreenState extends State<CalendarScreen> with AutomaticKeepAlive
                                                 children: [
                                                   Text(
                                                     '${day.day}',
-                                                    style: ResponsiveUtils.getTextStyle(
-                                                      context,
-                                                      fontWeight: FontWeight.w500,
-                                                      color: isHoliday || day.weekday == 7
-                                                          ? const Color(0xFFFF3B30) // 공휴일/일요일: 빨간색
-                                                          : day.weekday == 6
-                                                          ? const Color(0xFF007AFF) // 토요일: 파란색
-                                                          : const Color(0xFF1C1C1E), // 평일: 검정색
-                                                      fontSize: 14,
-                                                    ),
+                                                    style:
+                                                        ResponsiveUtils.getTextStyle(
+                                                          context,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                          color:
+                                                              isHoliday ||
+                                                                  day.weekday ==
+                                                                      7
+                                                              ? const Color(
+                                                                  0xFFFF3B30,
+                                                                ) // 공휴일/일요일: 빨간색
+                                                              : day.weekday == 6
+                                                              ? const Color(
+                                                                  0xFF007AFF,
+                                                                ) // 토요일: 파란색
+                                                              : const Color(
+                                                                  0xFF1C1C1E,
+                                                                ), // 평일: 검정색
+                                                          fontSize: 14,
+                                                        ),
                                                   ),
                                                   // 공휴일 이름 표시 (작은 글씨)
-                                                  if (isHoliday && holidayInfo != null)
+                                                  if (isHoliday &&
+                                                      holidayInfo != null)
                                                     Text(
-                                                      holidayInfo['name'].length > 4
-                                                          ? holidayInfo['name'].substring(0, 4)
+                                                      holidayInfo['name']
+                                                                  .length >
+                                                              4
+                                                          ? holidayInfo['name']
+                                                                .substring(0, 4)
                                                           : holidayInfo['name'],
-                                                      style: ResponsiveUtils.getTextStyle(
-                                                        context,
-                                                        fontSize: 8,
-                                                        color: const Color(0xFFFF3B30),
-                                                        fontWeight: FontWeight.w400,
-                                                      ),
-                                                      overflow: TextOverflow.ellipsis,
+                                                      style:
+                                                          ResponsiveUtils.getTextStyle(
+                                                            context,
+                                                            fontSize: 8,
+                                                            color: const Color(
+                                                              0xFFFF3B30,
+                                                            ),
+                                                            fontWeight:
+                                                                FontWeight.w400,
+                                                          ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
                                                       maxLines: 1,
                                                     ),
                                                 ],
@@ -410,12 +515,16 @@ class _CalendarScreenState extends State<CalendarScreen> with AutomaticKeepAlive
                                 );
                               }),
                             ),
-                            SizedBox(height: ResponsiveUtils.spacing(context, 8)),
+                            SizedBox(
+                              height: ResponsiveUtils.spacing(context, 8),
+                            ),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 _legendDot(const Color(0xFF34C759), '연차'),
-                                SizedBox(width: ResponsiveUtils.spacing(context, 20)),
+                                SizedBox(
+                                  width: ResponsiveUtils.spacing(context, 20),
+                                ),
                                 _legendDot(const Color(0xFF1976D2), '출장'),
                               ],
                             ),
@@ -427,16 +536,23 @@ class _CalendarScreenState extends State<CalendarScreen> with AutomaticKeepAlive
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveUtils.spacing(context, 12),
+                          ),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withValues(alpha: 0.08),
                               blurRadius: ResponsiveUtils.spacing(context, 3),
-                              offset: Offset(0, ResponsiveUtils.spacing(context, 1)),
+                              offset: Offset(
+                                0,
+                                ResponsiveUtils.spacing(context, 1),
+                              ),
                             ),
                           ],
                         ),
-                        padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
+                        padding: EdgeInsets.all(
+                          ResponsiveUtils.spacing(context, 20),
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -455,11 +571,18 @@ class _CalendarScreenState extends State<CalendarScreen> with AutomaticKeepAlive
                                   ),
                                 ),
                                 // 공휴일 표시
-                                if (_selectedDay != null && provider.isHoliday(_selectedDay!))
+                                if (_selectedDay != null &&
+                                    provider.isHoliday(_selectedDay!))
                                   Container(
                                     padding: EdgeInsets.symmetric(
-                                      horizontal: ResponsiveUtils.spacing(context, 8),
-                                      vertical: ResponsiveUtils.spacing(context, 3),
+                                      horizontal: ResponsiveUtils.spacing(
+                                        context,
+                                        8,
+                                      ),
+                                      vertical: ResponsiveUtils.spacing(
+                                        context,
+                                        3,
+                                      ),
                                     ),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFFFE5E5),
@@ -468,7 +591,9 @@ class _CalendarScreenState extends State<CalendarScreen> with AutomaticKeepAlive
                                       ),
                                     ),
                                     child: Text(
-                                      provider.getHolidayInfo(_selectedDay!)!['name'],
+                                      provider.getHolidayInfo(
+                                        _selectedDay!,
+                                      )!['name'],
                                       style: ResponsiveUtils.getTextStyle(
                                         context,
                                         fontSize: 11,
@@ -479,15 +604,21 @@ class _CalendarScreenState extends State<CalendarScreen> with AutomaticKeepAlive
                                   ),
                               ],
                             ),
-                            SizedBox(height: ResponsiveUtils.spacing(context, 16)),
+                            SizedBox(
+                              height: ResponsiveUtils.spacing(context, 16),
+                            ),
                             ..._getEventsForDay(
                               _selectedDay ?? DateTime.now(),
                               allLeaves,
                             ).map((e) => _eventTile(e)),
-                            if (_getEventsForDay(_selectedDay ?? DateTime.now(), allLeaves).isEmpty)
+                            if (_getEventsForDay(
+                              _selectedDay ?? DateTime.now(),
+                              allLeaves,
+                            ).isEmpty)
                               Center(
                                 child: Text(
-                                  (_selectedDay != null && provider.isHoliday(_selectedDay!))
+                                  (_selectedDay != null &&
+                                          provider.isHoliday(_selectedDay!))
                                       ? '공휴일입니다.'
                                       : '해당 날짜에 등록된 연차/출장이 없습니다.',
                                   style: ResponsiveUtils.getTextStyle(
@@ -517,7 +648,9 @@ class _CalendarScreenState extends State<CalendarScreen> with AutomaticKeepAlive
           height: ResponsiveUtils.spacing(context, 3),
           decoration: BoxDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 1.5)),
+            borderRadius: BorderRadius.circular(
+              ResponsiveUtils.spacing(context, 1.5),
+            ),
           ),
         ),
         SizedBox(width: ResponsiveUtils.spacing(context, 6)),
@@ -592,7 +725,9 @@ class _CalendarScreenState extends State<CalendarScreen> with AutomaticKeepAlive
     }
 
     return Container(
-      padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 12)),
+      padding: EdgeInsets.symmetric(
+        vertical: ResponsiveUtils.spacing(context, 12),
+      ),
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: Color(0xFFF2F2F7), width: 1)),
       ),
@@ -618,7 +753,9 @@ class _CalendarScreenState extends State<CalendarScreen> with AutomaticKeepAlive
                 ),
                 decoration: BoxDecoration(
                   color: chipColor,
-                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 6)),
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveUtils.spacing(context, 6),
+                  ),
                 ),
                 child: Text(
                   chipLabel,

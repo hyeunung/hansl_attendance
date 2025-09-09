@@ -6,10 +6,11 @@ import 'package:hansl/utils/logger.dart';
 /// Feature Flag 설정 화면 (개발/테스트용)
 /// 프로덕션에서는 숨겨져야 합니다.
 class FeatureFlagSettingsScreen extends StatefulWidget {
-  const FeatureFlagSettingsScreen({Key? key}) : super(key: key);
+  const FeatureFlagSettingsScreen({super.key});
 
   @override
-  State<FeatureFlagSettingsScreen> createState() => _FeatureFlagSettingsScreenState();
+  State<FeatureFlagSettingsScreen> createState() =>
+      _FeatureFlagSettingsScreenState();
 }
 
 class _FeatureFlagSettingsScreenState extends State<FeatureFlagSettingsScreen> {
@@ -66,8 +67,14 @@ class _FeatureFlagSettingsScreenState extends State<FeatureFlagSettingsScreen> {
         title: const Text('기본값으로 초기화'),
         content: const Text('모든 Feature Flag를 기본값으로 초기화하시겠습니까?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('취소')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('초기화')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('초기화'),
+          ),
         ],
       ),
     );
@@ -79,7 +86,10 @@ class _FeatureFlagSettingsScreenState extends State<FeatureFlagSettingsScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('모든 플래그가 기본값으로 초기화되었습니다'), backgroundColor: Colors.green),
+        const SnackBar(
+          content: Text('모든 플래그가 기본값으로 초기화되었습니다'),
+          backgroundColor: Colors.green,
+        ),
       );
     }
   }
@@ -91,7 +101,11 @@ class _FeatureFlagSettingsScreenState extends State<FeatureFlagSettingsScreen> {
         title: const Text('Feature Flags (개발용)'),
         backgroundColor: AppColors.primary,
         actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadFlags, tooltip: '새로고침'),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadFlags,
+            tooltip: '새로고침',
+          ),
           IconButton(
             icon: const Icon(Icons.restore),
             onPressed: _resetToDefaults,
@@ -99,18 +113,24 @@ class _FeatureFlagSettingsScreenState extends State<FeatureFlagSettingsScreen> {
           ),
         ],
       ),
-      body: _isLoading ? const Center(child: CircularProgressIndicator()) : _buildFlagList(),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(onRefresh: _loadFlags, child: _buildFlagList()),
     );
   }
 
   Widget _buildFlagList() {
     if (_flags.isEmpty) {
       return const Center(
-        child: Text('Feature Flag가 없습니다', style: TextStyle(fontSize: 16, color: Colors.grey)),
+        child: Text(
+          'Feature Flag가 없습니다',
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+        ),
       );
     }
 
-    final flagEntries = _flags.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
+    final flagEntries = _flags.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
 
     return ListView.builder(
       itemCount: flagEntries.length + 1, // +1 for info card
@@ -200,7 +220,7 @@ class _FeatureFlagSettingsScreenState extends State<FeatureFlagSettingsScreen> {
 
 /// Feature Flag 설정 진입점 (설정 화면에서 사용)
 class FeatureFlagSettingsTile extends StatelessWidget {
-  const FeatureFlagSettingsTile({Key? key}) : super(key: key);
+  const FeatureFlagSettingsTile({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -217,7 +237,9 @@ class FeatureFlagSettingsTile extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const FeatureFlagSettingsScreen()),
+          MaterialPageRoute(
+            builder: (context) => const FeatureFlagSettingsScreen(),
+          ),
         );
       },
     );

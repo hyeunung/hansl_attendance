@@ -10,7 +10,8 @@ import 'database_optimization_service.dart';
 /// 종합 성능 모니터링 서비스
 /// 실시간으로 앱 성능을 추적하고 분석하여 최적화 기회를 제공
 class PerformanceMonitoringService {
-  static final PerformanceMonitoringService _instance = PerformanceMonitoringService._internal();
+  static final PerformanceMonitoringService _instance =
+      PerformanceMonitoringService._internal();
   static PerformanceMonitoringService get instance => _instance;
   PerformanceMonitoringService._internal();
 
@@ -39,10 +40,11 @@ class PerformanceMonitoringService {
     });
 
     if (kDebugMode) {
-      if (kDebugMode)
+      if (kDebugMode) {
         print(
           '🔍 Performance monitoring started - snapshots every ${_snapshotInterval.inSeconds}s',
         );
+      }
     }
   }
 
@@ -63,16 +65,52 @@ class PerformanceMonitoringService {
   Future<void> _initializeMetrics() async {
     _metrics.clear();
     _metrics.addAll({
-      'app_start_time': PerformanceMetric('App Start Time', 'ms', MetricType.timing),
-      'memory_usage': PerformanceMetric('Memory Usage', 'MB', MetricType.memory),
+      'app_start_time': PerformanceMetric(
+        'App Start Time',
+        'ms',
+        MetricType.timing,
+      ),
+      'memory_usage': PerformanceMetric(
+        'Memory Usage',
+        'MB',
+        MetricType.memory,
+      ),
       'cpu_usage': PerformanceMetric('CPU Usage', '%', MetricType.cpu),
-      'network_requests': PerformanceMetric('Network Requests', 'count', MetricType.counter),
-      'cache_hit_rate': PerformanceMetric('Cache Hit Rate', '%', MetricType.percentage),
-      'ui_rebuilds': PerformanceMetric('UI Rebuilds', 'count/min', MetricType.counter),
-      'timer_count': PerformanceMetric('Active Timers', 'count', MetricType.counter),
-      'async_operations': PerformanceMetric('Async Operations', 'count', MetricType.counter),
-      'database_queries': PerformanceMetric('DB Queries', 'count/min', MetricType.counter),
-      'frame_rate': PerformanceMetric('Frame Rate', 'FPS', MetricType.performance),
+      'network_requests': PerformanceMetric(
+        'Network Requests',
+        'count',
+        MetricType.counter,
+      ),
+      'cache_hit_rate': PerformanceMetric(
+        'Cache Hit Rate',
+        '%',
+        MetricType.percentage,
+      ),
+      'ui_rebuilds': PerformanceMetric(
+        'UI Rebuilds',
+        'count/min',
+        MetricType.counter,
+      ),
+      'timer_count': PerformanceMetric(
+        'Active Timers',
+        'count',
+        MetricType.counter,
+      ),
+      'async_operations': PerformanceMetric(
+        'Async Operations',
+        'count',
+        MetricType.counter,
+      ),
+      'database_queries': PerformanceMetric(
+        'DB Queries',
+        'count/min',
+        MetricType.counter,
+      ),
+      'frame_rate': PerformanceMetric(
+        'Frame Rate',
+        'FPS',
+        MetricType.performance,
+      ),
     });
   }
 
@@ -86,7 +124,8 @@ class PerformanceMonitoringService {
       final timerStats = TimerManager.instance.getStats();
       final uiStats = UIOptimizationService.instance.getUIPerformanceStats();
       final asyncStats = AsyncOperationManager.instance.getStats();
-      final dbStats = DatabaseOptimizationService.instance.getPerformanceStats();
+      final dbStats = DatabaseOptimizationService.instance
+          .getPerformanceStats();
 
       // 메모리 사용량 (시뮬레이션 - 실제로는 플랫폼별 구현 필요)
       final memoryUsage = await _getMemoryUsage();
@@ -135,12 +174,16 @@ class PerformanceMonitoringService {
 
     // 메모리 사용량 체크
     if (snapshot.memoryUsage > _criticalMemoryThreshold) {
-      issues.add('🔴 High memory usage: ${snapshot.memoryUsage.toStringAsFixed(1)}MB');
+      issues.add(
+        '🔴 High memory usage: ${snapshot.memoryUsage.toStringAsFixed(1)}MB',
+      );
     }
 
     // 프레임율 체크
     if (snapshot.frameRate < _criticalFpsThreshold) {
-      issues.add('🔴 Low frame rate: ${snapshot.frameRate.toStringAsFixed(1)} FPS');
+      issues.add(
+        '🔴 Low frame rate: ${snapshot.frameRate.toStringAsFixed(1)} FPS',
+      );
     }
 
     // UI 리빌드 과다 체크
@@ -151,13 +194,17 @@ class PerformanceMonitoringService {
       final rebuildsPerSecond = rebuildDiff / timeDiff;
 
       if (rebuildsPerSecond > 10) {
-        issues.add('⚠️ High UI rebuild rate: ${rebuildsPerSecond.toStringAsFixed(1)}/sec');
+        issues.add(
+          '⚠️ High UI rebuild rate: ${rebuildsPerSecond.toStringAsFixed(1)}/sec',
+        );
       }
     }
 
     // 캐시 효율성 체크
     if (snapshot.cacheHitRate < 70.0) {
-      issues.add('📊 Low cache hit rate: ${snapshot.cacheHitRate.toStringAsFixed(1)}%');
+      issues.add(
+        '📊 Low cache hit rate: ${snapshot.cacheHitRate.toStringAsFixed(1)}%',
+      );
     }
 
     // 이슈가 있으면 디버그 출력
@@ -209,15 +256,22 @@ class PerformanceMonitoringService {
 
     // 평균값 계산
     final avgMemory =
-        _snapshots.map((s) => s.memoryUsage).reduce((a, b) => a + b) / _snapshots.length;
+        _snapshots.map((s) => s.memoryUsage).reduce((a, b) => a + b) /
+        _snapshots.length;
     final avgFrameRate =
-        _snapshots.map((s) => s.frameRate).reduce((a, b) => a + b) / _snapshots.length;
+        _snapshots.map((s) => s.frameRate).reduce((a, b) => a + b) /
+        _snapshots.length;
     final avgCacheHitRate =
-        _snapshots.map((s) => s.cacheHitRate).reduce((a, b) => a + b) / _snapshots.length;
+        _snapshots.map((s) => s.cacheHitRate).reduce((a, b) => a + b) /
+        _snapshots.length;
 
     // 트렌드 분석
-    final memoryTrend = _calculateTrend(_snapshots.map((s) => s.memoryUsage).toList());
-    final frameRateTrend = _calculateTrend(_snapshots.map((s) => s.frameRate).toList());
+    final memoryTrend = _calculateTrend(
+      _snapshots.map((s) => s.memoryUsage).toList(),
+    );
+    final frameRateTrend = _calculateTrend(
+      _snapshots.map((s) => s.frameRate).toList(),
+    );
 
     return {
       'monitoring_duration_minutes': duration.inMinutes,
@@ -246,7 +300,12 @@ class PerformanceMonitoringService {
         avgFrameRate,
         avgCacheHitRate,
       ),
-      'recommendations': _generateRecommendations(latest, avgMemory, avgFrameRate, avgCacheHitRate),
+      'recommendations': _generateRecommendations(
+        latest,
+        avgMemory,
+        avgFrameRate,
+        avgCacheHitRate,
+      ),
     };
   }
 
@@ -255,8 +314,12 @@ class PerformanceMonitoringService {
     if (values.length < 2) return 0.0;
 
     // 간단한 선형 트렌드 계산
-    final first = values.take(values.length ~/ 3).reduce((a, b) => a + b) / (values.length ~/ 3);
-    final last = values.skip(values.length * 2 ~/ 3).reduce((a, b) => a + b) / (values.length ~/ 3);
+    final first =
+        values.take(values.length ~/ 3).reduce((a, b) => a + b) /
+        (values.length ~/ 3);
+    final last =
+        values.skip(values.length * 2 ~/ 3).reduce((a, b) => a + b) /
+        (values.length ~/ 3);
 
     return (last - first) / first * 100; // 퍼센트 변화
   }
@@ -278,33 +341,33 @@ class PerformanceMonitoringService {
     double score = 100.0;
 
     // 메모리 사용량 (30% 가중치)
-    if (avgMemory > 400)
+    if (avgMemory > 400) {
       score -= 30;
-    else if (avgMemory > 300)
+    } else if (avgMemory > 300)
       score -= 20;
     else if (avgMemory > 200)
       score -= 10;
 
     // 프레임율 (40% 가중치)
-    if (avgFrameRate < 50)
+    if (avgFrameRate < 50) {
       score -= 40;
-    else if (avgFrameRate < 55)
+    } else if (avgFrameRate < 55)
       score -= 25;
     else if (avgFrameRate < 58)
       score -= 10;
 
     // 캐시 효율성 (20% 가중치)
-    if (avgCacheHitRate < 50)
+    if (avgCacheHitRate < 50) {
       score -= 20;
-    else if (avgCacheHitRate < 70)
+    } else if (avgCacheHitRate < 70)
       score -= 10;
     else if (avgCacheHitRate < 85)
       score -= 5;
 
     // 타이머 과다 사용 (10% 가중치)
-    if (latest.activeTimers > 20)
+    if (latest.activeTimers > 20) {
       score -= 10;
-    else if (latest.activeTimers > 10)
+    } else if (latest.activeTimers > 10)
       score -= 5;
 
     return score.clamp(0.0, 100.0);
@@ -395,10 +458,13 @@ class PerformanceMetric {
     }
   }
 
-  double get average => values.isEmpty ? 0.0 : values.reduce((a, b) => a + b) / values.length;
+  double get average =>
+      values.isEmpty ? 0.0 : values.reduce((a, b) => a + b) / values.length;
   double get latest => values.isEmpty ? 0.0 : values.last;
-  double get min => values.isEmpty ? 0.0 : values.reduce((a, b) => a < b ? a : b);
-  double get max => values.isEmpty ? 0.0 : values.reduce((a, b) => a > b ? a : b);
+  double get min =>
+      values.isEmpty ? 0.0 : values.reduce((a, b) => a < b ? a : b);
+  double get max =>
+      values.isEmpty ? 0.0 : values.reduce((a, b) => a > b ? a : b);
 }
 
 /// 메트릭 타입

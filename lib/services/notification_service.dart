@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
 import '../screens/main_tab.dart';
+import '../screens/notification/notification_center_screen.dart';
 
 // 백그라운드 메시지 핸들러 (글로벌 함수여야 함)
 @pragma('vm:entry-point')
@@ -45,10 +46,12 @@ class NotificationService {
   static String? _fcmToken;
 
   /// 글로벌 네비게이터 키 (외부에서 접근 가능)
-  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
 
   // 중복 알림 방지를 위한 최근 전송 기록 (메모리에서만 관리)
-  static final Map<String, DateTime> _recentNotifications = <String, DateTime>{};
+  static final Map<String, DateTime> _recentNotifications =
+      <String, DateTime>{};
 
   // 중복 알림 방지 시간 (초)
   static const int _duplicatePreventionSeconds = 30;
@@ -57,7 +60,9 @@ class NotificationService {
   static Future<void> initialize() async {
     try {
       // 백그라운드 메시지 핸들러 등록
-      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      FirebaseMessaging.onBackgroundMessage(
+        _firebaseMessagingBackgroundHandler,
+      );
 
       // 로컬 알림 초기화
       await _initializeLocalNotifications();
@@ -100,7 +105,8 @@ class NotificationService {
       if (kDebugMode) {
         if (kDebugMode) print('✅ 알림 권한 허용됨');
       }
-    } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
+    } else if (settings.authorizationStatus ==
+        AuthorizationStatus.provisional) {
       if (kDebugMode) {
         if (kDebugMode) print('⚠️ 임시 알림 권한 허용됨');
       }
@@ -129,7 +135,9 @@ class NotificationService {
 
           if (apnsToken != null) {
             if (kDebugMode) {
-              if (kDebugMode) print('✅ APNS 토큰 설정됨: ${apnsToken.substring(0, 20)}...');
+              if (kDebugMode) {
+                print('✅ APNS 토큰 설정됨: ${apnsToken.substring(0, 20)}...');
+              }
               if (kDebugMode) print('✅ iOS 푸시 알림 사용 가능');
             }
           } else {
@@ -149,7 +157,9 @@ class NotificationService {
 
               if (apnsToken != null) {
                 if (kDebugMode) {
-                  if (kDebugMode) print('✅ APNS 토큰 지연 생성됨: ${apnsToken.substring(0, 20)}...');
+                  if (kDebugMode) {
+                    print('✅ APNS 토큰 지연 생성됨: ${apnsToken.substring(0, 20)}...');
+                  }
                 }
               }
             }
@@ -234,7 +244,9 @@ class NotificationService {
   /// 로컬 알림 초기화
   static Future<void> _initializeLocalNotifications() async {
     // Android 설정
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
 
     // iOS 설정
     const iosSettings = DarwinInitializationSettings(
@@ -245,7 +257,10 @@ class NotificationService {
     );
 
     // 플랫폼 별 설정
-    final settings = InitializationSettings(android: androidSettings, iOS: iosSettings);
+    final settings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
+    );
 
     // 초기화
     await _localNotifications.initialize(
@@ -278,7 +293,9 @@ class NotificationService {
     // 포그라운드에서 메시지 수신
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       if (kDebugMode) {
-        if (kDebugMode) print('📱 포그라운드 메시지 수신: ${message.notification?.title}');
+        if (kDebugMode) {
+          print('📱 포그라운드 메시지 수신: ${message.notification?.title}');
+        }
       }
       _showLocalNotification(message);
     });
@@ -325,6 +342,12 @@ class NotificationService {
       // 알림 수신 이벤트 로깅
       _logNotificationEvent('received_foreground', message);
 
+      // iOS 배지 카운트 업데이트
+      if (Platform.isIOS) {
+        // 현재 배지 카운트를 가져와서 1 증가
+        await _updateBadgeCount();
+      }
+
       // Android 알림 채널 설정
       const androidDetails = AndroidNotificationDetails(
         'hansl_channel', // 채널 ID
@@ -343,13 +366,18 @@ class NotificationService {
         presentBadge: true,
         presentSound: true,
         sound: 'default',
+        badgeNumber: null, // null로 설정하면 시스템이 자동으로 관리
       );
 
       // 플랫폼 별 설정 통합
-      const details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+      const details = NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      );
 
       // 알림 ID 생성 (중복 방지)
-      final notificationId = message.messageId?.hashCode ?? DateTime.now().millisecondsSinceEpoch;
+      final notificationId =
+          message.messageId?.hashCode ?? DateTime.now().millisecondsSinceEpoch;
 
       // 로컬 알림 표시
       await _localNotifications.show(
@@ -415,7 +443,9 @@ class NotificationService {
         case 'business_trip':
           // 연차/출장 신청 알림 - 관리자는 승인 탭으로 바로 이동
           if (kDebugMode) {
-            if (kDebugMode) print('📅 ${type == 'business_trip' ? '출장' : '연차'} 신청 알림');
+            if (kDebugMode) {
+              print('📅 ${type == 'business_trip' ? '출장' : '연차'} 신청 알림');
+            }
             if (kDebugMode) print('   신청자: $requesterName ($requesterEmail)');
           }
 
@@ -443,16 +473,21 @@ class NotificationService {
                 '연구소_manager',
               ];
 
-              final hasApprovalRole = attendanceRoles.any((role) => approvalRoles.contains(role));
+              final hasApprovalRole = attendanceRoles.any(
+                (role) => approvalRoles.contains(role),
+              );
 
               if (hasApprovalRole) {
-                // 관리자는 승인 탭(index 2)으로 바로 이동
+                // 관리자는 승인 탭(index 2)으로 바로 이동 - 연차/출장 탭(0)
                 if (kDebugMode) {
-                  if (kDebugMode) print('✅ 관리자 권한 확인 - 승인 탭으로 이동');
+                  if (kDebugMode) print('✅ 관리자 권한 확인 - 승인 탭(연차/출장)으로 이동');
                 }
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(
-                    builder: (context) => const MainTab(initialIndex: 2), // 승인 탭
+                    builder: (context) => MainTab(
+                      initialIndex: 2, // 승인 탭
+                      approvalSubTab: 0, // 연차/출장 서브탭
+                    ),
                   ),
                   (route) => false,
                 );
@@ -463,7 +498,7 @@ class NotificationService {
                 }
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(
-                    builder: (context) => const MainTab(initialIndex: 0), // 홈 탭
+                    builder: (context) => MainTab(initialIndex: 0), // 홈 탭
                   ),
                   (route) => false,
                 );
@@ -476,7 +511,7 @@ class NotificationService {
             }
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(
-                builder: (context) => const MainTab(initialIndex: 0), // 홈 탭
+                builder: (context) => MainTab(initialIndex: 0), // 홈 탭
               ),
               (route) => false,
             );
@@ -492,7 +527,116 @@ class NotificationService {
           // MainTab으로 이동하고 연차 탭(index 1) 선택
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
-              builder: (context) => const MainTab(initialIndex: 1), // 연차 탭
+              builder: (context) => MainTab(initialIndex: 1), // 연차 탭
+            ),
+            (route) => false,
+          );
+          break;
+
+        case 'new_purchase_request':
+        case 'final_approval_request':
+        case 'purchase_approval':
+          // 발주 관련 알림 - 권한에 따라 발주 승인 탭 또는 홈으로 이동
+          if (kDebugMode) {
+            if (kDebugMode) print('📦 발주 관련 알림 처리');
+            if (kDebugMode) print('   타입: $type');
+            if (kDebugMode) {
+              print('   발주번호: ${message.data['purchase_order_number']}');
+            }
+          }
+
+          // 현재 사용자의 발주 권한 확인
+          try {
+            final user = Supabase.instance.client.auth.currentUser;
+            if (user != null) {
+              final response = await Supabase.instance.client
+                  .from('employees')
+                  .select('purchase_role')
+                  .eq('email', user.email!)
+                  .single();
+
+              final List<dynamic> purchaseRoles =
+                  (response['purchase_role'] as List<dynamic>?) ?? [];
+
+              // 발주 승인 권한이 있는 역할 확인
+              final approvalRoles = [
+                'middle_manager',
+                'raw_material_manager',
+                'consumable_manager',
+                'app_admin',
+              ];
+
+              final hasApprovalRole = purchaseRoles.any(
+                (role) => approvalRoles.contains(role),
+              );
+
+              if (hasApprovalRole) {
+                // 발주 승인 권한이 있는 사용자는 승인관리 탭(index 2)으로 이동 - 발주승인 탭(1)
+                if (kDebugMode) {
+                  if (kDebugMode) print('✅ 발주 승인 권한 확인 - 승인관리 탭(발주승인)으로 이동');
+                }
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(
+                    builder: (context) => MainTab(
+                      initialIndex: 2, // 승인관리 탭
+                      approvalSubTab: 1, // 발주승인 서브탭
+                    ),
+                  ),
+                  (route) => false,
+                );
+              } else {
+                // 일반 사용자는 홈 탭으로 이동
+                if (kDebugMode) {
+                  if (kDebugMode) print('📱 일반 사용자 - 홈 화면으로 이동');
+                }
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(
+                    builder: (context) => MainTab(initialIndex: 0), // 홈 탭
+                  ),
+                  (route) => false,
+                );
+              }
+            }
+          } catch (e) {
+            // 오류 시 기본 홈 화면으로
+            if (kDebugMode) {
+              if (kDebugMode) print('⚠️ 권한 확인 실패, 홈으로 이동: $e');
+            }
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (context) => MainTab(initialIndex: 0), // 홈 탭
+              ),
+              (route) => false,
+            );
+          }
+          break;
+
+        case 'purchase_approved':
+        case 'purchase_result':
+          // 발주 승인/반려 결과 알림 - 홈 화면으로 이동
+          if (kDebugMode) {
+            if (kDebugMode) print('📋 발주 결과 알림 - 홈 화면으로 이동');
+          }
+
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => MainTab(initialIndex: 0), // 홈 탭
+            ),
+            (route) => false,
+          );
+          break;
+
+        case 'notification_summary':
+        case 'grouped_notification':
+        case 'multiple_notifications':
+          // 그룹 알림 클릭 시 알림 센터로 이동
+          if (kDebugMode) {
+            if (kDebugMode) print('📬 알림 센터로 이동 (그룹 알림)');
+          }
+
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const NotificationCenterScreen(),
             ),
             (route) => false,
           );
@@ -507,7 +651,7 @@ class NotificationService {
           // MainTab으로 이동하고 홈 탭(index 0) 선택
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
-              builder: (context) => const MainTab(initialIndex: 0), // 홈 탭
+              builder: (context) => MainTab(initialIndex: 0), // 홈 탭
             ),
             (route) => false,
           );
@@ -587,14 +731,16 @@ class NotificationService {
   }) async {
     try {
       final projectId = 'qvhbigvdfyvhoegkhvef'; // 원래 프로젝트 ID로 복원
-      final functionUrl = 'https://$projectId.supabase.co/functions/v1/send_fcm_notification';
+      final functionUrl =
+          'https://$projectId.supabase.co/functions/v1/send_fcm_notification';
 
       final requestData = {
         'type': type,
         'title': title,
         'body': body,
         'data': data,
-        if (requesterDepartment != null) 'requester_department': requesterDepartment,
+        if (requesterDepartment != null)
+          'requester_department': requesterDepartment,
         if (userEmail != null) 'user_email': userEmail,
         if (requesterEmail != null) 'requester_email': requesterEmail,
         'is_manager_request': isManagerRequest,
@@ -608,7 +754,8 @@ class NotificationService {
         Uri.parse(functionUrl),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${Supabase.instance.client.auth.currentSession?.accessToken}',
+          'Authorization':
+              'Bearer ${Supabase.instance.client.auth.currentSession?.accessToken}',
         },
         body: jsonEncode(requestData),
       );
@@ -617,18 +764,26 @@ class NotificationService {
         final responseData = jsonDecode(response.body);
         if (responseData['success'] == true) {
           if (kDebugMode) {
-            if (kDebugMode) print('✅ Edge Function 알림 전송 성공: ${responseData['message']}');
+            if (kDebugMode) {
+              print('✅ Edge Function 알림 전송 성공: ${responseData['message']}');
+            }
           }
           return true;
         } else {
           if (kDebugMode) {
-            if (kDebugMode) print('❌ Edge Function 알림 전송 실패: ${responseData['message']}');
+            if (kDebugMode) {
+              print('❌ Edge Function 알림 전송 실패: ${responseData['message']}');
+            }
           }
           return false;
         }
       } else {
         if (kDebugMode) {
-          if (kDebugMode) print('❌ Edge Function 호출 실패: ${response.statusCode} - ${response.body}');
+          if (kDebugMode) {
+            print(
+              '❌ Edge Function 호출 실패: ${response.statusCode} - ${response.body}',
+            );
+          }
         }
         return false;
       }
@@ -641,7 +796,11 @@ class NotificationService {
   }
 
   /// 중복 알림 방지 체크
-  static bool _isDuplicateNotification(String userEmail, String title, String type) {
+  static bool _isDuplicateNotification(
+    String userEmail,
+    String title,
+    String type,
+  ) {
     final key = '${userEmail}_${title}_$type';
     final now = DateTime.now();
 
@@ -651,7 +810,9 @@ class NotificationService {
 
       if (secondsElapsed < _duplicatePreventionSeconds) {
         if (kDebugMode) {
-          if (kDebugMode) print('🚫 중복 알림 차단: $title (${secondsElapsed}초 전에 전송됨)');
+          if (kDebugMode) {
+            print('🚫 중복 알림 차단: $title ($secondsElapsed초 전에 전송됨)');
+          }
         }
         return true;
       }
@@ -659,7 +820,9 @@ class NotificationService {
 
     // 기록 저장 및 5분 이상 된 기록 정리
     _recentNotifications[key] = now;
-    _recentNotifications.removeWhere((key, timestamp) => now.difference(timestamp).inMinutes > 5);
+    _recentNotifications.removeWhere(
+      (key, timestamp) => now.difference(timestamp).inMinutes > 5,
+    );
 
     return false;
   }
@@ -676,7 +839,11 @@ class NotificationService {
     try {
       // 중복 알림 방지 체크
       final notificationType = data['type'] ?? 'admin';
-      if (_isDuplicateNotification(requesterEmail ?? 'admin', title, notificationType)) {
+      if (_isDuplicateNotification(
+        requesterEmail ?? 'admin',
+        title,
+        notificationType,
+      )) {
         if (kDebugMode) {
           if (kDebugMode) print('⏩ 중복 알림으로 전송 건너뜀: $title');
         }
@@ -684,7 +851,11 @@ class NotificationService {
       }
 
       if (kDebugMode) {
-        if (kDebugMode) print('📮 ${isManagerRequest ? 'Admin' : '부서 관리자'}에게 알림 전송 시작: $title');
+        if (kDebugMode) {
+          print(
+            '📮 ${isManagerRequest ? 'Admin' : '부서 관리자'}에게 알림 전송 시작: $title',
+          );
+        }
       }
 
       await _callFCMEdgeFunction(
@@ -759,6 +930,58 @@ class NotificationService {
   static Future<String?> getSavedToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('fcm_token');
+  }
+
+  /// iOS 배지 카운트 업데이트
+  static Future<void> _updateBadgeCount() async {
+    try {
+      // 읽지 않은 알림 개수를 가져와서 배지에 표시
+      final prefs = await SharedPreferences.getInstance();
+      int unreadCount = prefs.getInt('unread_notification_count') ?? 0;
+      unreadCount++; // 새 알림이 왔으므로 1 증가
+
+      // SharedPreferences에 저장
+      await prefs.setInt('unread_notification_count', unreadCount);
+
+      // iOS 배지 업데이트
+      if (Platform.isIOS) {
+        await FlutterLocalNotificationsPlugin()
+            .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin
+            >()
+            ?.requestPermissions(badge: true);
+      }
+
+      if (kDebugMode) {
+        print('🔢 iOS 배지 카운트 업데이트: $unreadCount');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ 배지 카운트 업데이트 실패: $e');
+      }
+    }
+  }
+
+  /// 배지 카운트 초기화
+  static Future<void> clearBadgeCount() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('unread_notification_count', 0);
+
+      if (Platform.isIOS) {
+        // iOS에서는 직접 배지를 0으로 설정할 수 없으므로
+        // 빈 알림을 보내서 배지를 제거
+        await _localNotifications.cancelAll();
+      }
+
+      if (kDebugMode) {
+        print('🔢 배지 카운트 초기화');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ 배지 카운트 초기화 실패: $e');
+      }
+    }
   }
 
   /// 로그인 후 FCM 토큰 재저장 (로그인 후 호출)

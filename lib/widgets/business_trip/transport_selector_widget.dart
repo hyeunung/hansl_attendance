@@ -11,12 +11,12 @@ class TransportSelectorWidget extends StatelessWidget {
   final bool isRequired;
 
   const TransportSelectorWidget({
-    Key? key,
+    super.key,
     required this.selectedTransport,
     required this.transportOptions,
     this.onChanged,
     this.isRequired = true,
-  }) : super(key: key);
+  });
 
   // 교통수단별 아이콘 매핑
   IconData _getTransportIcon(String transport) {
@@ -83,8 +83,12 @@ class TransportSelectorWidget extends StatelessWidget {
   Widget _buildHeader() {
     return Row(
       children: [
-        const Text('교통', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-        if (isRequired) const Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
+        const Text(
+          '교통',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+        ),
+        if (isRequired)
+          const Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
       ],
     );
   }
@@ -126,7 +130,9 @@ class TransportSelectorWidget extends StatelessWidget {
                     width: 32,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: _getTransportColor(transport).withValues(alpha: 0.1),
+                      color: _getTransportColor(
+                        transport,
+                      ).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -138,12 +144,18 @@ class TransportSelectorWidget extends StatelessWidget {
                   const SizedBox(width: 12),
                   Text(
                     transport,
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   if (_isCompanyCar(transport))
                     Container(
                       margin: const EdgeInsets.only(left: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.green.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -176,7 +188,9 @@ class TransportSelectorWidget extends StatelessWidget {
           color: _getTransportColor(selectedTransport!).withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: _getTransportColor(selectedTransport!).withValues(alpha: 0.2),
+            color: _getTransportColor(
+              selectedTransport!,
+            ).withValues(alpha: 0.2),
             width: 1,
           ),
         ),
@@ -186,7 +200,9 @@ class TransportSelectorWidget extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: _getTransportColor(selectedTransport!).withValues(alpha: 0.15),
+                color: _getTransportColor(
+                  selectedTransport!,
+                ).withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(18),
               ),
               child: Icon(
@@ -255,8 +271,11 @@ class TransportSelectionDialog extends StatelessWidget {
   final String? currentSelection;
   final List<String> transportOptions;
 
-  const TransportSelectionDialog({Key? key, this.currentSelection, required this.transportOptions})
-    : super(key: key);
+  const TransportSelectionDialog({
+    super.key,
+    this.currentSelection,
+    required this.transportOptions,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -273,7 +292,10 @@ class TransportSelectionDialog extends StatelessWidget {
               children: [
                 Icon(Icons.commute, color: AppColors.primary),
                 const SizedBox(width: 8),
-                const Text('교통수단 선택', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                const Text(
+                  '교통수단 선택',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                ),
               ],
             ),
             const SizedBox(height: 20),
@@ -290,7 +312,9 @@ class TransportSelectionDialog extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isSelected ? color.withValues(alpha: 0.1) : Colors.transparent,
+                      color: isSelected
+                          ? color.withValues(alpha: 0.1)
+                          : Colors.transparent,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isSelected ? color : Colors.grey.shade300,
@@ -324,7 +348,10 @@ class TransportSelectionDialog extends StatelessWidget {
                               if (_getTransportDescription(transport) != null)
                                 Text(
                                   _getTransportDescription(transport)!,
-                                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey[600],
+                                  ),
                                 ),
                             ],
                           ),
@@ -335,12 +362,15 @@ class TransportSelectionDialog extends StatelessWidget {
                   ),
                 ),
               );
-            }).toList(),
+            }),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('취소'),
+                ),
               ],
             ),
           ],

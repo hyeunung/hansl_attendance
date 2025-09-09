@@ -1,9 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter/foundation.dart';
 import 'secure_storage_service.dart';
-import 'package:flutter/foundation.dart';
 
 /// 환경 변수 안전 로딩 서비스
 /// .env 파일 대신 빌드 시 환경 변수나 보안 저장소 사용
@@ -23,7 +21,9 @@ class EnvironmentService {
     try {
       // 1. 시스템 환경 변수 우선 확인 (가장 안전)
       if (_hasSystemEnvVars()) {
-        if (kDebugMode) print('✅ Using system environment variables (most secure)');
+        if (kDebugMode) {
+          print('✅ Using system environment variables (most secure)');
+        }
         _initialized = true;
         return;
       }
@@ -37,7 +37,9 @@ class EnvironmentService {
 
       // 3. .env 파일 로드 (개발 환경에서만, 경고 표시)
       if (await _loadDotEnvFile()) {
-        if (kDebugMode) print('⚠️ WARNING: Using .env file - not secure for production!');
+        if (kDebugMode) {
+          print('⚠️ WARNING: Using .env file - not secure for production!');
+        }
 
         // .env에서 로드한 값들을 보안 저장소로 마이그레이션
         await _migrateToSecureStorage();
@@ -97,7 +99,9 @@ class EnvironmentService {
     for (final varName in requiredVars) {
       final value = await get(varName);
       if (value == null || value.isEmpty) {
-        if (kDebugMode) print('❌ Required environment variable missing: $varName');
+        if (kDebugMode) {
+          print('❌ Required environment variable missing: $varName');
+        }
         return false;
       }
     }
@@ -148,7 +152,12 @@ class EnvironmentService {
     try {
       if (!dotenv.isInitialized) return;
 
-      final envVars = [supabaseUrl, supabaseAnonKey, supabaseServiceKey, slackWebhookUrl];
+      final envVars = [
+        supabaseUrl,
+        supabaseAnonKey,
+        supabaseServiceKey,
+        slackWebhookUrl,
+      ];
 
       for (final varName in envVars) {
         final value = dotenv.env[varName];
@@ -166,7 +175,9 @@ class EnvironmentService {
   static Future<void> set(String key, String value) async {
     try {
       await SecureStorageService.write(key: key, value: value);
-      if (kDebugMode) print('✅ Environment variable "$key" set in secure storage');
+      if (kDebugMode) {
+        print('✅ Environment variable "$key" set in secure storage');
+      }
     } catch (e) {
       if (kDebugMode) print('❌ Failed to set environment variable "$key": $e');
       rethrow;
@@ -177,14 +188,17 @@ class EnvironmentService {
   static Future<Map<String, dynamic>> diagnostics() async {
     try {
       final systemVars = Platform.environment.keys
-          .where((key) => key.startsWith('SUPABASE_') || key.startsWith('SLACK_'))
+          .where(
+            (key) => key.startsWith('SUPABASE_') || key.startsWith('SLACK_'),
+          )
           .toList();
 
       return {
         'initialized': _initialized,
         'system_env_vars': systemVars,
         'dotenv_initialized': dotenv.isInitialized,
-        'secure_storage_available': await SecureStorageService.isSecureStorageAvailable(),
+        'secure_storage_available':
+            await SecureStorageService.isSecureStorageAvailable(),
         'validation_passed': await validateRequiredVars(),
       };
     } catch (e) {

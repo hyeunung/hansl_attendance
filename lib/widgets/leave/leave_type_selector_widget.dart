@@ -11,7 +11,7 @@ class LeaveTypeSelectorWidget extends StatefulWidget {
   final List<LeaveType> availableTypes;
 
   const LeaveTypeSelectorWidget({
-    Key? key,
+    super.key,
     required this.selectedType,
     required this.onTypeChanged,
     this.availableTypes = const [
@@ -20,10 +20,11 @@ class LeaveTypeSelectorWidget extends StatefulWidget {
       LeaveType.halfPm,
       LeaveType.official,
     ],
-  }) : super(key: key);
+  });
 
   @override
-  State<LeaveTypeSelectorWidget> createState() => _LeaveTypeSelectorWidgetState();
+  State<LeaveTypeSelectorWidget> createState() =>
+      _LeaveTypeSelectorWidgetState();
 }
 
 class _LeaveTypeSelectorWidgetState extends State<LeaveTypeSelectorWidget> {
@@ -48,7 +49,10 @@ class _LeaveTypeSelectorWidgetState extends State<LeaveTypeSelectorWidget> {
               children: [
                 Text(
                   widget.selectedType.label,
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Icon(
                   _dropdownOpen ? Icons.expand_less : Icons.expand_more,
@@ -78,7 +82,10 @@ class _LeaveTypeSelectorWidgetState extends State<LeaveTypeSelectorWidget> {
                       });
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: widget.selectedType == type
                             ? AppColors.primary.withValues(alpha: 0.1)
@@ -110,9 +117,14 @@ class _LeaveTypeSelectorWidgetState extends State<LeaveTypeSelectorWidget> {
                           if (type.days > 0)
                             Container(
                               margin: const EdgeInsets.only(left: 8),
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
-                                color: _getTypeColor(type).withValues(alpha: 0.2),
+                                color: _getTypeColor(
+                                  type,
+                                ).withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(

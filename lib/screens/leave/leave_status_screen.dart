@@ -77,24 +77,38 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
       ),
       body: OptimizedConsumer<LeaveProvider>(
         componentKey: 'leave_status_main',
-        throttleDuration: const Duration(milliseconds: 200), // Moderate throttling for leave data
-        shouldRebuild: (provider) => !provider.isLoading && provider.error == null,
+        throttleDuration: const Duration(
+          milliseconds: 200,
+        ), // Moderate throttling for leave data
+        shouldRebuild: (provider) =>
+            !provider.isLoading && provider.error == null,
         builder: (context, provider, _) {
           // 사용자 권한 확인
-          final userProvider = Provider.of<UserProvider>(context, listen: false);
+          final userProvider = Provider.of<UserProvider>(
+            context,
+            listen: false,
+          );
           final employee = userProvider.employee;
           final attendanceRole = employee?['attendance_role'];
           final name = employee?['name'] ?? '';
 
           // Admin 역할 확인
           final bool isAdmin =
-              attendanceRole != null && attendanceRole is List && attendanceRole.contains('admin');
+              attendanceRole != null &&
+              attendanceRole is List &&
+              attendanceRole.contains('admin');
 
           // Manager 역할 확인
-          final bool isManager = ['양승진', '최창열', '이정화', '조근일', '황연순'].contains(name);
+          final bool isManager = [
+            '양승진',
+            '최창열',
+            '이정화',
+            '조근일',
+            '황연순',
+          ].contains(name);
 
           // 승인 권한이 있는 경우 (Admin 또는 Manager)
-          final bool hasApprovalAuth = isAdmin || isManager;
+          // final bool hasApprovalAuth = isAdmin || isManager; // 미사용 변수 주석 처리
 
           // 에러 처리
           if (provider.error != null) {
@@ -104,9 +118,16 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
           return RefreshIndicator(
             onRefresh: () async {
               // 백엔드에서 최신 데이터 가져오기
-              final userProvider = Provider.of<UserProvider>(context, listen: false);
-              if (userProvider.email != null && userProvider.email!.isNotEmpty) {
-                await provider.fetchMyLeaves(email: userProvider.email!, forceRefresh: true);
+              final userProvider = Provider.of<UserProvider>(
+                context,
+                listen: false,
+              );
+              if (userProvider.email != null &&
+                  userProvider.email!.isNotEmpty) {
+                await provider.fetchMyLeaves(
+                  email: userProvider.email!,
+                  forceRefresh: true,
+                );
               }
               await provider.fetchTodayLeaves(DateTime.now());
               await provider.fetchAllLeaves(forceRefresh: true);
@@ -122,7 +143,9 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                   padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 28)),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
+                    borderRadius: BorderRadius.circular(
+                      ResponsiveUtils.spacing(context, 20),
+                    ),
                     boxShadow: [AppShadows.card],
                     border: Border.all(color: const Color(0xFFE9ECEF)),
                   ),
@@ -133,9 +156,13 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Container(
-                            padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 6)),
+                            padding: EdgeInsets.all(
+                              ResponsiveUtils.spacing(context, 6),
+                            ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF007AFF).withValues(alpha: 0.1),
+                              color: const Color(
+                                0xFF007AFF,
+                              ).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(
                                 ResponsiveUtils.spacing(context, 8),
                               ),
@@ -169,7 +196,9 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                         ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF2F2F7),
-                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveUtils.spacing(context, 12),
+                          ),
                         ),
                         child: Column(
                           children: [
@@ -184,7 +213,9 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                                 letterSpacing: -1.0,
                               ),
                             ),
-                            SizedBox(height: ResponsiveUtils.spacing(context, 4)),
+                            SizedBox(
+                              height: ResponsiveUtils.spacing(context, 4),
+                            ),
                             Text(
                               '잔여 연차',
                               style: ResponsiveUtils.getTextStyle(
@@ -208,10 +239,15 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                             child: Container(
                               padding: EdgeInsets.symmetric(
                                 vertical: ResponsiveUtils.spacing(context, 20),
-                                horizontal: ResponsiveUtils.spacing(context, 16),
+                                horizontal: ResponsiveUtils.spacing(
+                                  context,
+                                  16,
+                                ),
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF34C759).withValues(alpha: 0.1),
+                                color: const Color(
+                                  0xFF34C759,
+                                ).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(
                                   ResponsiveUtils.spacing(context, 10),
                                 ),
@@ -230,14 +266,18 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                                       height: 1.2,
                                     ),
                                   ),
-                                  SizedBox(height: ResponsiveUtils.spacing(context, 4)),
+                                  SizedBox(
+                                    height: ResponsiveUtils.spacing(context, 4),
+                                  ),
                                   Text(
                                     '내 대기중',
                                     style: ResponsiveUtils.getTextStyle(
                                       context,
                                       fontWeight: FontWeight.w800,
                                       fontSize: 14,
-                                      color: const Color(0xFF34C759).withValues(alpha: 0.7),
+                                      color: const Color(
+                                        0xFF34C759,
+                                      ).withValues(alpha: 0.7),
                                       height: 1.2,
                                     ),
                                   ),
@@ -252,10 +292,15 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                             child: Container(
                               padding: EdgeInsets.symmetric(
                                 vertical: ResponsiveUtils.spacing(context, 20),
-                                horizontal: ResponsiveUtils.spacing(context, 16),
+                                horizontal: ResponsiveUtils.spacing(
+                                  context,
+                                  16,
+                                ),
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF1976D2).withValues(alpha: 0.15),
+                                color: const Color(
+                                  0xFF1976D2,
+                                ).withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(
                                   ResponsiveUtils.spacing(context, 10),
                                 ),
@@ -274,14 +319,18 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                                       height: 1.2,
                                     ),
                                   ),
-                                  SizedBox(height: ResponsiveUtils.spacing(context, 4)),
+                                  SizedBox(
+                                    height: ResponsiveUtils.spacing(context, 4),
+                                  ),
                                   Text(
                                     '출장일수',
                                     style: ResponsiveUtils.getTextStyle(
                                       context,
                                       fontWeight: FontWeight.w800,
                                       fontSize: 14,
-                                      color: const Color(0xFF1976D2).withValues(alpha: 0.7),
+                                      color: const Color(
+                                        0xFF1976D2,
+                                      ).withValues(alpha: 0.7),
                                       height: 1.2,
                                     ),
                                   ),
@@ -301,7 +350,9 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                   throttleDuration: const Duration(milliseconds: 300),
                   builder: (context, userProvider, _) {
                     return Padding(
-                      padding: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 0)),
+                      padding: EdgeInsets.only(
+                        bottom: ResponsiveUtils.spacing(context, 0),
+                      ),
                       child: Row(
                         children: [
                           Expanded(
@@ -335,7 +386,9 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, rValue)),
+                    borderRadius: BorderRadius.circular(
+                      ResponsiveUtils.spacing(context, rValue),
+                    ),
                     boxShadow: [AppShadows.card],
                   ),
                   padding: EdgeInsets.symmetric(
@@ -383,7 +436,9 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, rValue)),
+                    borderRadius: BorderRadius.circular(
+                      ResponsiveUtils.spacing(context, rValue),
+                    ),
                     boxShadow: [AppShadows.card],
                   ),
                   padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 18)),
@@ -405,7 +460,10 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                             ),
                           ),
                           Text(
-                            DateTime.now().toString().substring(0, 10).replaceAll('-', '.'),
+                            DateTime.now()
+                                .toString()
+                                .substring(0, 10)
+                                .replaceAll('-', '.'),
                             style: ResponsiveUtils.getTextStyle(
                               context,
                               fontWeight: FontWeight.w400,
@@ -446,9 +504,12 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                                 children: [
                                   ...provider.todayLeaves.map(
                                     (l) => Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 6),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 6,
+                                      ),
                                       child: Row(
-                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
                                         children: [
                                           Icon(
                                             l['type'] == 'biztrip'
@@ -498,11 +559,16 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
       child: GestureDetector(
         onTap: () {
           if (idx == 0) {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaveScreenRouter()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const LeaveScreenRouter()),
+            );
           } else {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const BusinessTripScreenRouter()),
+              MaterialPageRoute(
+                builder: (_) => const BusinessTripScreenRouter(),
+              ),
             );
           }
         },
@@ -537,24 +603,24 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
   }
 
   Widget _recentLeaveTile(Map<String, dynamic> l) {
-    String typeLabel = l['type'] == 'biztrip' ? '출장 신청' : '연차 신청';
-    String typeDetail = '';
-    switch (l['type']) {
-      case 'annual':
-        typeDetail = '연차';
-        break;
-      case 'half_am':
-        typeDetail = '오전반차';
-        break;
-      case 'half_pm':
-        typeDetail = '오후반차';
-        break;
-      case 'official':
-        typeDetail = '공가';
-        break;
-      default:
-        typeDetail = '';
-    }
+    // String typeLabel = l['type'] == 'biztrip' ? '출장 신청' : '연차 신청'; // 미사용
+    // String typeDetail = ''; // 미사용
+    // switch (l['type']) {
+    //   case 'annual':
+    //     typeDetail = '연차';
+    //     break;
+    //   case 'half_am':
+    //     typeDetail = '오전반차';
+    //     break;
+    //   case 'half_pm':
+    //     typeDetail = '오후반차';
+    //     break;
+    //   case 'official':
+    //     typeDetail = '공가';
+    //     break;
+    //   default:
+    //     typeDetail = '';
+    // }
     String status = l['status'] ?? '';
     DateTime start = DateTime.parse(l['start_date']);
     DateTime end = DateTime.parse(l['end_date']);
@@ -574,10 +640,10 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
       // 그룹화된 항목: "12월 20일 - 25일 (연속 3건, 6일)"
       if (start.month == end.month) {
         period =
-            '${start.month}월 ${start.day}일 - ${end.day}일 (연속 ${groupedCount}건, ${displayDays % 1 == 0 ? displayDays.toInt() : displayDays}일)';
+            '${start.month}월 ${start.day}일 - ${end.day}일 (연속 $groupedCount건, ${displayDays % 1 == 0 ? displayDays.toInt() : displayDays}일)';
       } else {
         period =
-            '${start.month}월 ${start.day}일 - ${end.month}월 ${end.day}일 (연속 ${groupedCount}건, ${displayDays % 1 == 0 ? displayDays.toInt() : displayDays}일)';
+            '${start.month}월 ${start.day}일 - ${end.month}월 ${end.day}일 (연속 $groupedCount건, ${displayDays % 1 == 0 ? displayDays.toInt() : displayDays}일)';
       }
     } else {
       // 단일 항목: 기존 형식
@@ -591,7 +657,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
     }
 
     String? companions = l['companions'];
-    String? reason = l['reason'];
+    // String? reason = l['reason']; // 미사용
     String statusLabel = status == 'approved'
         ? '승인됨'
         : status == 'pending'
@@ -602,7 +668,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
         : status == 'pending'
         ? const Color(0xFFFF9500)
         : const Color(0xFFE57373);
-    final String name = l['type'] == 'biztrip' ? (l['name'] ?? '-') : '';
+    // final String name = l['type'] == 'biztrip' ? (l['name'] ?? '-') : ''; // 미사용
     return Column(
       children: [
         Padding(
@@ -611,9 +677,13 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Icon(
-                l['type'] == 'biztrip' ? Icons.flight_takeoff : Icons.beach_access,
+                l['type'] == 'biztrip'
+                    ? Icons.flight_takeoff
+                    : Icons.beach_access,
                 size: 20,
-                color: l['type'] == 'biztrip' ? const Color(0xFF1976D2) : const Color(0xFF34C759),
+                color: l['type'] == 'biztrip'
+                    ? const Color(0xFF1976D2)
+                    : const Color(0xFF34C759),
               ),
               const SizedBox(width: 10),
               Text(
@@ -630,21 +700,32 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
               if (status == 'pending')
                 IconButton(
                   onPressed: () => _deleteLeaveRequest(l),
-                  icon: const Icon(Icons.delete_outline, size: 20, color: Color(0xFFFF3B30)),
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    size: 20,
+                    color: Color(0xFFFF3B30),
+                  ),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   tooltip: '삭제',
                 ),
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 7,
+                ),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.13),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   statusLabel,
-                  style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 15),
+                  style: TextStyle(
+                    color: statusColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
                 ),
               ),
             ],
@@ -653,7 +734,10 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
         const SizedBox(height: 4),
         Row(
           children: [
-            Text(period, style: const TextStyle(fontSize: 15, color: Color(0xFF666666))),
+            Text(
+              period,
+              style: const TextStyle(fontSize: 15, color: Color(0xFF666666)),
+            ),
             if (companions != null && companions.isNotEmpty)
               Text(
                 ' ($companions 동행)',
@@ -669,7 +753,9 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
     final List<Widget> widgets = [];
     for (int i = 0; i < leaves.length; i++) {
       widgets.add(_recentLeaveTile(leaves[i]));
-      widgets.add(const Divider(height: 18, thickness: 2, color: Color(0xFFE0E3E8)));
+      widgets.add(
+        const Divider(height: 18, thickness: 2, color: Color(0xFFE0E3E8)),
+      );
     }
     return widgets;
   }
@@ -718,7 +804,9 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
       ),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
+        borderRadius: BorderRadius.circular(
+          ResponsiveUtils.spacing(context, 20),
+        ),
       ),
       child: Text(
         label,
@@ -743,7 +831,10 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
           '${leave['type'] == 'biztrip' ? '출장' : '연차'} 신청을 취소하시겠습니까?\n취소 후에는 복구할 수 없습니다.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('아니오')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('아니오'),
+          ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -784,7 +875,10 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
       // 성공 메시지
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('신청이 취소되었습니다.'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('신청이 취소되었습니다.'),
+            backgroundColor: Colors.green,
+          ),
         );
       }
     } catch (e) {
@@ -793,9 +887,12 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
 
       // 에러 메시지
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('취소 중 오류가 발생했습니다: $e'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('취소 중 오류가 발생했습니다: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }

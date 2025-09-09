@@ -145,7 +145,8 @@ class OptimizedButton extends StatefulWidget {
   State<OptimizedButton> createState() => _OptimizedButtonState();
 }
 
-class _OptimizedButtonState extends State<OptimizedButton> with UIOptimizationMixin {
+class _OptimizedButtonState extends State<OptimizedButton>
+    with UIOptimizationMixin {
   bool _isPressed = false;
 
   void _handlePressed() {
@@ -368,7 +369,10 @@ class OptimizedLoadingIndicator extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(color: color, strokeWidth: strokeWidth ?? 4.0),
+            CircularProgressIndicator(
+              color: color,
+              strokeWidth: strokeWidth ?? 4.0,
+            ),
             if (showMessage && message != null) ...[
               const SizedBox(height: 16),
               OptimizedText(
@@ -550,7 +554,8 @@ class OptimizedConsumer<T extends ChangeNotifier> extends StatefulWidget {
   State<OptimizedConsumer<T>> createState() => _OptimizedConsumerState<T>();
 }
 
-class _OptimizedConsumerState<T extends ChangeNotifier> extends State<OptimizedConsumer<T>>
+class _OptimizedConsumerState<T extends ChangeNotifier>
+    extends State<OptimizedConsumer<T>>
     with UIOptimizationMixin {
   @override
   Widget build(BuildContext context) {

@@ -51,77 +51,80 @@ class _MiddleManagerApprovalPageState extends State<MiddleManagerApprovalPage> {
       appBar: AppBar(title: const Text('발주 승인 (중간 관리자)')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: _pendingRequests.length,
-              itemBuilder: (context, index) {
-                final pr = _pendingRequests[index];
-                final id = pr['id'];
-                final type = pr['request_type']; // '원자재' or '소모품'
-                final vendorName = pr['vendors']?['vendor_name'] ?? '-';
-                final requestDate = pr['request_date'] ?? '-';
-                final totalAmount = pr['total_amount'] ?? 0;
-                final currency = pr['currency'] ?? '';
+          : RefreshIndicator(
+              onRefresh: _loadPendingRequests,
+              child: ListView.builder(
+                itemCount: _pendingRequests.length,
+                itemBuilder: (context, index) {
+                  final pr = _pendingRequests[index];
+                  final id = pr['id'];
+                  final type = pr['request_type']; // '원자재' or '소모품'
+                  final vendorName = pr['vendors']?['vendor_name'] ?? '-';
+                  final requestDate = pr['request_date'] ?? '-';
+                  final totalAmount = pr['total_amount'] ?? 0;
+                  final currency = pr['currency'] ?? '';
 
-                return Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  child: ListTile(
-                    title: Text('발주번호: #$id ($type)'),
-                    subtitle: Text(
-                      '$vendorName • $requestDate • $currency $totalAmount',
+                  return Card(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
                     ),
-                    onTap: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PoPreviewPage(
-                            purchaseRequestId: id,
-                            initialStatus: '대기',
-                            onApprove: () async {
-                              try {
-                                await supabase
-                                    .from('purchase_requests')
-                                    .update({'payment_status': '확인'})
-                                    .eq('id', id);
-                                if (mounted) {
-                                  Navigator.of(context).pop();
-                                  _loadPendingRequests();
+                    child: ListTile(
+                      title: Text('발주번호: #$id ($type)'),
+                      subtitle: Text(
+                        '$vendorName • $requestDate • $currency $totalAmount',
+                      ),
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PoPreviewPage(
+                              purchaseRequestId: id,
+                              initialStatus: '대기',
+                              onApprove: () async {
+                                try {
+                                  await supabase
+                                      .from('purchase_requests')
+                                      .update({'payment_status': '확인'})
+                                      .eq('id', id);
+                                  if (mounted) {
+                                    Navigator.of(context).pop();
+                                    _loadPendingRequests();
+                                  }
+                                } catch (e) {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('승인 실패: $e')),
+                                    );
+                                  }
                                 }
-                              } catch (e) {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('승인 실패: $e')),
-                                  );
-                                }
-                              }
-                            },
+                              },
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                    trailing: ElevatedButton(
-                      onPressed: () async {
-                        try {
-                          await supabase
-                              .from('purchase_requests')
-                              .update({'payment_status': '확인'})
-                              .eq('id', id);
-                          _loadPendingRequests();
-                        } catch (e) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('승인 실패: $e')),
-                            );
-                          }
-                        }
+                        );
                       },
-                      child: const Text('확인'),
+                      trailing: ElevatedButton(
+                        onPressed: () async {
+                          try {
+                            await supabase
+                                .from('purchase_requests')
+                                .update({'payment_status': '확인'})
+                                .eq('id', id);
+                            _loadPendingRequests();
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('승인 실패: $e')),
+                              );
+                            }
+                          }
+                        },
+                        child: const Text('확인'),
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
     );
   }

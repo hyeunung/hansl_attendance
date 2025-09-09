@@ -2,7 +2,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'database_optimization_service.dart';
 
 class SupabaseService {
-  final DatabaseOptimizationService _dbOptim = DatabaseOptimizationService.instance;
+  final DatabaseOptimizationService _dbOptim =
+      DatabaseOptimizationService.instance;
 
   /// Get employee name by email with optimized caching
   Future<String?> getEmployeeNameByEmail(String email) async {
@@ -16,11 +17,10 @@ class SupabaseService {
 
   /// Fetch all employee names with caching
   Future<List<String>> fetchEmployees() async {
-    final response = await Supabase.instance.client.from('employees').select('name');
-    if (response is List) {
-      return response.map((e) => e['name'] as String).toList();
-    }
-    return [];
+    final response = await Supabase.instance.client
+        .from('employees')
+        .select('name');
+    return response.map((e) => e['name'] as String).toList();
   }
 
   /// Get complete employee data by email with optimized caching
@@ -37,10 +37,15 @@ class SupabaseService {
 
     final roleData = await _dbOptim.getEmployeeRole(userId);
 
-    if (roleData == null || roleData['role'] == null || roleData['is_admin'] == null) {
+    if (roleData == null ||
+        roleData['role'] == null ||
+        roleData['is_admin'] == null) {
       throw Exception('역할 조회 실패: 데이터가 없습니다.');
     }
 
-    return {'role': roleData['role'] as String, 'isAdmin': roleData['is_admin'] as bool};
+    return {
+      'role': roleData['role'] as String,
+      'isAdmin': roleData['is_admin'] as bool,
+    };
   }
 }

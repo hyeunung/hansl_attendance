@@ -2,15 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:hansl/services/feature_flag_service.dart';
 import 'package:hansl/services/performance_monitor.dart';
 import 'package:hansl/utils/logger.dart';
-import 'annual_leave_request_screen.dart';
 import 'annual_leave_request_screen_optimized.dart';
-import 'business_trip_request_screen.dart';
 import 'business_trip_request_screen_optimized.dart';
 
 /// 연차 신청 화면 라우터
 /// Feature Flag에 따라 적절한 화면을 반환합니다.
 class LeaveScreenRouter extends StatefulWidget {
-  const LeaveScreenRouter({Key? key}) : super(key: key);
+  const LeaveScreenRouter({super.key});
 
   @override
   State<LeaveScreenRouter> createState() => _LeaveScreenRouterState();
@@ -26,7 +24,9 @@ class _LeaveScreenRouterState extends State<LeaveScreenRouter> {
     _stopwatch.start();
 
     // 어떤 버전을 사용할지 결정
-    _screenVersion = FeatureFlags.useRefactoredLeaveScreen ? 'optimized' : 'original';
+    _screenVersion = FeatureFlags.useRefactoredLeaveScreen
+        ? 'optimized'
+        : 'original';
 
     AppLogger.info('연차 신청 화면 라우팅: $_screenVersion');
   }
@@ -37,7 +37,10 @@ class _LeaveScreenRouterState extends State<LeaveScreenRouter> {
 
     // 성능 메트릭 기록
     if (FeatureFlags.performanceMonitoring) {
-      PerformanceMonitor.trackScreenLoad('leave_request_$_screenVersion', _stopwatch.elapsed);
+      PerformanceMonitor.trackScreenLoad(
+        'leave_request_$_screenVersion',
+        _stopwatch.elapsed,
+      );
     }
 
     super.dispose();
@@ -73,22 +76,18 @@ class _LeaveScreenRouterState extends State<LeaveScreenRouter> {
   }
 
   Widget _buildScreen() {
-    if (FeatureFlags.useRefactoredLeaveScreen) {
-      // 새로운 최적화된 화면 사용
-      return const AnnualLeaveRequestScreenOptimized();
-    } else {
-      // 기존 화면 사용
-      return const AnnualLeaveRequestScreen();
-    }
+    // 리팩토링된 화면만 사용 (기존 화면 삭제됨)
+    return const AnnualLeaveRequestScreenOptimized();
   }
 }
 
 /// 출장 신청 화면 라우터
 class BusinessTripScreenRouter extends StatefulWidget {
-  const BusinessTripScreenRouter({Key? key}) : super(key: key);
+  const BusinessTripScreenRouter({super.key});
 
   @override
-  State<BusinessTripScreenRouter> createState() => _BusinessTripScreenRouterState();
+  State<BusinessTripScreenRouter> createState() =>
+      _BusinessTripScreenRouterState();
 }
 
 class _BusinessTripScreenRouterState extends State<BusinessTripScreenRouter> {
@@ -101,7 +100,9 @@ class _BusinessTripScreenRouterState extends State<BusinessTripScreenRouter> {
     _stopwatch.start();
 
     // 어떤 버전을 사용할지 결정
-    _screenVersion = FeatureFlags.useRefactoredBusinessTripScreen ? 'refactored' : 'original';
+    _screenVersion = FeatureFlags.useRefactoredBusinessTripScreen
+        ? 'refactored'
+        : 'original';
 
     AppLogger.info('출장 신청 화면 라우팅: $_screenVersion');
   }
@@ -112,7 +113,10 @@ class _BusinessTripScreenRouterState extends State<BusinessTripScreenRouter> {
 
     // 성능 메트릭 기록
     if (FeatureFlags.performanceMonitoring) {
-      PerformanceMonitor.trackScreenLoad('business_trip_$_screenVersion', _stopwatch.elapsed);
+      PerformanceMonitor.trackScreenLoad(
+        'business_trip_$_screenVersion',
+        _stopwatch.elapsed,
+      );
     }
 
     super.dispose();
@@ -148,12 +152,7 @@ class _BusinessTripScreenRouterState extends State<BusinessTripScreenRouter> {
   }
 
   Widget _buildScreen() {
-    if (FeatureFlags.useRefactoredBusinessTripScreen) {
-      // 새로운 리팩토링된 화면 사용
-      return const BusinessTripRequestScreenOptimized();
-    } else {
-      // 기존 화면 사용
-      return const BusinessTripRequestScreen();
-    }
+    // 리팩토링된 화면만 사용 (기존 화면 삭제됨)
+    return const BusinessTripRequestScreenOptimized();
   }
 }

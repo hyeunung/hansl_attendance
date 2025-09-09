@@ -11,11 +11,11 @@ class PoPreviewPage extends StatefulWidget {
   final Future<void> Function() onApprove;
 
   const PoPreviewPage({
-    Key? key,
+    super.key,
     required this.purchaseRequestId,
     required this.initialStatus,
     required this.onApprove,
-  }) : super(key: key);
+  });
 
   @override
   _PoPreviewPageState createState() => _PoPreviewPageState();
@@ -89,11 +89,11 @@ class _PoPreviewPageState extends State<PoPreviewPage> {
                     onPressed: () async {
                       await widget.onApprove();
                     },
-                    child: Text(
-                      widget.initialStatus == '대기' ? '확인(승인)' : '결제 승인',
-                    ),
                     style: ElevatedButton.styleFrom(
                       minimumSize: const Size(double.infinity, 48),
+                    ),
+                    child: Text(
+                      widget.initialStatus == '대기' ? '확인(승인)' : '결제 승인',
                     ),
                   ),
                 ),

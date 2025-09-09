@@ -16,7 +16,7 @@ class PurchaseApprovalWidget extends StatefulWidget {
   State<PurchaseApprovalWidget> createState() => _PurchaseApprovalWidgetState();
 }
 
-class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget> 
+class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
     with SingleTickerProviderStateMixin {
   final NumberFormat currencyFormat = NumberFormat('#,###');
   late TabController _tabController;
@@ -25,13 +25,16 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    
+
     // 탭 변경 리스너 추가
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
-        final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
-        
+        final purchaseProvider = Provider.of<PurchaseProvider>(
+          context,
+          listen: false,
+        );
+
         if (_tabController.index == 1) {
           // 처리완료 탭으로 이동 시 금일 처리 데이터 로드
           purchaseProvider.fetchCompletedPurchases(
@@ -40,20 +43,21 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
         }
       }
     });
-    
+
     // 위젯 생성 시 자동으로 데이터 로드
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
-      
+      final purchaseProvider = Provider.of<PurchaseProvider>(
+        context,
+        listen: false,
+      );
+
       if (kDebugMode) {
         print('🔄 PurchaseApprovalWidget - 초기 데이터 로드');
         print('📋 employee: ${userProvider.employee}');
       }
-      
-      purchaseProvider.fetchPendingPurchases(
-        employee: userProvider.employee,
-      );
+
+      purchaseProvider.fetchPendingPurchases(employee: userProvider.employee);
     });
   }
 
@@ -71,7 +75,7 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
   bool canApproveFinal(List<dynamic> roles, String paymentCategory) {
     if (roles.contains('app_admin')) return true;
     if (!roles.contains('final_approver')) return false;
-    
+
     // final_approver가 있는 경우 세부 권한 체크
     if (roles.contains('raw_material_manager')) {
       return paymentCategory == '발주';
@@ -79,7 +83,7 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
     if (roles.contains('consumable_manager')) {
       return paymentCategory == '구매 요청';
     }
-    
+
     return false; // final_approver만 있고 세부 권한 없으면 false
   }
 
@@ -89,7 +93,9 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
       context: context,
       builder: (context) => Dialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 16)),
+          borderRadius: BorderRadius.circular(
+            ResponsiveUtils.spacing(context, 16),
+          ),
         ),
         child: Container(
           constraints: BoxConstraints(
@@ -104,14 +110,18 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                 decoration: BoxDecoration(
                   gradient: AppColors.primaryGradient,
                   borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(ResponsiveUtils.spacing(context, 16)),
-                    topRight: Radius.circular(ResponsiveUtils.spacing(context, 16)),
+                    topLeft: Radius.circular(
+                      ResponsiveUtils.spacing(context, 16),
+                    ),
+                    topRight: Radius.circular(
+                      ResponsiveUtils.spacing(context, 16),
+                    ),
                   ),
                 ),
                 child: Row(
                   children: [
                     Icon(
-                      Icons.receipt_long, 
+                      Icons.receipt_long,
                       color: Colors.white,
                       size: ResponsiveUtils.iconSize(context, 24),
                     ),
@@ -135,7 +145,9 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                       ),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.255),
-                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveUtils.spacing(context, 12),
+                        ),
                       ),
                       child: Text(
                         group.paymentCategory,
@@ -150,7 +162,7 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                     SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                     IconButton(
                       icon: Icon(
-                        Icons.close, 
+                        Icons.close,
                         color: Colors.white,
                         size: ResponsiveUtils.iconSize(context, 24),
                       ),
@@ -159,7 +171,7 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                   ],
                 ),
               ),
-              
+
               // 상세 내역
               Expanded(
                 child: ListView(
@@ -168,17 +180,43 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                     // 기본 정보
                     _buildInfoRow(context, '요청자', group.requesterName),
                     _buildInfoRow(context, '업체명', group.vendorName),
-                    _buildInfoRow(context, '요청일', DateFormat('yyyy.MM.dd').format(group.requestDate)),
-                    if (group.items.isNotEmpty && group.headerItem.deliveryRequestDate != DateTime(1970))
-                      _buildInfoRow(context, '입고요청일', DateFormat('yyyy.MM.dd').format(group.headerItem.deliveryRequestDate)),
-                    if (group.headerItem.projectVendor != null && group.headerItem.projectVendor!.isNotEmpty)
-                      _buildInfoRow(context, 'PJ업체', group.headerItem.projectVendor!),
-                    if (group.headerItem.salesOrderNumber != null && group.headerItem.salesOrderNumber!.isNotEmpty)
-                      _buildInfoRow(context, '수주번호', group.headerItem.salesOrderNumber!),
-                    if (group.headerItem.projectItem != null && group.headerItem.projectItem!.isNotEmpty)
-                      _buildInfoRow(context, 'Item', group.headerItem.projectItem!),
+                    _buildInfoRow(
+                      context,
+                      '요청일',
+                      DateFormat('yyyy.MM.dd').format(group.requestDate),
+                    ),
+                    if (group.items.isNotEmpty &&
+                        group.headerItem.deliveryRequestDate != DateTime(1970))
+                      _buildInfoRow(
+                        context,
+                        '입고요청일',
+                        DateFormat(
+                          'yyyy.MM.dd',
+                        ).format(group.headerItem.deliveryRequestDate),
+                      ),
+                    if (group.headerItem.projectVendor != null &&
+                        group.headerItem.projectVendor!.isNotEmpty)
+                      _buildInfoRow(
+                        context,
+                        'PJ업체',
+                        group.headerItem.projectVendor!,
+                      ),
+                    if (group.headerItem.salesOrderNumber != null &&
+                        group.headerItem.salesOrderNumber!.isNotEmpty)
+                      _buildInfoRow(
+                        context,
+                        '수주번호',
+                        group.headerItem.salesOrderNumber!,
+                      ),
+                    if (group.headerItem.projectItem != null &&
+                        group.headerItem.projectItem!.isNotEmpty)
+                      _buildInfoRow(
+                        context,
+                        'Item',
+                        group.headerItem.projectItem!,
+                      ),
                     Divider(height: ResponsiveUtils.spacing(context, 32)),
-                    
+
                     // 품목 리스트
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -204,174 +242,218 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                       ],
                     ),
                     SizedBox(height: ResponsiveUtils.spacing(context, 16)),
-                    
+
                     // line_number 순서로 정렬된 아이템들 표시
-                    ...(group.items.toList()..sort((a, b) => a.lineNumber.compareTo(b.lineNumber))).map((item) => Container(
-                      margin: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 12)),
-                      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8F9FA),
-                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                        border: Border.all(color: const Color(0xFFE0E0E0)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // 품목 번호와 이름 (DB의 line_number 사용)
-                          Text(
-                            '${item.lineNumber}. ${item.itemName.isNotEmpty ? item.itemName : "품목명 없음"}',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: const Color(0xFF1C1C1E),
+                    ...(group.items.toList()..sort(
+                          (a, b) => a.lineNumber.compareTo(b.lineNumber),
+                        ))
+                        .map(
+                          (item) => Container(
+                            margin: EdgeInsets.only(
+                              bottom: ResponsiveUtils.spacing(context, 12),
                             ),
-                          ),
-                          SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-                          // 규격
-                          if (item.specification.isNotEmpty)
-                            Padding(
-                              padding: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 4)),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  SizedBox(
-                                    width: ResponsiveUtils.spacing(context, 60),
-                                    child: Text(
-                                      '규격:',
-                                      style: ResponsiveUtils.getTextStyle(
-                                        context,
-                                        fontSize: 13,
-                                        color: const Color(0xFF8E8E93),
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      item.specification,
-                                      style: ResponsiveUtils.getTextStyle(
-                                        context,
-                                        fontSize: 13,
-                                        color: const Color(0xFF1C1C1E),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                            padding: EdgeInsets.all(
+                              ResponsiveUtils.spacing(context, 12),
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8F9FA),
+                              borderRadius: BorderRadius.circular(
+                                ResponsiveUtils.spacing(context, 8),
+                              ),
+                              border: Border.all(
+                                color: const Color(0xFFE0E0E0),
                               ),
                             ),
-                          // 수량
-                          Padding(
-                            padding: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 4)),
-                            child: Row(
-                              children: [
-                                SizedBox(
-                                  width: ResponsiveUtils.spacing(context, 60),
-                                  child: Text(
-                                    '수량:',
-                                    style: ResponsiveUtils.getTextStyle(
-                                      context,
-                                      fontSize: 13,
-                                      color: const Color(0xFF8E8E93),
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  '${item.quantity}',
-                                  style: ResponsiveUtils.getTextStyle(
-                                    context,
-                                    fontSize: 13,
-                                    color: const Color(0xFF1C1C1E),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          // 단가
-                          Padding(
-                            padding: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 4)),
-                            child: Row(
-                              children: [
-                                SizedBox(
-                                  width: ResponsiveUtils.spacing(context, 60),
-                                  child: Text(
-                                    '단가:',
-                                    style: ResponsiveUtils.getTextStyle(
-                                      context,
-                                      fontSize: 13,
-                                      color: const Color(0xFF8E8E93),
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  '₩${currencyFormat.format(item.unitPriceValue)}',
-                                  style: ResponsiveUtils.getTextStyle(
-                                    context,
-                                    fontSize: 13,
-                                    color: const Color(0xFF1C1C1E),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          // 금액
-                          Row(
-                            children: [
-                              SizedBox(
-                                width: ResponsiveUtils.spacing(context, 60),
-                                child: Text(
-                                  '금액:',
-                                  style: ResponsiveUtils.getTextStyle(
-                                    context,
-                                    fontSize: 13,
-                                    color: const Color(0xFF8E8E93),
-                                  ),
-                                ),
-                              ),
-                              Text(
-                                '₩${currencyFormat.format(item.amountValue)}',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                            ],
-                          ),
-                          // 비고
-                          if (item.remark != null && item.remark!.isNotEmpty) ...[
-                            SizedBox(height: ResponsiveUtils.spacing(context, 4)),
-                            Row(
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                // 품목 번호와 이름 (DB의 line_number 사용)
+                                Text(
+                                  '${item.lineNumber}. ${item.itemName.isNotEmpty ? item.itemName : "품목명 없음"}',
+                                  style: ResponsiveUtils.getTextStyle(
+                                    context,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: const Color(0xFF1C1C1E),
+                                  ),
+                                ),
                                 SizedBox(
-                                  width: ResponsiveUtils.spacing(context, 60),
-                                  child: Text(
-                                    '비고:',
-                                    style: ResponsiveUtils.getTextStyle(
-                                      context,
-                                      fontSize: 13,
-                                      color: const Color(0xFF8E8E93),
+                                  height: ResponsiveUtils.spacing(context, 8),
+                                ),
+                                // 규격
+                                if (item.specification.isNotEmpty)
+                                  Padding(
+                                    padding: EdgeInsets.only(
+                                      bottom: ResponsiveUtils.spacing(
+                                        context,
+                                        4,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        SizedBox(
+                                          width: ResponsiveUtils.spacing(
+                                            context,
+                                            60,
+                                          ),
+                                          child: Text(
+                                            '규격:',
+                                            style: ResponsiveUtils.getTextStyle(
+                                              context,
+                                              fontSize: 13,
+                                              color: const Color(0xFF8E8E93),
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Text(
+                                            item.specification,
+                                            style: ResponsiveUtils.getTextStyle(
+                                              context,
+                                              fontSize: 13,
+                                              color: const Color(0xFF1C1C1E),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    item.remark!,
-                                    style: ResponsiveUtils.getTextStyle(
-                                      context,
-                                      fontSize: 13,
-                                      color: const Color(0xFF1C1C1E),
-                                    ),
+                                // 수량
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    bottom: ResponsiveUtils.spacing(context, 4),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      SizedBox(
+                                        width: ResponsiveUtils.spacing(
+                                          context,
+                                          60,
+                                        ),
+                                        child: Text(
+                                          '수량:',
+                                          style: ResponsiveUtils.getTextStyle(
+                                            context,
+                                            fontSize: 13,
+                                            color: const Color(0xFF8E8E93),
+                                          ),
+                                        ),
+                                      ),
+                                      Text(
+                                        '${item.quantity}',
+                                        style: ResponsiveUtils.getTextStyle(
+                                          context,
+                                          fontSize: 13,
+                                          color: const Color(0xFF1C1C1E),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
+                                // 단가
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    bottom: ResponsiveUtils.spacing(context, 4),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      SizedBox(
+                                        width: ResponsiveUtils.spacing(
+                                          context,
+                                          60,
+                                        ),
+                                        child: Text(
+                                          '단가:',
+                                          style: ResponsiveUtils.getTextStyle(
+                                            context,
+                                            fontSize: 13,
+                                            color: const Color(0xFF8E8E93),
+                                          ),
+                                        ),
+                                      ),
+                                      Text(
+                                        '₩${currencyFormat.format(item.unitPriceValue)}',
+                                        style: ResponsiveUtils.getTextStyle(
+                                          context,
+                                          fontSize: 13,
+                                          color: const Color(0xFF1C1C1E),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // 금액
+                                Row(
+                                  children: [
+                                    SizedBox(
+                                      width: ResponsiveUtils.spacing(
+                                        context,
+                                        60,
+                                      ),
+                                      child: Text(
+                                        '금액:',
+                                        style: ResponsiveUtils.getTextStyle(
+                                          context,
+                                          fontSize: 13,
+                                          color: const Color(0xFF8E8E93),
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      '₩${currencyFormat.format(item.amountValue)}',
+                                      style: ResponsiveUtils.getTextStyle(
+                                        context,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                // 비고
+                                if (item.remark != null &&
+                                    item.remark!.isNotEmpty) ...[
+                                  SizedBox(
+                                    height: ResponsiveUtils.spacing(context, 4),
+                                  ),
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      SizedBox(
+                                        width: ResponsiveUtils.spacing(
+                                          context,
+                                          60,
+                                        ),
+                                        child: Text(
+                                          '비고:',
+                                          style: ResponsiveUtils.getTextStyle(
+                                            context,
+                                            fontSize: 13,
+                                            color: const Color(0xFF8E8E93),
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: Text(
+                                          item.remark!,
+                                          style: ResponsiveUtils.getTextStyle(
+                                            context,
+                                            fontSize: 13,
+                                            color: const Color(0xFF1C1C1E),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ],
                             ),
-                          ],
-                        ],
-                      ),
-                    )),
+                          ),
+                        ),
                   ],
                 ),
               ),
@@ -384,7 +466,9 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
 
   Widget _buildInfoRow(BuildContext context, String label, String value) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 4)),
+      padding: EdgeInsets.symmetric(
+        vertical: ResponsiveUtils.spacing(context, 4),
+      ),
       child: Row(
         children: [
           SizedBox(
@@ -447,18 +531,20 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
   Widget build(BuildContext context) {
     return Consumer2<PurchaseProvider, UserProvider>(
       builder: (context, purchaseProvider, userProvider, _) {
-        final purchaseRoles = userProvider.employee?['purchase_role'] as List<dynamic>? ?? [];
-        
+        final purchaseRoles =
+            userProvider.employee?['purchase_role'] as List<dynamic>? ?? [];
+
         // 사용자 역할에 따른 대기 개수 계산
         int pendingCount = 0;
         String pendingDetail = '';
-        
+
         if (purchaseRoles.contains('app_admin')) {
           pendingCount = purchaseProvider.totalPendingCount;
           if (purchaseProvider.middleManagerPendingCount > 0 ||
               purchaseProvider.rawMaterialPendingCount > 0 ||
               purchaseProvider.consumablePendingCount > 0) {
-            pendingDetail = ' (1차: ${purchaseProvider.middleManagerPendingCount}, '
+            pendingDetail =
+                ' (1차: ${purchaseProvider.middleManagerPendingCount}, '
                 '발주: ${purchaseProvider.rawMaterialPendingCount}, '
                 '구매: ${purchaseProvider.consumablePendingCount})';
           }
@@ -475,7 +561,7 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
             }
           }
         }
-        
+
         return Column(
           children: [
             // 상태별 탭 (대기중/처리완료)
@@ -518,7 +604,9 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                             ),
                           ),
                           if (pendingCount > 0) ...[
-                            SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+                            SizedBox(
+                              width: ResponsiveUtils.spacing(context, 6),
+                            ),
                             Container(
                               padding: EdgeInsets.symmetric(
                                 horizontal: ResponsiveUtils.spacing(context, 6),
@@ -527,7 +615,9 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                               decoration: BoxDecoration(
                                 color: _tabController.index == 0
                                     ? Colors.white.withValues(alpha: 0.255)
-                                    : AppColors.primary.withValues(alpha: 0.153),
+                                    : AppColors.primary.withValues(
+                                        alpha: 0.153,
+                                      ),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
@@ -581,9 +671,11 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                 ],
               ),
             ),
-            
+
             // app_admin인 경우 세부 개수 표시
-            if (purchaseRoles.contains('app_admin') && pendingDetail.isNotEmpty && _tabController.index == 0)
+            if (purchaseRoles.contains('app_admin') &&
+                pendingDetail.isNotEmpty &&
+                _tabController.index == 0)
               Padding(
                 padding: EdgeInsets.only(
                   left: ResponsiveUtils.spacing(context, 20),
@@ -599,7 +691,7 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                   ),
                 ),
               ),
-            
+
             // TabBarView
             Expanded(
               child: TabBarView(
@@ -621,8 +713,9 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
   Widget _buildPendingTab() {
     return Consumer2<PurchaseProvider, UserProvider>(
       builder: (context, purchaseProvider, userProvider, _) {
-        final purchaseRoles = userProvider.employee?['purchase_role'] as List<dynamic>? ?? [];
-        
+        final purchaseRoles =
+            userProvider.employee?['purchase_role'] as List<dynamic>? ?? [];
+
         if (purchaseProvider.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -645,7 +738,7 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
         }
 
         final orders = purchaseProvider.pendingOrders;
-        
+
         if (orders.isEmpty) {
           return Center(
             child: Column(
@@ -692,7 +785,13 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
             itemCount: orders.length,
             itemBuilder: (context, index) {
               final group = orders[index];
-              return _buildPurchaseCard(context, group, purchaseRoles, userProvider, purchaseProvider);
+              return _buildPurchaseCard(
+                context,
+                group,
+                purchaseRoles,
+                userProvider,
+                purchaseProvider,
+              );
             },
           ),
         );
@@ -725,7 +824,7 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
         }
 
         final orders = purchaseProvider.completedOrders;
-        
+
         if (orders.isEmpty) {
           return Center(
             child: Column(
@@ -781,14 +880,14 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
   }
 
   Widget _buildPurchaseCard(
-    BuildContext context, 
+    BuildContext context,
     PurchaseOrderGroup group,
     List<dynamic> purchaseRoles,
     UserProvider userProvider,
     PurchaseProvider purchaseProvider,
   ) {
     final headerItem = group.headerItem;
-    
+
     if (kDebugMode) {
       print('🎨 카드 렌더링: ${group.purchaseOrderNumber}');
       print('  - 아이템 수: ${group.items.length}');
@@ -798,18 +897,18 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
       print('  - 라인 넘버: ${headerItem.lineNumber}');
       print('  - 추가 아이템: ${group.additionalItemCount}개');
     }
-    
+
     // payment_category에 따른 색상 설정
     final Color categoryBgColor;
     final Color categoryTextColor;
     if (group.paymentCategory == '발주') {
-      categoryBgColor = const Color(0xFFE8F5E9);  // 연한 녹색 배경
-      categoryTextColor = const Color(0xFF4CAF50);  // 녹색 텍스트
+      categoryBgColor = const Color(0xFFE8F5E9); // 연한 녹색 배경
+      categoryTextColor = const Color(0xFF4CAF50); // 녹색 텍스트
     } else {
-      categoryBgColor = const Color(0xFFE3F2FD);  // 연한 파란색 배경
-      categoryTextColor = const Color(0xFF1976D2);  // 파란색 텍스트
+      categoryBgColor = const Color(0xFFE3F2FD); // 연한 파란색 배경
+      categoryTextColor = const Color(0xFF1976D2); // 파란색 텍스트
     }
-    
+
     // 승인 상태에 따른 색상 설정
     final Color statusBgColor;
     final Color statusTextColor;
@@ -827,17 +926,21 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
       statusTextColor = const Color(0xFFC62828);
       statusLabel = '대기중';
     }
-    
+
     return Container(
       margin: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 16)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 14)),
+        borderRadius: BorderRadius.circular(
+          ResponsiveUtils.spacing(context, 14),
+        ),
         boxShadow: [AppShadows.card],
       ),
       child: InkWell(
         onTap: () => _showOrderDetails(context, group),
-        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 14)),
+        borderRadius: BorderRadius.circular(
+          ResponsiveUtils.spacing(context, 14),
+        ),
         child: Padding(
           padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 18)),
           child: Column(
@@ -869,7 +972,9 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                     ),
                     decoration: BoxDecoration(
                       color: categoryBgColor,
-                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+                      borderRadius: BorderRadius.circular(
+                        ResponsiveUtils.spacing(context, 8),
+                      ),
                     ),
                     child: Text(
                       group.paymentCategory,
@@ -889,7 +994,9 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                     ),
                     decoration: BoxDecoration(
                       color: statusBgColor,
-                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+                      borderRadius: BorderRadius.circular(
+                        ResponsiveUtils.spacing(context, 8),
+                      ),
                     ),
                     child: Text(
                       statusLabel,
@@ -903,9 +1010,9 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                   ),
                 ],
               ),
-              
+
               SizedBox(height: ResponsiveUtils.spacing(context, 16)),
-              
+
               // 요청자 & 업체 정보
               Row(
                 children: [
@@ -943,22 +1050,26 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                   ),
                 ],
               ),
-              
+
               SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-              
+
               // 품목 정보
               Container(
                 padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 10)),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF8F9FA),
-                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveUtils.spacing(context, 8),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // 품명
                     Text(
-                      headerItem.itemName.isNotEmpty ? headerItem.itemName : '품목명 없음',
+                      headerItem.itemName.isNotEmpty
+                          ? headerItem.itemName
+                          : '품목명 없음',
                       style: ResponsiveUtils.getTextStyle(
                         context,
                         fontWeight: FontWeight.w600,
@@ -1004,7 +1115,9 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                         ),
                         decoration: BoxDecoration(
                           color: AppColors.primary.withValues(alpha: 0.051),
-                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 4)),
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveUtils.spacing(context, 4),
+                          ),
                         ),
                         child: Text(
                           '외 ${group.additionalItemCount}개 품목',
@@ -1020,9 +1133,9 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                   ],
                 ),
               ),
-              
+
               SizedBox(height: ResponsiveUtils.spacing(context, 16)),
-              
+
               // 하단: 금액 & 승인 버튼
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1062,30 +1175,51 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                               barrierDismissible: false,
                               builder: (context) => Dialog(
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
+                                  borderRadius: BorderRadius.circular(
+                                    ResponsiveUtils.spacing(context, 20),
+                                  ),
                                 ),
                                 child: Container(
-                                  width: MediaQuery.of(context).size.width * 0.85,
-                                  padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 24)),
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.85,
+                                  padding: EdgeInsets.all(
+                                    ResponsiveUtils.spacing(context, 24),
+                                  ),
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       // 아이콘
                                       Container(
-                                        width: ResponsiveUtils.spacing(context, 60),
-                                        height: ResponsiveUtils.spacing(context, 60),
+                                        width: ResponsiveUtils.spacing(
+                                          context,
+                                          60,
+                                        ),
+                                        height: ResponsiveUtils.spacing(
+                                          context,
+                                          60,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFF4CAF50).withValues(alpha: 0.102),
+                                          color: const Color(
+                                            0xFF4CAF50,
+                                          ).withValues(alpha: 0.102),
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
                                           Icons.check_circle_outline,
                                           color: const Color(0xFF4CAF50),
-                                          size: ResponsiveUtils.iconSize(context, 32),
+                                          size: ResponsiveUtils.iconSize(
+                                            context,
+                                            32,
+                                          ),
                                         ),
                                       ),
-                                      SizedBox(height: ResponsiveUtils.spacing(context, 20)),
-                                      
+                                      SizedBox(
+                                        height: ResponsiveUtils.spacing(
+                                          context,
+                                          20,
+                                        ),
+                                      ),
+
                                       // 제목
                                       Text(
                                         '1차 승인',
@@ -1096,8 +1230,13 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                                           color: const Color(0xFF1C1C1E),
                                         ),
                                       ),
-                                      SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-                                      
+                                      SizedBox(
+                                        height: ResponsiveUtils.spacing(
+                                          context,
+                                          8,
+                                        ),
+                                      ),
+
                                       // 설명
                                       Text(
                                         '발주를 승인하시겠습니까?',
@@ -1107,78 +1246,166 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                                           color: const Color(0xFF8E8E93),
                                         ),
                                       ),
-                                      SizedBox(height: ResponsiveUtils.spacing(context, 20)),
-                                      
+                                      SizedBox(
+                                        height: ResponsiveUtils.spacing(
+                                          context,
+                                          20,
+                                        ),
+                                      ),
+
                                       // 정보 카드
                                       Container(
                                         width: double.infinity,
-                                        padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
+                                        padding: EdgeInsets.all(
+                                          ResponsiveUtils.spacing(context, 16),
+                                        ),
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFF8F9FA),
-                                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                                          borderRadius: BorderRadius.circular(
+                                            ResponsiveUtils.spacing(
+                                              context,
+                                              12,
+                                            ),
+                                          ),
                                         ),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
-                                            _buildDialogInfoRow(context, '발주번호', group.purchaseOrderNumber),
-                                            SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-                                            _buildDialogInfoRow(context, '요청자', group.requesterName),
-                                            SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-                                            _buildDialogInfoRow(context, '업체', group.vendorName),
-                                            SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-                                            _buildDialogInfoRow(context, '총 금액', '₩${currencyFormat.format(group.totalAmount)}'),
+                                            _buildDialogInfoRow(
+                                              context,
+                                              '발주번호',
+                                              group.purchaseOrderNumber,
+                                            ),
+                                            SizedBox(
+                                              height: ResponsiveUtils.spacing(
+                                                context,
+                                                8,
+                                              ),
+                                            ),
+                                            _buildDialogInfoRow(
+                                              context,
+                                              '요청자',
+                                              group.requesterName,
+                                            ),
+                                            SizedBox(
+                                              height: ResponsiveUtils.spacing(
+                                                context,
+                                                8,
+                                              ),
+                                            ),
+                                            _buildDialogInfoRow(
+                                              context,
+                                              '업체',
+                                              group.vendorName,
+                                            ),
+                                            SizedBox(
+                                              height: ResponsiveUtils.spacing(
+                                                context,
+                                                8,
+                                              ),
+                                            ),
+                                            _buildDialogInfoRow(
+                                              context,
+                                              '총 금액',
+                                              '₩${currencyFormat.format(group.totalAmount)}',
+                                            ),
                                           ],
                                         ),
                                       ),
-                                      SizedBox(height: ResponsiveUtils.spacing(context, 24)),
-                                      
+                                      SizedBox(
+                                        height: ResponsiveUtils.spacing(
+                                          context,
+                                          24,
+                                        ),
+                                      ),
+
                                       // 버튼
                                       Row(
                                         children: [
                                           Expanded(
                                             child: TextButton(
-                                              onPressed: () => Navigator.of(context).pop(false),
+                                              onPressed: () => Navigator.of(
+                                                context,
+                                              ).pop(false),
                                               style: TextButton.styleFrom(
                                                 padding: EdgeInsets.symmetric(
-                                                  vertical: ResponsiveUtils.spacing(context, 14),
+                                                  vertical:
+                                                      ResponsiveUtils.spacing(
+                                                        context,
+                                                        14,
+                                                      ),
                                                 ),
                                                 shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-                                                  side: const BorderSide(color: Color(0xFFE0E0E0)),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                        ResponsiveUtils.spacing(
+                                                          context,
+                                                          12,
+                                                        ),
+                                                      ),
+                                                  side: const BorderSide(
+                                                    color: Color(0xFFE0E0E0),
+                                                  ),
                                                 ),
                                               ),
                                               child: Text(
                                                 '취소',
-                                                style: ResponsiveUtils.getTextStyle(
-                                                  context,
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: const Color(0xFF8E8E93),
-                                                ),
+                                                style:
+                                                    ResponsiveUtils.getTextStyle(
+                                                      context,
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: const Color(
+                                                        0xFF8E8E93,
+                                                      ),
+                                                    ),
                                               ),
                                             ),
                                           ),
-                                          SizedBox(width: ResponsiveUtils.spacing(context, 12)),
+                                          SizedBox(
+                                            width: ResponsiveUtils.spacing(
+                                              context,
+                                              12,
+                                            ),
+                                          ),
                                           Expanded(
                                             child: ElevatedButton(
-                                              onPressed: () => Navigator.of(context).pop(true),
+                                              onPressed: () => Navigator.of(
+                                                context,
+                                              ).pop(true),
                                               style: ElevatedButton.styleFrom(
-                                                backgroundColor: const Color(0xFF4CAF50),
+                                                backgroundColor: const Color(
+                                                  0xFF4CAF50,
+                                                ),
                                                 padding: EdgeInsets.symmetric(
-                                                  vertical: ResponsiveUtils.spacing(context, 14),
+                                                  vertical:
+                                                      ResponsiveUtils.spacing(
+                                                        context,
+                                                        14,
+                                                      ),
                                                 ),
                                                 shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                        ResponsiveUtils.spacing(
+                                                          context,
+                                                          12,
+                                                        ),
+                                                      ),
                                                 ),
                                               ),
                                               child: Text(
                                                 '승인',
-                                                style: ResponsiveUtils.getTextStyle(
-                                                  context,
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Colors.white,
-                                                ),
+                                                style:
+                                                    ResponsiveUtils.getTextStyle(
+                                                      context,
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: Colors.white,
+                                                    ),
                                               ),
                                             ),
                                           ),
@@ -1189,7 +1416,7 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                                 ),
                               ),
                             );
-                            
+
                             if (confirmed == true) {
                               final success = await purchaseProvider
                                   .approveMiddle(group.purchaseOrderNumber);
@@ -1206,7 +1433,9 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF4CAF50),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+                              borderRadius: BorderRadius.circular(
+                                ResponsiveUtils.spacing(context, 8),
+                              ),
                             ),
                             padding: EdgeInsets.symmetric(
                               horizontal: ResponsiveUtils.spacing(context, 16),
@@ -1223,13 +1452,16 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                             ),
                           ),
                         ),
-                      
+
                       if (canApproveMiddle(purchaseRoles) &&
                           group.middleManagerStatus == 'pending')
                         SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                      
+
                       // 최종 승인 버튼
-                      if (canApproveFinal(purchaseRoles, group.paymentCategory) &&
+                      if (canApproveFinal(
+                            purchaseRoles,
+                            group.paymentCategory,
+                          ) &&
                           group.middleManagerStatus == 'approved' &&
                           group.finalManagerStatus == 'pending')
                         ElevatedButton(
@@ -1240,25 +1472,40 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                               barrierDismissible: false,
                               builder: (context) => Dialog(
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
+                                  borderRadius: BorderRadius.circular(
+                                    ResponsiveUtils.spacing(context, 20),
+                                  ),
                                 ),
                                 child: Container(
-                                  width: MediaQuery.of(context).size.width * 0.85,
-                                  padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 24)),
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.85,
+                                  padding: EdgeInsets.all(
+                                    ResponsiveUtils.spacing(context, 24),
+                                  ),
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       // 아이콘
                                       Container(
-                                        width: ResponsiveUtils.spacing(context, 60),
-                                        height: ResponsiveUtils.spacing(context, 60),
+                                        width: ResponsiveUtils.spacing(
+                                          context,
+                                          60,
+                                        ),
+                                        height: ResponsiveUtils.spacing(
+                                          context,
+                                          60,
+                                        ),
                                         decoration: BoxDecoration(
                                           gradient: LinearGradient(
                                             begin: Alignment.topLeft,
                                             end: Alignment.bottomRight,
                                             colors: [
-                                              AppColors.primary.withValues(alpha: 0.153),
-                                              AppColors.primary.withValues(alpha: 0.051),
+                                              AppColors.primary.withValues(
+                                                alpha: 0.153,
+                                              ),
+                                              AppColors.primary.withValues(
+                                                alpha: 0.051,
+                                              ),
                                             ],
                                           ),
                                           shape: BoxShape.circle,
@@ -1266,11 +1513,19 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                                         child: Icon(
                                           Icons.verified_outlined,
                                           color: AppColors.primary,
-                                          size: ResponsiveUtils.iconSize(context, 32),
+                                          size: ResponsiveUtils.iconSize(
+                                            context,
+                                            32,
+                                          ),
                                         ),
                                       ),
-                                      SizedBox(height: ResponsiveUtils.spacing(context, 20)),
-                                      
+                                      SizedBox(
+                                        height: ResponsiveUtils.spacing(
+                                          context,
+                                          20,
+                                        ),
+                                      ),
+
                                       // 제목
                                       Text(
                                         '최종 승인',
@@ -1281,8 +1536,13 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                                           color: const Color(0xFF1C1C1E),
                                         ),
                                       ),
-                                      SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-                                      
+                                      SizedBox(
+                                        height: ResponsiveUtils.spacing(
+                                          context,
+                                          8,
+                                        ),
+                                      ),
+
                                       // 설명
                                       Text(
                                         '발주를 최종 승인하시겠습니까?',
@@ -1292,78 +1552,165 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                                           color: const Color(0xFF8E8E93),
                                         ),
                                       ),
-                                      SizedBox(height: ResponsiveUtils.spacing(context, 20)),
-                                      
+                                      SizedBox(
+                                        height: ResponsiveUtils.spacing(
+                                          context,
+                                          20,
+                                        ),
+                                      ),
+
                                       // 정보 카드
                                       Container(
                                         width: double.infinity,
-                                        padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
+                                        padding: EdgeInsets.all(
+                                          ResponsiveUtils.spacing(context, 16),
+                                        ),
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFF8F9FA),
-                                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                                          borderRadius: BorderRadius.circular(
+                                            ResponsiveUtils.spacing(
+                                              context,
+                                              12,
+                                            ),
+                                          ),
                                         ),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
-                                            _buildDialogInfoRow(context, '발주번호', group.purchaseOrderNumber),
-                                            SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-                                            _buildDialogInfoRow(context, '요청자', group.requesterName),
-                                            SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-                                            _buildDialogInfoRow(context, '업체', group.vendorName),
-                                            SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-                                            _buildDialogInfoRow(context, '총 금액', '₩${currencyFormat.format(group.totalAmount)}'),
+                                            _buildDialogInfoRow(
+                                              context,
+                                              '발주번호',
+                                              group.purchaseOrderNumber,
+                                            ),
+                                            SizedBox(
+                                              height: ResponsiveUtils.spacing(
+                                                context,
+                                                8,
+                                              ),
+                                            ),
+                                            _buildDialogInfoRow(
+                                              context,
+                                              '요청자',
+                                              group.requesterName,
+                                            ),
+                                            SizedBox(
+                                              height: ResponsiveUtils.spacing(
+                                                context,
+                                                8,
+                                              ),
+                                            ),
+                                            _buildDialogInfoRow(
+                                              context,
+                                              '업체',
+                                              group.vendorName,
+                                            ),
+                                            SizedBox(
+                                              height: ResponsiveUtils.spacing(
+                                                context,
+                                                8,
+                                              ),
+                                            ),
+                                            _buildDialogInfoRow(
+                                              context,
+                                              '총 금액',
+                                              '₩${currencyFormat.format(group.totalAmount)}',
+                                            ),
                                           ],
                                         ),
                                       ),
-                                      SizedBox(height: ResponsiveUtils.spacing(context, 24)),
-                                      
+                                      SizedBox(
+                                        height: ResponsiveUtils.spacing(
+                                          context,
+                                          24,
+                                        ),
+                                      ),
+
                                       // 버튼
                                       Row(
                                         children: [
                                           Expanded(
                                             child: TextButton(
-                                              onPressed: () => Navigator.of(context).pop(false),
+                                              onPressed: () => Navigator.of(
+                                                context,
+                                              ).pop(false),
                                               style: TextButton.styleFrom(
                                                 padding: EdgeInsets.symmetric(
-                                                  vertical: ResponsiveUtils.spacing(context, 14),
+                                                  vertical:
+                                                      ResponsiveUtils.spacing(
+                                                        context,
+                                                        14,
+                                                      ),
                                                 ),
                                                 shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-                                                  side: const BorderSide(color: Color(0xFFE0E0E0)),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                        ResponsiveUtils.spacing(
+                                                          context,
+                                                          12,
+                                                        ),
+                                                      ),
+                                                  side: const BorderSide(
+                                                    color: Color(0xFFE0E0E0),
+                                                  ),
                                                 ),
                                               ),
                                               child: Text(
                                                 '취소',
-                                                style: ResponsiveUtils.getTextStyle(
-                                                  context,
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: const Color(0xFF8E8E93),
-                                                ),
+                                                style:
+                                                    ResponsiveUtils.getTextStyle(
+                                                      context,
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: const Color(
+                                                        0xFF8E8E93,
+                                                      ),
+                                                    ),
                                               ),
                                             ),
                                           ),
-                                          SizedBox(width: ResponsiveUtils.spacing(context, 12)),
+                                          SizedBox(
+                                            width: ResponsiveUtils.spacing(
+                                              context,
+                                              12,
+                                            ),
+                                          ),
                                           Expanded(
                                             child: ElevatedButton(
-                                              onPressed: () => Navigator.of(context).pop(true),
+                                              onPressed: () => Navigator.of(
+                                                context,
+                                              ).pop(true),
                                               style: ElevatedButton.styleFrom(
-                                                backgroundColor: AppColors.primary,
+                                                backgroundColor:
+                                                    AppColors.primary,
                                                 padding: EdgeInsets.symmetric(
-                                                  vertical: ResponsiveUtils.spacing(context, 14),
+                                                  vertical:
+                                                      ResponsiveUtils.spacing(
+                                                        context,
+                                                        14,
+                                                      ),
                                                 ),
                                                 shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                        ResponsiveUtils.spacing(
+                                                          context,
+                                                          12,
+                                                        ),
+                                                      ),
                                                 ),
                                               ),
                                               child: Text(
                                                 '최종 승인',
-                                                style: ResponsiveUtils.getTextStyle(
-                                                  context,
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Colors.white,
-                                                ),
+                                                style:
+                                                    ResponsiveUtils.getTextStyle(
+                                                      context,
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: Colors.white,
+                                                    ),
                                               ),
                                             ),
                                           ),
@@ -1374,7 +1721,7 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                                 ),
                               ),
                             );
-                            
+
                             if (confirmed == true) {
                               final success = await purchaseProvider
                                   .approveFinal(group.purchaseOrderNumber);
@@ -1391,7 +1738,9 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+                              borderRadius: BorderRadius.circular(
+                                ResponsiveUtils.spacing(context, 8),
+                              ),
                             ),
                             padding: EdgeInsets.symmetric(
                               horizontal: ResponsiveUtils.spacing(context, 16),
@@ -1408,22 +1757,34 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                             ),
                           ),
                         ),
-                      
+
                       // 반려 버튼
-                      if ((canApproveMiddle(purchaseRoles) && group.middleManagerStatus == 'pending') ||
-                          (canApproveFinal(purchaseRoles, group.paymentCategory) && 
-                           group.middleManagerStatus == 'approved' && 
-                           group.finalManagerStatus == 'pending')) ...[
+                      if ((canApproveMiddle(purchaseRoles) &&
+                              group.middleManagerStatus == 'pending') ||
+                          (canApproveFinal(
+                                purchaseRoles,
+                                group.paymentCategory,
+                              ) &&
+                              group.middleManagerStatus == 'approved' &&
+                              group.finalManagerStatus == 'pending')) ...[
                         SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                         OutlinedButton(
                           onPressed: () {
                             // 반려 사유 입력 다이얼로그
-                            _showRejectDialog(context, group, purchaseRoles, userProvider, purchaseProvider);
+                            _showRejectDialog(
+                              context,
+                              group,
+                              purchaseRoles,
+                              userProvider,
+                              purchaseProvider,
+                            );
                           },
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: Color(0xFFFF3B30)),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+                              borderRadius: BorderRadius.circular(
+                                ResponsiveUtils.spacing(context, 8),
+                              ),
                             ),
                             padding: EdgeInsets.symmetric(
                               horizontal: ResponsiveUtils.spacing(context, 16),
@@ -1454,7 +1815,7 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
 
   Widget _buildCompletedCard(BuildContext context, PurchaseOrderGroup group) {
     final headerItem = group.headerItem;
-    
+
     // payment_category에 따른 색상 설정
     final Color categoryBgColor;
     final Color categoryTextColor;
@@ -1465,12 +1826,12 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
       categoryBgColor = const Color(0xFFE3F2FD);
       categoryTextColor = const Color(0xFF1976D2);
     }
-    
+
     // 승인 상태에 따른 색상 설정
     final Color statusBgColor;
     final Color statusTextColor;
     String statusLabel;
-    
+
     if (group.finalManagerStatus == 'approved') {
       statusBgColor = const Color(0xFFE8F5E9);
       statusTextColor = const Color(0xFF388E3C);
@@ -1492,17 +1853,21 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
       statusTextColor = const Color(0xFF8E8E93);
       statusLabel = '처리완료';
     }
-    
+
     return Container(
       margin: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 16)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 14)),
+        borderRadius: BorderRadius.circular(
+          ResponsiveUtils.spacing(context, 14),
+        ),
         boxShadow: [AppShadows.card],
       ),
       child: InkWell(
         onTap: () => _showOrderDetails(context, group),
-        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 14)),
+        borderRadius: BorderRadius.circular(
+          ResponsiveUtils.spacing(context, 14),
+        ),
         child: Padding(
           padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 18)),
           child: Column(
@@ -1534,7 +1899,9 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                     ),
                     decoration: BoxDecoration(
                       color: categoryBgColor,
-                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+                      borderRadius: BorderRadius.circular(
+                        ResponsiveUtils.spacing(context, 8),
+                      ),
                     ),
                     child: Text(
                       group.paymentCategory,
@@ -1554,7 +1921,9 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                     ),
                     decoration: BoxDecoration(
                       color: statusBgColor,
-                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+                      borderRadius: BorderRadius.circular(
+                        ResponsiveUtils.spacing(context, 8),
+                      ),
                     ),
                     child: Text(
                       statusLabel,
@@ -1568,9 +1937,9 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                   ),
                 ],
               ),
-              
+
               SizedBox(height: ResponsiveUtils.spacing(context, 16)),
-              
+
               // 요청자 & 업체 정보
               Row(
                 children: [
@@ -1608,21 +1977,25 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                   ),
                 ],
               ),
-              
+
               SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-              
+
               // 품목 정보
               Container(
                 padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 10)),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF8F9FA),
-                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveUtils.spacing(context, 8),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      headerItem.itemName.isNotEmpty ? headerItem.itemName : '품목명 없음',
+                      headerItem.itemName.isNotEmpty
+                          ? headerItem.itemName
+                          : '품목명 없음',
                       style: ResponsiveUtils.getTextStyle(
                         context,
                         fontWeight: FontWeight.w600,
@@ -1638,7 +2011,9 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                         ),
                         decoration: BoxDecoration(
                           color: AppColors.primary.withValues(alpha: 0.051),
-                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 4)),
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveUtils.spacing(context, 4),
+                          ),
                         ),
                         child: Text(
                           '외 ${group.additionalItemCount}개 품목',
@@ -1654,9 +2029,9 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                   ],
                 ),
               ),
-              
+
               SizedBox(height: ResponsiveUtils.spacing(context, 16)),
-              
+
               // 하단: 금액
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1708,13 +2083,15 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
     PurchaseProvider purchaseProvider,
   ) {
     final TextEditingController reasonController = TextEditingController();
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => Dialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
+          borderRadius: BorderRadius.circular(
+            ResponsiveUtils.spacing(context, 20),
+          ),
         ),
         child: Container(
           width: MediaQuery.of(context).size.width * 0.85,
@@ -1737,10 +2114,10 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                 ),
               ),
               SizedBox(height: ResponsiveUtils.spacing(context, 20)),
-              
+
               // 제목
               Text(
-                '반려',
+                '반려 확인',
                 style: ResponsiveUtils.getTextStyle(
                   context,
                   fontSize: 20,
@@ -1749,10 +2126,10 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                 ),
               ),
               SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-              
+
               // 설명
               Text(
-                '발주를 반려하시겠습니까?',
+                '이 발주를 반려하시겠습니까?',
                 style: ResponsiveUtils.getTextStyle(
                   context,
                   fontSize: 14,
@@ -1760,59 +2137,40 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                 ),
               ),
               SizedBox(height: ResponsiveUtils.spacing(context, 20)),
-              
+
               // 정보 카드
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF8F9FA),
-                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveUtils.spacing(context, 12),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildDialogInfoRow(context, '발주번호', group.purchaseOrderNumber),
+                    _buildDialogInfoRow(
+                      context,
+                      '발주번호',
+                      group.purchaseOrderNumber,
+                    ),
                     SizedBox(height: ResponsiveUtils.spacing(context, 8)),
                     _buildDialogInfoRow(context, '요청자', group.requesterName),
                     SizedBox(height: ResponsiveUtils.spacing(context, 8)),
                     _buildDialogInfoRow(context, '업체', group.vendorName),
+                    SizedBox(height: ResponsiveUtils.spacing(context, 8)),
+                    _buildDialogInfoRow(
+                      context,
+                      '금액',
+                      '${group.totalAmount.toStringAsFixed(0)}원',
+                    ),
                   ],
                 ),
               ),
-              SizedBox(height: ResponsiveUtils.spacing(context, 20)),
-              
-              // 반려 사유 입력
-              TextField(
-                controller: reasonController,
-                decoration: InputDecoration(
-                  labelText: '반려 사유',
-                  hintText: '반려 사유를 입력해주세요',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-                    borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-                    borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-                    borderSide: BorderSide(color: AppColors.primary, width: 2),
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
-                ),
-                maxLines: 3,
-                style: ResponsiveUtils.getTextStyle(
-                  context,
-                  fontSize: 14,
-                  color: const Color(0xFF1C1C1E),
-                ),
-              ),
               SizedBox(height: ResponsiveUtils.spacing(context, 24)),
-              
+
               // 버튼
               Row(
                 children: [
@@ -1824,7 +2182,9 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                           vertical: ResponsiveUtils.spacing(context, 14),
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveUtils.spacing(context, 12),
+                          ),
                           side: const BorderSide(color: Color(0xFFE0E0E0)),
                         ),
                       ),
@@ -1843,25 +2203,16 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () async {
-                        if (reasonController.text.trim().isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('반려 사유를 입력해주세요'),
-                              backgroundColor: const Color(0xFFFF3B30),
-                            ),
-                          );
-                          return;
-                        }
-                        
-                        final isMiddleManager = canApproveMiddle(purchaseRoles) && 
-                                               group.middleManagerStatus == 'pending';
-                        
+                        final isMiddleManager =
+                            canApproveMiddle(purchaseRoles) &&
+                            group.middleManagerStatus == 'pending';
+
                         final success = await purchaseProvider.rejectPurchase(
                           group.purchaseOrderNumber,
                           isMiddleManager: isMiddleManager,
-                          reason: reasonController.text.trim(),
+                          reason: '확인 후 반려',
                         );
-                        
+
                         if (success && context.mounted) {
                           Navigator.of(context).pop();
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -1878,7 +2229,9 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                           vertical: ResponsiveUtils.spacing(context, 14),
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveUtils.spacing(context, 12),
+                          ),
                         ),
                       ),
                       child: Text(

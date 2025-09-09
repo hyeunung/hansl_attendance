@@ -8,8 +8,10 @@ import 'async_operation_manager.dart';
 /// Database query optimization service
 /// Provides optimized database access patterns with intelligent caching,
 /// query batching, and performance monitoring
-class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin {
-  static final DatabaseOptimizationService _instance = DatabaseOptimizationService._internal();
+class DatabaseOptimizationService
+    with TimerManagementMixin, AsyncOperationMixin {
+  static final DatabaseOptimizationService _instance =
+      DatabaseOptimizationService._internal();
   static DatabaseOptimizationService get instance => _instance;
   DatabaseOptimizationService._internal();
 
@@ -104,9 +106,13 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
     final cacheKey = 'attendance_${employeeId}_$dateStr$limitStr$historyStr';
 
     // Use shorter TTL for today's data, longer for historical data
-    final isToday = dateStr == DateTime.now().toIso8601String().substring(0, 10);
+    final isToday =
+        dateStr == DateTime.now().toIso8601String().substring(0, 10);
     final effectiveTtl =
-        cacheTtl ?? (isToday ? CacheConfig.attendanceTodayTtl : CacheConfig.attendanceHistoryTtl);
+        cacheTtl ??
+        (isToday
+            ? CacheConfig.attendanceTodayTtl
+            : CacheConfig.attendanceHistoryTtl);
 
     return await _cache.getOrFetch<List<Map<String, dynamic>>>(
           key: cacheKey,
@@ -140,7 +146,8 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
           ),
           ttl: effectiveTtl,
           fromJson: (json) =>
-              (json['data'] as List?)?.cast<Map<String, dynamic>>() ?? <Map<String, dynamic>>[],
+              (json['data'] as List?)?.cast<Map<String, dynamic>>() ??
+              <Map<String, dynamic>>[],
           toJson: (data) => {'data': data},
         ) ??
         [];
@@ -161,7 +168,8 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
       'leave',
       if (userEmail != null) 'user_$userEmail',
       if (status != null) 'status_$status',
-      if (startDate != null) 'start_${startDate.toIso8601String().substring(0, 10)}',
+      if (startDate != null)
+        'start_${startDate.toIso8601String().substring(0, 10)}',
       if (endDate != null) 'end_${endDate.toIso8601String().substring(0, 10)}',
       if (includeEmployeeData) 'with_employee',
     ];
@@ -184,17 +192,24 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
               }
 
               if (startDate != null) {
-                query = query.gte('start_date', startDate.toIso8601String().substring(0, 10));
+                query = query.gte(
+                  'start_date',
+                  startDate.toIso8601String().substring(0, 10),
+                );
               }
 
               if (endDate != null) {
-                query = query.lte('end_date', endDate.toIso8601String().substring(0, 10));
+                query = query.lte(
+                  'end_date',
+                  endDate.toIso8601String().substring(0, 10),
+                );
               }
 
               query = query.order('created_at', ascending: false);
 
               final leaveData = await query;
-              final leaveList = (leaveData as List).cast<Map<String, dynamic>>();
+              final leaveList = (leaveData as List)
+                  .cast<Map<String, dynamic>>();
 
               // Add employee data if requested
               if (includeEmployeeData) {
@@ -209,14 +224,17 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
           ),
           ttl: cacheTtl ?? CacheConfig.leaveDataTtl,
           fromJson: (json) =>
-              (json['data'] as List?)?.cast<Map<String, dynamic>>() ?? <Map<String, dynamic>>[],
+              (json['data'] as List?)?.cast<Map<String, dynamic>>() ??
+              <Map<String, dynamic>>[],
           toJson: (data) => {'data': data},
         ) ??
         [];
   }
 
   /// Batch employee data enrichment to reduce N+1 queries
-  Future<void> _enrichWithEmployeeData(List<Map<String, dynamic>> leaveList) async {
+  Future<void> _enrichWithEmployeeData(
+    List<Map<String, dynamic>> leaveList,
+  ) async {
     if (leaveList.isEmpty) return;
 
     // Extract unique emails
@@ -369,7 +387,10 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
   /// Query performance monitoring
   void _recordQueryStart(String queryType) {
     _totalQueries++;
-    final performance = QueryPerformance(queryType: queryType, startTime: DateTime.now());
+    final performance = QueryPerformance(
+      queryType: queryType,
+      startTime: DateTime.now(),
+    );
     _performanceLog.add(performance);
 
     // Keep only recent entries
@@ -381,7 +402,8 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
   void _recordQueryEnd(String queryType, bool success) {
     final entry = _performanceLog.lastWhere(
       (p) => p.queryType == queryType && p.endTime == null,
-      orElse: () => QueryPerformance(queryType: queryType, startTime: DateTime.now()),
+      orElse: () =>
+          QueryPerformance(queryType: queryType, startTime: DateTime.now()),
     );
 
     entry.endTime = DateTime.now();
@@ -412,7 +434,9 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
         .where(
           (p) =>
               p.endTime != null &&
-              p.endTime!.isAfter(DateTime.now().subtract(const Duration(minutes: 10))),
+              p.endTime!.isAfter(
+                DateTime.now().subtract(const Duration(minutes: 10)),
+              ),
         )
         .toList();
 
@@ -426,7 +450,9 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
         : 0.0;
 
     final successfulQueries = recentQueries.where((p) => p.success).length;
-    final successRate = recentQueries.isNotEmpty ? successfulQueries / recentQueries.length : 1.0;
+    final successRate = recentQueries.isNotEmpty
+        ? successfulQueries / recentQueries.length
+        : 1.0;
 
     return {
       'total_queries': _totalQueries,
@@ -441,7 +467,9 @@ class DatabaseOptimizationService with TimerManagementMixin, AsyncOperationMixin
           .map(
             (p) => {
               'query_type': p.queryType,
-              'execution_time_ms': p.endTime!.difference(p.startTime).inMilliseconds,
+              'execution_time_ms': p.endTime!
+                  .difference(p.startTime)
+                  .inMilliseconds,
               'success': p.success,
               'timestamp': p.startTime.toIso8601String(),
             },

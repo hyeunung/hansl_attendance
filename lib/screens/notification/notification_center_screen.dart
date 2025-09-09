@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../theme/app_colors.dart';
+import '../main_tab.dart';
 
 class NotificationCenterScreen extends StatefulWidget {
   const NotificationCenterScreen({super.key});
 
   @override
-  State<NotificationCenterScreen> createState() => _NotificationCenterScreenState();
+  State<NotificationCenterScreen> createState() =>
+      _NotificationCenterScreenState();
 }
 
 class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
@@ -56,12 +58,17 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
     try {
       await _supabase
           .from('notifications')
-          .update({'is_read': true, 'read_at': DateTime.now().toIso8601String()})
+          .update({
+            'is_read': true,
+            'read_at': DateTime.now().toIso8601String(),
+          })
           .eq('id', notificationId);
 
       // 로컬 상태 업데이트
       setState(() {
-        final index = _notifications.indexWhere((n) => n['id'] == notificationId);
+        final index = _notifications.indexWhere(
+          (n) => n['id'] == notificationId,
+        );
         if (index != -1) {
           _notifications[index]['is_read'] = true;
           _notifications[index]['read_at'] = DateTime.now().toIso8601String();
@@ -79,7 +86,10 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
 
       await _supabase
           .from('notifications')
-          .update({'is_read': true, 'read_at': DateTime.now().toIso8601String()})
+          .update({
+            'is_read': true,
+            'read_at': DateTime.now().toIso8601String(),
+          })
           .eq('user_email', user.email!)
           .eq('is_read', false);
 
@@ -110,7 +120,9 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
         _notifications.removeWhere((n) => n['id'] == notificationId);
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('알림을 삭제했습니다')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('알림을 삭제했습니다')));
     } catch (e) {
       print('알림 삭제 실패: $e');
     }
@@ -126,6 +138,17 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
         return '🚗';
       case 'leave_result':
         return '✅';
+      case 'new_purchase_request':
+      case 'purchase_approval':
+      case 'final_approval_request':
+        return '📦';
+      case 'purchase_approved':
+      case 'purchase_result':
+        return '💳';
+      case 'notification_summary':
+      case 'grouped_notification':
+      case 'multiple_notifications':
+        return '🔔';
       default:
         return '📢';
     }
@@ -141,6 +164,17 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
         return Colors.orange;
       case 'leave_result':
         return Colors.green;
+      case 'new_purchase_request':
+      case 'purchase_approval':
+      case 'final_approval_request':
+        return Colors.purple;
+      case 'purchase_approved':
+      case 'purchase_result':
+        return Colors.teal;
+      case 'notification_summary':
+      case 'grouped_notification':
+      case 'multiple_notifications':
+        return Colors.indigo;
       default:
         return Colors.grey;
     }
@@ -166,12 +200,17 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final unreadCount = _notifications.where((n) => n['is_read'] == false).length;
+    final unreadCount = _notifications
+        .where((n) => n['is_read'] == false)
+        .length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text('알림', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        title: const Text(
+          '알림',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -190,9 +229,16 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.notifications_none, size: 64, color: Colors.grey[400]),
+                  Icon(
+                    Icons.notifications_none,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
                   const SizedBox(height: 16),
-                  Text('알림이 없습니다', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+                  Text(
+                    '알림이 없습니다',
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  ),
                 ],
               ),
             )
@@ -244,7 +290,9 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                     ),
                                     child: Center(
                                       child: Text(
-                                        _getNotificationIcon(notification['type'] ?? ''),
+                                        _getNotificationIcon(
+                                          notification['type'] ?? '',
+                                        ),
                                         style: const TextStyle(fontSize: 20),
                                       ),
                                     ),
@@ -252,7 +300,8 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Row(
                                           children: [
@@ -264,7 +313,9 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                                   fontWeight: isRead
                                                       ? FontWeight.w500
                                                       : FontWeight.w600,
-                                                  color: isRead ? Colors.grey[700] : Colors.black,
+                                                  color: isRead
+                                                      ? Colors.grey[700]
+                                                      : Colors.black,
                                                 ),
                                               ),
                                             ),
@@ -274,7 +325,8 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                                 height: 8,
                                                 decoration: BoxDecoration(
                                                   color: AppColors.primary,
-                                                  borderRadius: BorderRadius.circular(4),
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
                                                 ),
                                               ),
                                           ],
@@ -284,15 +336,22 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                           notification['body'] ?? '',
                                           style: TextStyle(
                                             fontSize: 14,
-                                            color: isRead ? Colors.grey[600] : Colors.grey[700],
+                                            color: isRead
+                                                ? Colors.grey[600]
+                                                : Colors.grey[700],
                                           ),
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          _formatDate(notification['created_at']),
-                                          style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                                          _formatDate(
+                                            notification['created_at'],
+                                          ),
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[500],
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -312,24 +371,137 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
     );
   }
 
-  void _handleNotificationTap(Map<String, dynamic> notification) {
+  void _handleNotificationTap(Map<String, dynamic> notification) async {
     // 알림 타입에 따라 적절한 화면으로 이동
     final type = notification['type'] ?? '';
-    final data = notification['data'] ?? {};
+    // final data = notification['data'] ?? {}; // 미사용 변수 주석 처리
+
+    // 먼저 현재 사용자 정보와 권한 가져오기
+    final user = _supabase.auth.currentUser;
+    Map<String, dynamic>? employeeData;
+
+    if (user != null) {
+      try {
+        employeeData = await _supabase
+            .from('employees')
+            .select('*') // 모든 필드 가져오기
+            .eq('email', user.email!)
+            .single();
+      } catch (e) {
+        print('Employee data fetch failed: $e');
+      }
+    }
 
     switch (type) {
       case 'leave_request':
       case 'business_trip':
-        // 승인 탭으로 이동
-        Navigator.pushReplacementNamed(context, '/main', arguments: {'initialIndex': 2});
+        // 연차/출장 승인 권한 확인
+        final attendanceRoles =
+            (employeeData?['attendance_role'] as List<dynamic>?) ?? [];
+        final hasApprovalRole = attendanceRoles.any(
+          (role) => [
+            'admin',
+            'superadmin',
+            '개발3팀_manager',
+            'CAD_manager',
+            '개발팀_manager',
+            '경영지원팀_manager',
+            '연구소_manager',
+          ].contains(role),
+        );
+
+        if (hasApprovalRole) {
+          // MainTab에 employee 정보 전달
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => MainTab(
+                initialIndex: 2, // 승인 탭
+                approvalSubTab: 0, // 연차/출장 서브탭
+                initialEmployee: employeeData,
+              ),
+            ),
+          );
+        } else {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => const MainTab(initialIndex: 0),
+            ),
+          );
+        }
+        break;
+
+      case 'new_purchase_request':
+      case 'purchase_approval':
+      case 'final_approval_request':
+        // 발주 승인 권한 확인
+        final attendanceRoles =
+            (employeeData?['attendance_role'] as List<dynamic>?) ?? [];
+        final purchaseRoles =
+            (employeeData?['purchase_role'] as List<dynamic>?) ?? [];
+
+        final hasAttendanceApproval = attendanceRoles.any(
+          (role) => [
+            'admin',
+            'superadmin',
+            '개발3팀_manager',
+            'CAD_manager',
+            '개발팀_manager',
+            '경영지원팀_manager',
+            '연구소_manager',
+          ].contains(role),
+        );
+
+        final hasPurchaseApproval = purchaseRoles.any(
+          (role) => [
+            'middle_manager',
+            'raw_material_manager',
+            'consumable_manager',
+            'app_admin',
+          ].contains(role),
+        );
+
+        if (hasAttendanceApproval && hasPurchaseApproval) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => MainTab(
+                initialIndex: 2, // 승인 탭
+                approvalSubTab: 1, // 발주 서브탭
+                initialEmployee: employeeData,
+              ),
+            ),
+          );
+        } else {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => const MainTab(initialIndex: 0),
+            ),
+          );
+        }
         break;
       case 'leave_result':
         // 연차 현황 탭으로 이동
-        Navigator.pushReplacementNamed(context, '/main', arguments: {'initialIndex': 1});
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const MainTab(initialIndex: 1),
+          ),
+        );
+        break;
+      case 'purchase_approved':
+      case 'purchase_result':
+        // 홈으로 이동 (발주 결과)
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const MainTab(initialIndex: 0),
+          ),
+        );
         break;
       default:
         // 홈으로 이동
-        Navigator.pushReplacementNamed(context, '/main');
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const MainTab(initialIndex: 0),
+          ),
+        );
     }
   }
 }

@@ -19,6 +19,7 @@ class AttendanceProvider extends ChangeNotifier
   String? userEmail;
 
   // Edge Functions endpoints
+  // 위치 기반 자동 출근 기능 제거에 따라 사용하지 않음
   static const String _validateLocationEndpoint = 'validate_location';
   static const String _validateWorkTimeEndpoint = 'validate_work_time';
 
@@ -79,7 +80,8 @@ class AttendanceProvider extends ChangeNotifier
   // 출근 버튼 활성화 조건: 출근 전 & 위치 OK & 00:00~18:00
   bool canClockIn = true;
   // 퇴근 버튼 활성화 조건: 출근 후 & 퇴근 전
-  bool get canClockOut => status == AttendanceStatus.working || status == AttendanceStatus.late;
+  bool get canClockOut =>
+      status == AttendanceStatus.working || status == AttendanceStatus.late;
 
   // 지각 통계 Getters
   int get monthlyLateCount => _monthlyLateCount;
@@ -279,7 +281,12 @@ class AttendanceProvider extends ChangeNotifier
   }
 
   // 두 지점 간의 거리 계산 (Haversine formula)
-  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+  double _calculateDistance(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
     const double earthRadius = 6371000; // 지구의 반지름 (미터)
     final double dLat = (lat2 - lat1) * math.pi / 180;
     final double dLon = (lon2 - lon1) * math.pi / 180;
@@ -299,10 +306,6 @@ class AttendanceProvider extends ChangeNotifier
     double longitude,
     async_ops.CancellationToken token,
   ) async {
-    if (kDebugMode) {
-      debugPrint('Validating location: lat=$latitude, lng=$longitude, userId=$userId');
-    }
-
     try {
       final response = await Supabase.instance.client.functions.invoke(
         _validateLocationEndpoint,
@@ -426,14 +429,19 @@ class AttendanceProvider extends ChangeNotifier
         Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high),
         Future.delayed(
           const Duration(seconds: 10),
-          () => throw async_ops.TimeoutException('GPS timeout', const Duration(seconds: 10)),
+          () => throw async_ops.TimeoutException(
+            'GPS timeout',
+            const Duration(seconds: 10),
+          ),
         ),
       ]);
       token.throwIfCancelled();
 
       // DEBUG: 시뮬레이터에서 테스트를 위해 회사 위치 사용
       if (kDebugMode) {
-        debugPrint('Original position: lat=${pos.latitude}, lng=${pos.longitude}');
+        debugPrint(
+          'Original position: lat=${pos.latitude}, lng=${pos.longitude}',
+        );
         // 시뮬레이터에서는 회사 위치로 override
         pos = Position(
           latitude: 35.844541, // 회사 위도
@@ -475,11 +483,18 @@ class AttendanceProvider extends ChangeNotifier
         }
 
         // Edge Function 오류 시 클라이언트 사이드 검증으로 폴백
-        final distance = _calculateDistance(pos.latitude, pos.longitude, _companyLat, _companyLng);
+        final distance = _calculateDistance(
+          pos.latitude,
+          pos.longitude,
+          _companyLat,
+          _companyLng,
+        );
 
         if (kDebugMode) {
           debugPrint('📍 Fallback to client validation');
-          debugPrint('📍 Distance: ${distance.round()}m (max: ${_allowedDistance}m)');
+          debugPrint(
+            '📍 Distance: ${distance.round()}m (max: ${_allowedDistance}m)',
+          );
         }
 
         if (distance > _allowedDistance) {
@@ -500,7 +515,7 @@ class AttendanceProvider extends ChangeNotifier
     }
 
     token.throwIfCancelled();
-    
+
     // 오늘 날짜 문자열 먼저 생성
     final todayStr =
         "${DateTime.now().year.toString().padLeft(4, '0')}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}";
@@ -512,7 +527,9 @@ class AttendanceProvider extends ChangeNotifier
         timeResult = await _validateWorkTimeWithServer('clockIn', token);
 
         if (!timeResult['isValid']) {
-          debugPrint('⚠️ Server time validation failed: ${timeResult['message']}');
+          debugPrint(
+            '⚠️ Server time validation failed: ${timeResult['message']}',
+          );
           // 서버 검증 실패 시 클라이언트에서 지각 여부만 판단하고 계속 진행
           final now = DateTime.now();
           final hour = now.hour;
@@ -567,7 +584,9 @@ class AttendanceProvider extends ChangeNotifier
           .eq('date', todayStr)
           .limit(1);
 
-      debugPrint('🔍 Query completed. Records found: ${existingRecords.length}');
+      debugPrint(
+        '🔍 Query completed. Records found: ${existingRecords.length}',
+      );
       if (existingRecords.isNotEmpty) {
         debugPrint('🔍 Existing record: ${existingRecords.first}');
       }
@@ -612,7 +631,9 @@ class AttendanceProvider extends ChangeNotifier
 
         if (kDebugMode) {
           debugPrint('✅ Updated existing attendance record for $todayStr');
-          debugPrint('✅ Clock in time: ${now.toIso8601String().substring(11, 19)}');
+          debugPrint(
+            '✅ Clock in time: ${now.toIso8601String().substring(11, 19)}',
+          );
         }
       } else {
         // 기존 레코드가 없으면 INSERT (새로 생성)
@@ -649,7 +670,8 @@ class AttendanceProvider extends ChangeNotifier
       String errorMsg = '출근 등록 중 오류가 발생했습니다.';
       if (e.toString().contains('duplicate')) {
         errorMsg = '이미 출근 기록이 있습니다.';
-      } else if (e.toString().contains('permission') || e.toString().contains('RLS')) {
+      } else if (e.toString().contains('permission') ||
+          e.toString().contains('RLS')) {
         errorMsg = '권한 오류가 발생했습니다. 관리자에게 문의하세요.';
       } else if (e.toString().contains('network')) {
         errorMsg = '네트워크 연결을 확인해주세요.';
@@ -738,14 +760,19 @@ class AttendanceProvider extends ChangeNotifier
         Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high),
         Future.delayed(
           const Duration(seconds: 10),
-          () => throw async_ops.TimeoutException('GPS timeout', const Duration(seconds: 10)),
+          () => throw async_ops.TimeoutException(
+            'GPS timeout',
+            const Duration(seconds: 10),
+          ),
         ),
       ]);
       token.throwIfCancelled();
 
       // DEBUG: 시뮬레이터에서 테스트를 위해 회사 위치 사용 (퇴근도 동일)
       if (kDebugMode) {
-        debugPrint('Original position (clock out): lat=${pos.latitude}, lng=${pos.longitude}');
+        debugPrint(
+          'Original position (clock out): lat=${pos.latitude}, lng=${pos.longitude}',
+        );
         // 시뮬레이터에서는 회사 위치로 override
         pos = Position(
           latitude: 35.844541, // 회사 위도
@@ -788,11 +815,18 @@ class AttendanceProvider extends ChangeNotifier
         }
 
         // Edge Function 오류 시 클라이언트 사이드 검증으로 폴백
-        final distance = _calculateDistance(pos.latitude, pos.longitude, _companyLat, _companyLng);
+        final distance = _calculateDistance(
+          pos.latitude,
+          pos.longitude,
+          _companyLat,
+          _companyLng,
+        );
 
         if (kDebugMode) {
           debugPrint('📍 Fallback to client validation (clock out)');
-          debugPrint('📍 Distance: ${distance.round()}m (max: ${_allowedDistance}m)');
+          debugPrint(
+            '📍 Distance: ${distance.round()}m (max: ${_allowedDistance}m)',
+          );
         }
 
         if (distance > _allowedDistance) {
@@ -829,7 +863,9 @@ class AttendanceProvider extends ChangeNotifier
       }
     } else {
       if (kDebugMode) {
-        debugPrint('DEBUG: Skipping time validation for clock out in debug mode');
+        debugPrint(
+          'DEBUG: Skipping time validation for clock out in debug mode',
+        );
       }
     }
 
@@ -842,7 +878,9 @@ class AttendanceProvider extends ChangeNotifier
       token.throwIfCancelled();
 
       if (kDebugMode) {
-        debugPrint('📝 Checking existing attendance record for clock out: $todayStr');
+        debugPrint(
+          '📝 Checking existing attendance record for clock out: $todayStr',
+        );
         debugPrint('📝 Employee ID: $userId');
       }
 
@@ -860,7 +898,9 @@ class AttendanceProvider extends ChangeNotifier
       if (record != null) {
         // 기존 레코드가 있으면 UPDATE
         if (kDebugMode) {
-          debugPrint('📝 Found existing record ID for clock out: ${record['id']}');
+          debugPrint(
+            '📝 Found existing record ID for clock out: ${record['id']}',
+          );
         }
 
         await Supabase.instance.client
@@ -873,13 +913,19 @@ class AttendanceProvider extends ChangeNotifier
             .eq('id', record['id']);
 
         if (kDebugMode) {
-          debugPrint('✅ Updated attendance record with clock out for $todayStr');
-          debugPrint('✅ Clock out time: ${now.toIso8601String().substring(11, 19)}');
+          debugPrint(
+            '✅ Updated attendance record with clock out for $todayStr',
+          );
+          debugPrint(
+            '✅ Clock out time: ${now.toIso8601String().substring(11, 19)}',
+          );
         }
       } else {
         // 출근 기록 없이 퇴근하는 경우 (예외적 상황)
         if (kDebugMode) {
-          debugPrint('⚠️ No existing record found for clock out, creating new record');
+          debugPrint(
+            '⚠️ No existing record found for clock out, creating new record',
+          );
         }
 
         final insertData = {
@@ -895,10 +941,14 @@ class AttendanceProvider extends ChangeNotifier
           debugPrint('📝 Insert data for clock out: $insertData');
         }
 
-        await Supabase.instance.client.from('attendance_records').insert(insertData);
+        await Supabase.instance.client
+            .from('attendance_records')
+            .insert(insertData);
 
         if (kDebugMode) {
-          debugPrint('⚠️ Created new attendance record with only clock out for $todayStr');
+          debugPrint(
+            '⚠️ Created new attendance record with only clock out for $todayStr',
+          );
         }
       }
     } catch (e, stackTrace) {
@@ -913,7 +963,8 @@ class AttendanceProvider extends ChangeNotifier
       String errorMsg = '퇴근 등록 중 오류가 발생했습니다.';
       if (e.toString().contains('duplicate')) {
         errorMsg = '이미 퇴근 기록이 있습니다.';
-      } else if (e.toString().contains('permission') || e.toString().contains('RLS')) {
+      } else if (e.toString().contains('permission') ||
+          e.toString().contains('RLS')) {
         errorMsg = '권한 오류가 발생했습니다. 관리자에게 문의하세요.';
       } else if (e.toString().contains('network')) {
         errorMsg = '네트워크 연결을 확인해주세요.';
@@ -1006,7 +1057,9 @@ class AttendanceProvider extends ChangeNotifier
     );
 
     if (kDebugMode) {
-      debugPrint('⏰ Midnight reset scheduled in ${duration.inHours}h ${duration.inMinutes % 60}m');
+      debugPrint(
+        '⏰ Midnight reset scheduled in ${duration.inHours}h ${duration.inMinutes % 60}m',
+      );
     }
   }
 
@@ -1045,7 +1098,9 @@ class AttendanceProvider extends ChangeNotifier
     );
 
     if (kDebugMode) {
-      debugPrint('⏰ Auto clock-out scheduled in ${duration.inHours}h ${duration.inMinutes % 60}m');
+      debugPrint(
+        '⏰ Auto clock-out scheduled in ${duration.inHours}h ${duration.inMinutes % 60}m',
+      );
     }
   }
 
@@ -1076,7 +1131,11 @@ class AttendanceProvider extends ChangeNotifier
         // DB에 자동 퇴근 기록 저장
         await Supabase.instance.client
             .from('attendance_records')
-            .update({'clock_out': '18:00:00', 'status': '퇴근', 'updated_at': now.toIso8601String()})
+            .update({
+              'clock_out': '18:00:00',
+              'status': '퇴근',
+              'updated_at': now.toIso8601String(),
+            })
             .eq('employee_id', userId)
             .eq('date', todayStr);
 
@@ -1138,12 +1197,17 @@ class AttendanceProvider extends ChangeNotifier
 
       // clock_in은 있지만 clock_out이 없는 기록 필터링
       final missingClockOuts = allRecords
-          .where((record) => record['clock_in'] != null && record['clock_out'] == null)
+          .where(
+            (record) =>
+                record['clock_in'] != null && record['clock_out'] == null,
+          )
           .toList();
 
       if (missingClockOuts.isNotEmpty) {
         if (kDebugMode) {
-          debugPrint('🔍 Found ${missingClockOuts.length} missing clock-outs for $yesterdayStr');
+          debugPrint(
+            '🔍 Found ${missingClockOuts.length} missing clock-outs for $yesterdayStr',
+          );
         }
 
         // 각 기록에 대해 18:00 퇴근 처리
@@ -1158,7 +1222,9 @@ class AttendanceProvider extends ChangeNotifier
               .eq('id', record['id']);
 
           if (kDebugMode) {
-            debugPrint('✅ Auto clock-out applied for ${record['employee_name']} on $yesterdayStr');
+            debugPrint(
+              '✅ Auto clock-out applied for ${record['employee_name']} on $yesterdayStr',
+            );
           }
         }
       }
@@ -1184,8 +1250,10 @@ class AttendanceProvider extends ChangeNotifier
   }
 
   // 출근/퇴근 시간 문자열
-  String get clockInStr => clockInTime == null ? '-' : _formatTime(clockInTime!);
-  String get clockOutStr => clockOutTime == null ? '-' : _formatTime(clockOutTime!);
+  String get clockInStr =>
+      clockInTime == null ? '-' : _formatTime(clockInTime!);
+  String get clockOutStr =>
+      clockOutTime == null ? '-' : _formatTime(clockOutTime!);
 
   String _formatTime(DateTime dt) {
     return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}:${dt.second.toString().padLeft(2, '0')}';
@@ -1239,7 +1307,10 @@ class AttendanceProvider extends ChangeNotifier
   }
 
   // 히스토리 비교 헬퍼
-  bool _isHistoryEqual(List<AttendanceRecord> old, List<AttendanceRecord> newList) {
+  bool _isHistoryEqual(
+    List<AttendanceRecord> old,
+    List<AttendanceRecord> newList,
+  ) {
     if (old.length != newList.length) return false;
     for (int i = 0; i < old.length; i++) {
       if (old[i].date != newList[i].date ||
@@ -1261,7 +1332,9 @@ class AttendanceProvider extends ChangeNotifier
     await _cache.invalidate('$_todayAttendanceCacheKey${userId}_$todayStr');
     await _cache.invalidate('$_attendanceHistoryCacheKey$userId');
 
-    if (kDebugMode) debugPrint('🗑️ Attendance caches invalidated for user: $userId');
+    if (kDebugMode) {
+      debugPrint('🗑️ Attendance caches invalidated for user: $userId');
+    }
   }
 
   /// Force refresh all attendance data

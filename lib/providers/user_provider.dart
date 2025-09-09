@@ -28,7 +28,11 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setUser({required String id, required String name, required String email}) {
+  void setUser({
+    required String id,
+    required String name,
+    required String email,
+  }) {
     _id = id;
     _name = name;
     _email = email;

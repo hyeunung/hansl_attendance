@@ -8,8 +8,11 @@ class TripDateChipsWidget extends StatelessWidget {
   final Set<DateTime> selectedDates;
   final Function(DateTime) onRemove;
 
-  const TripDateChipsWidget({Key? key, required this.selectedDates, required this.onRemove})
-    : super(key: key);
+  const TripDateChipsWidget({
+    super.key,
+    required this.selectedDates,
+    required this.onRemove,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +24,10 @@ class TripDateChipsWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
         ),
         child: const Center(
-          child: Text('선택된 날짜가 없습니다', style: TextStyle(color: Colors.grey, fontSize: 14)),
+          child: Text(
+            '선택된 날짜가 없습니다',
+            style: TextStyle(color: Colors.grey, fontSize: 14),
+          ),
         ),
       );
     }
@@ -68,7 +74,10 @@ class TripDateChipsWidget extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                     onTap: () => onRemove(date),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -81,7 +90,11 @@ class TripDateChipsWidget extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 4),
-                          const Icon(Icons.close, size: 14, color: AppColors.primary),
+                          const Icon(
+                            Icons.close,
+                            size: 14,
+                            color: AppColors.primary,
+                          ),
                         ],
                       ),
                     ),

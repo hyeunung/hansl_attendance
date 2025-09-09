@@ -11,12 +11,12 @@ class TripCalendarWidget extends StatelessWidget {
   final Function(DateTime) onPageChanged;
 
   const TripCalendarWidget({
-    Key? key,
+    super.key,
     required this.selectedDates,
     required this.onDaySelected,
     required this.focusedDay,
     required this.onPageChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -50,15 +50,27 @@ class TripCalendarWidget extends StatelessWidget {
         ),
         calendarStyle: CalendarStyle(
           outsideDaysVisible: false,
-          defaultTextStyle: const TextStyle(color: Colors.black87, fontSize: 15),
+          defaultTextStyle: const TextStyle(
+            color: Colors.black87,
+            fontSize: 15,
+          ),
           weekendTextStyle: TextStyle(color: Colors.red.shade400, fontSize: 15),
           todayDecoration: BoxDecoration(
             color: AppColors.primary.withValues(alpha: 0.3),
             shape: BoxShape.circle,
           ),
-          selectedDecoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-          todayTextStyle: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-          selectedTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          selectedDecoration: const BoxDecoration(
+            color: AppColors.primary,
+            shape: BoxShape.circle,
+          ),
+          todayTextStyle: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+          selectedTextStyle: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         daysOfWeekStyle: DaysOfWeekStyle(
           weekdayStyle: const TextStyle(
@@ -86,10 +98,16 @@ class TripCalendarWidget extends StatelessWidget {
             return Container(
               margin: const EdgeInsets.all(4.0),
               alignment: Alignment.center,
-              decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+              decoration: const BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+              ),
               child: Text(
                 '${day.day}',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             );
           },

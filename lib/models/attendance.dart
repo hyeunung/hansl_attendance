@@ -46,8 +46,12 @@ class AttendanceRecord {
           ? DateTime.parse('${json['date']}T${json['clock_out']}')
           : null,
       note: json['note'] as String?,
-      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
-      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : null,
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'])
+          : null,
       isLate: json['is_late'] == true,
     );
   }

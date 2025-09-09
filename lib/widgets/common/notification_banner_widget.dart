@@ -9,12 +9,12 @@ class NotificationBannerWidget extends StatelessWidget {
   final VoidCallback? onDismiss;
 
   const NotificationBannerWidget({
-    Key? key,
+    super.key,
     this.message,
     this.type = BannerType.info,
     this.displayDuration = const Duration(seconds: 2),
     this.onDismiss,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -116,7 +116,11 @@ mixin BannerControllerMixin<T extends StatefulWidget> on State<T> {
   String? get bannerMessage => _bannerMessage;
   BannerType get bannerType => _bannerType;
 
-  void showBanner(String message, {BannerType type = BannerType.info, Duration? duration}) {
+  void showBanner(
+    String message, {
+    BannerType type = BannerType.info,
+    Duration? duration,
+  }) {
     setState(() {
       _bannerMessage = message;
       _bannerType = type;

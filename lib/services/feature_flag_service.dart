@@ -15,11 +15,11 @@ class FeatureFlagService {
   static const Map<String, bool> _defaultFlags = {
     'refactored_leave_screen': true, // 리팩토링된 화면 활성화
     'refactored_business_trip_screen': true, // 출장 신청 화면도 활성화
-    'refactored_attendance_screen': false, // 출석 화면 리팩토링 비활성화 (지각 위젯 테스트)
+    'refactored_attendance_screen': true, // 출석 화면 리팩토링 활성화
     'use_edge_functions': true, // Edge Functions 사용
     'new_validators': true,
-    'enhanced_logging': true,
-    'performance_monitoring': true,
+    'enhanced_logging': false, // 로깅 비활성화
+    'performance_monitoring': false, // 성능 모니터링 비활성화
     'show_debug_info': false, // 디버그 정보 표시 비활성화
   };
 
@@ -76,7 +76,11 @@ class FeatureFlagService {
   }
 
   /// A/B 테스트 그룹 결정
-  bool shouldUseNewFeature(String userId, String featureFlag, {int percentage = 10}) {
+  bool shouldUseNewFeature(
+    String userId,
+    String featureFlag, {
+    int percentage = 10,
+  }) {
     // 플래그가 완전히 비활성화된 경우
     if (!isEnabled(featureFlag)) {
       return false;
@@ -87,7 +91,9 @@ class FeatureFlagService {
     final userPercentage = hash.abs() % 100;
 
     final result = userPercentage < percentage;
-    AppLogger.debug('A/B 테스트: $userId -> $userPercentage% (threshold: $percentage%) = $result');
+    AppLogger.debug(
+      'A/B 테스트: $userId -> $userPercentage% (threshold: $percentage%) = $result',
+    );
 
     return result;
   }
@@ -151,7 +157,8 @@ class FeatureFlags {
   static final _service = FeatureFlagService();
 
   /// 리팩토링된 연차 신청 화면 사용 여부
-  static bool get useRefactoredLeaveScreen => _service.isEnabled('refactored_leave_screen');
+  static bool get useRefactoredLeaveScreen =>
+      _service.isEnabled('refactored_leave_screen');
 
   /// 리팩토링된 출장 신청 화면 사용 여부
   static bool get useRefactoredBusinessTripScreen =>
@@ -164,7 +171,8 @@ class FeatureFlags {
   static bool get useEnhancedLogging => _service.isEnabled('enhanced_logging');
 
   /// 성능 모니터링 활성화 여부
-  static bool get performanceMonitoring => _service.isEnabled('performance_monitoring');
+  static bool get performanceMonitoring =>
+      _service.isEnabled('performance_monitoring');
 
   /// 디버그 정보 표시 여부
   static bool get showDebugInfo => _service.isEnabled('show_debug_info');

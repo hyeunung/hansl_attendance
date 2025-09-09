@@ -24,7 +24,8 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveClientMixin {
+class _SettingsScreenState extends State<SettingsScreen>
+    with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
   String _fontSize = '보통';
@@ -71,7 +72,10 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('취소')),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('취소'),
+            ),
           ],
         );
       },
@@ -99,7 +103,10 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
               groupValue: _fontSize,
               onChanged: (String? value) async {
                 if (value != null) {
-                  final fontProvider = Provider.of<FontProvider>(context, listen: false);
+                  final fontProvider = Provider.of<FontProvider>(
+                    context,
+                    listen: false,
+                  );
                   await fontProvider.setFontSize(value);
                   setState(() {
                     _fontSize = value;
@@ -134,16 +141,19 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
   }
 
   void _showInquiryDialog() {
-    final TextEditingController _controller = TextEditingController();
+    final TextEditingController controller = TextEditingController();
     showCupertinoDialog(
       context: context,
       builder: (context) {
         return CupertinoAlertDialog(
-          title: const Text('문의하기', style: TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text(
+            '문의하기',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           content: Padding(
             padding: const EdgeInsets.only(top: 12),
             child: CupertinoTextField(
-              controller: _controller,
+              controller: controller,
               maxLines: 5,
               placeholder: '문의 내용을 입력하세요',
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
@@ -154,24 +164,33 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
             ),
           ),
           actions: [
-            CupertinoDialogAction(child: const Text('취소'), onPressed: () => Navigator.pop(context)),
+            CupertinoDialogAction(
+              child: const Text('취소'),
+              onPressed: () => Navigator.pop(context),
+            ),
             CupertinoDialogAction(
               isDefaultAction: true,
               child: const Text('보내기'),
               onPressed: () async {
-                final content = _controller.text.trim();
+                final content = controller.text.trim();
 
                 if (content.isEmpty) {
                   // 문의 내용이 비어있으면 에러 표시
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('문의 내용을 입력해주세요.'), backgroundColor: Colors.red),
+                    const SnackBar(
+                      content: Text('문의 내용을 입력해주세요.'),
+                      backgroundColor: Colors.red,
+                    ),
                   );
                   return;
                 }
 
                 // 사용자 정보를 먼저 가져오기
-                final userProvider = Provider.of<UserProvider>(context, listen: false);
+                final userProvider = Provider.of<UserProvider>(
+                  context,
+                  listen: false,
+                );
                 final userName = userProvider.name ?? '알 수 없음';
                 final userEmail = userProvider.email ?? '알 수 없음';
 
@@ -189,7 +208,10 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                   builder: (context) => Container(
                     color: Colors.black54,
                     child: const Center(
-                      child: CupertinoActivityIndicator(radius: 20, color: Colors.white),
+                      child: CupertinoActivityIndicator(
+                        radius: 20,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 );
@@ -209,11 +231,13 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
 
                   if (success) {
                     // 문의 내용 입력 필드 초기화
-                    _controller.clear();
+                    controller.clear();
 
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('✅ 문의가 관리자에게 성공적으로 전송되었습니다!\n곧 답변을 받으실 수 있습니다.'),
+                        content: Text(
+                          '✅ 문의가 관리자에게 성공적으로 전송되었습니다!\n곧 답변을 받으실 수 있습니다.',
+                        ),
                         backgroundColor: Colors.green,
                         duration: Duration(seconds: 4),
                       ),
@@ -234,7 +258,10 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                   overlayEntry.remove();
 
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('오류가 발생했습니다: $e'), backgroundColor: Colors.red),
+                    SnackBar(
+                      content: Text('오류가 발생했습니다: $e'),
+                      backgroundColor: Colors.red,
+                    ),
                   );
                 }
               },
@@ -252,7 +279,10 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
         return CupertinoAlertDialog(
           title: const Text(
             '계정 삭제',
-            style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFD32F2F)),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color(0xFFD32F2F),
+            ),
           ),
           content: const Padding(
             padding: EdgeInsets.only(top: 12),
@@ -262,7 +292,10 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
             ),
           ),
           actions: [
-            CupertinoDialogAction(child: const Text('취소'), onPressed: () => Navigator.pop(context)),
+            CupertinoDialogAction(
+              child: const Text('취소'),
+              onPressed: () => Navigator.pop(context),
+            ),
             CupertinoDialogAction(
               isDestructiveAction: true,
               child: const Text('삭제'),
@@ -320,7 +353,10 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
         final supabase = Supabase.instance.client;
 
         // 1. 출퇴근 기록 삭제
-        await supabase.from('attendance_records').delete().eq('employee_id', userId);
+        await supabase
+            .from('attendance_records')
+            .delete()
+            .eq('employee_id', userId);
 
         // 2. 연차 신청 기록 삭제
         await supabase.from('leave').delete().eq('user_email', userEmail);
@@ -343,7 +379,10 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
 
       // 성공 메시지 표시
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('계정이 성공적으로 삭제되었습니다.'), backgroundColor: Colors.green),
+        const SnackBar(
+          content: Text('계정이 성공적으로 삭제되었습니다.'),
+          backgroundColor: Colors.green,
+        ),
       );
 
       // 로그인 화면으로 이동
@@ -357,7 +396,10 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
 
       // 에러 메시지 표시
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('계정 삭제 중 오류가 발생했습니다: $e'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('계정 삭제 중 오류가 발생했습니다: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -390,14 +432,22 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
 
     if (email == null || email.isEmpty) {
       return const Scaffold(
-        body: Center(child: Text('로그인 정보가 없습니다. 다시 로그인 해주세요.', style: TextStyle(fontSize: 16))),
+        body: Center(
+          child: Text(
+            '로그인 정보가 없습니다. 다시 로그인 해주세요.',
+            style: TextStyle(fontSize: 16),
+          ),
+        ),
       );
     }
 
     if (leaveProvider.error != null) {
       return Scaffold(
         body: Center(
-          child: Text('데이터를 불러오지 못했습니다.\n${leaveProvider.error}', textAlign: TextAlign.center),
+          child: Text(
+            '데이터를 불러오지 못했습니다.\n${leaveProvider.error}',
+            textAlign: TextAlign.center,
+          ),
         ),
       );
     }
@@ -418,15 +468,27 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
           : RefreshIndicator(
               onRefresh: () async {
                 // 모든 데이터 새로고침
-                final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
-                final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
-                final userProvider = Provider.of<UserProvider>(context, listen: false);
+                final attendanceProvider = Provider.of<AttendanceProvider>(
+                  context,
+                  listen: false,
+                );
+                final leaveProvider = Provider.of<LeaveProvider>(
+                  context,
+                  listen: false,
+                );
+                final userProvider = Provider.of<UserProvider>(
+                  context,
+                  listen: false,
+                );
 
                 await Future.wait([
                   attendanceProvider.forceRefreshAll(),
                   if (userProvider.email != null) ...[
                     leaveProvider.fetchAllLeaves(forceRefresh: true),
-                    leaveProvider.fetchMyLeaves(email: userProvider.email!, forceRefresh: true),
+                    leaveProvider.fetchMyLeaves(
+                      email: userProvider.email!,
+                      forceRefresh: true,
+                    ),
                   ],
                 ]);
               },
@@ -439,16 +501,23 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveUtils.spacing(context, 12),
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: ResponsiveUtils.spacing(context, 3),
-                            offset: Offset(0, ResponsiveUtils.spacing(context, 1)),
+                            offset: Offset(
+                              0,
+                              ResponsiveUtils.spacing(context, 1),
+                            ),
                           ),
                         ],
                       ),
-                      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
+                      padding: EdgeInsets.all(
+                        ResponsiveUtils.spacing(context, 20),
+                      ),
                       child: Row(
                         children: [
                           Container(
@@ -490,7 +559,9 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                                     color: const Color(0xFF1C1C1E),
                                   ),
                                 ),
-                                SizedBox(height: ResponsiveUtils.spacing(context, 4)),
+                                SizedBox(
+                                  height: ResponsiveUtils.spacing(context, 4),
+                                ),
                                 Text(
                                   '${(department?.isNotEmpty ?? false) ? department : '-'} • ${(position?.isNotEmpty ?? false) ? position : '-'}',
                                   style: ResponsiveUtils.getTextStyle(
@@ -513,16 +584,23 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveUtils.spacing(context, 12),
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: ResponsiveUtils.spacing(context, 3),
-                            offset: Offset(0, ResponsiveUtils.spacing(context, 1)),
+                            offset: Offset(
+                              0,
+                              ResponsiveUtils.spacing(context, 1),
+                            ),
                           ),
                         ],
                       ),
-                      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
+                      padding: EdgeInsets.all(
+                        ResponsiveUtils.spacing(context, 20),
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -541,21 +619,31 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                               ),
                             ],
                           ),
-                          SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+                          SizedBox(
+                            height: ResponsiveUtils.spacing(context, 12),
+                          ),
                           Row(
                             children: [
                               Expanded(
                                 child: Container(
                                   padding: EdgeInsets.symmetric(
-                                    vertical: ResponsiveUtils.spacing(context, 16),
-                                    horizontal: ResponsiveUtils.spacing(context, 8),
+                                    vertical: ResponsiveUtils.spacing(
+                                      context,
+                                      16,
+                                    ),
+                                    horizontal: ResponsiveUtils.spacing(
+                                      context,
+                                      8,
+                                    ),
                                   ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFF8F9FA),
                                     borderRadius: BorderRadius.circular(
                                       ResponsiveUtils.spacing(context, 10),
                                     ),
-                                    border: Border.all(color: const Color(0xFFF2F2F7)),
+                                    border: Border.all(
+                                      color: const Color(0xFFF2F2F7),
+                                    ),
                                   ),
                                   child: Column(
                                     children: [
@@ -568,7 +656,12 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                                           color: const Color(0xFF1E90FF),
                                         ),
                                       ),
-                                      SizedBox(height: ResponsiveUtils.spacing(context, 2)),
+                                      SizedBox(
+                                        height: ResponsiveUtils.spacing(
+                                          context,
+                                          2,
+                                        ),
+                                      ),
                                       Text(
                                         '총 연차',
                                         style: ResponsiveUtils.getTextStyle(
@@ -582,19 +675,29 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                                   ),
                                 ),
                               ),
-                              SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                              SizedBox(
+                                width: ResponsiveUtils.spacing(context, 8),
+                              ),
                               Expanded(
                                 child: Container(
                                   padding: EdgeInsets.symmetric(
-                                    vertical: ResponsiveUtils.spacing(context, 16),
-                                    horizontal: ResponsiveUtils.spacing(context, 8),
+                                    vertical: ResponsiveUtils.spacing(
+                                      context,
+                                      16,
+                                    ),
+                                    horizontal: ResponsiveUtils.spacing(
+                                      context,
+                                      8,
+                                    ),
                                   ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFF8F9FA),
                                     borderRadius: BorderRadius.circular(
                                       ResponsiveUtils.spacing(context, 10),
                                     ),
-                                    border: Border.all(color: const Color(0xFFF2F2F7)),
+                                    border: Border.all(
+                                      color: const Color(0xFFF2F2F7),
+                                    ),
                                   ),
                                   child: Column(
                                     children: [
@@ -607,7 +710,12 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                                           color: const Color(0xFF1E90FF),
                                         ),
                                       ),
-                                      SizedBox(height: ResponsiveUtils.spacing(context, 2)),
+                                      SizedBox(
+                                        height: ResponsiveUtils.spacing(
+                                          context,
+                                          2,
+                                        ),
+                                      ),
                                       Text(
                                         '소모 연차',
                                         style: ResponsiveUtils.getTextStyle(
@@ -621,19 +729,29 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                                   ),
                                 ),
                               ),
-                              SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                              SizedBox(
+                                width: ResponsiveUtils.spacing(context, 8),
+                              ),
                               Expanded(
                                 child: Container(
                                   padding: EdgeInsets.symmetric(
-                                    vertical: ResponsiveUtils.spacing(context, 16),
-                                    horizontal: ResponsiveUtils.spacing(context, 8),
+                                    vertical: ResponsiveUtils.spacing(
+                                      context,
+                                      16,
+                                    ),
+                                    horizontal: ResponsiveUtils.spacing(
+                                      context,
+                                      8,
+                                    ),
                                   ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFF8F9FA),
                                     borderRadius: BorderRadius.circular(
                                       ResponsiveUtils.spacing(context, 10),
                                     ),
-                                    border: Border.all(color: const Color(0xFFF2F2F7)),
+                                    border: Border.all(
+                                      color: const Color(0xFFF2F2F7),
+                                    ),
                                   ),
                                   child: Column(
                                     children: [
@@ -646,7 +764,12 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                                           color: const Color(0xFF1E90FF),
                                         ),
                                       ),
-                                      SizedBox(height: ResponsiveUtils.spacing(context, 2)),
+                                      SizedBox(
+                                        height: ResponsiveUtils.spacing(
+                                          context,
+                                          2,
+                                        ),
+                                      ),
                                       Text(
                                         '잔여',
                                         style: ResponsiveUtils.getTextStyle(
@@ -672,12 +795,17 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveUtils.spacing(context, 12),
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: ResponsiveUtils.spacing(context, 3),
-                            offset: Offset(0, ResponsiveUtils.spacing(context, 1)),
+                            offset: Offset(
+                              0,
+                              ResponsiveUtils.spacing(context, 1),
+                            ),
                           ),
                         ],
                       ),
@@ -707,7 +835,10 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                             onTap: () => _showFontSizeDialog(),
                             child: Padding(
                               padding: EdgeInsets.symmetric(
-                                horizontal: ResponsiveUtils.spacing(context, 20),
+                                horizontal: ResponsiveUtils.spacing(
+                                  context,
+                                  20,
+                                ),
                                 vertical: ResponsiveUtils.spacing(context, 16),
                               ),
                               child: Row(
@@ -715,7 +846,10 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                                 children: [
                                   Container(
                                     width: ResponsiveUtils.spacing(context, 28),
-                                    height: ResponsiveUtils.spacing(context, 28),
+                                    height: ResponsiveUtils.spacing(
+                                      context,
+                                      28,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFF3E5F5),
                                       borderRadius: BorderRadius.circular(
@@ -725,11 +859,16 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                                     child: Center(
                                       child: Icon(
                                         Icons.text_fields,
-                                        size: ResponsiveUtils.iconSize(context, 14),
+                                        size: ResponsiveUtils.iconSize(
+                                          context,
+                                          14,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                  SizedBox(width: ResponsiveUtils.spacing(context, 12)),
+                                  SizedBox(
+                                    width: ResponsiveUtils.spacing(context, 12),
+                                  ),
                                   Expanded(
                                     child: Text(
                                       '글꼴 크기',
@@ -750,7 +889,9 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                  SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                                  SizedBox(
+                                    width: ResponsiveUtils.spacing(context, 8),
+                                  ),
                                   Icon(
                                     Icons.chevron_right,
                                     color: const Color(0xFFC7C7CC),
@@ -770,12 +911,17 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveUtils.spacing(context, 12),
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: ResponsiveUtils.spacing(context, 3),
-                            offset: Offset(0, ResponsiveUtils.spacing(context, 1)),
+                            offset: Offset(
+                              0,
+                              ResponsiveUtils.spacing(context, 1),
+                            ),
                           ),
                         ],
                       ),
@@ -824,7 +970,9 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
             // 개발자 전용 캐시 복원 버튼
             if (kDebugMode) ...[
               Padding(
-                padding: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 16)),
+                padding: EdgeInsets.only(
+                  bottom: ResponsiveUtils.spacing(context, 16),
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -944,7 +1092,10 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
 
                       // 알림 Provider 초기화
                       if (mounted) {
-                        Provider.of<NotificationProvider>(context, listen: false).clear();
+                        Provider.of<NotificationProvider>(
+                          context,
+                          listen: false,
+                        ).clear();
                       }
 
                       if (!mounted) return;

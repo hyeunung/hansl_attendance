@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hansl/providers/attendance_provider.dart';
 import 'package:mockito/mockito.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../helpers/test_helper.dart';
 
 // Mock 클래스
 class MockSupabaseClient extends Mock implements SupabaseClient {}
@@ -14,6 +15,11 @@ void main() {
     late AttendanceProvider provider;
     // late MockSupabaseClient mockSupabase;
     // late MockFunctionsClient mockFunctions;
+
+    setUpAll(() async {
+      // SharedPreferences Mock 초기화
+      await TestHelper.setUp();
+    });
 
     setUp(() {
       // mockSupabase = MockSupabaseClient();

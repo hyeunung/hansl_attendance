@@ -18,14 +18,15 @@ import '../main_tab.dart';
 /// 최적화된 출장 신청 화면
 /// 컴포넌트 분리, 성능 최적화, 보안 강화 적용
 class BusinessTripRequestScreenOptimized extends StatefulWidget {
-  const BusinessTripRequestScreenOptimized({Key? key}) : super(key: key);
+  const BusinessTripRequestScreenOptimized({super.key});
 
   @override
   State<BusinessTripRequestScreenOptimized> createState() =>
       _BusinessTripRequestScreenOptimizedState();
 }
 
-class _BusinessTripRequestScreenOptimizedState extends State<BusinessTripRequestScreenOptimized>
+class _BusinessTripRequestScreenOptimizedState
+    extends State<BusinessTripRequestScreenOptimized>
     with AutomaticKeepAliveClientMixin, BannerControllerMixin {
   // Controllers
   final TextEditingController _placeController = TextEditingController();
@@ -35,7 +36,7 @@ class _BusinessTripRequestScreenOptimizedState extends State<BusinessTripRequest
 
   // State variables
   String? _selectedTransport;
-  Set<DateTime> _selectedDates = {};
+  final Set<DateTime> _selectedDates = {};
   String? _selectedEmployee;
   List<String> _employeeList = [];
   List<String> _selectedCompanions = [];
@@ -171,7 +172,8 @@ class _BusinessTripRequestScreenOptimizedState extends State<BusinessTripRequest
             endDate: endDate,
             reason: [
               '출장자: $_selectedEmployee',
-              if (_selectedCompanions.isNotEmpty) '동행: ${_selectedCompanions.join(', ')}',
+              if (_selectedCompanions.isNotEmpty)
+                '동행: ${_selectedCompanions.join(', ')}',
               '장소: ${LeaveValidators.sanitizeInput(_placeController.text)}',
               '목적: ${LeaveValidators.sanitizeInput(_purposeController.text)}',
               '교통수단: $_selectedTransport',
@@ -187,10 +189,14 @@ class _BusinessTripRequestScreenOptimizedState extends State<BusinessTripRequest
       final totalDays = sortedDates.length;
       final groupCount = dateGroups.length;
       final message = groupCount > 1
-          ? '출장 신청이 완료되었습니다 (${totalDays}일, ${groupCount}건)'
-          : '출장 신청이 완료되었습니다 (${totalDays}일)';
+          ? '출장 신청이 완료되었습니다 ($totalDays일, $groupCount건)'
+          : '출장 신청이 완료되었습니다 ($totalDays일)';
 
-      showBanner(message, type: BannerType.success, duration: const Duration(seconds: 3));
+      showBanner(
+        message,
+        type: BannerType.success,
+        duration: const Duration(seconds: 3),
+      );
 
       // 데이터는 이미 requestLeave에서 자동으로 새로고침됨 (fetchAllLeaves 포함)
 
@@ -201,7 +207,7 @@ class _BusinessTripRequestScreenOptimizedState extends State<BusinessTripRequest
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const MainTab(initialIndex: 1)),
+          MaterialPageRoute(builder: (_) => MainTab(initialIndex: 1)),
           (route) => false,
         );
       }
@@ -243,7 +249,9 @@ class _BusinessTripRequestScreenOptimizedState extends State<BusinessTripRequest
       return false;
     }
 
-    final purposeError = LeaveValidators.validatePurpose(_purposeController.text);
+    final purposeError = LeaveValidators.validatePurpose(
+      _purposeController.text,
+    );
     if (purposeError != null) {
       showBanner(purposeError, type: BannerType.error);
       return false;
@@ -326,7 +334,9 @@ class _BusinessTripRequestScreenOptimizedState extends State<BusinessTripRequest
     final month = now.month;
     final year = now.year;
     // 현재 선택된 날짜 중 이번 달과 올해 카운트(간단 지표)
-    final monthTrips = _selectedDates.where((d) => d.year == year && d.month == month).length;
+    final monthTrips = _selectedDates
+        .where((d) => d.year == year && d.month == month)
+        .length;
     final yearTrips = _selectedDates.where((d) => d.year == year).length;
 
     return TripInfoCardWidget(
@@ -341,7 +351,10 @@ class _BusinessTripRequestScreenOptimizedState extends State<BusinessTripRequest
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('출장 날짜 선택', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const Text(
+          '출장 날짜 선택',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 12),
         TripCalendarWidget(
           selectedDates: _selectedDates,
@@ -359,9 +372,15 @@ class _BusinessTripRequestScreenOptimizedState extends State<BusinessTripRequest
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('선택된 날짜', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const Text(
+          '선택된 날짜',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 12),
-        TripDateChipsWidget(selectedDates: _selectedDates, onRemove: _handleDateRemove),
+        TripDateChipsWidget(
+          selectedDates: _selectedDates,
+          onRemove: _handleDateRemove,
+        ),
       ],
     );
   }
@@ -383,7 +402,16 @@ class _BusinessTripRequestScreenOptimizedState extends State<BusinessTripRequest
   Widget _buildTransportSection() {
     return TransportSelectorWidget(
       selectedTransport: _selectedTransport,
-      transportOptions: const ['펠리세이드', '스타리아', 'GV80', 'GV90', '자차', 'KTX(SRT)', '버스', '비행기'],
+      transportOptions: const [
+        '펠리세이드',
+        '스타리아',
+        'GV80',
+        'GV90',
+        '자차',
+        'KTX(SRT)',
+        '버스',
+        '비행기',
+      ],
       onChanged: (value) {
         setState(() => _selectedTransport = value);
       },
@@ -412,7 +440,8 @@ class _BusinessTripRequestScreenOptimizedState extends State<BusinessTripRequest
         top: false,
         child: Row(
           children: [
-            if (MediaQuery.of(context).viewInsets.bottom > 0) const SizedBox(width: 48),
+            if (MediaQuery.of(context).viewInsets.bottom > 0)
+              const SizedBox(width: 48),
             Expanded(child: _buildSubmitButton()),
             const SizedBox(width: 8),
             if (MediaQuery.of(context).viewInsets.bottom > 0)
@@ -449,7 +478,9 @@ class _BusinessTripRequestScreenOptimizedState extends State<BusinessTripRequest
         final result = await showDialog<List<String>>(
           context: context,
           builder: (_) => EmployeeSelectionDialog(
-            employeeList: _employeeList.where((n) => n != _selectedEmployee).toList(),
+            employeeList: _employeeList
+                .where((n) => n != _selectedEmployee)
+                .toList(),
             isMultiSelect: true,
             selectedEmployees: _selectedCompanions,
             title: '추가 인원 선택',
@@ -497,7 +528,10 @@ class _BusinessTripRequestScreenOptimizedState extends State<BusinessTripRequest
             ? const SizedBox(
                 width: 24,
                 height: 24,
-                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
               )
             : Text(
                 '출장 신청하기',
