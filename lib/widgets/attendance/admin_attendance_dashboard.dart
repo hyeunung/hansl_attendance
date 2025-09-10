@@ -249,9 +249,7 @@ class _AdminAttendanceDashboardState extends State<AdminAttendanceDashboard> {
               second,
             );
             if (kDebugMode) {
-              print(
-                '  ⏰ 출근 시간 파싱: $clockInStr -> $hour시 $minute분 $second초',
-              );
+              print('  ⏰ 출근 시간 파싱: $clockInStr -> $hour시 $minute분 $second초');
             }
           } else {
             // ISO 형식 보조 처리

@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'dart:math' as math;
 import '../models/attendance.dart';
 import '../services/timer_manager.dart';
@@ -426,12 +427,16 @@ class AttendanceProvider extends ChangeNotifier
     Position pos;
     try {
       pos = await Future.any([
-        Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high),
+        Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.medium, // 안드로이드에서 더 빠른 위치 획득
+          forceAndroidLocationManager: true, // 안드로이드에서 더 안정적인 위치 획득
+          timeLimit: const Duration(seconds: 20), // 내부 타임아웃도 설정
+        ),
         Future.delayed(
-          const Duration(seconds: 10),
+          const Duration(seconds: 20), // 타임아웃을 20초로 연장
           () => throw async_ops.TimeoutException(
             'GPS timeout',
-            const Duration(seconds: 10),
+            const Duration(seconds: 20),
           ),
         ),
       ]);
@@ -458,8 +463,31 @@ class AttendanceProvider extends ChangeNotifier
         debugPrint('DEBUG: Using company location for testing');
       }
     } catch (e) {
-      _updateErrorAndLoading('위치 정보를 가져오는데 실패했습니다.', false);
-      return;
+      if (kDebugMode) {
+        debugPrint('❌ GPS 위치 획득 실패: $e');
+      }
+
+      // 안드로이드에서 위치 획득 실패 시 한 번 더 시도
+      if (Platform.isAndroid) {
+        try {
+          debugPrint('🔄 안드로이드 위치 재시도 중...');
+          pos = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.low, // 더 낮은 정확도로 재시도
+            forceAndroidLocationManager: true,
+            timeLimit: const Duration(seconds: 10),
+          );
+          token.throwIfCancelled();
+        } catch (retryError) {
+          if (kDebugMode) {
+            debugPrint('❌ 재시도도 실패: $retryError');
+          }
+          _updateErrorAndLoading('위치 정보를 가져오는데 실패했습니다. GPS를 확인해주세요.', false);
+          return;
+        }
+      } else {
+        _updateErrorAndLoading('위치 정보를 가져오는데 실패했습니다.', false);
+        return;
+      }
     }
 
     // 서버사이드 위치 검증
@@ -757,12 +785,16 @@ class AttendanceProvider extends ChangeNotifier
     Position pos;
     try {
       pos = await Future.any([
-        Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high),
+        Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.medium, // 안드로이드에서 더 빠른 위치 획득
+          forceAndroidLocationManager: true, // 안드로이드에서 더 안정적인 위치 획득
+          timeLimit: const Duration(seconds: 20), // 내부 타임아웃도 설정
+        ),
         Future.delayed(
-          const Duration(seconds: 10),
+          const Duration(seconds: 20), // 타임아웃을 20초로 연장
           () => throw async_ops.TimeoutException(
             'GPS timeout',
-            const Duration(seconds: 10),
+            const Duration(seconds: 20),
           ),
         ),
       ]);
@@ -789,8 +821,31 @@ class AttendanceProvider extends ChangeNotifier
         debugPrint('DEBUG: Using company location for testing (clock out)');
       }
     } catch (e) {
-      _updateErrorAndLoading('위치 정보를 가져오는데 실패했습니다.', false);
-      return;
+      if (kDebugMode) {
+        debugPrint('❌ GPS 위치 획득 실패: $e');
+      }
+
+      // 안드로이드에서 위치 획득 실패 시 한 번 더 시도
+      if (Platform.isAndroid) {
+        try {
+          debugPrint('🔄 안드로이드 위치 재시도 중...');
+          pos = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.low, // 더 낮은 정확도로 재시도
+            forceAndroidLocationManager: true,
+            timeLimit: const Duration(seconds: 10),
+          );
+          token.throwIfCancelled();
+        } catch (retryError) {
+          if (kDebugMode) {
+            debugPrint('❌ 재시도도 실패: $retryError');
+          }
+          _updateErrorAndLoading('위치 정보를 가져오는데 실패했습니다. GPS를 확인해주세요.', false);
+          return;
+        }
+      } else {
+        _updateErrorAndLoading('위치 정보를 가져오는데 실패했습니다.', false);
+        return;
+      }
     }
 
     // 서버사이드 위치 검증 - 퇴근도 동일하게 위치 검증 (디버그 모드 포함)

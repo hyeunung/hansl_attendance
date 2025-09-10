@@ -1196,51 +1196,109 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             ),
           ),
           if (showDeleteButton && status != 'pending') ...[
-            // 처리완료 항목에 대한 삭제 버튼
+            // 처리완료 항목에 대한 수정/삭제 버튼
             SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                boxShadow: [AppShadows.button],
-                borderRadius: BorderRadius.circular(
-                  ResponsiveUtils.spacing(context, 8),
-                ),
-              ),
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF3B30),
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(
-                    vertical: ResponsiveUtils.spacing(context, 14),
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(
-                      ResponsiveUtils.spacing(context, 8),
+            Row(
+              children: [
+                // 수정 버튼
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      boxShadow: [AppShadows.button],
+                      borderRadius: BorderRadius.circular(
+                        ResponsiveUtils.spacing(context, 8),
+                      ),
+                    ),
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(
+                          vertical: ResponsiveUtils.spacing(context, 14),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveUtils.spacing(context, 8),
+                          ),
+                        ),
+                      ),
+                      onPressed: () async {
+                        print('🔍 수정 버튼 클릭됨');
+                        print('🔍 Leave data: ${l}');
+                        try {
+                          await _showEditDialog(context, l, provider);
+                        } catch (e) {
+                          print('❌ 수정 다이얼로그 에러: $e');
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('수정 화면을 열 수 없습니다: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.edit),
+                      label: Text(
+                        '수정',
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-                onPressed: () async {
-                  final confirmed = await _showConfirmationDialog(
-                    context,
-                    '삭제 확인',
-                    '이 $typeLabel 기록을 삭제하시겠습니까?\n삭제 후 복구할 수 없으며, 신청자에게 알림이 전송됩니다.',
-                    '삭제',
-                    const Color(0xFFFF3B30),
-                  );
-                  if (confirmed == true) {
-                    await _deleteApprovedLeave(l, provider);
-                  }
-                },
-                icon: const Icon(Icons.delete_outline),
-                label: Text(
-                  '삭제',
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
+                SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                // 삭제 버튼
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      boxShadow: [AppShadows.button],
+                      borderRadius: BorderRadius.circular(
+                        ResponsiveUtils.spacing(context, 8),
+                      ),
+                    ),
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF3B30),
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(
+                          vertical: ResponsiveUtils.spacing(context, 14),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveUtils.spacing(context, 8),
+                          ),
+                        ),
+                      ),
+                      onPressed: () async {
+                        final confirmed = await _showConfirmationDialog(
+                          context,
+                          '삭제 확인',
+                          '이 $typeLabel 기록을 삭제하시겠습니까?\n삭제 후 복구할 수 없으며, 신청자에게 알림이 전송됩니다.',
+                          '삭제',
+                          const Color(0xFFFF3B30),
+                        );
+                        if (confirmed == true) {
+                          await _deleteApprovedLeave(l, provider);
+                        }
+                      },
+                      icon: const Icon(Icons.delete_outline),
+                      label: Text(
+                        '삭제',
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ] else if (showButtons && status == 'pending' && canApprove) ...[
             SizedBox(height: ResponsiveUtils.spacing(context, 12)),
@@ -1584,6 +1642,602 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     );
   }
 
+  // 수정 다이얼로그
+  Future<void> _showEditDialog(
+    BuildContext context,
+    Map<String, dynamic> leave,
+    LeaveProvider provider,
+  ) async {
+    print('🔍 _showEditDialog 시작');
+    print('🔍 Leave ID: ${leave['id']}');
+    print('🔍 Leave type: ${leave['type']}');
+    
+    final startDateController = TextEditingController(
+      text: leave['start_date'] ?? '',
+    );
+    final endDateController = TextEditingController(
+      text: leave['end_date'] ?? '',
+    );
+    final reasonController = TextEditingController(
+      text: leave['reason'] ?? '',
+    );
+    
+    String selectedType = leave['type'] ?? 'annual';
+    DateTime? selectedStartDate = leave['start_date'] != null
+        ? DateTime.parse(leave['start_date'])
+        : null;
+    DateTime? selectedEndDate = leave['end_date'] != null
+        ? DateTime.parse(leave['end_date'])
+        : null;
+
+    print('🔍 다이얼로그 표시 시작');
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              insetPadding: const EdgeInsets.all(16),
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 500),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 헤더
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.primary,
+                            AppColors.primary.withOpacity(0.8),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
+                        ),
+                      ),
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.edit_calendar,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Text(
+                              '휴가 정보 수정',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    // 컨텐츠
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 신청자 정보
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF0F8FF),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppColors.primary.withOpacity(0.2),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    backgroundColor: AppColors.primary.withOpacity(0.1),
+                                    child: Text(
+                                      (leave['name'] ?? '?')[0],
+                                      style: TextStyle(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '신청자: ${leave['name'] ?? '알 수 없음'}',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '신청일: ${leave['created_at']?.substring(0, 10) ?? ''}',
+                                        style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            
+                            // 휴가 유형
+                            Row(
+                              children: [
+                                Container(
+                                  width: 4,
+                                  height: 20,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  '휴가 유형',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8F9FA),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFFE0E0E0)),
+                              ),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: selectedType,
+                                  isExpanded: true,
+                                  icon: Icon(
+                                    Icons.arrow_drop_down,
+                                    color: AppColors.primary,
+                                  ),
+                                  items: const [
+                                    DropdownMenuItem(
+                                      value: 'annual',
+                                      child: Text('연차'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'biztrip',
+                                      child: Text('출장'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'half_am',
+                                      child: Text('오전 반차'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'half_pm',
+                                      child: Text('오후 반차'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'official',
+                                      child: Text('공가'),
+                                    ),
+                                  ],
+                                  onChanged: (value) {
+                                    if (value != null) {
+                                      setState(() {
+                                        selectedType = value;
+                                      });
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            
+                            // 날짜 선택
+                            Row(
+                              children: [
+                                Container(
+                                  width: 4,
+                                  height: 20,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  '휴가 기간',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () async {
+                                      final date = await showDatePicker(
+                                        context: context,
+                                        initialDate: selectedStartDate ?? DateTime.now(),
+                                        firstDate: DateTime(2020),
+                                        lastDate: DateTime(2030),
+                                      );
+                                      if (date != null) {
+                                        setState(() {
+                                          selectedStartDate = date;
+                                          startDateController.text = 
+                                              DateFormat('yyyy-MM-dd').format(date);
+                                        });
+                                      }
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF8F9FA),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(color: const Color(0xFFE0E0E0)),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.calendar_today,
+                                            size: 18,
+                                            color: AppColors.primary,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              startDateController.text.isEmpty
+                                                  ? '시작일'
+                                                  : startDateController.text,
+                                              style: TextStyle(
+                                                color: startDateController.text.isEmpty
+                                                    ? Colors.grey
+                                                    : Colors.black,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () async {
+                                      final date = await showDatePicker(
+                                        context: context,
+                                        initialDate: selectedEndDate ?? DateTime.now(),
+                                        firstDate: DateTime(2020),
+                                        lastDate: DateTime(2030),
+                                      );
+                                      if (date != null) {
+                                        setState(() {
+                                          selectedEndDate = date;
+                                          endDateController.text = 
+                                              DateFormat('yyyy-MM-dd').format(date);
+                                        });
+                                      }
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF8F9FA),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(color: const Color(0xFFE0E0E0)),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.calendar_today,
+                                            size: 18,
+                                            color: AppColors.primary,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              endDateController.text.isEmpty
+                                                  ? '종료일'
+                                                  : endDateController.text,
+                                              style: TextStyle(
+                                                color: endDateController.text.isEmpty
+                                                    ? Colors.grey
+                                                    : Colors.black,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                            
+                            // 사유
+                            Row(
+                              children: [
+                                Container(
+                                  width: 4,
+                                  height: 20,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  '사유',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8F9FA),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFFE0E0E0)),
+                              ),
+                              child: TextField(
+                                controller: reasonController,
+                                maxLines: 3,
+                                decoration: const InputDecoration(
+                                  hintText: '휴가 사유를 입력하세요',
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.all(12),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    
+                    // 버튼 영역
+                    Container(
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF8F9FA),
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(20),
+                          bottomRight: Radius.circular(20),
+                        ),
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextButton(
+                              style: TextButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: Colors.grey[700],
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  side: BorderSide(color: Colors.grey[300]!),
+                                ),
+                              ),
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text(
+                                '취소',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AppColors.primary,
+                                    AppColors.primary.withOpacity(0.8),
+                                  ],
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primary.withOpacity(0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: TextButton(
+                                style: TextButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                onPressed: () async {
+                                  print('🟦 수정하기 버튼 클릭');
+                                  print('🟦 Leave ID: ${leave['id']}');
+                                  print('🟦 Selected Type: $selectedType');
+                                  print('🟦 Start Date: $selectedStartDate');
+                                  print('🟦 End Date: $selectedEndDate');
+                                  print('🟦 Reason: ${reasonController.text}');
+                                  
+                                  // 수정 로직 구현
+                                  if (selectedStartDate == null || selectedEndDate == null) {
+                                    print('❌ 날짜가 선택되지 않음');
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('시작일과 종료일을 선택해주세요'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                  
+                                  if (reasonController.text.trim().isEmpty) {
+                                    print('❌ 사유가 입력되지 않음');
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('사유를 입력해주세요'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                  
+                                  print('🟦 다이얼로그 닫기');
+                                  
+                                  // BuildContext를 먼저 저장
+                                  final navigatorContext = Navigator.of(context);
+                                  final scaffoldMessenger = ScaffoldMessenger.of(context);
+                                  
+                                  // 수정 다이얼로그 닫기
+                                  Navigator.pop(context);
+                                  
+                                  // mounted 체크
+                                  await Future.delayed(const Duration(milliseconds: 100));
+                                  
+                                  print('🟦 로딩 다이얼로그 표시');
+                                  // 로딩 표시 - GlobalKey 사용
+                                  late BuildContext loadingContext;
+                                  showDialog(
+                                    context: navigatorContext.context,
+                                    barrierDismissible: false,
+                                    builder: (dialogContext) {
+                                      loadingContext = dialogContext;
+                                      return const Center(
+                                        child: CircularProgressIndicator(),
+                                      );
+                                    },
+                                  );
+                                  
+                                  try {
+                                    print('🟦 updateLeaveDetails 호출 시작');
+                                    // 실제 수정 로직 호출
+                                    await provider.updateLeaveDetails(
+                                      leaveId: leave['id'],
+                                      type: selectedType,
+                                      startDate: DateFormat('yyyy-MM-dd').format(selectedStartDate!),
+                                      endDate: DateFormat('yyyy-MM-dd').format(selectedEndDate!),
+                                      reason: reasonController.text.trim(),
+                                    );
+                                    
+                                    print('✅ updateLeaveDetails 완료');
+                                    
+                                    // 로딩 닫기 - loadingContext 사용
+                                    if (loadingContext.mounted) {
+                                      Navigator.of(loadingContext).pop();
+                                      print('🟦 로딩 다이얼로그 닫기 완료');
+                                    } else {
+                                      // 백업 방법 - navigatorContext 사용
+                                      try {
+                                        navigatorContext.pop();
+                                        print('🟦 로딩 다이얼로그 닫기 완료 (백업)');
+                                      } catch (e) {
+                                        print('❌ 로딩 다이얼로그 닫기 실패: $e');
+                                      }
+                                    }
+                                    
+                                    // 성공 메시지
+                                    scaffoldMessenger.showSnackBar(
+                                      const SnackBar(
+                                        content: Text('휴가 정보가 수정되었습니다'),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                    
+                                    print('🟦 데이터 새로고침 시작');
+                                    // 데이터 새로고침
+                                    await provider.fetchAllLeaves(forceRefresh: true);
+                                    print('✅ 데이터 새로고침 완료');
+                                  } catch (e) {
+                                    print('❌ 수정 중 오류 발생: $e');
+                                    
+                                    // 로딩 닫기 - loadingContext 사용
+                                    if (loadingContext.mounted) {
+                                      Navigator.of(loadingContext).pop();
+                                      print('🟦 로딩 다이얼로그 닫기 완료 (에러)');
+                                    } else {
+                                      // 백업 방법 - navigatorContext 사용
+                                      try {
+                                        navigatorContext.pop();
+                                        print('🟦 로딩 다이얼로그 닫기 완료 (에러-백업)');
+                                      } catch (e2) {
+                                        print('❌ 로딩 다이얼로그 닫기 실패 (에러): $e2');
+                                      }
+                                    }
+                                    
+                                    // 에러 메시지
+                                    scaffoldMessenger.showSnackBar(
+                                      SnackBar(
+                                        content: Text('수정 중 오류가 발생했습니다: $e'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: const Text(
+                                  '수정하기',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<bool?> _showConfirmationDialog(
     BuildContext context,
     String title,
@@ -1591,104 +2245,178 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     String confirmText,
     Color confirmColor,
   ) {
+    // 아이콘과 색상 결정
+    IconData iconData;
+    Color iconBgColor;
+    
+    if (title.contains('삭제')) {
+      iconData = Icons.delete_outline;
+      iconBgColor = const Color(0xFFFF3B30).withOpacity(0.1);
+    } else if (title.contains('반려')) {
+      iconData = Icons.warning_amber_rounded;
+      iconBgColor = const Color(0xFFFF9500).withOpacity(0.1);
+    } else if (title.contains('승인')) {
+      iconData = Icons.check_circle_outline;
+      iconBgColor = const Color(0xFF34C759).withOpacity(0.1);
+    } else {
+      iconData = Icons.info_outline;
+      iconBgColor = AppColors.primary.withOpacity(0.1);
+    }
+
     return showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
+        return Dialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveUtils.spacing(context, 14),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 400),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
-          ),
-          title: Text(
-            title,
-            style: ResponsiveUtils.getTextStyle(
-              context,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          content: Text(
-            message,
-            style: ResponsiveUtils.getTextStyle(
-              context,
-              fontSize: 16,
-              color: const Color(0xFF8E8E93),
-              height: 1.4,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          contentPadding: EdgeInsets.fromLTRB(
-            ResponsiveUtils.spacing(context, 24),
-            ResponsiveUtils.spacing(context, 20),
-            ResponsiveUtils.spacing(context, 24),
-            ResponsiveUtils.spacing(context, 20),
-          ),
-          actionsPadding: EdgeInsets.fromLTRB(
-            ResponsiveUtils.spacing(context, 24),
-            ResponsiveUtils.spacing(context, 0),
-            ResponsiveUtils.spacing(context, 24),
-            ResponsiveUtils.spacing(context, 24),
-          ),
-          actions: [
-            Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: TextButton(
-                    style: TextButton.styleFrom(
-                      backgroundColor: const Color(0xFFF2F2F7),
-                      foregroundColor: const Color(0xFF1C1C1E),
-                      padding: EdgeInsets.symmetric(
-                        vertical: ResponsiveUtils.spacing(context, 12),
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveUtils.spacing(context, 8),
+                // 아이콘과 제목 영역
+                Padding(
+                  padding: const EdgeInsets.only(top: 32, bottom: 20),
+                  child: Column(
+                    children: [
+                      // 아이콘
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: iconBgColor,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          iconData,
+                          size: 40,
+                          color: confirmColor,
                         ),
                       ),
-                    ),
-                    onPressed: () => Navigator.of(context).pop(false),
-                    child: Text(
-                      '취소',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                      const SizedBox(height: 16),
+                      // 제목
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1C1C1E),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
-                SizedBox(width: ResponsiveUtils.spacing(context, 12)),
-                Expanded(
-                  child: TextButton(
-                    style: TextButton.styleFrom(
-                      backgroundColor: confirmColor,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(
-                        vertical: ResponsiveUtils.spacing(context, 12),
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveUtils.spacing(context, 8),
+                
+                // 메시지
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(
+                    message,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFF8E8E93),
+                      height: 1.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                // 버튼 영역
+                Container(
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF8F9FA),
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(20),
+                      bottomRight: Radius.circular(20),
+                    ),
+                  ),
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: TextButton(
+                            style: TextButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: const Color(0xFF1C1C1E),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: const Text(
+                              '취소',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                    onPressed: () => Navigator.of(context).pop(true),
-                    child: Text(
-                      confirmText,
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            boxShadow: [
+                              BoxShadow(
+                                color: confirmColor.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: TextButton(
+                            style: TextButton.styleFrom(
+                              backgroundColor: confirmColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: Text(
+                              confirmText,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ],
             ),
-            // (불필요) 확인 다이얼로그 내 위젯 렌더 제거
-          ],
+          ),
         );
       },
     );

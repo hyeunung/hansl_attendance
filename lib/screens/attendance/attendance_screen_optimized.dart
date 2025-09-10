@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../theme/app_colors.dart';
@@ -37,7 +39,11 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
   Color _bannerColor = const Color(0xFF357AE8);
 
   // UI update frequency optimization
-  static const Duration _uiUpdateInterval = Duration(seconds: 5);
+  // Android needs longer intervals to prevent flickering
+  static Duration get _uiUpdateInterval => 
+      !kIsWeb && Platform.isAndroid 
+          ? const Duration(seconds: 10) 
+          : const Duration(seconds: 5);
   bool _shouldUpdateUI = true;
 
   @override
@@ -76,9 +82,14 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
 
   void _scheduleSmartUIUpdates() {
     // Smart UI updates that adjust frequency based on user activity
+    // Android: Use longer interval to prevent flickering
+    final smartUpdateInterval = !kIsWeb && Platform.isAndroid 
+        ? const Duration(minutes: 2)
+        : const Duration(minutes: 1);
+        
     createScopedPeriodicTimer(
       key: 'smart_ui_update',
-      interval: const Duration(minutes: 1),
+      interval: smartUpdateInterval,
       callback: (timer) {
         if (!mounted) return;
 

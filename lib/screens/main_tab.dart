@@ -14,6 +14,7 @@ import '../providers/notification_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../utils/responsive_utils.dart';
 import '../services/notification_service.dart';
+import '../services/badge_count_service.dart';
 
 // KeepAlive 위젯 정의
 class KeepAlive extends StatefulWidget {
@@ -61,10 +62,15 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
   late int _currentIndex;
   late PageController _pageController;
   List<Widget>? _screens; // nullable로 변경
+  bool _isInitialized = false; // 초기화 완료 여부 추가
 
   @override
   void initState() {
     super.initState();
+    debugPrint('🔵 MainTab initState 시작');
+    debugPrint('🔵 initialIndex: ${widget.initialIndex}');
+    debugPrint('🔵 initialEmployee: ${widget.initialEmployee}');
+    
     // 초기 인덱스는 나중에 권한 확인 후 설정
     _currentIndex = 0; // 일단 0으로 초기화
     _pageController = PageController(
@@ -72,47 +78,73 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
       keepPage: true, // 페이지 상태 유지
     );
 
-    // 자동 로그인이나 알림에서 넘어온 경우 바로 설정
-    if (widget.initialEmployee != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+    // MainTab이 생성되었다는 것은 이미 인증된 상태
+    // 바로 초기화 진행
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint('🔵 PostFrameCallback 시작 - _initialize() 호출');
+      _initialize();
+    });
+  }
+
+  Future<void> _initialize() async {
+    debugPrint('🟡 _initialize() 시작');
+    // MainTab이 생성되었다는 것은 이미 인증된 상태
+    // 바로 초기화 진행
+    if (mounted) {
+      // 자동 로그인이나 알림에서 넘어온 경우 바로 설정
+      if (widget.initialEmployee != null) {
+        debugPrint('🟡 initialEmployee가 있음');
         final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-        // 알림에서 넘어온 경우 attendance_role만 있을 수 있음
-        if (widget.initialEmployee!.containsKey('attendance_role')) {
-          userProvider.setEmployee(widget.initialEmployee!);
-        } else {
-          // 자동 로그인인 경우
+        // 알림에서 넘어온 경우와 자동 로그인 구분
+        // email이 있으면 자동 로그인, 없으면 알림에서 온 것
+        if (widget.initialEmployee!.containsKey('email') && 
+            widget.initialEmployee!['email'] != null) {
+          debugPrint('🟡 전체 employee 정보가 있는 경우 - 자동 로그인');
+          // 자동 로그인인 경우 - setUser 먼저 호출
           userProvider.setUser(
             id: widget.initialEmployee!['id'],
             name: widget.initialEmployee!['name'],
             email: widget.initialEmployee!['email'],
           );
           userProvider.setEmployee(widget.initialEmployee!);
+        } else {
+          debugPrint('🟡 email이 없는 경우 - 알림에서 온 것');
+          // 알림에서 온 경우 - employee 정보만 설정
+          userProvider.setEmployee(widget.initialEmployee!);
         }
 
         // employee 정보가 설정되면 화면 다시 초기화
         _initializeScreens();
-      });
-    }
+      } else {
+        // initialEmployee가 없으면 데이터 로드
+        await _loadEmployeeData();
+      }
 
-    // 화면 초기화를 먼저 하고 데이터는 나중에 로드
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
       _initializeScreens();
-      _loadEmployeeData();
+      
+      // 초기화 완료 표시
+      if (mounted) {
+        setState(() {
+          _isInitialized = true;
+        });
+      }
 
       // NotificationProvider 초기화
       try {
-        final notificationProvider = Provider.of<NotificationProvider>(
-          context,
-          listen: false,
-        );
-        await notificationProvider.initialize();
+        if (mounted) {
+          final notificationProvider = Provider.of<NotificationProvider>(
+            context,
+            listen: false,
+          );
+          await notificationProvider.initialize();
+        }
         if (kDebugMode) {
-          if (kDebugMode) print('✅ NotificationProvider 초기화 완료');
+          print('✅ NotificationProvider 초기화 완료');
         }
       } catch (e) {
         if (kDebugMode) {
-          if (kDebugMode) print('❌ NotificationProvider 초기화 실패: $e');
+          print('❌ NotificationProvider 초기화 실패: $e');
         }
       }
 
@@ -120,15 +152,31 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
       try {
         await NotificationService.refreshTokenAfterLogin();
         if (kDebugMode) {
-          if (kDebugMode) print('✅ FCM 토큰 자동 갱신 완료');
+          print('✅ FCM 토큰 자동 갱신 완료');
         }
       } catch (e) {
         if (kDebugMode) {
-          if (kDebugMode) print('❌ FCM 토큰 갱신 실패: $e');
+          print('❌ FCM 토큰 갱신 실패: $e');
         }
       }
-    });
+
+      // 배지 카운트 초기화 및 실시간 구독 설정
+      try {
+        await BadgeCountService.updateBadgeCount();
+        BadgeCountService.setupRealtimeSubscription();
+        if (kDebugMode) {
+          print('✅ 배지 카운트 서비스 초기화 완료');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('❌ 배지 카운트 초기화 실패: $e');
+        }
+      }
+    }
   }
+
+  // 세션 체크 메서드 제거 - MainTab은 이미 인증된 상태에서만 생성됨
+  // 앱 시작 시 main.dart에서 인증 체크 완료
 
   Future<void> _loadEmployeeData() async {
     try {
@@ -213,18 +261,14 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    // 화면이 초기화되지 않았으면 로딩 표시
-    if (_screens == null) {
-      // 초기화가 안 된 경우 여기서 즉시 초기화
-      _initializeScreens();
-      if (_screens == null) {
-        return Scaffold(
-          body: Container(
-            color: const Color(0xFFF8F9FA),
-            child: const Center(child: CircularProgressIndicator()),
-          ),
-        );
-      }
+    // 초기화가 완료되지 않았으면 로딩 표시
+    if (!_isInitialized || _screens == null) {
+      return Scaffold(
+        body: Container(
+          color: const Color(0xFFF8F9FA),
+          child: const Center(child: CircularProgressIndicator()),
+        ),
+      );
     }
 
     final userProvider = Provider.of<UserProvider>(context);
@@ -232,12 +276,19 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
   }
 
   void _initializeScreens() {
-    if (_screens != null) return; // 이미 초기화됨
+    debugPrint('🟢 _initializeScreens() 시작');
+    if (_screens != null) {
+      debugPrint('🟢 이미 화면이 초기화되어 있음 - 리턴');
+      return; // 이미 초기화됨
+    }
 
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final employee = userProvider.employee;
+    debugPrint('🟢 employee 정보: $employee');
+    
     final List<dynamic> attendanceRoles =
         (employee?['attendance_role'] as List<dynamic>?) ?? [];
+    debugPrint('🟢 attendance_roles: $attendanceRoles');
 
     // 승인관리 탭을 볼 수 있는 역할 확인
     final approvalRoles = [
@@ -266,6 +317,7 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
 
     setState(() {
       if (showApprovalTab) {
+        debugPrint('🟢 승인 권한 있음 - 5개 탭 생성');
         // 승인 권한이 있는 사용자는 5개 탭 모두 표시
         _screens = [
           const AttendanceScreenRouter(), // 출석
@@ -277,10 +329,13 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
 
         // 권한이 있으면 요청된 인덱스 사용
         _currentIndex = widget.initialIndex;
+        debugPrint('🟢 초기 인덱스 설정: $_currentIndex');
         if (_currentIndex >= _screens!.length) {
           _currentIndex = 0;
+          debugPrint('🟢 인덱스 범위 초과 - 0으로 설정');
         }
       } else {
+        debugPrint('🟢 승인 권한 없음 - 4개 탭 생성');
         // 승인 권한이 없는 사용자는 4개 탭만 표시
         _screens = [
           const AttendanceScreenRouter(), // 출석
@@ -291,6 +346,7 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
 
         // 권한이 없으면 인덱스 조정
         if (widget.initialIndex == 2) {
+          debugPrint('🟢 승인 탭 요청했지만 권한 없음 - 홈으로');
           // 승인 탭을 요청했지만 권한이 없으면 홈으로
           _currentIndex = 0;
         } else if (widget.initialIndex > 2) {

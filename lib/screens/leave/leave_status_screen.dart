@@ -33,12 +33,12 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
     if (!_isFirstLoad) return; // 이미 로드했으면 다시 로드하지 않음
 
     // build 완료 후에 비동기적으로 데이터 로드
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final provider = Provider.of<LeaveProvider>(context, listen: false);
       final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-      // 이미 데이터가 있으면 다시 로드하지 않음
-      if (provider.myLeaves.isNotEmpty) {
+      // 이미 데이터가 있으면 다시 로드하지 않음 (연차가 0일 수도 있으므로 > 0 체크 제거)
+      if (provider.myLeaves.isNotEmpty && provider.annualLeaveLoaded) {
         setState(() {
           _isFirstLoad = false;
         });
@@ -46,12 +46,12 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
       }
 
       if (userProvider.email != null && userProvider.email!.isNotEmpty) {
-        // forceRefresh: true로 항상 최신 데이터 가져오기
-        provider.fetchMyLeaves(email: userProvider.email!, forceRefresh: true);
+        // 연차 데이터와 함께 가져오기 (forceRefresh는 첫 로드시에만)
+        await provider.fetchMyLeaves(email: userProvider.email!, forceRefresh: false);
       }
       provider.fetchTodayLeaves(DateTime.now());
       // 관리자의 경우 전체 leave 데이터도 가져옴 (승인 대기 카운트를 위해)
-      provider.fetchAllLeaves(forceRefresh: true);
+      provider.fetchAllLeaves(forceRefresh: false);
 
       setState(() {
         _isFirstLoad = false;
@@ -91,21 +91,6 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
           final employee = userProvider.employee;
           final attendanceRole = employee?['attendance_role'];
           final name = employee?['name'] ?? '';
-
-          // Admin 역할 확인
-          final bool isAdmin =
-              attendanceRole != null &&
-              attendanceRole is List &&
-              attendanceRole.contains('admin');
-
-          // Manager 역할 확인
-          final bool isManager = [
-            '양승진',
-            '최창열',
-            '이정화',
-            '조근일',
-            '황연순',
-          ].contains(name);
 
           // 승인 권한이 있는 경우 (Admin 또는 Manager)
           // final bool hasApprovalAuth = isAdmin || isManager; // 미사용 변수 주석 처리
@@ -203,12 +188,12 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                         child: Column(
                           children: [
                             Text(
-                              provider.remainAnnual.toString(),
+                              provider.remainAnnual > 0 ? provider.remainAnnual.toString() : '없음',
                               style: ResponsiveUtils.getTextStyle(
                                 context,
                                 fontWeight: FontWeight.w700,
                                 fontSize: 36,
-                                color: const Color(0xFF007AFF),
+                                color: provider.remainAnnual > 0 ? const Color(0xFF007AFF) : const Color(0xFF8E8E93),
                                 height: 1.0,
                                 letterSpacing: -1.0,
                               ),

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../theme/app_colors.dart';
@@ -9,13 +10,15 @@ import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/font_provider.dart';
-import '../../services/slack_service.dart';
+import '../inquiry/inquiry_screen.dart';
+import '../../services/inquiry_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../auth/login_screen.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../services/cache_recovery_service.dart';
 import 'package:flutter/foundation.dart';
 import '../../providers/attendance_provider.dart';
+import '../../services/badge_count_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -30,11 +33,17 @@ class _SettingsScreenState extends State<SettingsScreen>
   bool get wantKeepAlive => true;
   String _fontSize = '보통';
   String _appVersion = '로딩 중...';
+  final InquiryService _inquiryService = InquiryService();
+  int _inquiryBadgeCount = 0;
+  bool _isAdmin = false;
+  dynamic _realtimeSubscription;
 
   @override
   void initState() {
     super.initState();
     _loadAppVersion();
+    _loadInquiryBadgeCount();
+    _setupRealtimeSubscription();
     // 글꼴 크기 초기화
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final fontProvider = Provider.of<FontProvider>(context, listen: false);
@@ -42,6 +51,44 @@ class _SettingsScreenState extends State<SettingsScreen>
         _fontSize = fontProvider.fontSize;
       });
     });
+  }
+
+  /// 문의 뱃지 카운트 로드
+  Future<void> _loadInquiryBadgeCount() async {
+    _isAdmin = await _inquiryService.isAppAdmin();
+
+    int count = 0;
+    if (_isAdmin) {
+      // 관리자: 미처리 문의 개수
+      count = await _inquiryService.getUnprocessedCount();
+    } else {
+      // 일반 사용자: 미확인 답변 개수
+      count = await _inquiryService.getUnreadResponseCount();
+    }
+
+    if (mounted) {
+      setState(() {
+        _inquiryBadgeCount = count;
+      });
+    }
+  }
+
+  /// 실시간 업데이트 구독
+  void _setupRealtimeSubscription() {
+    _realtimeSubscription = _inquiryService.subscribeToInquiryUpdates(
+      onUpdate: (updatedInquiry) {
+        // 업데이트 시 뱃지 카운트 재로드
+        _loadInquiryBadgeCount();
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    if (_realtimeSubscription != null) {
+      _inquiryService.unsubscribe(_realtimeSubscription);
+    }
+    super.dispose();
   }
 
   Future<void> _loadAppVersion() async {
@@ -140,136 +187,14 @@ class _SettingsScreenState extends State<SettingsScreen>
     }
   }
 
-  void _showInquiryDialog() {
-    final TextEditingController controller = TextEditingController();
-    showCupertinoDialog(
-      context: context,
-      builder: (context) {
-        return CupertinoAlertDialog(
-          title: const Text(
-            '문의하기',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          content: Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: CupertinoTextField(
-              controller: controller,
-              maxLines: 5,
-              placeholder: '문의 내용을 입력하세요',
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-              decoration: BoxDecoration(
-                color: CupertinoColors.systemGrey6,
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          ),
-          actions: [
-            CupertinoDialogAction(
-              child: const Text('취소'),
-              onPressed: () => Navigator.pop(context),
-            ),
-            CupertinoDialogAction(
-              isDefaultAction: true,
-              child: const Text('보내기'),
-              onPressed: () async {
-                final content = controller.text.trim();
-
-                if (content.isEmpty) {
-                  // 문의 내용이 비어있으면 에러 표시
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('문의 내용을 입력해주세요.'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                  return;
-                }
-
-                // 사용자 정보를 먼저 가져오기
-                final userProvider = Provider.of<UserProvider>(
-                  context,
-                  listen: false,
-                );
-                final userName = userProvider.name ?? '알 수 없음';
-                final userEmail = userProvider.email ?? '알 수 없음';
-
-                // 문의 다이얼로그 닫기
-                Navigator.pop(context);
-
-                // 짧은 딜레이 후 로딩 표시
-                await Future.delayed(const Duration(milliseconds: 100));
-
-                if (!mounted) return;
-
-                // 간단한 로딩 오버레이 표시
-                final overlay = Overlay.of(context);
-                final overlayEntry = OverlayEntry(
-                  builder: (context) => Container(
-                    color: Colors.black54,
-                    child: const Center(
-                      child: CupertinoActivityIndicator(
-                        radius: 20,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                );
-                overlay.insert(overlayEntry);
-
-                try {
-                  // 슬랙으로 문의 전송
-                  final slackService = SlackService();
-                  final success = await slackService.sendInquiryToSlack(
-                    inquiryContent: content,
-                    userEmail: userEmail,
-                    userName: userName,
-                  );
-
-                  // 로딩 오버레이 제거
-                  overlayEntry.remove();
-
-                  if (success) {
-                    // 문의 내용 입력 필드 초기화
-                    controller.clear();
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          '✅ 문의가 관리자에게 성공적으로 전송되었습니다!\n곧 답변을 받으실 수 있습니다.',
-                        ),
-                        backgroundColor: Colors.green,
-                        duration: Duration(seconds: 4),
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          '❌ 문의 전송에 실패했습니다.\n관리자가 슬랙 설정을 확인중일 수 있습니다.\n잠시 후 다시 시도하거나 직접 연락해주세요.',
-                        ),
-                        backgroundColor: Colors.red,
-                        duration: Duration(seconds: 6),
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  // 로딩 오버레이 제거
-                  overlayEntry.remove();
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('오류가 발생했습니다: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              },
-            ),
-          ],
-        );
-      },
+  void _showInquiryDialog() async {
+    // 문의하기 화면으로 이동
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const InquiryScreen()),
     );
+    // 돌아올 때 뱃지 카운트 재로드
+    _loadInquiryBadgeCount();
   }
 
   void _showAccountDeletionDialog() {
@@ -366,6 +291,9 @@ class _SettingsScreenState extends State<SettingsScreen>
 
         // 4. 로그아웃 (Auth 사용자는 관리자가 별도 삭제)
         await supabase.auth.signOut();
+        
+        // 배지 제거
+        await BadgeCountService.updateBadgeCount();
 
         // 5. 자동 로그인 정보 삭제
         final prefs = await SharedPreferences.getInstance();
@@ -410,6 +338,14 @@ class _SettingsScreenState extends State<SettingsScreen>
     final userProvider = Provider.of<UserProvider>(context);
     final leaveProvider = Provider.of<LeaveProvider>(context);
 
+    // 디버그: 현재 UserProvider 상태 확인
+    if (kDebugMode) {
+      print('🔍 SettingsScreen - UserProvider 상태:');
+      print('  - email: ${userProvider.email}');
+      print('  - name: ${userProvider.name}');
+      print('  - id: ${userProvider.id}');
+    }
+
     // 데이터가 없으면 여기서 로드
     if (!leaveProvider.isLoading && leaveProvider.myLeaves.isEmpty) {
       final email = userProvider.email;
@@ -431,12 +367,23 @@ class _SettingsScreenState extends State<SettingsScreen>
     final email = userProvider.email;
 
     if (email == null || email.isEmpty) {
-      return const Scaffold(
-        body: Center(
-          child: Text(
-            '로그인 정보가 없습니다. 다시 로그인 해주세요.',
-            style: TextStyle(fontSize: 16),
-          ),
+      // 디버깅 모드에서 핫리로드 등으로 인한 상태 초기화 시 자동으로 로그인 화면으로 이동
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const LoginScreen(),
+            ),
+            (route) => false,
+          );
+        }
+      });
+      
+      // 로그인 화면으로 이동하는 동안 로딩 표시
+      return Scaffold(
+        body: Container(
+          color: const Color(0xFFF8F9FA),
+          child: const Center(child: CircularProgressIndicator()),
         ),
       );
     }
@@ -791,7 +738,7 @@ class _SettingsScreenState extends State<SettingsScreen>
 
                     SizedBox(height: ResponsiveUtils.spacing(context, 20)),
 
-                    // 앱 설정
+                    // 앱 설정 섹션 (글꼴 크기, 문의하기 통합)
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -815,144 +762,226 @@ class _SettingsScreenState extends State<SettingsScreen>
                           Padding(
                             padding: EdgeInsets.fromLTRB(
                               ResponsiveUtils.spacing(context, 20),
-                              ResponsiveUtils.spacing(context, 16),
                               ResponsiveUtils.spacing(context, 20),
-                              ResponsiveUtils.spacing(context, 8),
+                              ResponsiveUtils.spacing(context, 20),
+                              ResponsiveUtils.spacing(context, 12),
                             ),
-                            child: Text(
-                              '앱 설정',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 21,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF1C1C1E),
-                                letterSpacing: 0.5,
-                              ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  '⚙️ 앱 설정',
+                                  style: ResponsiveUtils.getTextStyle(
+                                    context,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF1C1C1E),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
+                          
+                          // 구분선
+                          Container(
+                            height: 0.5,
+                            color: const Color(0xFFE5E5EA),
+                            margin: EdgeInsets.symmetric(
+                              horizontal: ResponsiveUtils.spacing(context, 20),
+                            ),
+                          ),
+                          
                           // 글꼴 크기
-                          InkWell(
-                            onTap: () => _showFontSizeDialog(),
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: ResponsiveUtils.spacing(
-                                  context,
-                                  20,
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => _showFontSizeDialog(),
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: ResponsiveUtils.spacing(context, 20),
+                                  vertical: ResponsiveUtils.spacing(context, 16),
                                 ),
-                                vertical: ResponsiveUtils.spacing(context, 16),
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    width: ResponsiveUtils.spacing(context, 28),
-                                    height: ResponsiveUtils.spacing(
-                                      context,
-                                      28,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF3E5F5),
-                                      borderRadius: BorderRadius.circular(
-                                        ResponsiveUtils.spacing(context, 6),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: ResponsiveUtils.spacing(context, 36),
+                                      height: ResponsiveUtils.spacing(context, 36),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            const Color(0xFF007AFF).withValues(alpha: 0.1),
+                                            const Color(0xFF007AFF).withValues(alpha: 0.05),
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        borderRadius: BorderRadius.circular(
+                                          ResponsiveUtils.spacing(context, 8),
+                                        ),
                                       ),
-                                    ),
-                                    child: Center(
-                                      child: Icon(
-                                        Icons.text_fields,
-                                        size: ResponsiveUtils.iconSize(
-                                          context,
-                                          14,
+                                      child: Center(
+                                        child: Icon(
+                                          Icons.text_fields,
+                                          size: ResponsiveUtils.iconSize(context, 20),
+                                          color: const Color(0xFF007AFF),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                  SizedBox(
-                                    width: ResponsiveUtils.spacing(context, 12),
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      '글꼴 크기',
-                                      style: ResponsiveUtils.getTextStyle(
-                                        context,
-                                        fontSize: 19,
-                                        fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF8E8E93),
+                                    SizedBox(
+                                      width: ResponsiveUtils.spacing(context, 14),
+                                    ),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '글꼴 크기',
+                                            style: ResponsiveUtils.getTextStyle(
+                                              context,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                              color: const Color(0xFF1C1C1E),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: ResponsiveUtils.spacing(context, 2),
+                                          ),
+                                          Text(
+                                            '현재: $_fontSize',
+                                            style: ResponsiveUtils.getTextStyle(
+                                              context,
+                                              fontSize: 13,
+                                              color: const Color(0xFF8E8E93),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                  ),
-                                  Text(
-                                    _fontSize,
-                                    style: ResponsiveUtils.getTextStyle(
-                                      context,
-                                      fontSize: 18,
-                                      color: const Color(0xFF8E8E93),
-                                      fontWeight: FontWeight.w600,
+                                    Icon(
+                                      Icons.chevron_right,
+                                      color: const Color(0xFFC7C7CC),
+                                      size: ResponsiveUtils.iconSize(context, 20),
                                     ),
-                                  ),
-                                  SizedBox(
-                                    width: ResponsiveUtils.spacing(context, 8),
-                                  ),
-                                  Icon(
-                                    Icons.chevron_right,
-                                    color: const Color(0xFFC7C7CC),
-                                    size: ResponsiveUtils.iconSize(context, 16),
-                                  ),
-                                ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          
+                          // 구분선
+                          Container(
+                            height: 0.5,
+                            color: const Color(0xFFE5E5EA),
+                            margin: EdgeInsets.symmetric(
+                              horizontal: ResponsiveUtils.spacing(context, 20),
+                            ),
+                          ),
+                          
+                          // 문의하기
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: _showInquiryDialog,
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: ResponsiveUtils.spacing(context, 20),
+                                  vertical: ResponsiveUtils.spacing(context, 16),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: ResponsiveUtils.spacing(context, 36),
+                                      height: ResponsiveUtils.spacing(context, 36),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            const Color(0xFF34C759).withValues(alpha: 0.1),
+                                            const Color(0xFF34C759).withValues(alpha: 0.05),
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        borderRadius: BorderRadius.circular(
+                                          ResponsiveUtils.spacing(context, 8),
+                                        ),
+                                      ),
+                                      child: Center(
+                                        child: Icon(
+                                          Icons.support_agent,
+                                          size: ResponsiveUtils.iconSize(context, 20),
+                                          color: const Color(0xFF34C759),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: ResponsiveUtils.spacing(context, 14),
+                                    ),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Text(
+                                                _isAdmin ? '문의 관리' : '문의하기',
+                                                style: ResponsiveUtils.getTextStyle(
+                                                  context,
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: const Color(0xFF1C1C1E),
+                                                ),
+                                              ),
+                                              if (_inquiryBadgeCount > 0) ...[
+                                                SizedBox(
+                                                  width: ResponsiveUtils.spacing(context, 8),
+                                                ),
+                                                Container(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: ResponsiveUtils.spacing(context, 6),
+                                                    vertical: ResponsiveUtils.spacing(context, 2),
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFFFF3B30),
+                                                    borderRadius: BorderRadius.circular(10),
+                                                  ),
+                                                  child: Text(
+                                                    _inquiryBadgeCount.toString(),
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: ResponsiveUtils.fontSize(context, 11),
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                          SizedBox(
+                                            height: ResponsiveUtils.spacing(context, 2),
+                                          ),
+                                          Text(
+                                            _isAdmin 
+                                              ? '새로운 문의 ${_inquiryBadgeCount}건' 
+                                              : '앱 사용 중 궁금한 점을 문의하세요',
+                                            style: ResponsiveUtils.getTextStyle(
+                                              context,
+                                              fontSize: 13,
+                                              color: const Color(0xFF8E8E93),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.chevron_right,
+                                      color: const Color(0xFFC7C7CC),
+                                      size: ResponsiveUtils.iconSize(context, 20),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
                         ],
-                      ),
-                    ),
-
-                    SizedBox(height: ResponsiveUtils.spacing(context, 20)),
-
-                    // 문의하기
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveUtils.spacing(context, 12),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: ResponsiveUtils.spacing(context, 3),
-                            offset: Offset(
-                              0,
-                              ResponsiveUtils.spacing(context, 1),
-                            ),
-                          ),
-                        ],
-                      ),
-                      child: ListTile(
-                        minLeadingWidth: 0,
-                        leading: Container(
-                          width: ResponsiveUtils.spacing(context, 28),
-                          height: ResponsiveUtils.spacing(context, 28),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF3E5F5),
-                            borderRadius: BorderRadius.circular(
-                              ResponsiveUtils.spacing(context, 6),
-                            ),
-                          ),
-                          alignment: Alignment.center,
-                          child: Icon(
-                            Icons.chat_bubble_outline,
-                            size: ResponsiveUtils.iconSize(context, 18),
-                            color: const Color(0xFF8E8E93),
-                          ),
-                        ),
-                        title: Text(
-                          '문의하기',
-                          style: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontSize: 19,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF8E8E93),
-                          ),
-                        ),
-                        onTap: _showInquiryDialog,
                       ),
                     ),
                   ],
@@ -1083,6 +1112,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                       // Supabase 세션 종료
                       final supabase = Supabase.instance.client;
                       await supabase.auth.signOut();
+                      
+                      // 배지 제거
+                      await BadgeCountService.updateBadgeCount();
+                      BadgeCountService.removeSubscriptions();
 
                       // SharedPreferences 초기화
                       final prefs = await SharedPreferences.getInstance();

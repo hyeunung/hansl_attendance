@@ -29,6 +29,9 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
     // 탭 변경 리스너 추가
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
+        // UI 업데이트를 위한 setState 추가
+        setState(() {});
+
         final userProvider = Provider.of<UserProvider>(context, listen: false);
         final purchaseProvider = Provider.of<PurchaseProvider>(
           context,

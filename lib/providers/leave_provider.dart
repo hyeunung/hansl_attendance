@@ -42,6 +42,10 @@ class LeaveProvider extends ChangeNotifier
 
   double _usedAnnual = 0;
   double get usedAnnual => _usedAnnual;
+  
+  // 연차 데이터 로드 여부 확인 플래그
+  bool _annualLeaveLoaded = false;
+  bool get annualLeaveLoaded => _annualLeaveLoaded;
 
   // 배치 업데이트 지원
   bool _shouldNotify = true;
@@ -270,12 +274,11 @@ class LeaveProvider extends ChangeNotifier
           isLoading = false;
         });
 
-        if (kDebugMode)
-          if (kDebugMode) {
-            print(
-              '✅ My leaves updated from ${forceRefresh ? 'DB' : 'cache'}: ${newLeaves.length} items',
-            );
-          }
+        if (kDebugMode) {
+          print(
+            '✅ My leaves updated from ${forceRefresh ? 'DB' : 'cache'}: ${newLeaves.length} items',
+          );
+        }
       } else {
         _updateLoadingState(false, null);
       }
@@ -320,10 +323,9 @@ class LeaveProvider extends ChangeNotifier
           isLoading = false;
         });
 
-        if (kDebugMode)
-          if (kDebugMode) {
-            print('✅ Today leaves updated: ${newTodayLeaves.length} items');
-          }
+        if (kDebugMode) {
+          print('✅ Today leaves updated: ${newTodayLeaves.length} items');
+        }
       } else {
         _updateLoadingState(false, null);
       }
@@ -632,24 +634,24 @@ class LeaveProvider extends ChangeNotifier
           _currentGrantedAnnual = newGrantedAnnual;
           _usedAnnual = newUsedAnnual;
           _remainAnnual = newRemainAnnual;
+          _annualLeaveLoaded = true;  // 연차 데이터 로드 완료 플래그 설정
 
           if (kDebugMode) {
-            if (kDebugMode) {
-              print(
-                '📊 연차 정보 업데이트: 지급=$_currentGrantedAnnual, 사용=$_usedAnnual, 잔여=$_remainAnnual',
-              );
-            }
+            print(
+              '📊 연차 정보 업데이트: 지급=$_currentGrantedAnnual, 사용=$_usedAnnual, 잔여=$_remainAnnual',
+            );
           }
+          // Only notify when annual leave data actually changes
+          _debouncedNotify();
         }
       }
     } catch (e) {
-      if (kDebugMode) {
-        if (kDebugMode) print('❌ DB 연차 정보 로드 실패: $e');
-      }
+      if (kDebugMode) print('❌ DB 연차 정보 로드 실패: $e');
       // 기본값 유지
       _currentGrantedAnnual = 0;
       _usedAnnual = 0;
       _remainAnnual = 0;
+      _annualLeaveLoaded = true;  // 연차가 0이어도 로드 완료로 표시
     }
   }
 
@@ -1079,11 +1081,7 @@ class LeaveProvider extends ChangeNotifier
       // 5. 사용연차 재계산
       await _updateUsedAnnualLeave(userEmail);
 
-      // 6. 최신 데이터로 강제 새로고침
-      await fetchMyLeaves(email: userEmail, forceRefresh: true);
-      await fetchAllLeaves(forceRefresh: true);
-
-      // 7. UI 업데이트
+      // 6. UI 업데이트 (이미 로컬 데이터 삭제했으므로 추가 새로고침 불필요)
       notifyListeners();
 
       if (kDebugMode) {
@@ -1094,6 +1092,188 @@ class LeaveProvider extends ChangeNotifier
         if (kDebugMode) print('❌ 연차/출장 신청 삭제 실패: $e');
       }
       throw Exception('신청 취소 중 오류가 발생했습니다: $e');
+    }
+  }
+
+  // 관리자가 연차/출장 수정
+  Future<void> updateLeave({
+    required int leaveId,
+    required String type,
+    required String status,
+    required String startDate,
+    required String endDate,
+    required String reason,
+  }) async {
+    try {
+      if (kDebugMode) {
+        print('📝 연차/출장 수정 시작: ID=$leaveId');
+      }
+
+      // Edge Function을 통해 수정
+      final response = await Supabase.instance.client.functions.invoke(
+        'update_leave',
+        body: {
+          'leaveId': leaveId,
+          'type': type,
+          'status': status,
+          'startDate': startDate,
+          'endDate': endDate,
+          'reason': reason,
+        },
+      );
+
+      if (response.status == 200) {
+        if (kDebugMode) {
+          print('✅ 연차/출장 수정 완료');
+        }
+
+        // 로컬 데이터 업데이트
+        final index = allLeaves.indexWhere((leave) => leave['id'] == leaveId);
+        if (index != -1) {
+          allLeaves[index] = {
+            ...allLeaves[index],
+            'type': type,
+            'status': status,
+            'start_date': startDate,
+            'end_date': endDate,
+            'reason': reason,
+            'updated_at': DateTime.now().toIso8601String(),
+          };
+        }
+
+        final myIndex = myLeaves.indexWhere((leave) => leave['id'] == leaveId);
+        if (myIndex != -1) {
+          myLeaves[myIndex] = {
+            ...myLeaves[myIndex],
+            'type': type,
+            'status': status,
+            'start_date': startDate,
+            'end_date': endDate,
+            'reason': reason,
+            'updated_at': DateTime.now().toIso8601String(),
+          };
+        }
+
+        notifyListeners();
+        
+        // 성공적으로 수정됨 - 추가 새로고침 불필요 (이미 로컬 데이터 업데이트함)
+      } else {
+        throw Exception('수정 실패: ${response.data?['error'] ?? '알 수 없는 오류'}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ 연차/출장 수정 실패: $e');
+      }
+      throw Exception('수정 중 오류가 발생했습니다: $e');
+    }
+  }
+
+  // 관리자가 연차/출장 세부사항 수정
+  Future<void> updateLeaveDetails({
+    required int leaveId,
+    required String type,
+    required String startDate,
+    required String endDate,
+    required String reason,
+  }) async {
+    try {
+      if (kDebugMode) {
+        print('📝 연차/출장 세부사항 수정 시작: ID=$leaveId');
+        print('📝 Type: $type');
+        print('📝 Start Date: $startDate');
+        print('📝 End Date: $endDate');
+        print('📝 Reason: $reason');
+      }
+
+      // 현재 leave 정보 찾기
+      final currentLeave = _allLeavesRaw.firstWhere(
+        (leave) => leave['id'] == leaveId,
+        orElse: () => {},
+      );
+
+      if (currentLeave.isEmpty) {
+        print('❌ 수정할 연차/출장 정보를 찾을 수 없습니다. ID: $leaveId');
+        throw Exception('수정할 연차/출장 정보를 찾을 수 없습니다.');
+      }
+
+      print('📝 현재 leave 정보: $currentLeave');
+      print('📝 Edge Function 호출 시작');
+
+      // Edge Function을 통해 수정 - 타임아웃 설정
+      final response = await Supabase.instance.client.functions.invoke(
+        'update_leave',
+        body: {
+          'leaveId': leaveId,
+          'type': type,
+          'status': currentLeave['status'], // 상태는 변경하지 않음 (반려된 것도 수정 가능)
+          'startDate': startDate,
+          'endDate': endDate,
+          'reason': reason,
+        },
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          print('⏰ Edge Function 타임아웃 (30초)');
+          throw Exception('요청 시간이 초과되었습니다. 다시 시도해주세요.');
+        },
+      );
+      
+      print('📝 Edge Function 응답: ${response.status}');
+      print('📝 Edge Function 응답 데이터: ${response.data}');
+
+      if (response.status == 200) {
+        if (kDebugMode) {
+          print('✅ 연차/출장 세부사항 수정 완료');
+        }
+
+        // 로컬 데이터 업데이트
+        final rawIndex = _allLeavesRaw.indexWhere((leave) => leave['id'] == leaveId);
+        if (rawIndex != -1) {
+          _allLeavesRaw[rawIndex] = {
+            ..._allLeavesRaw[rawIndex],
+            'type': type,
+            'start_date': startDate,
+            'end_date': endDate,
+            'reason': reason,
+            'updated_at': DateTime.now().toIso8601String(),
+          };
+        }
+
+        // 그룹화된 데이터 재처리
+        _reprocessGroupedData();
+
+        // myLeaves에서도 업데이트
+        final myIndex = myLeaves.indexWhere((leave) => leave['id'] == leaveId);
+        if (myIndex != -1) {
+          myLeaves[myIndex] = {
+            ...myLeaves[myIndex],
+            'type': type,
+            'start_date': startDate,
+            'end_date': endDate,
+            'reason': reason,
+            'updated_at': DateTime.now().toIso8601String(),
+          };
+        }
+
+        // 캐시 무효화
+        final requesterEmail = currentLeave['user_email'] ?? '';
+        await _invalidateRelatedCaches(requesterEmail);
+
+        // 사용연차 재계산 (타입이나 날짜가 변경된 경우)
+        if (requesterEmail.isNotEmpty) {
+          await _updateUsedAnnualLeave(requesterEmail);
+        }
+
+        notifyListeners();
+      } else {
+        throw Exception('수정 실패: ${response.data?['error'] ?? '알 수 없는 오류'}');
+      }
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        print('❌ 연차/출장 세부사항 수정 실패: $e');
+        print('❌ Stack trace: $stackTrace');
+      }
+      throw Exception('수정 중 오류가 발생했습니다: $e');
     }
   }
 
@@ -1139,44 +1319,13 @@ class LeaveProvider extends ChangeNotifier
         if (kDebugMode) print('🔄 캐시 무효화 완료');
       }
 
-      // 4. 신청자에게 알림 전송
-      try {
-        final statusText = status == 'approved' ? '승인' : '반려';
-        final typeText = leaveType == 'biztrip' ? '출장' : '연차';
-
-        await NotificationService.sendNotificationToUser(
-          userEmail: requesterEmail,
-          title: '⚠️ $typeText 기록 삭제',
-          body:
-              '관리자가 $statusText된 $typeText 기록을 삭제했습니다.\n기간: $startDate ~ $endDate\n문의사항은 관리자에게 연락해주세요.',
-          data: {
-            'type': 'leave_deleted_by_admin',
-            'user_email': requesterEmail,
-            'user_name': requesterName,
-            'leave_type': leaveType,
-            'start_date': startDate,
-            'end_date': endDate,
-            'status': status,
-          },
-        );
-        if (kDebugMode) {
-          if (kDebugMode) print('✅ 신청자 알림 전송 완료');
-        }
-      } catch (notificationError) {
-        if (kDebugMode) {
-          if (kDebugMode) print('⚠️ 알림 전송 실패 (무시하고 계속): $notificationError');
-        }
-        // 알림 실패는 전체 프로세스를 중단시키지 않음
-      }
+      // 4. 신청자 알림은 Edge Function에서 이미 처리됨 (FCM 푸시)
+      // 중복 알림 방지를 위해 Provider에서 추가 알림은 제거
 
       // 5. 사용연차 재계산
       await _updateUsedAnnualLeave(requesterEmail);
 
-      // 6. 최신 데이터로 강제 새로고침
-      await fetchMyLeaves(email: requesterEmail, forceRefresh: true);
-      await fetchAllLeaves(forceRefresh: true);
-
-      // 7. UI 업데이트
+      // 6. UI 업데이트 (이미 로컬 데이터 삭제했으므로 추가 새로고침 불필요)
       notifyListeners();
 
       if (kDebugMode) {
@@ -1211,7 +1360,7 @@ class LeaveProvider extends ChangeNotifier
   void _debouncedNotify() {
     scopedDebounce(
       key: 'notify_debounce',
-      delay: const Duration(milliseconds: 100),
+      delay: const Duration(milliseconds: 300),
       callback: () {
         if (_shouldNotify) {
           notifyListeners();

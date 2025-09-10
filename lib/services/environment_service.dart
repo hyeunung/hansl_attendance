@@ -12,7 +12,6 @@ class EnvironmentService {
   static const String supabaseUrl = 'SUPABASE_URL';
   static const String supabaseAnonKey = 'SUPABASE_ANON_KEY';
   static const String supabaseServiceKey = 'SUPABASE_SERVICE_KEY';
-  static const String slackWebhookUrl = 'SLACK_WEBHOOK_URL';
 
   /// 환경 서비스 초기화
   static Future<void> initialize() async {
@@ -152,12 +151,7 @@ class EnvironmentService {
     try {
       if (!dotenv.isInitialized) return;
 
-      final envVars = [
-        supabaseUrl,
-        supabaseAnonKey,
-        supabaseServiceKey,
-        slackWebhookUrl,
-      ];
+      final envVars = [supabaseUrl, supabaseAnonKey, supabaseServiceKey];
 
       for (final varName in envVars) {
         final value = dotenv.env[varName];
@@ -188,9 +182,7 @@ class EnvironmentService {
   static Future<Map<String, dynamic>> diagnostics() async {
     try {
       final systemVars = Platform.environment.keys
-          .where(
-            (key) => key.startsWith('SUPABASE_') || key.startsWith('SLACK_'),
-          )
+          .where((key) => key.startsWith('SUPABASE_'))
           .toList();
 
       return {

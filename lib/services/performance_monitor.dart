@@ -16,7 +16,7 @@ class PerformanceMonitor {
   static Duration? stopTracking(String key) {
     final startTime = _activeTrackers.remove(key);
     if (startTime == null) return null;
-    
+
     final duration = DateTime.now().difference(startTime);
     _recordMetric(key, duration);
     return duration;

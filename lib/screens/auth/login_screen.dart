@@ -8,6 +8,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
 import '../../services/notification_service.dart';
+import '../../utils/error_translator.dart';
 import '../../utils/responsive_utils.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -94,14 +95,20 @@ class _LoginScreenState extends State<LoginScreen> {
       // 입력된 이메일을 그대로 사용
       final email = _emailController.text.trim();
 
-      print('🔐 로그인 시도 중... 이메일: $email');
+      if (kDebugMode) {
+        print('🔐 로그인 시도 중... 이메일: $email');
+        print('🔑 비밀번호 길이: ${_passwordController.text.length}자');
+      }
+
       final response = await Supabase.instance.client.auth.signInWithPassword(
         email: email,
         password: _passwordController.text,
       );
 
-      print('📱 로그인 응답: ${response.user != null ? "성공" : "실패"}');
-      print('📱 세션 정보: ${response.session != null ? "존재함" : "없음"}');
+      if (kDebugMode) {
+        print('📱 로그인 응답: ${response.user != null ? "성공" : "실패"}');
+        print('📱 세션 정보: ${response.session != null ? "존재함" : "없음"}');
+      }
 
       if (response.user != null) {
         // 직원 정보 employees 테이블에서 조회
@@ -159,12 +166,12 @@ class _LoginScreenState extends State<LoginScreen> {
         NotificationService.refreshTokenAfterLogin();
       } else {
         setState(() {
-          _error = '로그인 실패: 알 수 없는 오류';
+          _error = ErrorTranslator.getUserFriendlyMessage('로그인 실패: 알 수 없는 오류');
         });
       }
     } catch (e) {
       setState(() {
-        _error = '로그인 실패: $e';
+        _error = ErrorTranslator.getUserFriendlyMessage(e);
       });
     } finally {
       setState(() {
@@ -233,7 +240,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         });
                       } catch (e) {
                         if (kDebugMode) print('Password reset error: $e');
-                        setState(() => errorMsg = '메일 전송 실패: ${e.toString()}');
+                        setState(
+                          () => errorMsg =
+                              ErrorTranslator.getUserFriendlyMessage(e),
+                        );
                       }
                     },
                     child: const Text('메일 전송'),
@@ -599,17 +609,12 @@ class _SignupScreenState extends State<SignupScreen> {
         return;
       } else {
         setState(() {
-          _error = '회원가입 실패: 알 수 없는 오류';
+          _error = ErrorTranslator.getUserFriendlyMessage('회원가입 실패: 알 수 없는 오류');
         });
       }
     } catch (e) {
-      String msg = '회원가입 실패: $e';
-      if (e.toString().contains('user_already_exists') ||
-          e.toString().contains('already registered')) {
-        msg = '이미 가입된 이메일입니다. 로그인 해주세요.';
-      }
       setState(() {
-        _error = msg;
+        _error = ErrorTranslator.getUserFriendlyMessage(e);
       });
     } finally {
       setState(() {

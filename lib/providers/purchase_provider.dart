@@ -479,23 +479,17 @@ class PurchaseProvider extends ChangeNotifier {
             .or(
               'middle_manager_status.eq.approved,middle_manager_status.eq.rejected,final_manager_status.eq.approved,final_manager_status.eq.rejected',
             )
-            .or(
-              'middle_manager_approved_at.gte.$todayStart,middle_manager_rejected_at.gte.$todayStart,final_manager_approved_at.gte.$todayStart,final_manager_rejected_at.gte.$todayStart',
-            )
-            .lte('middle_manager_approved_at', todayEnd.toIso8601String())
             .order('request_date', ascending: false);
         completedRequests = List<Map<String, dynamic>>.from(response);
       } else if (purchaseRole.contains('middle_manager')) {
-        // 1차 승인자가 오늘 처리한 항목
+        // 1차 승인자가 처리한 항목
         final response = await _supabase
             .from('purchase_requests')
             .select()
             .or(
               'middle_manager_status.eq.approved,middle_manager_status.eq.rejected',
             )
-            .gte('middle_manager_approved_at', todayStart.toIso8601String())
-            .lte('middle_manager_approved_at', todayEnd.toIso8601String())
-            .order('middle_manager_approved_at', ascending: false);
+            .order('request_date', ascending: false);
         completedRequests = List<Map<String, dynamic>>.from(response);
       } else if (purchaseRole.contains('final_approver')) {
         // 최종 승인자가 오늘 처리한 항목
@@ -515,9 +509,7 @@ class PurchaseProvider extends ChangeNotifier {
               .or(
                 'final_manager_status.eq.approved,final_manager_status.eq.rejected',
               )
-              .gte('final_manager_approved_at', todayStart.toIso8601String())
-              .lte('final_manager_approved_at', todayEnd.toIso8601String())
-              .order('final_manager_approved_at', ascending: false);
+              .order('request_date', ascending: false);
           completedRequests = List<Map<String, dynamic>>.from(response);
         }
       }

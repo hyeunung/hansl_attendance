@@ -198,7 +198,7 @@ Deno.serve(async (req) => {
     try {
       const leaveType = leaveData.type === 'annual' ? '연차' : '출장'
       const statusKorean = status === 'approved' ? '승인' : '반려'
-      const approverName = employee.name || userEmail.split('@')[0]
+      // approverName은 이미 위에서 올바르게 설정됨 (line 170)
       
       console.log(`📱 신청자 ${leaveData.user_email}에게 ${statusKorean} 알림 발송 시작`)
       
