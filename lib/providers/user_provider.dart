@@ -25,7 +25,6 @@ class UserProvider extends ChangeNotifier {
 
   void setEmail(String? email) {
     _email = email;
-    // Debug code removed
     notifyListeners();
   }
 
@@ -37,7 +36,6 @@ class UserProvider extends ChangeNotifier {
     _id = id;
     _name = name;
     _email = email;
-    // Debug code removed
     notifyListeners();
   }
 

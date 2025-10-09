@@ -38,7 +38,6 @@ class NotificationProvider with ChangeNotifier {
       _notifications = List<Map<String, dynamic>>.from(response);
       _updateUnreadCount();
     } catch (e) {
-      // Debug code removed
       error = '알림을 불러오는 중 오류가 발생했습니다';
       _notifications = [];
       _unreadCount = 0;
@@ -51,7 +50,6 @@ class NotificationProvider with ChangeNotifier {
   // 읽지 않은 알림 개수 업데이트
   void _updateUnreadCount() {
     _unreadCount = _notifications.where((n) => n['is_read'] == false).length;
-    // Debug code removed
   }
 
   // 알림을 읽음으로 표시
@@ -74,7 +72,6 @@ class NotificationProvider with ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      // Debug code removed
       error = '알림 읽음 처리 중 오류가 발생했습니다';
       notifyListeners();
     }
@@ -105,10 +102,7 @@ class NotificationProvider with ChangeNotifier {
 
       _updateUnreadCount();
       notifyListeners();
-
-      // Debug code removed
     } catch (e) {
-      // Debug code removed
       error = '모든 알림 읽음 처리 중 오류가 발생했습니다';
       notifyListeners();
     }
@@ -122,10 +116,7 @@ class NotificationProvider with ChangeNotifier {
       _notifications.removeWhere((n) => n['id'] == notificationId);
       _updateUnreadCount();
       notifyListeners();
-
-      // Debug code removed
     } catch (e) {
-      // Debug code removed
       error = '알림 삭제 중 오류가 발생했습니다';
       notifyListeners();
     }
@@ -149,7 +140,6 @@ class NotificationProvider with ChangeNotifier {
               value: user.email,
             ),
             callback: (payload) {
-              // Debug code removed
               // 새 알림을 목록 맨 앞에 추가
               _notifications.insert(0, payload.newRecord);
               _updateUnreadCount();

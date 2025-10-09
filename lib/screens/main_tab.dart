@@ -137,14 +137,10 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
 
       // 배지 카운트 초기화 및 실시간 구독 설정
       try {
-        print('🚀 BadgeCountService.updateBadgeCount() 호출 시작');
         await BadgeCountService.updateBadgeCount();
-        print('✅ BadgeCountService.updateBadgeCount() 호출 완료');
         BadgeCountService.setupRealtimeSubscription();
-        // Debug code removed
       } catch (e) {
-        print('❌ BadgeCountService 에러: $e');
-        // Debug code removed
+        // Badge service error - silently fail
       }
     }
   }

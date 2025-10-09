@@ -2,7 +2,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PurchaseNotificationListener {
   
-  static final _supabase = Supabase.instance.client;
   static RealtimeChannel? _channel;
   
   /// 발주 알림 실시간 리스너 시작

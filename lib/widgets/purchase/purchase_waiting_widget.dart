@@ -213,7 +213,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
               borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 16)),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF000000).withOpacity(0.04),
+                  color: const Color(0xFF000000).withValues(alpha: 0.04),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -321,7 +321,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                     decoration: BoxDecoration(
                       border: Border(
                         top: BorderSide(
-                          color: const Color(0xFFE0E0E0).withOpacity(0.5),
+                          color: const Color(0xFFE0E0E0).withValues(alpha: 0.5),
                           width: 0.5,
                         ),
                       ),
