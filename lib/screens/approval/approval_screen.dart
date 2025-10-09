@@ -637,24 +637,67 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                   ]
                                 : null,
                           ),
-                          child: Row(
+                          child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                Icons.event_available,
-                                size: ResponsiveUtils.iconSize(context, 18),
-                                color: _mainTabController.index == 0
-                                    ? AppColors.primary
-                                    : const Color(0xFF8E8E93),
+                              Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  Icon(
+                                    Icons.event_available,
+                                    size: ResponsiveUtils.iconSize(context, 20),
+                                    color: _mainTabController.index == 0
+                                        ? AppColors.primary
+                                        : const Color(0xFF8E8E93),
+                                  ),
+                                  if (pending.isNotEmpty)
+                                    Positioned(
+                                      right: -8,
+                                      top: -4,
+                                      child: Container(
+                                        padding: EdgeInsets.all(
+                                          ResponsiveUtils.spacing(context, 2),
+                                        ),
+                                        constraints: BoxConstraints(
+                                          minWidth: ResponsiveUtils.spacing(context, 16),
+                                          minHeight: ResponsiveUtils.spacing(context, 16),
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFF3B30),
+                                          borderRadius: BorderRadius.circular(
+                                            ResponsiveUtils.spacing(context, 8),
+                                          ),
+                                          border: Border.all(
+                                            color: _mainTabController.index == 0
+                                                ? Colors.white
+                                                : const Color(0xFFF2F3F5),
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            pending.length > 99 ? '99+' : '${pending.length}',
+                                            style: ResponsiveUtils.getTextStyle(
+                                              context,
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                               SizedBox(
-                                width: ResponsiveUtils.spacing(context, 6),
+                                height: ResponsiveUtils.spacing(context, 4),
                               ),
                               Text(
                                 '연차/출장',
                                 style: ResponsiveUtils.getTextStyle(
                                   context,
-                                  fontSize: 15,
+                                  fontSize: 12,
                                   fontWeight: _mainTabController.index == 0
                                       ? FontWeight.w600
                                       : FontWeight.w500,
@@ -662,38 +705,10 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                       ? const Color(0xFF1C1C1E)
                                       : const Color(0xFF8E8E93),
                                 ),
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              if (_mainTabController.index == 0 &&
-                                  pending.isNotEmpty) ...[
-                                SizedBox(
-                                  width: ResponsiveUtils.spacing(context, 6),
-                                ),
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: ResponsiveUtils.spacing(
-                                      context,
-                                      6,
-                                    ),
-                                    vertical: ResponsiveUtils.spacing(
-                                      context,
-                                      2,
-                                    ),
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFF3B30),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Text(
-                                    '${pending.length}',
-                                    style: ResponsiveUtils.getTextStyle(
-                                      context,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ],
                             ],
                           ),
                         ),
@@ -730,24 +745,67 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     ]
                                   : null,
                             ),
-                            child: Row(
+                            child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(
-                                  Icons.shopping_bag_outlined,
-                                  size: ResponsiveUtils.iconSize(context, 18),
-                                  color: _mainTabController.index == 1
-                                      ? AppColors.primary
-                                      : const Color(0xFF8E8E93),
+                                Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    Icon(
+                                      Icons.shopping_bag_outlined,
+                                      size: ResponsiveUtils.iconSize(context, 20),
+                                      color: _mainTabController.index == 1
+                                          ? AppColors.primary
+                                          : const Color(0xFF8E8E93),
+                                    ),
+                                    if (pendingApprovalCount > 0)
+                                      Positioned(
+                                        right: -8,
+                                        top: -4,
+                                        child: Container(
+                                          padding: EdgeInsets.all(
+                                            ResponsiveUtils.spacing(context, 2),
+                                          ),
+                                          constraints: BoxConstraints(
+                                            minWidth: ResponsiveUtils.spacing(context, 16),
+                                            minHeight: ResponsiveUtils.spacing(context, 16),
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFFF3B30),
+                                            borderRadius: BorderRadius.circular(
+                                              ResponsiveUtils.spacing(context, 8),
+                                            ),
+                                            border: Border.all(
+                                              color: _mainTabController.index == 1
+                                                  ? Colors.white
+                                                  : const Color(0xFFF2F3F5),
+                                              width: 1.5,
+                                            ),
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              pendingApprovalCount > 99 ? '99+' : '$pendingApprovalCount',
+                                              style: ResponsiveUtils.getTextStyle(
+                                                context,
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.w700,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                                 SizedBox(
-                                  width: ResponsiveUtils.spacing(context, 6),
+                                  height: ResponsiveUtils.spacing(context, 4),
                                 ),
                                 Text(
                                   '발주승인',
                                   style: ResponsiveUtils.getTextStyle(
                                     context,
-                                    fontSize: 15,
+                                    fontSize: 12,
                                     fontWeight: _mainTabController.index == 1
                                         ? FontWeight.w600
                                         : FontWeight.w500,
@@ -755,37 +813,10 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                         ? const Color(0xFF1C1C1E)
                                         : const Color(0xFF8E8E93),
                                   ),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                if (pendingApprovalCount > 0) ...[
-                                  SizedBox(
-                                    width: ResponsiveUtils.spacing(context, 6),
-                                  ),
-                                  Container(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: ResponsiveUtils.spacing(
-                                        context,
-                                        6,
-                                      ),
-                                      vertical: ResponsiveUtils.spacing(
-                                        context,
-                                        2,
-                                      ),
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFF3B30),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Text(
-                                      '$pendingApprovalCount',
-                                      style: ResponsiveUtils.getTextStyle(
-                                        context,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ],
                               ],
                             ),
                           ),
@@ -821,24 +852,67 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                   ]
                                 : null,
                           ),
-                          child: Row(
+                          child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                Icons.shopping_cart_outlined,
-                                size: ResponsiveUtils.iconSize(context, 18),
-                                color: _mainTabController.index == 2
-                                    ? AppColors.primary
-                                    : const Color(0xFF8E8E93),
+                              Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  Icon(
+                                    Icons.shopping_cart_outlined,
+                                    size: ResponsiveUtils.iconSize(context, 20),
+                                    color: _mainTabController.index == 2
+                                        ? AppColors.primary
+                                        : const Color(0xFF8E8E93),
+                                  ),
+                                  if (purchaseWaitingCount > 0)
+                                    Positioned(
+                                      right: -8,
+                                      top: -4,
+                                      child: Container(
+                                        padding: EdgeInsets.all(
+                                          ResponsiveUtils.spacing(context, 2),
+                                        ),
+                                        constraints: BoxConstraints(
+                                          minWidth: ResponsiveUtils.spacing(context, 16),
+                                          minHeight: ResponsiveUtils.spacing(context, 16),
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFF3B30),
+                                          borderRadius: BorderRadius.circular(
+                                            ResponsiveUtils.spacing(context, 8),
+                                          ),
+                                          border: Border.all(
+                                            color: _mainTabController.index == 2
+                                                ? Colors.white
+                                                : const Color(0xFFF2F3F5),
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            purchaseWaitingCount > 99 ? '99+' : '$purchaseWaitingCount',
+                                            style: ResponsiveUtils.getTextStyle(
+                                              context,
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                               SizedBox(
-                                width: ResponsiveUtils.spacing(context, 6),
+                                height: ResponsiveUtils.spacing(context, 4),
                               ),
                               Text(
                                 '구매대기',
                                 style: ResponsiveUtils.getTextStyle(
                                   context,
-                                  fontSize: 15,
+                                  fontSize: 12,
                                   fontWeight: _mainTabController.index == 2
                                       ? FontWeight.w600
                                       : FontWeight.w500,
@@ -846,37 +920,10 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                       ? const Color(0xFF1C1C1E)
                                       : const Color(0xFF8E8E93),
                                 ),
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              if (purchaseWaitingCount > 0) ...[
-                                SizedBox(
-                                  width: ResponsiveUtils.spacing(context, 6),
-                                ),
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: ResponsiveUtils.spacing(
-                                      context,
-                                      6,
-                                    ),
-                                    vertical: ResponsiveUtils.spacing(
-                                      context,
-                                      2,
-                                    ),
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFF3B30),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Text(
-                                    '$purchaseWaitingCount',
-                                    style: ResponsiveUtils.getTextStyle(
-                                      context,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ],
                             ],
                           ),
                         ),
@@ -912,24 +959,67 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                   ]
                                 : null,
                           ),
-                          child: Row(
+                          child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                Icons.inventory_2_outlined,
-                                size: ResponsiveUtils.iconSize(context, 18),
-                                color: _mainTabController.index == 3
-                                    ? AppColors.primary
-                                    : const Color(0xFF8E8E93),
+                              Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  Icon(
+                                    Icons.inventory_2_outlined,
+                                    size: ResponsiveUtils.iconSize(context, 20),
+                                    color: _mainTabController.index == 3
+                                        ? AppColors.primary
+                                        : const Color(0xFF8E8E93),
+                                  ),
+                                  if (receivingWaitingCount > 0)
+                                    Positioned(
+                                      right: -8,
+                                      top: -4,
+                                      child: Container(
+                                        padding: EdgeInsets.all(
+                                          ResponsiveUtils.spacing(context, 2),
+                                        ),
+                                        constraints: BoxConstraints(
+                                          minWidth: ResponsiveUtils.spacing(context, 16),
+                                          minHeight: ResponsiveUtils.spacing(context, 16),
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFF3B30),
+                                          borderRadius: BorderRadius.circular(
+                                            ResponsiveUtils.spacing(context, 8),
+                                          ),
+                                          border: Border.all(
+                                            color: _mainTabController.index == 3
+                                                ? Colors.white
+                                                : const Color(0xFFF2F3F5),
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            receivingWaitingCount > 99 ? '99+' : '$receivingWaitingCount',
+                                            style: ResponsiveUtils.getTextStyle(
+                                              context,
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                               SizedBox(
-                                width: ResponsiveUtils.spacing(context, 6),
+                                height: ResponsiveUtils.spacing(context, 4),
                               ),
                               Text(
                                 '입고대기',
                                 style: ResponsiveUtils.getTextStyle(
                                   context,
-                                  fontSize: 15,
+                                  fontSize: 12,
                                   fontWeight: _mainTabController.index == 3
                                       ? FontWeight.w600
                                       : FontWeight.w500,
@@ -937,37 +1027,10 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                       ? const Color(0xFF1C1C1E)
                                       : const Color(0xFF8E8E93),
                                 ),
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              if (receivingWaitingCount > 0) ...[
-                                SizedBox(
-                                  width: ResponsiveUtils.spacing(context, 6),
-                                ),
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: ResponsiveUtils.spacing(
-                                      context,
-                                      6,
-                                    ),
-                                    vertical: ResponsiveUtils.spacing(
-                                      context,
-                                      2,
-                                    ),
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFF3B30),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Text(
-                                    '$receivingWaitingCount',
-                                    style: ResponsiveUtils.getTextStyle(
-                                      context,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ],
                             ],
                           ),
                         ),

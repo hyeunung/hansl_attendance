@@ -2,12 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'dart:async';
 import '../services/leave_service.dart';
 import '../services/supabase_service.dart';
-import '../services/notification_service.dart';
 import '../services/cache_service.dart';
 import '../services/request_utils.dart';
 import '../services/timer_manager.dart';
 import '../services/async_operation_manager.dart';
-import '../constants/app_strings.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -544,12 +542,6 @@ class LeaveProvider extends ChangeNotifier
         // 직원 정보를 별도로 캐싱 (requestLeave에서 빠르게 접근하기 위해)
         // CacheService는 getOrFetch만 제공하므로 _employee 변수에 저장
 
-        // Debug code removed
-        // Debug code removed
-        // Debug code removed
-        // Debug code removed
-        // Debug code removed
-
         final newGrantedAnnual =
             (employee['annual_leave_granted_current_year'] ?? 0).toDouble();
         // DB 컬럼명은 used_annual_leave임
@@ -568,21 +560,15 @@ class LeaveProvider extends ChangeNotifier
         _remainAnnual = newRemainAnnual;
         _annualLeaveLoaded = true;  // 연차 데이터 로드 완료 플래그 설정
 
-        // Debug code removed
-        // Debug code removed
-        // Debug code removed
-        // Debug code removed
-        
         // Always notify to ensure UI updates
         _debouncedNotify();
       } else {
         // employee가 null인 경우도 처리
-        // Debug code removed
+
         _annualLeaveLoaded = true;
         _debouncedNotify();
       }
     } catch (e) {
-        // Debug code removed
       // 기본값 유지
       _currentGrantedAnnual = 0;
       _usedAnnual = 0;
@@ -634,12 +620,10 @@ class LeaveProvider extends ChangeNotifier
     try {
       // 캐시된 직원 정보 사용 (DB 조회 최소화)
       String name = '';
-      String department = '';
 
       // _employee에 캐시된 정보가 있으면 사용
       if (_employee != null) {
         name = _employee?['name'] ?? '';
-        department = _employee?['department'] ?? '';
       } else {
         // 캐시에 없을 경우만 DB 조회
         final supabaseService = SupabaseService();
@@ -647,7 +631,6 @@ class LeaveProvider extends ChangeNotifier
         if (employee != null) {
           _employee = employee; // 메모리에 캐싱
           name = employee['name'] ?? '';
-          department = employee['department'] ?? '';
         }
       }
 
@@ -677,7 +660,6 @@ class LeaveProvider extends ChangeNotifier
           _invalidateUserRelatedCaches(userEmail),
         ]);
       } catch (e) {
-        print('[ERROR] 사용연차 업데이트 실패: $e');
         // 에러가 나도 계속 진행
       }
 
@@ -685,14 +667,14 @@ class LeaveProvider extends ChangeNotifier
       try {
         await fetchMyLeaves(email: userEmail, forceRefresh: true);
       } catch (e) {
-        print('[ERROR] fetchMyLeaves 실패: $e');
+        // 데이터 새로고침 오류 시 무시
       }
       
       // 전체 연차/출장 목록 새로고침 (대시보드 업데이트용)
       try {
         await fetchAllLeaves(forceRefresh: true);
       } catch (e) {
-        print('[ERROR] fetchAllLeaves 실패: $e');
+        // 데이터 새로고침 오류 시 무시
       }
       
       // UI 업데이트 알림
@@ -704,34 +686,6 @@ class LeaveProvider extends ChangeNotifier
     }
   }
 
-  // 휴가 타입 라벨 변환 헬퍼 메서드
-  String _getTypeLabel(String type) {
-    switch (type) {
-      case 'annual':
-        return '연차';
-      case 'half_am':
-        return '오전반차';
-      case 'half_pm':
-        return '오후반차';
-      case 'official':
-        return '공가';
-      case 'biztrip':
-        return '출장';
-      default:
-        return '휴가';
-    }
-  }
-
-  // 기간 포맷팅 헬퍼 메서드
-  String _formatPeriod(DateTime startDate, DateTime endDate) {
-    if (startDate.year == endDate.year &&
-        startDate.month == endDate.month &&
-        startDate.day == endDate.day) {
-      return '${startDate.month}월 ${startDate.day}일';
-    } else {
-      return '${startDate.month}월 ${startDate.day}일 ~ ${endDate.month}월 ${endDate.day}일';
-    }
-  }
 
   Future<void> updateLeaveStatus(
     int id,
@@ -753,10 +707,6 @@ class LeaveProvider extends ChangeNotifier
 
       final leaveDetails = _allLeavesRaw[rawLeaveIndex];
       final requesterEmail = leaveDetails['user_email'] as String?;
-      final requesterName = leaveDetails['name'] as String? ?? '사용자';
-      final leaveType = leaveDetails['type'] as String? ?? '';
-      final startDate = leaveDetails['start_date'] as String? ?? '';
-      final endDate = leaveDetails['end_date'] as String? ?? '';
 
       // 2. DB 상태 업데이트
       await _service.updateLeaveStatus(id, status);
@@ -1050,9 +1000,7 @@ class LeaveProvider extends ChangeNotifier
     required String status,
   }) async {
     try {
-      if (kDebugMode) {
-        // Debug print removed
-      }
+      
 
       // 1. Edge Function을 통해 삭제 (RLS 우회, 관리자 권한)
       await _service.deleteLeaveViaEdgeFunction(
@@ -1362,25 +1310,6 @@ class LeaveProvider extends ChangeNotifier
             'is_alternative': false,
           },
         ];
-      }
-
-      // 항상 로그 출력 (디버깅용)
-      // Debug print removed
-
-      if (kDebugMode) {
-        if (holidays.isNotEmpty) {
-          // 이번 달 공휴일 표시
-          final currentMonth = DateTime.now().month;
-          final currentMonthHolidays = holidays.where((h) {
-            final date = DateTime.parse(h['date']);
-            return date.year == currentYear && date.month == currentMonth;
-          }).toList();
-
-          if (currentMonthHolidays.isNotEmpty) {
-            // Debug print removed
-            // Process holidays (debug prints removed)
-          }
-        }
       }
 
       notifyListeners();

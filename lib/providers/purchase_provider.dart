@@ -15,6 +15,10 @@ class PurchaseProvider extends ChangeNotifier {
   int _rawMaterialPendingCount = 0;
   int _consumablePendingCount = 0;
   int _totalPendingCount = 0;
+  
+  // 탭별 카운트 (뱃지 표시용)
+  int _purchaseWaitingCount = 0;
+  int _receivingWaitingCount = 0;
 
   List<PurchaseOrderGroup> get pendingOrders => _pendingOrders;
   List<PurchaseOrderGroup> get completedOrders => _completedOrders;
@@ -26,6 +30,10 @@ class PurchaseProvider extends ChangeNotifier {
   int get rawMaterialPendingCount => _rawMaterialPendingCount;
   int get consumablePendingCount => _consumablePendingCount;
   int get totalPendingCount => _totalPendingCount;
+  
+  // 탭별 카운트 getter
+  int get purchaseWaitingCount => _purchaseWaitingCount;
+  int get receivingWaitingCount => _receivingWaitingCount;
   
   // 구매대기/입고대기 탭을 위한 모든 구매요청 데이터 로드
   Future<void> loadAllPurchaseRequests() async {
@@ -136,17 +144,10 @@ class PurchaseProvider extends ChangeNotifier {
       List<Map<String, dynamic>> pendingRequests = [];
 
       if (kDebugMode) {
-        print('🔍 PurchaseProvider - fetchPendingPurchases 시작');
-        print('📋 employee 전체 데이터: $employee');
-        print('📋 purchase_role: $purchaseRole');
-        print('📋 purchase_role 타입: ${purchaseRole.runtimeType}');
-        print('📋 purchase_role이 비어있나요?: ${purchaseRole.isEmpty}');
       }
 
       // Step 1: purchase_requests 테이블에서 대기 중인 헤더 정보만 가져오기
       if (purchaseRole.contains('app_admin')) {
-        if (kDebugMode) print('🔐 app_admin 권한으로 조회 시작');
-
         final response = await _supabase
             .from('purchase_requests')
             .select()
@@ -167,12 +168,10 @@ class PurchaseProvider extends ChangeNotifier {
         }
         pendingRequests = uniqueRequests.values.toList();
         
-        if (kDebugMode) print('✅ app_admin 조회 완료: ${pendingRequests.length}건 (중복 제거)');
+        
       }
       // middle_manager: 1차 승인 대기
-      else if (purchaseRole.contains('middle_manager')) {
-        if (kDebugMode) print('🔐 middle_manager 권한으로 조회 시작');
-        final response = await _supabase
+      else if (purchaseRole.contains('middle_manager')) {        final response = await _supabase
             .from('purchase_requests')
             .select()
             .eq('middle_manager_status', 'pending')
@@ -195,11 +194,7 @@ class PurchaseProvider extends ChangeNotifier {
       }
       // final_approver + raw_material_manager: '발주'만
       else if (purchaseRole.contains('final_approver') &&
-          purchaseRole.contains('raw_material_manager')) {
-        if (kDebugMode) {
-          print('🔐 final_approver + raw_material_manager 권한으로 조회 시작');
-        }
-        final response = await _supabase
+          purchaseRole.contains('raw_material_manager')) {        final response = await _supabase
             .from('purchase_requests')
             .select()
             .eq('middle_manager_status', 'approved')
@@ -224,11 +219,7 @@ class PurchaseProvider extends ChangeNotifier {
       }
       // final_approver + consumable_manager: '구매 요청'만
       else if (purchaseRole.contains('final_approver') &&
-          purchaseRole.contains('consumable_manager')) {
-        if (kDebugMode) {
-          print('🔐 final_approver + consumable_manager 권한으로 조회 시작');
-        }
-        final response = await _supabase
+          purchaseRole.contains('consumable_manager')) {        final response = await _supabase
             .from('purchase_requests')
             .select()
             .eq('middle_manager_status', 'approved')
@@ -247,13 +238,10 @@ class PurchaseProvider extends ChangeNotifier {
         }
         pendingRequests = uniqueRequests.values.toList();
         
-        if (kDebugMode) print('✅ consumable 조회 완료: ${pendingRequests.length}건 (중복 제거)');
-      } else {
-        if (kDebugMode) print('⚠️ 권한 없음: purchase_role에 해당 권한이 없습니다');
-      }
+        
+      } else {      }
 
       if (kDebugMode) {
-        print('📊 총 조회된 대기 발주: ${pendingRequests.length}건');
       }
 
       // Step 2: 각 발주번호별로 품목 정보 가져오기
@@ -295,15 +283,6 @@ class PurchaseProvider extends ChangeNotifier {
           };
 
           if (kDebugMode) {
-            print(
-              '📋 품목 병합 - $purchaseOrderNumber - Line ${item['line_number']}:',
-            );
-            print('  - project_vendor: ${mergedJson['project_vendor']}');
-            print(
-              '  - sales_order_number: ${mergedJson['sales_order_number']}',
-            );
-            print('  - project_item: ${mergedJson['project_item']}');
-            print('  - remark: ${mergedJson['remark']}');
           }
 
           return PurchaseRequest.fromJson(mergedJson);
@@ -323,12 +302,9 @@ class PurchaseProvider extends ChangeNotifier {
         );
 
         if (kDebugMode) {
-          print('📦 그룹 생성: $purchaseOrderNumber');
-          print('  - 아이템 수: ${items.length}');
           print(
             '  - 헤더 아이템: ${headerItem.itemName} (라인넘버: ${headerItem.lineNumber})',
           );
-          print('  - 총 금액: $totalAmount');
         }
 
         groups.add(
@@ -347,17 +323,13 @@ class PurchaseProvider extends ChangeNotifier {
       }
 
       _pendingOrders = groups;
-      if (kDebugMode) print('📦 최종 그룹 수: ${_pendingOrders.length}개');
-
       // 역할별 대기 개수 계산 (await 추가)
       await _calculatePendingCounts(purchaseRole);
-    } catch (e, stackTrace) {
-      _error = e.toString();
-      if (kDebugMode) {
-        print('❌ Error fetching pending purchases: $e');
-        print('📍 Stack trace: $stackTrace');
-      }
-    } finally {
+      
+      // 탭별 카운트 계산
+      await _calculateTabCounts(employee);
+    } catch (e) {
+      _error = e.toString();    } finally {
       _isLoading = false;
       notifyListeners();
     }
@@ -387,12 +359,11 @@ class PurchaseProvider extends ChangeNotifier {
           isMiddleManager: true,
         );
       } catch (e) {
-        if (kDebugMode) print('알림 전송 실패 (무시): $e');
+        
       }
 
       return true;
     } catch (e) {
-      if (kDebugMode) print('Error approving middle: $e');
       return false;
     }
   }
@@ -424,12 +395,11 @@ class PurchaseProvider extends ChangeNotifier {
           isMiddleManager: false,
         );
       } catch (e) {
-        if (kDebugMode) print('알림 전송 실패 (무시): $e');
+        
       }
 
       return true;
     } catch (e) {
-      if (kDebugMode) print('Error approving final: $e');
       return false;
     }
   }
@@ -489,12 +459,11 @@ class PurchaseProvider extends ChangeNotifier {
           rejectionReason: reason,
         );
       } catch (e) {
-        if (kDebugMode) print('알림 전송 실패 (무시): $e');
+        
       }
 
       return true;
     } catch (e) {
-      if (kDebugMode) print('Error rejecting purchase: $e');
       return false;
     }
   }
@@ -502,8 +471,6 @@ class PurchaseProvider extends ChangeNotifier {
   // 역할별 대기 개수 계산
   Future<void> _calculatePendingCounts(List<dynamic> purchaseRole) async {
     try {
-      if (kDebugMode) print('📊 역할별 대기 개수 계산 시작...');
-
       // 병렬로 모든 쿼리 실행
       final results = await Future.wait([
         // 1차 승인 대기 개수 (middle_manager)
@@ -570,19 +537,82 @@ class PurchaseProvider extends ChangeNotifier {
           }
         }
       }
-
-      if (kDebugMode) {
-        print('📊 역할별 대기 개수:');
-        print('  - 1차 승인 대기: $_middleManagerPendingCount개');
-        print('  - 발주 최종 승인 대기: $_rawMaterialPendingCount개');
-        print('  - 구매 요청 최종 승인 대기: $_consumablePendingCount개');
-        print('  - 총 대기: $_totalPendingCount개');
-      }
-
       // UI 업데이트를 위해 notifyListeners 호출
       notifyListeners();
     } catch (e) {
-      if (kDebugMode) print('❌ Error calculating pending counts: $e');
+      // 오류 발생 시 무시
+    }
+  }
+  
+  // 탭별 카운트 계산 (구매대기, 입고대기)
+  Future<void> _calculateTabCounts(Map<String, dynamic>? employee) async {
+    try {
+      final purchaseRole = employee?['purchase_role'] as List<dynamic>? ?? [];
+      final userName = employee?['name'] ?? '';
+      final isAppAdmin = purchaseRole.contains('app_admin');
+      final isLeadBuyer = purchaseRole.contains('lead buyer');
+      final isMiddleManager = purchaseRole.contains('middle_manager');
+      final isFinalApprover = purchaseRole.contains('raw_material_manager') || 
+                              purchaseRole.contains('consumable_manager');
+      final isCeo = purchaseRole.contains('ceo');
+      
+      // 구매대기 카운트 (선진행 + 일반&최종승인)
+      final purchaseResponse = await _supabase
+          .from('purchase_requests')
+          .select('*, purchase_request_items(*)')
+          .eq('payment_category', '구매 요청')
+          .eq('is_payment_completed', false);
+      
+      final purchasePurchases = (purchaseResponse as List<dynamic>).where((purchase) {
+        final progressType = purchase['progress_type'] ?? '';
+        final finalStatus = purchase['final_manager_status'] ?? '';
+        
+        // 선진행은 무조건 포함
+        if (progressType.toString().contains('선진행')) return true;
+        // 일반은 최종승인 완료된 것만
+        if (progressType.toString().contains('일반') && finalStatus == 'approved') return true;
+        
+        return false;
+      }).toList();
+      
+      // 권한에 따른 필터링
+      if (!isAppAdmin && !isLeadBuyer) {
+        _purchaseWaitingCount = purchasePurchases.where((p) => 
+          p['requester_name'] == userName
+        ).length;
+      } else {
+        _purchaseWaitingCount = purchasePurchases.length;
+      }
+      
+      // 입고대기 카운트 (선진행 + 최종승인)
+      final receivingResponse = await _supabase
+          .from('purchase_requests')
+          .select('*, purchase_request_items(*)')
+          .eq('is_received', false);
+      
+      final receivingPurchases = (receivingResponse as List<dynamic>).where((purchase) {
+        final progressType = purchase['progress_type'] ?? '';
+        final finalStatus = purchase['final_manager_status'] ?? '';
+        
+        // 선진행은 무조건 포함
+        if (progressType.toString().contains('선진행')) return true;
+        // 최종승인 완료된 것 포함
+        if (finalStatus == 'approved') return true;
+        
+        return false;
+      }).toList();
+      
+      // 권한에 따른 필터링
+      if (!isAppAdmin && !isMiddleManager && !isFinalApprover && !isCeo) {
+        _receivingWaitingCount = receivingPurchases.where((p) => 
+          p['requester_name'] == userName
+        ).length;
+      } else {
+        _receivingWaitingCount = receivingPurchases.length;
+      }      
+      notifyListeners();
+    } catch (e) {      _purchaseWaitingCount = 0;
+      _receivingWaitingCount = 0;
     }
   }
 
@@ -600,13 +630,6 @@ class PurchaseProvider extends ChangeNotifier {
       // 오늘 날짜 범위 설정 (한국 시간 기준)
       final now = DateTime.now();
       final todayStart = DateTime(now.year, now.month, now.day);
-      final todayEnd = todayStart.add(const Duration(days: 1));
-
-      if (kDebugMode) {
-        print('🔍 PurchaseProvider - fetchCompletedPurchases 시작');
-        print('📅 오늘 날짜 범위: $todayStart ~ $todayEnd');
-      }
-
       List<Map<String, dynamic>> completedRequests = [];
 
       // 역할별 처리완료 항목 조회
@@ -730,15 +753,9 @@ class PurchaseProvider extends ChangeNotifier {
       _completedOrders = groups;
 
       if (kDebugMode) {
-        print('✅ 처리완료 조회 완료: ${_completedOrders.length}건');
       }
-    } catch (e, stackTrace) {
-      _error = e.toString();
-      if (kDebugMode) {
-        print('❌ Error fetching completed purchases: $e');
-        print('📍 Stack trace: $stackTrace');
-      }
-    } finally {
+    } catch (e) {
+      _error = e.toString();    } finally {
       _isLoading = false;
       notifyListeners();
     }
@@ -761,7 +778,6 @@ class PurchaseProvider extends ChangeNotifier {
 
       return items;
     } catch (e) {
-      if (kDebugMode) print('Error fetching order details: $e');
       return [];
     }
   }
@@ -776,8 +792,6 @@ class PurchaseProvider extends ChangeNotifier {
     String? rejectionReason,
   }) async {
     try {
-      if (kDebugMode) print('📨 발주 알림 전송 시작: $purchaseOrderNumber');
-
       // status에 따른 알림 대상 및 메시지 결정
       String title = '';
       String body = '';
@@ -822,12 +836,7 @@ class PurchaseProvider extends ChangeNotifier {
           body,
           purchaseOrderNumber,
         );
-      }
-
-      if (kDebugMode) print('✅ 발주 알림 전송 완료');
-    } catch (e) {
-      if (kDebugMode) print('❌ 발주 알림 전송 실패: $e');
-      // 알림 실패해도 승인 프로세스는 계속 진행
+      }    } catch (e) {      // 알림 실패해도 승인 프로세스는 계속 진행
     }
   }
 
@@ -857,7 +866,7 @@ class PurchaseProvider extends ChangeNotifier {
         }
       }
     } catch (e) {
-      if (kDebugMode) print('역할 기반 알림 전송 실패: $e');
+      // 오류 발생 시 무시
     }
   }
 
@@ -887,7 +896,7 @@ class PurchaseProvider extends ChangeNotifier {
         }
       }
     } catch (e) {
-      if (kDebugMode) print('신청자 알림 전송 실패: $e');
+      // 오류 발생 시 무시
     }
   }
 
@@ -904,7 +913,7 @@ class PurchaseProvider extends ChangeNotifier {
         body: {'token': fcmToken, 'title': title, 'body': body, 'data': data},
       );
     } catch (e) {
-      if (kDebugMode) print('FCM 전송 실패: $e');
+      // 오류 발생 시 무시
     }
   }
 
@@ -916,8 +925,6 @@ class PurchaseProvider extends ChangeNotifier {
     required double totalAmount,
   }) async {
     try {
-      if (kDebugMode) print('📨 새 발주 요청 알림 전송 시작: $purchaseOrderNumber');
-
       final title = '🆕 새 발주 승인 요청';
       final formattedAmount = totalAmount.toStringAsFixed(0);
       final body =
@@ -937,11 +944,8 @@ class PurchaseProvider extends ChangeNotifier {
         title,
         body,
         purchaseOrderNumber,
-      );
-
-      if (kDebugMode) print('✅ 새 발주 요청 알림 전송 완료');
-    } catch (e) {
-      if (kDebugMode) print('❌ 새 발주 요청 알림 전송 실패: $e');
+      );    } catch (e) {
+      // 오류 발생 시 무시
     }
   }
 }

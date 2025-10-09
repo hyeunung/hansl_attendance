@@ -42,7 +42,6 @@ class BadgeCountService {
       final isConsumableManager = UserRoleHelper.isConsumableManager(purchaseRoles);
       final isLeadBuyer = UserRoleHelper.isLeadBuyer(purchaseRoles); // app_admin 포함됨
       
-      print('🔑 Badge 권한: AppAdmin=$isAppAdmin, LeadBuyer=$isLeadBuyer');
 
       if (isSuperAdmin || isAppAdmin) {
         final leaveCount = await _getPendingLeaveCount();
@@ -69,13 +68,10 @@ class BadgeCountService {
       }
 
       // 배지 업데이트
-      print('📱 전체 배지 카운트: $totalCount');
       if (totalCount > 0) {
         await FlutterAppBadger.updateBadgeCount(totalCount);
-        print('✅ 배지 업데이트 성공: $totalCount');
       } else {
         await FlutterAppBadger.removeBadge();
-        print('✅ 배지 제거 (카운트 0)');
       }
 
       // Debug code removed
@@ -185,7 +181,6 @@ class BadgeCountService {
         }).toList();
         
         final purchaseWaitingCount = purchaseWaitingFiltered.length;
-        print('🛒 구매대기 카운트: $purchaseWaitingCount (선진행 + 일반&승인완료)');
         count += purchaseWaitingCount;
         
         // 2. 입고대기: 미입고 AND (선진행 OR 최종승인)
@@ -222,7 +217,6 @@ class BadgeCountService {
         }).toList();
         
         final receivingWaitingCount = receivingWaitingFiltered.length;
-        print('📦 입고대기 카운트: $receivingWaitingCount (선진행 + 최종승인)');
         count += receivingWaitingCount;
       }
       
