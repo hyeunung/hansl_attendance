@@ -75,7 +75,7 @@ class PurchaseRequest {
       deliveryRequestDate: json['delivery_request_date'] != null
           ? DateTime.parse(json['delivery_request_date'])
           : DateTime.now(),
-      progressType: json['progress_type']?.toString() ?? '',
+      progressType: json['progress_type']?.toString() ?? '일반',
       isPaymentCompleted: json['is_payment_completed'] ?? false,
       paymentCategory: json['payment_category']?.toString() ?? '',
       currency: json['currency']?.toString() ?? 'KRW',
@@ -156,7 +156,6 @@ class PurchaseRequest {
   }
 }
 
-// 발주서 그룹 (동일한 purchase_order_number를 가진 아이템들)
 class PurchaseOrderGroup {
   final String purchaseOrderNumber;
   final List<PurchaseRequest> items;
@@ -164,9 +163,12 @@ class PurchaseOrderGroup {
   final String vendorName;
   final String requesterName;
   final DateTime requestDate;
-  final String paymentCategory;
+  final String? paymentCategory;
   final String? middleManagerStatus;
   final String? finalManagerStatus;
+  final String? progressType;
+  final bool? isPaymentCompleted;
+  final bool? isReceived;
 
   PurchaseOrderGroup({
     required this.purchaseOrderNumber,
@@ -175,12 +177,14 @@ class PurchaseOrderGroup {
     required this.vendorName,
     required this.requesterName,
     required this.requestDate,
-    required this.paymentCategory,
+    this.paymentCategory,
     this.middleManagerStatus,
     this.finalManagerStatus,
+    this.progressType,
+    this.isPaymentCompleted,
+    this.isReceived,
   });
 
-  // 헤더 아이템 (line_number가 1인 항목)
   PurchaseRequest get headerItem {
     try {
       return items.firstWhere((item) => item.lineNumber == 1);
@@ -190,6 +194,5 @@ class PurchaseOrderGroup {
     }
   }
 
-  // 추가 아이템 개수 (헤더 제외)
   int get additionalItemCount => items.length - 1;
 }

@@ -30,7 +30,7 @@ class EmployeeSelectorWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [AppShadows.card],
+        boxShadow: AppShadows.cardShadow,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(

@@ -36,17 +36,24 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _loadPrefs() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _autoLogin = prefs.getBool('autoLogin') ?? false;
-      _saveId = prefs.getBool('saveId') ?? false;
-      if (_saveId) {
-        final savedId = prefs.getString('savedId') ?? '';
-        if (savedId.isNotEmpty) {
+    final newAutoLogin = prefs.getBool('autoLogin') ?? false;
+    final newSaveId = prefs.getBool('saveId') ?? false;
+    String? savedId;
+    if (newSaveId) {
+      savedId = prefs.getString('savedId') ?? '';
+    }
+    
+    // 값이 변경되었을 때만 setState 호출
+    if (mounted && (newAutoLogin != _autoLogin || newSaveId != _saveId || 
+        (savedId != null && savedId.isNotEmpty && savedId != _emailController.text))) {
+      setState(() {
+        _autoLogin = newAutoLogin;
+        _saveId = newSaveId;
+        if (savedId != null && savedId.isNotEmpty) {
           _emailController.text = savedId;
         }
-      }
-      // 자동로그인은 Supabase 세션에서 처리하므로 여기서는 제거
-    });
+      });
+    }
   }
 
   Future<void> _saveIdPref(bool value) async {
@@ -65,69 +72,61 @@ class _LoginScreenState extends State<LoginScreen> {
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) => page,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(1.0, 0.0);
-          const end = Offset.zero;
-          const curve = Curves.ease;
-          var tween = Tween(
-            begin: begin,
-            end: end,
-          ).chain(CurveTween(curve: curve));
-          var fadeTween = Tween<double>(begin: 0.0, end: 1.0);
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: FadeTransition(
-              opacity: animation.drive(fadeTween),
-              child: child,
-            ),
+          // 페이드 효과만 사용하여 깜빡임 최소화
+          var fadeAnimation = Tween<double>(
+            begin: 0.0,
+            end: 1.0,
+          ).animate(CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeInOut,
+          ));
+          
+          return FadeTransition(
+            opacity: fadeAnimation,
+            child: child,
           );
         },
-        transitionDuration: const Duration(milliseconds: 350),
+        transitionDuration: const Duration(milliseconds: 300),
       ),
     );
   }
 
   Future<void> _login() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+    // 상태 변경을 한 번에 처리
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+    }
     try {
       // 입력된 이메일을 그대로 사용
       final email = _emailController.text.trim();
 
-      if (kDebugMode) {
-        print('🔐 로그인 시도 중... 이메일: $email');
-        print('🔑 비밀번호 길이: ${_passwordController.text.length}자');
-      }
+      // Debug code removed
 
       final response = await Supabase.instance.client.auth.signInWithPassword(
         email: email,
         password: _passwordController.text,
       );
 
-      if (kDebugMode) {
-        print('📱 로그인 응답: ${response.user != null ? "성공" : "실패"}');
-        print('📱 세션 정보: ${response.session != null ? "존재함" : "없음"}');
-      }
+      // Debug code removed
 
       if (response.user != null) {
         // 직원 정보 employees 테이블에서 조회
         final email = response.user!.email;
-        if (kDebugMode) print('📧 응답 이메일: $email');
-
-        if (email == null) throw Exception('이메일 정보가 없습니다.');
+        // Debug print removed
+if (email == null) throw Exception('이메일 정보가 없습니다.');
         final employee = await Supabase.instance.client
             .from('employees')
             .select()
             .ilike('email', email) // 대소문자 무시하고 이메일 매칭
             .maybeSingle();
 
-        if (kDebugMode) {
-          print('👤 직원 정보 조회 결과: ${employee != null ? "찾음" : "없음"}');
-        }
+        // Debug code removed
         if (employee != null) {
-          if (kDebugMode) print('👤 직원 데이터: $employee');
-        }
+          // Debug print removed
+}
 
         if (employee == null) throw Exception('등록된 사용자 정보가 없습니다.');
 
@@ -141,16 +140,13 @@ class _LoginScreenState extends State<LoginScreen> {
         );
         userProvider.setEmployee(employee);
 
-        if (kDebugMode) print('✅ UserProvider 설정 완료');
-        if (kDebugMode) print('👤 저장된 ID: ${userProvider.id}');
-        if (kDebugMode) print('👤 저장된 이름: ${userProvider.name}');
-        if (kDebugMode) print('👤 저장된 이메일: ${userProvider.email}');
-
-        // 세션 지속성 확인
-        final currentSession = Supabase.instance.client.auth.currentSession;
-        if (kDebugMode) {
-          print('🔒 현재 세션 상태: ${currentSession != null ? "유지됨" : "없음"}');
-        }
+        // Debug print removed
+// Debug print removed
+// Debug print removed
+// Debug print removed
+// 세션 지속성 확인 (사용되지 않는 변수 제거)
+        // final currentSession = Supabase.instance.client.auth.currentSession;
+        // Debug code removed
 
         // 자동 로그인 설정 저장 (보안상 비밀번호는 저장하지 않음)
         final prefs = await SharedPreferences.getInstance();
@@ -161,22 +157,24 @@ class _LoginScreenState extends State<LoginScreen> {
           await prefs.setString('savedId', _emailController.text.trim());
         }
 
-        if (kDebugMode) print('✅ 로그인 완료 - 메인 화면으로 이동');
-        _navigateWithTransition(MainTab());
+        // Debug print removed
+_navigateWithTransition(MainTab());
         NotificationService.refreshTokenAfterLogin();
       } else {
-        setState(() {
-          _error = ErrorTranslator.getUserFriendlyMessage('로그인 실패: 알 수 없는 오류');
-        });
+        if (mounted) {
+          setState(() {
+            _error = ErrorTranslator.getUserFriendlyMessage('로그인 실패: 알 수 없는 오류');
+            _isLoading = false;
+          });
+        }
       }
     } catch (e) {
-      setState(() {
-        _error = ErrorTranslator.getUserFriendlyMessage(e);
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = ErrorTranslator.getUserFriendlyMessage(e);
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -239,8 +237,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           errorMsg = null;
                         });
                       } catch (e) {
-                        if (kDebugMode) print('Password reset error: $e');
-                        setState(
+                        // Debug print removed
+setState(
                           () => errorMsg =
                               ErrorTranslator.getUserFriendlyMessage(e),
                         );
@@ -341,7 +339,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         enableSuggestions: true,
                         autocorrect: false,
                         onChanged: (val) {
-                          if (_saveId) _saveIdPref(true);
+                          // 바로 저장하지 않고 로그인 시에만 저장
                         },
                       ),
                       const SizedBox(height: 14),
@@ -376,9 +374,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           Checkbox(
                             value: _autoLogin,
                             onChanged: (value) {
-                              setState(() {
-                                _autoLogin = value ?? false;
-                              });
+                              if (value != null && value != _autoLogin) {
+                                setState(() {
+                                  _autoLogin = value;
+                                });
+                              }
                             },
                           ),
                           Text(
@@ -393,10 +393,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           Checkbox(
                             value: _saveId,
                             onChanged: (value) {
-                              setState(() {
-                                _saveId = value ?? false;
-                              });
-                              _saveIdPref(value ?? false);
+                              if (value != null && value != _saveId) {
+                                setState(() {
+                                  _saveId = value;
+                                });
+                                _saveIdPref(value);
+                              }
                             },
                           ),
                           Text(

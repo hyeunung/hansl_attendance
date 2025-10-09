@@ -30,7 +30,6 @@ serve(async (req) => {
     const results = [];
 
     for (const year of years) {
-      console.log(`Processing year ${year}...`);
       
       // 음력-양력 변환으로 정확한 공휴일 계산
       const holidays = calculateKoreanHolidays(year);
@@ -92,9 +91,6 @@ serve(async (req) => {
     }
 
     // 성공 메시지와 통계
-    console.log(`✅ 공휴일 자동 동기화 완료`);
-    console.log(`📊 추가: ${totalInserted}개, 업데이트: ${totalUpdated}개, 건너뜀: ${totalSkipped}개`);
-    console.log(`📅 처리된 연도: ${years.join(', ')}`);
 
     return new Response(
       JSON.stringify({

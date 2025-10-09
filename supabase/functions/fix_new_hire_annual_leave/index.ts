@@ -17,7 +17,6 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    console.log('🔄 신입 직원 연차 수정 시작...')
 
     // 1. 현재 올해 입사자들 확인
     const currentYear = new Date().getFullYear()
@@ -32,7 +31,6 @@ Deno.serve(async (req) => {
       throw new Error(`직원 조회 실패: ${fetchError.message}`)
     }
 
-    console.log(`📋 ${currentYear}년 입사자 ${currentYearEmployees?.length || 0}명 발견`)
 
     let updatedCount = 0
     const results = []
@@ -66,7 +64,6 @@ Deno.serve(async (req) => {
             error: updateError.message
           })
         } else {
-          console.log(`✅ ${employee.name}: ${employee.annual_leave_granted_current_year} → ${calculatedLeave}`)
           updatedCount++
           results.push({
             employee: employee.name,
@@ -77,7 +74,6 @@ Deno.serve(async (req) => {
           })
         }
       } else {
-        console.log(`ℹ️ ${employee.name}: 이미 올바른 연차(${calculatedLeave})`)
         results.push({
           employee: employee.name,
           email: employee.email,
@@ -95,8 +91,6 @@ Deno.serve(async (req) => {
       results
     }
 
-    console.log('🎉 신입 직원 연차 수정 완료!')
-    console.log(response)
 
     return new Response(
       JSON.stringify(response),

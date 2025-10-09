@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'logger.dart';
 
 /// 전역 에러 처리 유틸리티
 class ErrorHandler {
@@ -12,7 +11,7 @@ class ErrorHandler {
     bool showSnackBar = true,
   }) async {
     // 로깅
-    AppLogger.error('에러 발생', error, stackTrace);
+    // Debug code removed
 
     // 사용자 메시지 결정
     final message = userMessage ?? _getErrorMessage(error);
@@ -89,7 +88,7 @@ class ErrorHandler {
   /// 네트워크 에러 처리
   static Future<void> _handleNetworkError(BuildContext context) async {
     // 네트워크 상태 확인 로직
-    AppLogger.warning('네트워크 에러 감지됨');
+    // Debug code removed
 
     // 재시도 옵션 제공
     if (context.mounted) {
@@ -113,14 +112,14 @@ class ErrorHandler {
 
       if (retry == true) {
         // 재시도 로직 구현
-        AppLogger.info('네트워크 재시도 요청');
+        // Debug code removed
       }
     }
   }
 
   /// 인증 에러 처리
   static Future<void> _handleAuthError(BuildContext context) async {
-    AppLogger.warning('인증 에러 감지됨');
+    // Debug code removed
 
     if (context.mounted) {
       // 로그인 화면으로 이동

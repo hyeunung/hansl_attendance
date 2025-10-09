@@ -6,6 +6,9 @@ class NotificationProvider with ChangeNotifier {
   int _unreadCount = 0;
   List<Map<String, dynamic>> _notifications = [];
   bool _isLoading = false;
+  String? error;
+  
+  // Debug logging function removed
 
   int get unreadCount => _unreadCount;
   List<Map<String, dynamic>> get notifications => _notifications;
@@ -35,14 +38,10 @@ class NotificationProvider with ChangeNotifier {
       _notifications = List<Map<String, dynamic>>.from(response);
       _updateUnreadCount();
     } catch (e) {
-      // notifications 테이블이 없는 경우 빈 목록 유지
+      // Debug code removed
+      error = '알림을 불러오는 중 오류가 발생했습니다';
       _notifications = [];
       _unreadCount = 0;
-
-      if (kDebugMode && !e.toString().contains('42P01')) {
-        // 테이블이 없는 에러(42P01)가 아닌 경우에만 로그 출력
-        debugPrint('❌ 알림 로드 실패: $e');
-      }
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -52,9 +51,7 @@ class NotificationProvider with ChangeNotifier {
   // 읽지 않은 알림 개수 업데이트
   void _updateUnreadCount() {
     _unreadCount = _notifications.where((n) => n['is_read'] == false).length;
-    if (kDebugMode) {
-      if (kDebugMode) print('🔔 읽지 않은 알림: $_unreadCount개');
-    }
+    // Debug code removed
   }
 
   // 알림을 읽음으로 표시
@@ -77,9 +74,9 @@ class NotificationProvider with ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      if (kDebugMode) {
-        if (kDebugMode) print('❌ 읽음 처리 실패: $e');
-      }
+      // Debug code removed
+      error = '알림 읽음 처리 중 오류가 발생했습니다';
+      notifyListeners();
     }
   }
 
@@ -109,13 +106,11 @@ class NotificationProvider with ChangeNotifier {
       _updateUnreadCount();
       notifyListeners();
 
-      if (kDebugMode) {
-        if (kDebugMode) print('✅ 모든 알림을 읽음으로 표시');
-      }
+      // Debug code removed
     } catch (e) {
-      if (kDebugMode) {
-        if (kDebugMode) print('❌ 모두 읽음 처리 실패: $e');
-      }
+      // Debug code removed
+      error = '모든 알림 읽음 처리 중 오류가 발생했습니다';
+      notifyListeners();
     }
   }
 
@@ -128,13 +123,11 @@ class NotificationProvider with ChangeNotifier {
       _updateUnreadCount();
       notifyListeners();
 
-      if (kDebugMode) {
-        if (kDebugMode) print('✅ 알림 삭제 완료');
-      }
+      // Debug code removed
     } catch (e) {
-      if (kDebugMode) {
-        if (kDebugMode) print('❌ 알림 삭제 실패: $e');
-      }
+      // Debug code removed
+      error = '알림 삭제 중 오류가 발생했습니다';
+      notifyListeners();
     }
   }
 
@@ -156,9 +149,7 @@ class NotificationProvider with ChangeNotifier {
               value: user.email,
             ),
             callback: (payload) {
-              if (kDebugMode) {
-                if (kDebugMode) print('🔔 새 알림 수신: ${payload.newRecord}');
-              }
+              // Debug code removed
               // 새 알림을 목록 맨 앞에 추가
               _notifications.insert(0, payload.newRecord);
               _updateUnreadCount();
@@ -169,8 +160,8 @@ class NotificationProvider with ChangeNotifier {
     } catch (e) {
       // 테이블이 없는 경우 무시
       if (kDebugMode && !e.toString().contains('42P01')) {
-        debugPrint('❌ 실시간 구독 설정 실패: $e');
-      }
+        // Debug print removed
+}
     }
   }
 

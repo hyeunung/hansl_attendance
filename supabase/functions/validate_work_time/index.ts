@@ -37,7 +37,6 @@ serve(async (req) => {
     const currentMinute = kstTime.getMinutes();
     const dayOfWeek = kstTime.getDay(); // 0 = Sunday, 6 = Saturday
 
-    console.log(`Time validation: ${action} at ${currentHour}:${currentMinute} KST for employee ${employeeId}`);
 
     let isValid = true;
     let isLate = false;
@@ -68,7 +67,6 @@ serve(async (req) => {
           
           if (leaves && leaves.length > 0) {
             hasHalfAm = true;
-            console.log(`Employee ${employee.email} has half_am leave today`);
           }
         }
       } catch (err) {
@@ -93,7 +91,6 @@ serve(async (req) => {
         }
       }
       
-      console.log(`Clock in validation: Hour=${currentHour}, Minute=${currentMinute}, HasHalfAm=${hasHalfAm}, IsLate=${isLate}, IsValid=${isValid}`);
     } else if (action === 'clockOut') {
       // 퇴근 시간 검증
       // 기본적으로 제한 없음 (필요시 추가 가능)

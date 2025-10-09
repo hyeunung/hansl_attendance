@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../../providers/leave_provider.dart';
 import '../../theme/app_colors.dart';
@@ -39,13 +38,7 @@ class _CalendarScreenState extends State<CalendarScreen>
         await provider.fetchHolidays(forceRefresh: true);
 
         // 디버그 로그
-        if (kDebugMode) {
-          print('📅 CalendarScreen initState - 전체 데이터 로드 시도');
-          print(
-            '📅 현재 달력용 승인된 leave 개수: ${provider.approvedLeavesForCalendar.length}',
-          );
-          print('🎆 공휴일 데이터: ${provider.holidays.length}개');
-        }
+        // Debug code removed
       }
     });
   }
@@ -97,18 +90,7 @@ class _CalendarScreenState extends State<CalendarScreen>
         final allLeaves = provider.approvedLeavesForCalendar; // 승인된 것만
 
         // 디버그 로그 추가
-        if (kDebugMode) {
-          print('📅 달력 화면 - 승인 화면용 leave 수: ${provider.allLeaves.length}');
-          print('📅 달력 화면 - 달력용 승인된 leave 수: ${allLeaves.length}');
-          if (allLeaves.isNotEmpty) {
-            print('📅 최근 승인된 연차/출장:');
-            allLeaves.take(5).forEach((leave) {
-              print(
-                '  - ${leave['name']} (${leave['user_email']}): ${leave['type']} | ${leave['start_date']} ~ ${leave['end_date']}',
-              );
-            });
-          }
-        }
+        // Debug code removed
         final days = _daysInMonth(_focusedMonth);
         final firstWeekday = days.first.weekday % 7; // 일요일=0
         final totalCells = days.length + firstWeekday;

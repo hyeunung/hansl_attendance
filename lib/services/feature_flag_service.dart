@@ -1,5 +1,4 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:hansl/utils/logger.dart';
 
 /// Feature Flag 관리 서비스
 /// 점진적 롤아웃과 A/B 테스팅을 위한 기능 플래그 시스템
@@ -27,10 +26,10 @@ class FeatureFlagService {
   Future<void> initialize() async {
     try {
       _prefs = await SharedPreferences.getInstance();
-      AppLogger.info('Feature Flag Service 초기화 완료');
+      // Debug code removed
       _logCurrentFlags();
     } catch (e) {
-      AppLogger.error('Feature Flag Service 초기화 실패', e);
+      // Debug code removed
     }
   }
 
@@ -57,22 +56,22 @@ class FeatureFlagService {
   Future<void> setFlag(String flag, bool value) async {
     try {
       await _prefs?.setBool(flag, value);
-      AppLogger.info('Feature Flag 설정: $flag = $value');
+      // Debug code removed
     } catch (e) {
-      AppLogger.error('Feature Flag 설정 실패: $flag', e);
+      // Debug code removed
     }
   }
 
   /// 플래그 오버라이드 (테스트용)
   void override(String flag, bool value) {
     _overrides[flag] = value;
-    AppLogger.debug('Feature Flag 오버라이드: $flag = $value');
+    // Debug code removed
   }
 
   /// 오버라이드 초기화
   void clearOverrides() {
     _overrides.clear();
-    AppLogger.debug('모든 Feature Flag 오버라이드 제거');
+    // Debug code removed
   }
 
   /// A/B 테스트 그룹 결정
@@ -91,9 +90,7 @@ class FeatureFlagService {
     final userPercentage = hash.abs() % 100;
 
     final result = userPercentage < percentage;
-    AppLogger.debug(
-      'A/B 테스트: $userId -> $userPercentage% (threshold: $percentage%) = $result',
-    );
+    // Debug code removed
 
     return result;
   }
@@ -108,7 +105,7 @@ class FeatureFlagService {
   Future<void> setRolloutPercentage(String flag, int percentage) async {
     final key = '${flag}_rollout_percentage';
     await _prefs?.setInt(key, percentage.clamp(0, 100));
-    AppLogger.info('롤아웃 비율 설정: $flag = $percentage%');
+    // Debug code removed
   }
 
   /// 현재 활성화된 플래그 목록
@@ -136,8 +133,8 @@ class FeatureFlagService {
 
   /// 현재 플래그 상태 로깅
   void _logCurrentFlags() {
-    final flags = getAllFlags();
-    AppLogger.debug('현재 Feature Flags:', flags);
+    // final flags = getAllFlags();
+    // Debug code removed
   }
 
   /// 플래그 상태 초기화 (개발/테스트용)
@@ -148,7 +145,7 @@ class FeatureFlagService {
       }
     }
     _overrides.clear();
-    AppLogger.info('모든 Feature Flags를 기본값으로 초기화');
+    // Debug code removed
   }
 }
 

@@ -21,7 +21,7 @@ class AssetManager {
 
   /// Initialize asset management (call in main.dart)
   static Future<void> initialize(BuildContext context) async {
-    debugPrint('AssetManager: Initializing...');
+    // Debug print removed
 
     // Configure image cache for optimal performance
     ImagePreloader.configureImageCache(
@@ -32,7 +32,7 @@ class AssetManager {
     // Preload critical assets
     await ImagePreloader.preloadCriticalAssets(context);
 
-    debugPrint('AssetManager: Initialization complete');
+    // Debug print removed
   }
 
   /// Check if an asset exists before loading
@@ -41,7 +41,7 @@ class AssetManager {
       await rootBundle.load(assetPath);
       return true;
     } catch (e) {
-      debugPrint('AssetManager: Asset not found - $assetPath');
+      // Debug print removed
       return false;
     }
   }
@@ -57,7 +57,7 @@ class AssetManager {
       _instance._loadedAssets.add(assetPath);
       return data;
     } catch (e) {
-      debugPrint('AssetManager: Failed to load asset - $assetPath: $e');
+      // Debug print removed
       return null;
     }
   }
@@ -85,7 +85,7 @@ class AssetManager {
 
   /// Clean up resources and clear caches
   static void dispose() {
-    debugPrint('AssetManager: Disposing resources...');
+    // Debug print removed
     ImagePreloader.clearPreloadCache();
     _instance._loadedAssets.clear();
   }
@@ -125,7 +125,6 @@ class AssetManager {
   }
 
   static int _calculateFontSizes() {
-    // Font sizes in bytes (approximate)
     return 396 * 1024 + // NotoSans-Black.otf
         388 * 1024 + // NotoSans-Bold.otf
         388 * 1024 + // NotoSans-DemiLight.otf

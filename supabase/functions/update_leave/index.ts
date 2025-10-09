@@ -59,7 +59,6 @@ serve(async (req) => {
     }
 
     const adminName = employee.name || user.email?.split('@')[0];
-    console.log(`관리자 ${adminName}(${user.email})가 연차/출장 수정 시작: ID=${leaveId}`);
 
     // 기존 연차 정보 조회
     const { data: oldLeave, error: fetchError } = await supabase
@@ -89,72 +88,9 @@ serve(async (req) => {
       throw new Error(`수정 실패: ${updateError.message}`);
     }
 
-    console.log(`✅ 연차/출장 수정 완료: ID=${leaveId}`);
 
-    // FCM 푸시 알림 전송 (상태가 변경된 경우)
-    if (oldLeave.status !== status || oldLeave.type !== type || 
-        oldLeave.start_date !== startDate || oldLeave.end_date !== endDate) {
-      try {
-        const { data: requester } = await supabase
-          .from('employees')
-          .select('name, fcm_token')
-          .eq('email', oldLeave.user_email)
-          .single();
-
-        if (requester?.fcm_token) {
-          const typeText = {
-            'annual': '연차',
-            'half_am': '오전반차',
-            'half_pm': '오후반차',
-            'official': '공가',
-            'biztrip': '출장'
-          }[type] || type;
-
-          const statusText = {
-            'approved': '승인',
-            'rejected': '반려',
-            'pending': '대기'
-          }[status] || status;
-
-          let title = `${typeText} 수정 알림`;
-          let body = `${startDate} ~ ${endDate}\n`;
-          
-          if (oldLeave.status !== status) {
-            const oldStatusText = {
-              'approved': '승인',
-              'rejected': '반려',
-              'pending': '대기'
-            }[oldLeave.status] || oldLeave.status;
-            body += `상태: ${oldStatusText} → ${statusText}`;
-          } else if (oldLeave.start_date !== startDate || oldLeave.end_date !== endDate) {
-            body += `날짜가 변경되었습니다.`;
-          } else {
-            body += `내용이 수정되었습니다.`;
-          }
-          body += `\n(수정자: ${adminName})`;
-
-          // FCM 푸시 알림 전송 (통일된 함수명 사용)
-          await supabase.functions.invoke('send_fcm_notification', {
-            body: {
-              type: 'user',
-              user_email: oldLeave.user_email,
-              title: title,
-              body: body,
-              data: {
-                type: 'leave_updated',
-                leaveId: leaveId.toString(),
-                status: status
-              }
-            }
-          });
-
-          console.log(`✅ FCM 푸시 알림 전송 완료: ${requester.name}`);
-        }
-      } catch (fcmError) {
-        console.error('FCM 알림 전송 실패:', fcmError);
-        // FCM 실패는 무시하고 계속 진행
-      }
-    }
+    // FCM 알림은 이제 DB 트리거(leave_update_notification)에서 자동으로 처리됨
+    // Edge Function에서는 알림을 보내지 않음 (중복 방지)
 
     return new Response(
       JSON.stringify({

@@ -7,6 +7,9 @@ import 'package:provider/provider.dart';
 /// UI optimization service for efficient rendering and state management
 /// Provides intelligent widget rebuilding, performance monitoring, and memory management
 class UIOptimizationService {
+  
+  // Debug logging function removed
+  
   static final UIOptimizationService _instance =
       UIOptimizationService._internal();
   static UIOptimizationService get instance => _instance;
@@ -61,13 +64,7 @@ class UIOptimizationService {
       _pendingCallbacks[componentKey] = callback;
       _preventedRebuilds++;
 
-      if (kDebugMode) {
-        if (kDebugMode) {
-          print(
-            '⏳ Throttled rebuild for $componentKey (saved $_preventedRebuilds rebuilds)',
-          );
-        }
-      }
+      // Debug code removed
     }
   }
 
@@ -82,11 +79,7 @@ class UIOptimizationService {
       try {
         callback();
       } catch (e) {
-        if (kDebugMode) {
-          if (kDebugMode) {
-            print('❌ Error in throttled callback for $componentKey: $e');
-          }
-        }
+        // Debug code removed
       }
     });
   }
@@ -258,11 +251,7 @@ class UIOptimizationService {
     _componentReferences.removeWhere((key, ref) => ref.target == null);
 
     if (kDebugMode && expiredComponents.isNotEmpty) {
-      if (kDebugMode) {
-        print(
-          '🧹 Cleaned up ${expiredComponents.length} expired UI components',
-        );
-      }
+      // Debug code removed
     }
   }
 
@@ -289,6 +278,7 @@ class UIOptimizationService {
 
 /// Optimized builder widget that manages rebuild throttling
 class _OptimizedBuilder extends StatefulWidget {
+  
   final String componentKey;
   final Widget Function() builder;
   final Duration? throttleDuration;
@@ -305,6 +295,7 @@ class _OptimizedBuilder extends StatefulWidget {
 }
 
 class _OptimizedBuilderState extends State<_OptimizedBuilder> {
+  
   Widget? _cachedWidget;
   DateTime? _lastBuildTime;
 
@@ -387,6 +378,7 @@ mixin UIOptimizationMixin<T extends StatefulWidget> on State<T> {
 
 /// Optimized Consumer wrapper for selective rebuilds
 class OptimizedConsumer<T extends ChangeNotifier> extends StatelessWidget {
+  
   final Widget Function(BuildContext context, T provider, Widget? child)
   builder;
   final String componentKey;
@@ -427,6 +419,7 @@ class OptimizedConsumer<T extends ChangeNotifier> extends StatelessWidget {
 
 /// Optimized ListView for better performance with large datasets
 class OptimizedListView extends StatelessWidget {
+  
   final int itemCount;
   final Widget Function(BuildContext context, int index) itemBuilder;
   final ScrollController? controller;
@@ -466,6 +459,7 @@ class OptimizedListView extends StatelessWidget {
 
 /// Optimized AnimatedBuilder for smooth animations
 class OptimizedAnimatedBuilder extends StatelessWidget {
+  
   final Animation<double> animation;
   final Widget Function(BuildContext context, Widget? child) builder;
   final Widget? child;

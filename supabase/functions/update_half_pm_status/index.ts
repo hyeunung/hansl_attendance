@@ -7,7 +7,6 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-console.log("Update Half PM Status Function Started")
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,11 +33,9 @@ async function updateHalfPmStatus() {
   const currentHour = kstDate.getHours()
   const currentMinute = kstDate.getMinutes()
   
-  console.log(`🕐 Processing date: ${today} ${currentHour}:${currentMinute} (KST)`)
 
   // 4. 12:30 이후에만 실행
   if (currentHour < 12 || (currentHour === 12 && currentMinute < 30)) {
-    console.log('⏰ Not yet 12:30 PM, skipping update')
     return {
       success: true,
       message: 'Not yet 12:30 PM, no updates needed',
@@ -62,7 +59,6 @@ async function updateHalfPmStatus() {
     }
 
     if (!halfPmLeaves || halfPmLeaves.length === 0) {
-      console.log('✅ No half_pm leaves for today')
       return {
         success: true,
         message: 'No half_pm leaves for today',
@@ -70,7 +66,6 @@ async function updateHalfPmStatus() {
       }
     }
 
-    console.log(`🏖️ Found ${halfPmLeaves.length} approved half_pm leaves for today`)
 
     // 6. 오후반차 직원들의 출근 기록 업데이트
     let updatedCount = 0
@@ -110,14 +105,11 @@ async function updateHalfPmStatus() {
           console.error(`Failed to update record for ${userEmail}: ${updateError.message}`)
         } else {
           updatedCount++
-          console.log(`✅ Updated ${userEmail} to 오후반차 status with clock_out at 12:30`)
         }
       } else {
-        console.log(`⏭️ Skipping ${userEmail} - not clocked in or already on leave`)
       }
     }
 
-    console.log(`✅ Successfully updated ${updatedCount} records to 오후반차 status`)
     
     return {
       success: true,
@@ -140,7 +132,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log(`🚀 Starting half PM status update process...`)
     const result = await updateHalfPmStatus()
     
     return new Response(

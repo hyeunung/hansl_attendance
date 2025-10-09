@@ -46,3 +46,24 @@ app.*.map.json
 
 # Environment variables (contains sensitive API keys)
 .env
+.env.*
+*.env
+.env.local
+.env.production
+.env.development
+
+# Firebase configuration
+google-services.json
+GoogleService-Info.plist
+
+# iOS certificates and provisioning profiles
+*.p12
+*.p8
+*.mobileprovision
+*.cer
+
+# Backup files
+*.bak
+*-E
+*.backup
+*.tmp

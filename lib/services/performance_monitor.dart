@@ -1,9 +1,10 @@
-import 'package:flutter/foundation.dart';
-import 'package:hansl/utils/logger.dart';
 
 /// 간단한 성능 모니터링 서비스
 /// Feature Flag 마이그레이션을 위한 성능 추적
 class PerformanceMonitor {
+  
+  // Debug logging function removed
+  
   static final Map<String, List<Duration>> _metrics = {};
   static final Map<String, DateTime> _activeTrackers = {};
 
@@ -28,18 +29,11 @@ class PerformanceMonitor {
 
     // 느린 화면 로드 경고
     if (loadTime.inMilliseconds > 500) {
-      AppLogger.warning('느린 화면 로드 감지', {
-        'screen': screenName,
-        'duration_ms': loadTime.inMilliseconds,
-      });
+      // Debug code removed
     }
 
     // 개발 모드에서는 콘솔에도 출력
-    if (kDebugMode) {
-      if (kDebugMode) {
-        print('📊 Screen Load: $screenName - ${loadTime.inMilliseconds}ms');
-      }
-    }
+    // Debug code removed
   }
 
   /// 사용자 액션 추적
@@ -48,10 +42,7 @@ class PerformanceMonitor {
 
     // 느린 액션 경고
     if (duration.inMilliseconds > 1000) {
-      AppLogger.warning('느린 사용자 액션 감지', {
-        'action': action,
-        'duration_ms': duration.inMilliseconds,
-      });
+      // Debug code removed
     }
   }
 

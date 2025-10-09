@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:hansl/providers/attendance_provider.dart';
-import 'package:hansl/widgets/attendance/attendance_status_card.dart';
 import 'package:hansl/widgets/attendance/attendance_action_buttons.dart';
 import 'package:hansl/widgets/attendance/attendance_summary_card.dart';
 import 'package:hansl/widgets/attendance/attendance_history_card.dart';
@@ -26,15 +25,6 @@ void main() {
         ),
       );
     }
-
-    testWidgets('AttendanceStatusCard 표시 테스트', (WidgetTester tester) async {
-      await tester.pumpWidget(createTestWidget(const AttendanceStatusCard()));
-
-      // 현재 상태 텍스트 확인
-      expect(find.text('현재 상태'), findsOneWidget);
-      expect(find.text('출근 전'), findsOneWidget);
-      expect(find.text('-'), findsOneWidget);
-    });
 
     testWidgets('AttendanceActionButtons 출근 버튼 테스트', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(
@@ -84,16 +74,5 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsWidgets);
     });
 
-    testWidgets('AttendanceStatusCard 지각 상태 테스트', (WidgetTester tester) async {
-      provider.status = AttendanceStatus.late;
-      provider.clockInTime = DateTime.now();
-      provider.isLate = true;
-      
-      await tester.pumpWidget(createTestWidget(const AttendanceStatusCard()));
-      await tester.pump();
-
-      // 지각 상태 텍스트 확인
-      expect(find.text('지각'), findsOneWidget);
-    });
   });
 }

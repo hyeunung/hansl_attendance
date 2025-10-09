@@ -82,11 +82,6 @@ class _SplashScreenState extends State<SplashScreen>
                   ],
                 ),
               ),
-              SizedBox(height: ResponsiveUtils.spacing(context, 20)),
-              CircularProgressIndicator(
-                color: AppColors.primary,
-                strokeWidth: 3,
-              ),
             ],
           ),
         ),

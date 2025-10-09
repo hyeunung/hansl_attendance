@@ -68,7 +68,6 @@ class LeaveValidators {
       return '최소 1일 이상 선택해주세요';
     }
 
-    // 미래 날짜만 선택 가능 (오늘 포함)
     final today = DateTime.now();
     final todayOnly = DateTime(today.year, today.month, today.day);
 
@@ -80,7 +79,6 @@ class LeaveValidators {
       }
     }
 
-    // 최대 연속 신청 일수 체크 (30일)
     for (var dates in selectedDates.values) {
       if (dates.isNotEmpty) {
         final sortedDates = dates.toList()..sort();

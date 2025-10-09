@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hansl/services/feature_flag_service.dart';
 import 'package:hansl/services/performance_monitor.dart';
-import 'package:hansl/utils/logger.dart';
 import 'annual_leave_request_screen_optimized.dart';
 import 'business_trip_request_screen_optimized.dart';
 
@@ -28,7 +27,7 @@ class _LeaveScreenRouterState extends State<LeaveScreenRouter> {
         ? 'optimized'
         : 'original';
 
-    AppLogger.info('연차 신청 화면 라우팅: $_screenVersion');
+    // Debug code removed
   }
 
   @override
@@ -76,7 +75,6 @@ class _LeaveScreenRouterState extends State<LeaveScreenRouter> {
   }
 
   Widget _buildScreen() {
-    // 리팩토링된 화면만 사용 (기존 화면 삭제됨)
     return const AnnualLeaveRequestScreenOptimized();
   }
 }
@@ -104,7 +102,7 @@ class _BusinessTripScreenRouterState extends State<BusinessTripScreenRouter> {
         ? 'refactored'
         : 'original';
 
-    AppLogger.info('출장 신청 화면 라우팅: $_screenVersion');
+    // Debug code removed
   }
 
   @override
@@ -152,7 +150,6 @@ class _BusinessTripScreenRouterState extends State<BusinessTripScreenRouter> {
   }
 
   Widget _buildScreen() {
-    // 리팩토링된 화면만 사용 (기존 화면 삭제됨)
     return const BusinessTripRequestScreenOptimized();
   }
 }

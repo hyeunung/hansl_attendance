@@ -39,7 +39,6 @@ serve(async (req) => {
       throw new Error('leaveId is required');
     }
 
-    console.log('Delete request:', { leaveId, userEmail, isAdmin });
 
     // isAdmin이 true인 경우, 실제 권한 확인
     if (isAdmin) {
@@ -99,62 +98,9 @@ serve(async (req) => {
       );
     }
 
-    console.log('Successfully deleted:', deletedData);
 
-    // FCM 푸시 알림 전송 (관리자가 삭제한 경우만)
-    if (isAdmin && deletedData && deletedData.length > 0) {
-      // 관리자(삭제 수행자) 정보 조회
-      const { data: adminInfo } = await supabase
-        .from('employees')
-        .select('name')
-        .eq('email', user.email)
-        .single();
-      
-      const adminName = adminInfo?.name || user.email?.split('@')[0] || '관리자';
-
-      for (const leave of deletedData) {
-        try {
-          // 삭제된 연차의 신청자 정보 조회
-          const { data: requester } = await supabase
-            .from('employees')
-            .select('name, fcm_token')
-            .eq('email', leave.user_email)
-            .single();
-
-          if (requester?.fcm_token) {
-            const typeText = {
-              'annual': '연차',
-              'half_am': '오전반차',
-              'half_pm': '오후반차',
-              'official': '공가',
-              'biztrip': '출장'
-            }[leave.type] || leave.type;
-
-            const title = `${typeText} 삭제 알림`;
-            const body = `${leave.start_date} ~ ${leave.end_date}\n${adminName}님이 삭제하였습니다.`;
-
-            // FCM 푸시 알림 전송 (통일된 함수명 사용)
-            await supabase.functions.invoke('send_fcm_notification', {
-              body: {
-                type: 'user',
-                user_email: leave.user_email,
-                title: title,
-                body: body,
-                data: {
-                  type: 'leave_deleted',
-                  leaveId: leave.id.toString()
-                }
-              }
-            });
-
-            console.log(`✅ FCM 푸시 알림 전송 완료: ${requester.name}`);
-          }
-        } catch (fcmError) {
-          console.error('FCM 알림 전송 실패:', fcmError);
-          // FCM 실패는 무시하고 계속 진행
-        }
-      }
-    }
+    // FCM 알림은 이제 DB 트리거(leave_delete_notification)에서 자동으로 처리됨
+    // Edge Function에서는 알림을 보내지 않음 (중복 방지)
 
     return new Response(
       JSON.stringify({ 

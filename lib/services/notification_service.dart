@@ -22,19 +22,13 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     final type = message.data['type'] ?? 'unknown';
 
     if (kDebugMode) {
-      if (kDebugMode) print('📨 백그라운드 메시지 수신:');
-      if (kDebugMode) print('   메시지 ID: ${message.messageId}');
-      if (kDebugMode) print('   제목: $title');
-      if (kDebugMode) print('   내용: $body');
-      if (kDebugMode) print('   타입: $type');
-      if (kDebugMode) print('   데이터: ${message.data}');
-      if (kDebugMode) print('   수신 시간: ${DateTime.now().toIso8601String()}');
+      // Debug code removed
     }
 
     // TODO: 백그라운드에서 필요한 추가 처리 (예: 로컬 DB 업데이트)
   } catch (e) {
     if (kDebugMode) {
-      if (kDebugMode) print('❌ 백그라운드 메시지 처리 실패: $e');
+      // Debug code removed
     }
   }
 }
@@ -80,11 +74,11 @@ class NotificationService {
       _setupMessageListeners();
 
       if (kDebugMode) {
-        if (kDebugMode) print('🔔 Firebase 알림 서비스 초기화 완료');
+        // Debug code removed
       }
     } catch (e) {
       if (kDebugMode) {
-        if (kDebugMode) print('❌ Firebase 알림 서비스 초기화 실패: $e');
+        // Debug code removed
       }
     }
   }
@@ -103,16 +97,16 @@ class NotificationService {
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
       if (kDebugMode) {
-        if (kDebugMode) print('✅ 알림 권한 허용됨');
+        // Debug code removed
       }
     } else if (settings.authorizationStatus ==
         AuthorizationStatus.provisional) {
       if (kDebugMode) {
-        if (kDebugMode) print('⚠️ 임시 알림 권한 허용됨');
+        // Debug code removed
       }
     } else {
       if (kDebugMode) {
-        if (kDebugMode) print('❌ 알림 권한 거부됨');
+        // Debug code removed
       }
     }
   }
@@ -123,7 +117,7 @@ class NotificationService {
       // iOS에서 APNS 토큰 처리 (필수)
       if (Platform.isIOS) {
         if (kDebugMode) {
-          if (kDebugMode) print('📱 iOS 플랫폼 감지 - APNS 토큰 확인...');
+        // Debug code removed
         }
 
         try {
@@ -136,21 +130,21 @@ class NotificationService {
           if (apnsToken != null) {
             if (kDebugMode) {
               if (kDebugMode) {
-                print('✅ APNS 토큰 설정됨: ${apnsToken.substring(0, 20)}...');
+                // Debug code removed
               }
-              if (kDebugMode) print('✅ iOS 푸시 알림 사용 가능');
+        // Debug code removed
             }
           } else {
             if (kDebugMode) {
-              if (kDebugMode) print('⚠️ APNS 토큰 없음');
-              if (kDebugMode) print('📱 실제 iPhone에서 테스트하거나 알림 권한을 확인하세요');
-              if (kDebugMode) print('📱 시뮬레이터에서는 푸시 알림을 받을 수 없습니다');
+        // Debug code removed
+        // Debug code removed
+        // Debug code removed
             }
 
             // 실제 기기에서 추가 시도
             if (!kIsWeb) {
               if (kDebugMode) {
-                if (kDebugMode) print('🔄 APNS 토큰 추가 시도...');
+        // Debug code removed
               }
               await Future.delayed(const Duration(seconds: 2));
               apnsToken = await _messaging.getAPNSToken();
@@ -158,7 +152,7 @@ class NotificationService {
               if (apnsToken != null) {
                 if (kDebugMode) {
                   if (kDebugMode) {
-                    print('✅ APNS 토큰 지연 생성됨: ${apnsToken.substring(0, 20)}...');
+                    // Debug code removed
                   }
                 }
               }
@@ -166,8 +160,8 @@ class NotificationService {
           }
         } catch (apnsError) {
           if (kDebugMode) {
-            if (kDebugMode) print('❌ APNS 토큰 오류: $apnsError');
-            if (kDebugMode) print('📱 iOS 푸시 알림이 작동하지 않을 수 있습니다');
+        // Debug code removed
+        // Debug code removed
           }
         }
       }
@@ -178,7 +172,7 @@ class NotificationService {
 
         if (_fcmToken != null) {
           if (kDebugMode) {
-            if (kDebugMode) print('🔑 FCM 토큰 성공: $_fcmToken');
+        // Debug code removed
           }
 
           // SharedPreferences에 토큰 저장
@@ -189,19 +183,19 @@ class NotificationService {
           await _sendTokenToServer(_fcmToken!);
         } else {
           if (kDebugMode) {
-            if (kDebugMode) print('❌ FCM 토큰이 null - 재시도');
+        // Debug code removed
           }
           await _retryGetToken();
         }
       } catch (fcmError) {
         if (kDebugMode) {
-          if (kDebugMode) print('❌ FCM 토큰 오류: $fcmError - 재시도');
+        // Debug code removed
         }
         await _retryGetToken();
       }
     } catch (e) {
       if (kDebugMode) {
-        if (kDebugMode) print('❌ 토큰 가져오기 전체 실패: $e');
+        // Debug code removed
       }
       await _retryGetToken();
     }
@@ -210,7 +204,7 @@ class NotificationService {
   /// FCM 토큰 가져오기 재시도
   static Future<void> _retryGetToken() async {
     if (kDebugMode) {
-      if (kDebugMode) print('🔄 FCM 토큰 재시도 시작...');
+        // Debug code removed
     }
 
     try {
@@ -221,7 +215,7 @@ class NotificationService {
 
       if (_fcmToken != null) {
         if (kDebugMode) {
-          if (kDebugMode) print('✅ FCM 토큰 재시도 성공: $_fcmToken');
+        // Debug code removed
         }
 
         final prefs = await SharedPreferences.getInstance();
@@ -229,14 +223,14 @@ class NotificationService {
         await _sendTokenToServer(_fcmToken!);
       } else {
         if (kDebugMode) {
-          if (kDebugMode) print('❌ FCM 토큰 재시도도 null - 토큰 갱신 대기');
+        // Debug code removed
         }
         // onTokenRefresh 리스너는 이미 _setupMessageListeners에서 설정됨
       }
     } catch (retryError) {
       if (kDebugMode) {
-        if (kDebugMode) print('❌ FCM 토큰 재시도 실패: $retryError');
-        if (kDebugMode) print('📝 토큰은 나중에 onTokenRefresh에서 처리됩니다.');
+        // Debug code removed
+        // Debug code removed
       }
     }
   }
@@ -268,23 +262,23 @@ class NotificationService {
       onDidReceiveNotificationResponse: (NotificationResponse response) {
         // 알림 탭 핸들링
         if (kDebugMode) {
-          if (kDebugMode) print('🔔 로컬 알림 탭: ${response.payload}');
+        // Debug code removed
         }
         _handleLocalNotificationTap(response.payload);
       },
     );
 
     if (kDebugMode) {
-      if (kDebugMode) print('✅ 로컬 알림 초기화 완료');
+        // Debug code removed
     }
   }
 
   /// 포그라운드 알림 설정
   static Future<void> _configureForegroundNotification() async {
     await _messaging.setForegroundNotificationPresentationOptions(
-      alert: true,
+      alert: false,  // FCM 자동 알림 비활성화 (로컬 알림으로 처리)
       badge: true,
-      sound: true,
+      sound: false,  // 소리도 로컬 알림에서 처리
     );
   }
 
@@ -294,7 +288,7 @@ class NotificationService {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       if (kDebugMode) {
         if (kDebugMode) {
-          print('📱 포그라운드 메시지 수신: ${message.notification?.title}');
+          // Debug code removed
         }
       }
       _showLocalNotification(message);
@@ -303,7 +297,7 @@ class NotificationService {
     // 앱이 백그라운드에서 열릴 때 (알림 탭)
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       if (kDebugMode) {
-        if (kDebugMode) print('🔔 알림 탭으로 앱 열림: ${message.notification?.title}');
+        // Debug code removed
       }
       _handleNotificationTap(message);
     });
@@ -311,7 +305,7 @@ class NotificationService {
     // 토큰 갱신 리스너
     _messaging.onTokenRefresh.listen((String token) {
       if (kDebugMode) {
-        if (kDebugMode) print('🔄 FCM 토큰 갱신: $token');
+        // Debug code removed
       }
       _fcmToken = token;
 
@@ -332,11 +326,11 @@ class NotificationService {
       final type = message.data['type'] ?? 'unknown';
 
       if (kDebugMode) {
-        if (kDebugMode) print('📢 포그라운드 알림 표시:');
-        if (kDebugMode) print('   제목: $title');
-        if (kDebugMode) print('   내용: $body');
-        if (kDebugMode) print('   타입: $type');
-        if (kDebugMode) print('   데이터: ${message.data}');
+        // Debug code removed
+        // Debug code removed
+        // Debug code removed
+        // Debug code removed
+        // Debug code removed
       }
 
       // 알림 수신 이벤트 로깅
@@ -389,11 +383,11 @@ class NotificationService {
       );
 
       if (kDebugMode) {
-        if (kDebugMode) print('✅ 포그라운드 알림 표시 완료');
+        // Debug code removed
       }
     } catch (e) {
       if (kDebugMode) {
-        if (kDebugMode) print('❌ 로컬 알림 표시 실패: $e');
+        // Debug code removed
       }
     }
   }
@@ -405,7 +399,7 @@ class NotificationService {
     try {
       final data = jsonDecode(payload) as Map<String, dynamic>;
       if (kDebugMode) {
-        if (kDebugMode) print('👆 로컬 알림 탭 처리: $data');
+        // Debug code removed
       }
 
       // RemoteMessage와 비슷한 형식으로 변환
@@ -413,7 +407,7 @@ class NotificationService {
       _handleNotificationTap(message);
     } catch (e) {
       if (kDebugMode) {
-        if (kDebugMode) print('❌ 로컬 알림 payload 파싱 실패: $e');
+        // Debug code removed
       }
     }
   }
@@ -421,7 +415,7 @@ class NotificationService {
   /// 알림 탭 처리
   static void _handleNotificationTap(RemoteMessage message) async {
     if (kDebugMode) {
-      if (kDebugMode) print('👆 알림 탭 처리: ${message.data}');
+        // Debug code removed
     }
 
     try {
@@ -433,7 +427,7 @@ class NotificationService {
       final context = navigatorKey.currentContext;
       if (context == null) {
         if (kDebugMode) {
-          if (kDebugMode) print('❌ NavigatorKey context가 null입니다.');
+        // Debug code removed
         }
         return;
       }
@@ -444,9 +438,9 @@ class NotificationService {
           // 연차/출장 신청 알림 - 관리자는 승인 탭으로 바로 이동
           if (kDebugMode) {
             if (kDebugMode) {
-              print('📅 ${type == 'business_trip' ? '출장' : '연차'} 신청 알림');
+              // Debug code removed
             }
-            if (kDebugMode) print('   신청자: $requesterName ($requesterEmail)');
+        // Debug code removed
           }
 
           // 현재 사용자의 권한 확인을 위해 Supabase에서 직접 조회
@@ -480,7 +474,7 @@ class NotificationService {
               if (hasApprovalRole) {
                 // 관리자는 승인 탭(index 2)으로 바로 이동 - 연차/출장 탭(0)
                 if (kDebugMode) {
-                  if (kDebugMode) print('✅ 관리자 권한 확인 - 승인 탭(연차/출장)으로 이동');
+        // Debug code removed
                 }
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(
@@ -494,7 +488,7 @@ class NotificationService {
               } else {
                 // 일반 사용자는 홈 탭으로 이동
                 if (kDebugMode) {
-                  if (kDebugMode) print('📱 일반 사용자 - 홈 화면으로 이동');
+        // Debug code removed
                 }
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(
@@ -507,7 +501,7 @@ class NotificationService {
           } catch (e) {
             // 오류 시 기본 홈 화면으로
             if (kDebugMode) {
-              if (kDebugMode) print('⚠️ 권한 확인 실패, 홈으로 이동: $e');
+        // Debug code removed
             }
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(
@@ -521,7 +515,7 @@ class NotificationService {
         case 'leave_result':
           // 승인/반려 결과 알림 - 연차 현황 화면으로 이동
           if (kDebugMode) {
-            if (kDebugMode) print('📋 승인/반려 결과 알림 - 연차 현황 화면으로 이동');
+        // Debug code removed
           }
 
           // MainTab으로 이동하고 연차 탭(index 1) 선택
@@ -533,15 +527,15 @@ class NotificationService {
           );
           break;
 
-        case 'new_purchase_request':
+        case 'purchase_requests':
         case 'final_approval_request':
         case 'purchase_approval':
           // 발주 관련 알림 - 권한에 따라 발주 승인 탭 또는 홈으로 이동
           if (kDebugMode) {
-            if (kDebugMode) print('📦 발주 관련 알림 처리');
-            if (kDebugMode) print('   타입: $type');
+        // Debug code removed
+        // Debug code removed
             if (kDebugMode) {
-              print('   발주번호: ${message.data['purchase_order_number']}');
+              // Debug code removed
             }
           }
 
@@ -573,7 +567,7 @@ class NotificationService {
               if (hasApprovalRole) {
                 // 발주 승인 권한이 있는 사용자는 승인관리 탭(index 2)으로 이동 - 발주승인 탭(1)
                 if (kDebugMode) {
-                  if (kDebugMode) print('✅ 발주 승인 권한 확인 - 승인관리 탭(발주승인)으로 이동');
+        // Debug code removed
                 }
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(
@@ -587,7 +581,7 @@ class NotificationService {
               } else {
                 // 일반 사용자는 홈 탭으로 이동
                 if (kDebugMode) {
-                  if (kDebugMode) print('📱 일반 사용자 - 홈 화면으로 이동');
+        // Debug code removed
                 }
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(
@@ -600,7 +594,7 @@ class NotificationService {
           } catch (e) {
             // 오류 시 기본 홈 화면으로
             if (kDebugMode) {
-              if (kDebugMode) print('⚠️ 권한 확인 실패, 홈으로 이동: $e');
+        // Debug code removed
             }
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(
@@ -615,7 +609,7 @@ class NotificationService {
         case 'purchase_result':
           // 발주 승인/반려 결과 알림 - 홈 화면으로 이동
           if (kDebugMode) {
-            if (kDebugMode) print('📋 발주 결과 알림 - 홈 화면으로 이동');
+        // Debug code removed
           }
 
           Navigator.of(context).pushAndRemoveUntil(
@@ -631,7 +625,7 @@ class NotificationService {
         case 'multiple_notifications':
           // 그룹 알림 클릭 시 알림 센터로 이동
           if (kDebugMode) {
-            if (kDebugMode) print('📬 알림 센터로 이동 (그룹 알림)');
+        // Debug code removed
           }
 
           Navigator.of(context).pushAndRemoveUntil(
@@ -645,7 +639,7 @@ class NotificationService {
         default:
           // 기본 홈 화면으로 이동
           if (kDebugMode) {
-            if (kDebugMode) print('🏠 기본 홈 화면으로 이동 (알림 타입: $type)');
+        // Debug code removed
           }
 
           // MainTab으로 이동하고 홈 탭(index 0) 선택
@@ -661,7 +655,7 @@ class NotificationService {
       _logNotificationEvent('tap', message);
     } catch (e) {
       if (kDebugMode) {
-        if (kDebugMode) print('❌ 알림 탭 처리 중 오류: $e');
+        // Debug code removed
       }
     }
   }
@@ -677,12 +671,12 @@ class NotificationService {
         'title': message.notification?.title,
       };
       if (kDebugMode) {
-        if (kDebugMode) print('📊 알림 이벤트 로그: $eventData');
+        // Debug code removed
       }
       // TODO: 실제 분석 서버로 로그 전송 구현
     } catch (e) {
       if (kDebugMode) {
-        if (kDebugMode) print('❌ 알림 이벤트 로깅 실패: $e');
+        // Debug code removed
       }
     }
   }
@@ -693,13 +687,13 @@ class NotificationService {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) {
         if (kDebugMode) {
-          if (kDebugMode) print('❌ 로그인된 사용자가 없어서 토큰 저장 불가');
+        // Debug code removed
         }
         return;
       }
 
       if (kDebugMode) {
-        if (kDebugMode) print('📤 서버에 토큰 전송: $token');
+        // Debug code removed
       }
 
       // Supabase에 FCM 토큰 저장
@@ -709,11 +703,11 @@ class NotificationService {
           .eq('email', user.email!);
 
       if (kDebugMode) {
-        if (kDebugMode) print('✅ FCM 토큰 저장 완료: ${user.email}');
+        // Debug code removed
       }
     } catch (e) {
       if (kDebugMode) {
-        if (kDebugMode) print('❌ 서버에 토큰 전송 실패: $e');
+        // Debug code removed
       }
     }
   }
@@ -730,6 +724,13 @@ class NotificationService {
     bool isManagerRequest = false,
   }) async {
     try {
+      // Debug code removed
+      // Debug code removed
+      // Debug code removed
+      // Debug code removed
+      // Debug code removed
+      // Debug code removed
+      
       final projectId = 'qvhbigvdfyvhoegkhvef'; // 원래 프로젝트 ID로 복원
       final functionUrl =
           'https://$projectId.supabase.co/functions/v1/send_fcm_notification';
@@ -746,10 +747,11 @@ class NotificationService {
         'is_manager_request': isManagerRequest,
       };
 
-      if (kDebugMode) {
-        if (kDebugMode) print('📮 Edge Function 호출: $type - $title');
-      }
+      // Debug code removed
+      // Debug code removed
 
+      // Debug code removed
+      
       final response = await http.post(
         Uri.parse(functionUrl),
         headers: {
@@ -760,36 +762,25 @@ class NotificationService {
         body: jsonEncode(requestData),
       );
 
+      // Debug code removed
+      // Debug code removed
+      
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         if (responseData['success'] == true) {
-          if (kDebugMode) {
-            if (kDebugMode) {
-              print('✅ Edge Function 알림 전송 성공: ${responseData['message']}');
-            }
-          }
+      // Debug code removed
           return true;
         } else {
-          if (kDebugMode) {
-            if (kDebugMode) {
-              print('❌ Edge Function 알림 전송 실패: ${responseData['message']}');
-            }
-          }
+      // Debug code removed
           return false;
         }
       } else {
-        if (kDebugMode) {
-          if (kDebugMode) {
-            print(
-              '❌ Edge Function 호출 실패: ${response.statusCode} - ${response.body}',
-            );
-          }
-        }
+      // Debug code removed
         return false;
       }
     } catch (e) {
       if (kDebugMode) {
-        if (kDebugMode) print('❌ Edge Function 호출 중 오류: $e');
+        // Debug code removed
       }
       return false;
     }
@@ -804,26 +795,33 @@ class NotificationService {
     final key = '${userEmail}_${title}_$type';
     final now = DateTime.now();
 
+      // Debug code removed
+      // Debug code removed
+    
     if (_recentNotifications.containsKey(key)) {
       final lastSent = _recentNotifications[key]!;
       final secondsElapsed = now.difference(lastSent).inSeconds;
 
+      // Debug code removed
+      // Debug code removed
+      
       if (secondsElapsed < _duplicatePreventionSeconds) {
+      // Debug code removed
         if (kDebugMode) {
-          if (kDebugMode) {
-            print('🚫 중복 알림 차단: $title ($secondsElapsed초 전에 전송됨)');
-          }
+          // Debug code removed
         }
         return true;
       }
     }
 
     // 기록 저장 및 5분 이상 된 기록 정리
+      // Debug code removed
     _recentNotifications[key] = now;
     _recentNotifications.removeWhere(
       (key, timestamp) => now.difference(timestamp).inMinutes > 5,
     );
 
+      // Debug code removed
     return false;
   }
 
@@ -837,6 +835,17 @@ class NotificationService {
     bool isManagerRequest = false,
   }) async {
     try {
+      // Debug code removed
+      // Debug code removed
+      // Debug code removed
+      // Debug code removed
+      // Debug code removed
+      // Debug code removed
+      // Debug code removed
+      // Debug code removed
+      // Debug code removed
+      // Debug code removed
+      
       // 중복 알림 방지 체크
       final notificationType = data['type'] ?? 'admin';
       if (_isDuplicateNotification(
@@ -844,19 +853,11 @@ class NotificationService {
         title,
         notificationType,
       )) {
-        if (kDebugMode) {
-          if (kDebugMode) print('⏩ 중복 알림으로 전송 건너뜀: $title');
-        }
+      // Debug code removed
         return;
       }
 
-      if (kDebugMode) {
-        if (kDebugMode) {
-          print(
-            '📮 ${isManagerRequest ? 'Admin' : '부서 관리자'}에게 알림 전송 시작: $title',
-          );
-        }
-      }
+      // Debug code removed
 
       await _callFCMEdgeFunction(
         type: 'admin',
@@ -868,14 +869,14 @@ class NotificationService {
         isManagerRequest: isManagerRequest,
       ).catchError((error) {
         if (kDebugMode) {
-          print('⚠️ FCM 전송 실패 (계속 진행): $error');
+          // Debug code removed
         }
         // FCM 실패해도 프로세스는 계속 진행
         return false;
       });
     } catch (e) {
       if (kDebugMode) {
-        if (kDebugMode) print('❌ 알림 전송 실패: $e');
+        // Debug code removed
       }
       rethrow;
     }
@@ -893,13 +894,13 @@ class NotificationService {
       final notificationType = data['type'] ?? 'user';
       if (_isDuplicateNotification(userEmail, title, notificationType)) {
         if (kDebugMode) {
-          if (kDebugMode) print('⏩ 중복 알림으로 전송 건너뜀: $title');
+        // Debug code removed
         }
         return;
       }
 
       if (kDebugMode) {
-        if (kDebugMode) print('📮 $userEmail 사용자에게 알림 전송 시작: $title');
+        // Debug code removed
       }
 
       await _callFCMEdgeFunction(
@@ -910,14 +911,14 @@ class NotificationService {
         userEmail: userEmail,
       ).catchError((error) {
         if (kDebugMode) {
-          print('⚠️ FCM 전송 실패 (계속 진행): $error');
+          // Debug code removed
         }
         // FCM 실패해도 프로세스는 계속 진행
         return false;
       });
     } catch (e) {
       if (kDebugMode) {
-        if (kDebugMode) print('❌ 사용자 알림 전송 실패: $e');
+        // Debug code removed
       }
       rethrow;
     }
@@ -953,11 +954,11 @@ class NotificationService {
       }
 
       if (kDebugMode) {
-        print('🔢 iOS 배지 카운트 업데이트: $unreadCount');
+        // Debug code removed
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ 배지 카운트 업데이트 실패: $e');
+        // Debug code removed
       }
     }
   }
@@ -975,11 +976,11 @@ class NotificationService {
       }
 
       if (kDebugMode) {
-        print('🔢 배지 카운트 초기화');
+        // Debug code removed
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ 배지 카운트 초기화 실패: $e');
+        // Debug code removed
       }
     }
   }
@@ -989,17 +990,17 @@ class NotificationService {
     try {
       if (_fcmToken != null) {
         if (kDebugMode) {
-          if (kDebugMode) print('🔄 로그인 후 FCM 토큰 재저장 시작');
+        // Debug code removed
         }
         await _sendTokenToServer(_fcmToken!);
       } else {
         if (kDebugMode) {
-          if (kDebugMode) print('⚠️ FCM 토큰이 없어서 재저장 불가');
+        // Debug code removed
         }
       }
     } catch (e) {
       if (kDebugMode) {
-        if (kDebugMode) print('❌ 로그인 후 FCM 토큰 재저장 실패: $e');
+        // Debug code removed
       }
     }
   }

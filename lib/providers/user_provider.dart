@@ -25,9 +25,7 @@ class UserProvider extends ChangeNotifier {
 
   void setEmail(String? email) {
     _email = email;
-    if (kDebugMode) {
-      print('📧 UserProvider: email 설정 = $email');
-    }
+    // Debug code removed
     notifyListeners();
   }
 
@@ -39,12 +37,7 @@ class UserProvider extends ChangeNotifier {
     _id = id;
     _name = name;
     _email = email;
-    if (kDebugMode) {
-      print('👤 UserProvider: 사용자 정보 설정');
-      print('  - ID: $id');
-      print('  - Name: $name');
-      print('  - Email: $email');
-    }
+    // Debug code removed
     notifyListeners();
   }
 

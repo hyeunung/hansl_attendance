@@ -42,7 +42,7 @@ class _LeaveTypeSelectorWidgetState extends State<LeaveTypeSelectorWidget> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [AppShadows.card],
+              boxShadow: AppShadows.cardShadow,
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthFlowType, FlutterAuthClientOptions, Supabase, AuthState, AuthChangeEvent;
 import 'package:firebase_core/firebase_core.dart';
@@ -9,10 +9,10 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart';
 import 'theme/app_theme.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/auth/reset_password_screen.dart';
 import 'screens/main_tab.dart';
 import 'screens/splash/splash_screen.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'providers/user_provider.dart';
 import 'providers/leave_provider.dart';
 import 'providers/font_provider.dart';
@@ -20,118 +20,92 @@ import 'providers/attendance_provider.dart';
 import 'providers/notification_provider.dart';
 import 'providers/purchase_provider.dart';
 import 'services/notification_service.dart';
+import 'services/purchase_notification_listener.dart';
 import 'services/performance_initialization.dart';
-import 'services/environment_service.dart';
 import 'services/secure_storage_service.dart';
 import 'services/feature_flag_service.dart';
 import 'services/badge_count_service.dart';
-// import 'services/attendance_notification_service.dart'; // 백그라운드 위치 기능 제거
 import 'screens/attendance/attendance_screen_optimized.dart';
 
-// 글로벌 네비게이터 키 (알림에서 네비게이션용)
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
-  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
-  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // 화면 회전 비활성화 - 세로 모드만 허용
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+  // FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding); // 비활성화 - Flutter SplashScreen 사용
 
   // Initialize date formatting for Korean locale
   await initializeDateFormatting('ko_KR', null);
 
-  // 초기화를 먼저 완료한 후 앱 실행 (세션 유지를 위해)
-  await _initializeServices();
-  
-  // 앱 실행
-  runApp(const HanslApp());
-}
-
-Future<void> _initializeServices() async {
+  // 환경변수 먼저 로드
   try {
-    // Supabase가 이미 초기화되었는지 확인
-    bool isSupabaseInitialized = false;
-    try {
-      // Supabase.instance에 접근 가능하면 이미 초기화됨
-      final _ = Supabase.instance.client;
-      isSupabaseInitialized = true;
-      if (kDebugMode) {
-        debugPrint('✅ Supabase already initialized');
-        // 핫리로드 시에도 세션 체크
-        final currentSession = Supabase.instance.client.auth.currentSession;
-        debugPrint('🔐 Hot reload - 현재 세션: ${currentSession != null ? "유지됨" : "없음"}');
-      }
-    } catch (e) {
-      // 초기화되지 않았으므로 초기화 필요
-      isSupabaseInitialized = false;
-    }
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    // Failed to load .env file, using defaults
+  }
 
-    // 병렬로 초기화 작업 수행
-    final futures = <Future>[];
-    
+  // 필수 서비스만 빠르게 초기화
+  try {
     // Firebase 초기화
-    futures.add(Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform));
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    // Firebase initialized
     
-    // Supabase는 초기화되지 않았을 때만 초기화
-    if (!isSupabaseInitialized) {
-      futures.add(
-        Supabase.initialize(
-          url: 'https://qvhbigvdfyvhoegkhvef.supabase.co',
-          anonKey:
-              'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2aGJpZ3ZkZnl2aG9lZ2todmVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc4MTQzNjAsImV4cCI6MjA2MzM5MDM2MH0.7VZlSwnNuE0MaQpDjuzeZFgjJrDBQOWA_COyqaM8Rbg',
-          authOptions: const FlutterAuthClientOptions(
-            authFlowType: AuthFlowType.pkce,
-            autoRefreshToken: true,
-          ),
+    // Supabase 초기화 체크
+    bool needsSupabaseInit = true;
+    try {
+      final _ = Supabase.instance.client;
+      needsSupabaseInit = false;
+      // Supabase already initialized
+    } catch (e) {
+      needsSupabaseInit = true;
+    }
+    
+    // Supabase 초기화
+    if (needsSupabaseInit) {
+      await Supabase.initialize(
+        url: dotenv.env['SUPABASE_URL'] ?? 'https://qvhbigvdfyvhoegkhvef.supabase.co',
+        anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? 
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2aGJpZ3ZkZnl2aG9lZ2todmVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc4MTQzNjAsImV4cCI6MjA2MzM5MDM2MH0.7VZlSwnNuE0MaQpDjuzeZFgjJrDBQOWA_COyqaM8Rbg',
+        authOptions: const FlutterAuthClientOptions(
+          authFlowType: AuthFlowType.pkce,
+          autoRefreshToken: true,
         ),
       );
+      // Supabase initialized
     }
-    
-    await Future.wait(futures);
-
-    if (kDebugMode) {
-      debugPrint('✅ Firebase & Supabase initialized successfully');
-    }
-
-    // 나머지 초기화는 순차적으로 (빠르게 처리됨)
-    try {
-      // .env 파일 직접 로드
-      await dotenv.load(fileName: ".env");
-      if (kDebugMode) {
-        print('✅ .env file loaded');
-      }
-
-      // EnvironmentService는 선택적으로 초기화
-      try {
-        await EnvironmentService.initialize();
-      } catch (e) {
-        // EnvironmentService 에러는 무시하고 계속 진행
-        if (kDebugMode) {
-          print('⚠️ EnvironmentService init failed, but continuing: $e');
-        }
-      }
-
-      await SecureStorageService.migrateFromSharedPreferences();
-    } catch (e) {
-      if (kDebugMode) {
-        print('⚠️ Environment service initialization failed: $e');
-      }
-    }
-
-    await NotificationService.initialize();
-    await PerformanceInitialization.initialize();
-
-    // Feature Flag 서비스 초기화
-    await FeatureFlagService().initialize();
-
-    // 출퇴근 알림 서비스 비활성화 (백그라운드 위치 기능 제거)
-    // await AttendanceNotificationService.initialize();
-    // await AttendanceNotificationService.startLocationBasedCheckInReminder();
-    // await AttendanceNotificationService.scheduleCheckOutReminder();
   } catch (e) {
-    if (kDebugMode) {
-      print('❌ Critical initialization error: $e');
-    }
+    // Initialization failed
+  }
+
+  // 앱 실행
+  runApp(const HanslApp());
+  
+  // 앱이 실행된 후에 나머지 서비스 초기화
+  Future.delayed(const Duration(milliseconds: 100), () async {
+    await _initializeOtherServices();
+  });
+}
+
+
+// 나머지 서비스 초기화 (릴리즈 모드용)
+Future<void> _initializeOtherServices() async {
+  try {
+    await NotificationService.initialize();
+    await SecureStorageService.migrateFromSharedPreferences();
+    PurchaseNotificationListener.startListening();
+    await PerformanceInitialization.initialize();
+    await FeatureFlagService().initialize();
+  } catch (e) {
+    // Other service initialization failed
   }
 }
+
+
 
 class HanslApp extends StatefulWidget {
   const HanslApp({super.key});
@@ -144,6 +118,7 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
   Widget? _initialScreen; // null로 시작 (스플래시 화면 표시)
   late final StreamSubscription<AuthState> _authStateSubscription;
   bool _isInitialized = false; // 초기화 완료 여부
+  bool _showSplash = true; // 스플래시 화면 표시 여부
 
   @override
   void initState() {
@@ -153,12 +128,9 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
     // Auth state change listener 설정
     _setupAuthListener();
 
-    // 네이티브 스플래시를 즉시 제거 (Flutter 화면이 준비되면 바로 보이도록)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      FlutterNativeSplash.remove();
-    });
+    // 스플래시 화면 제거는 _checkAuthAndRoute가 완료된 후에 처리됨
+    // 여기서는 제거하지 않음
 
-    // 즉시 인증 체크 시작 (1.5초 스플래시 표시하면서)
     _checkAuthAndRoute();
   }
 
@@ -168,19 +140,8 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
           final event = data.event;
           final session = data.session;
 
-          if (kDebugMode) {
-            print('🔐 Auth state changed: $event');
-            print('🔐 Session: ${session != null ? "있음" : "없음"}');
-          }
-
           // 초기화가 완료된 후에만 auth 변경에 반응
           if (!_isInitialized) {
-            // 초기 세션 복원 이벤트 처리
-            if (event == AuthChangeEvent.initialSession && session != null) {
-              if (kDebugMode) {
-                print('📱 초기 세션 복원됨!');
-              }
-            }
             return;
           }
 
@@ -188,9 +149,6 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
           if ((event == AuthChangeEvent.signedIn || 
                event == AuthChangeEvent.tokenRefreshed) && 
               session != null) {
-            if (kDebugMode) {
-              print('✅ 세션 복원/로그인 감지 - 메인 화면으로');
-            }
             
             // employee 정보 로드
             try {
@@ -203,33 +161,36 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
                     .maybeSingle();
                     
                 if (employee != null && mounted) {
-                  setState(() {
-                    _initialScreen = MainTab(initialEmployee: employee);
-                  });
+                  // 이전 화면과 다를 때만 setState 호출
+                  if (_initialScreen is! MainTab) {
+                    setState(() {
+                      _initialScreen = MainTab(initialEmployee: employee);
+                    });
+                  }
                 }
               }
             } catch (e) {
-              if (kDebugMode) {
-                print('❌ Employee 정보 로드 실패: $e');
-              }
+              // Employee loading failed
             }
           }
           // 로그아웃 또는 토큰 만료 시 로그인 화면으로
           else if (event == AuthChangeEvent.signedOut ||
               (event == AuthChangeEvent.tokenRefreshed && session == null)) {
             if (mounted) {
-              setState(() {
-                _initialScreen = const LoginScreen();
-              });
+              // 이전 화면과 다를 때만 setState 호출
+              if (_initialScreen is! LoginScreen) {
+                setState(() {
+                  _initialScreen = const LoginScreen();
+                });
+              }
             }
           }
         });
   }
 
   Future<void> _checkAuthAndRoute() async {
-    debugPrint('🎬 앱 시작 - 인증 체크 시작');
     
-    // 1.5초 스플래시 표시와 동시에 인증 체크 진행
+    // 최소 1.5초는 스플래시 화면 표시 (자연스러운 전환을 위해)
     final splashFuture = Future.delayed(const Duration(milliseconds: 1500));
     final authCheckFuture = _performAuthCheck();
     
@@ -237,57 +198,40 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
     final results = await Future.wait([splashFuture, authCheckFuture]);
     final authResult = results[1] as Map<String, dynamic>?;
     
-    debugPrint('⏰ 인증 체크 완료');
+    // 다음 화면 미리 준비
+    if (authResult != null) {
+      _initialScreen = MainTab(key: const ValueKey('main'), initialEmployee: authResult);
+    } else {
+      _initialScreen = const LoginScreen(key: ValueKey('login'));
+    }
     
-    // 인증 결과에 따라 화면 설정
+    // 화면 준비 완료 후 부드러운 전환
     if (mounted) {
       setState(() {
-        if (authResult != null) {
-          // 인증 성공 - 메인 화면으로
-          debugPrint('✅ 자동 로그인 성공 - 메인 화면으로');
-          _initialScreen = MainTab(initialEmployee: authResult);
-        } else {
-          // 인증 실패 - 로그인 화면으로
-          debugPrint('❌ 자동 로그인 실패 - 로그인 화면으로');
-          _initialScreen = const LoginScreen();
-        }
         _isInitialized = true;
+        // 동시에 페이드 아웃 시작
+        _showSplash = false;
       });
     }
   }
 
   Future<Map<String, dynamic>?> _performAuthCheck() async {
     try {
-      debugPrint('🔍 세션 체크 중...');
       
       // Supabase 세션 체크
       final session = Supabase.instance.client.auth.currentSession;
       if (session == null) {
-        debugPrint('❌ 세션 없음');
         return null;
       }
       
-      debugPrint('📱 세션 존재');
       
-      // 세션 정보 디버깅
-      if (kDebugMode) {
-        final expiresAt = session.expiresAt;
-        if (expiresAt != null) {
-          final expiryDate = DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000);
-          final now = DateTime.now();
-          final remaining = expiryDate.difference(now);
-          debugPrint('⏰ 세션 만료 시간: $expiryDate (남은 시간: ${remaining.inMinutes}분)');
-        }
-      }
       
       // 이메일 체크
       final email = session.user.email;
       if (email == null) {
-        debugPrint('❌ 이메일 없음');
         return null;
       }
       
-      debugPrint('📧 이메일: $email');
       
       // Employee 정보 조회
       final employee = await Supabase.instance.client
@@ -297,16 +241,14 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
           .maybeSingle();
           
       if (employee == null) {
-        debugPrint('❌ 직원 정보 없음');
         await Supabase.instance.client.auth.signOut();
         return null;
       }
       
-      debugPrint('✅ 직원 정보 확인');
       return employee;
       
     } catch (e) {
-      debugPrint('❌ 인증 체크 에러: $e');
+      // 인증 체크 에러
       return null;
     }
   }
@@ -319,6 +261,8 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
     PerformanceInitialization.dispose();
     // 배지 카운트 구독 해제
     BadgeCountService.removeSubscriptions();
+    // 발주 알림 리스너 중지
+    PurchaseNotificationListener.stopListening();
     super.dispose();
   }
 
@@ -330,7 +274,7 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
       switch (state) {
         case AppLifecycleState.paused:
           // App goes to background - perform maintenance
-          PerformanceInitialization.performMaintenance();
+          PerformanceInitialization.performMaintenance().catchError((e) => {});
           break;
         case AppLifecycleState.resumed:
           // App comes to foreground - log current stats
@@ -344,18 +288,18 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint(
-      '🖼️ Build 호출 - _initialScreen: ${_initialScreen != null ? "설정됨" : "null (스플래시 표시)"}',
-      );
-    debugPrint('🔑 _isInitialized: $_isInitialized');
     
     // 디버깅 모드에서 핫리로드 시 세션 체크
     if (_isInitialized && _initialScreen is MainTab) {
       final session = Supabase.instance.client.auth.currentSession;
-      if (session == null) {
-        debugPrint('🔴 핫리로드 감지 - 세션 없음, 로그인 화면으로 변경');
-        setState(() {
-          _initialScreen = const LoginScreen();
+      if (session == null && _initialScreen is! LoginScreen) {
+        // build 메서드 내에서 setState 호출 방지
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _initialScreen = const LoginScreen();
+            });
+          }
         });
       }
     }
@@ -370,6 +314,18 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
         ChangeNotifierProxyProvider<UserProvider, AttendanceProvider>(
           create: (_) => AttendanceProvider(userId: '', userName: ''),
           update: (context, userProvider, attendanceProvider) {
+            // 기존 provider가 있고, userId가 변경되지 않았다면 그대로 사용
+            if (attendanceProvider != null &&
+                attendanceProvider.userId == (userProvider.id ?? '')) {
+              // email만 업데이트
+              if (userProvider.email != null && 
+                  attendanceProvider.userEmail != userProvider.email) {
+                attendanceProvider.setUserEmail(userProvider.email!);
+              }
+              return attendanceProvider;
+            }
+            
+            // userId가 변경되었거나 provider가 없는 경우에만 새로 생성
             if (userProvider.id != null && userProvider.name != null) {
               final provider = AttendanceProvider(
                 userId: userProvider.id!,
@@ -381,6 +337,7 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
               }
               return provider;
             }
+            
             return attendanceProvider ??
                 AttendanceProvider(userId: '', userName: '');
           },
@@ -399,6 +356,17 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
         ],
         // routes 제거 - onGenerateRoute에서만 처리
         onGenerateRoute: (settings) {
+          // 비밀번호 재설정 페이지 라우트
+          // Supabase 비밀번호 재설정 콜백 처리
+          if (settings.name == '/auth-callback' ||
+              settings.name?.contains('#access_token') == true ||
+              settings.name?.contains('type=recovery') == true) {
+            // Supabase가 자동으로 토큰을 처리하므로 바로 비밀번호 재설정 화면으로
+            return MaterialPageRoute(
+              builder: (context) => const ResetPasswordScreen(),
+            );
+          }
+          
           // 알림에서 전달받은 arguments 처리
           if (settings.name == '/attendance') {
             // 로그인 체크
@@ -420,9 +388,26 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
           }
           return null;
         },
-        home: !_isInitialized 
-            ? const SplashScreen()  // 초기화 전에는 스플래시
-            : _initialScreen ?? const LoginScreen(), // 초기화 후: 설정된 화면 또는 로그인
+        home: Stack(
+          children: [
+            // 실제 화면 (아래층) - 먼저 배치하여 준비
+            if (_isInitialized && _initialScreen != null)
+              AnimatedOpacity(
+                opacity: _showSplash ? 0.0 : 1.0,
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeIn,
+                child: _initialScreen!,
+              ),
+            // 스플래시 화면 (위층) - 페이드 아웃
+            if (_showSplash)
+              AnimatedOpacity(
+                opacity: _showSplash ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeOut,
+                child: const SplashScreen(),
+              ),
+          ],
+        ),
         debugShowCheckedModeBanner: false,
       ),
     );

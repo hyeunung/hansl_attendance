@@ -61,8 +61,6 @@ Deno.serve(async (req) => {
       }
     }) || []
 
-    console.log(`✅ 승인 화면용 전체 leave 조회 완료: ${enrichedLeaves.length}건`)
-    console.log(`  - Pending: ${enrichedLeaves.filter(l => l.status === 'pending').length}건`)
 
     return new Response(
       JSON.stringify({
