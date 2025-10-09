@@ -13,7 +13,6 @@ class ResponsiveUtils {
     return MediaQuery.of(context).size.height;
   }
 
-  // iPhone 16 Pro Max (440px)를 기준으로 스케일링
   static double getScaleFactor(BuildContext context) {
     final screenWidth = getScreenWidth(context);
     final baseWidth = 440.0; // iPhone 16 Pro Max 기준

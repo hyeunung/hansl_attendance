@@ -1,10 +1,10 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// 보안 데이터 저장소 서비스
 /// 민감한 데이터는 암호화하여 저장, 일반 데이터는 SharedPreferences 사용
 class SecureStorageService {
+  
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
     iOptions: IOSOptions(
@@ -12,7 +12,6 @@ class SecureStorageService {
     ),
   );
 
-  // 민감한 데이터 키들 (암호화 저장)
   static const Set<String> _sensitiveKeys = {
     'user_token',
     'refresh_token',
@@ -38,9 +37,7 @@ class SecureStorageService {
         await prefs.setString(key, value);
       }
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('❌ SecureStorageService write error for key "$key": $e');
-      }
+      // Debug code removed
       rethrow;
     }
   }
@@ -57,9 +54,7 @@ class SecureStorageService {
         return prefs.getString(key);
       }
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('❌ SecureStorageService read error for key "$key": $e');
-      }
+      // Debug code removed
       return null;
     }
   }
@@ -76,9 +71,7 @@ class SecureStorageService {
         await prefs.remove(key);
       }
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('❌ SecureStorageService delete error for key "$key": $e');
-      }
+      // Debug code removed
     }
   }
 
@@ -92,7 +85,6 @@ class SecureStorageService {
       final prefs = await SharedPreferences.getInstance();
       final keys = prefs.getKeys();
 
-      // 앱에서 사용하는 키들만 삭제 (시스템 키는 보존)
       final appKeys = keys.where(
         (key) =>
             key.startsWith('hansl_') ||
@@ -106,8 +98,8 @@ class SecureStorageService {
         await prefs.remove(key);
       }
     } catch (e) {
-      if (kDebugMode) debugPrint('❌ SecureStorageService deleteAll error: $e');
-    }
+      // Debug removed
+}
   }
 
   /// 보안 저장소 사용 가능 여부 확인
@@ -116,8 +108,8 @@ class SecureStorageService {
       await _secureStorage.read(key: 'test_key');
       return true;
     } catch (e) {
-      if (kDebugMode) debugPrint('⚠️ SecureStorage not available: $e');
-      return false;
+      // Debug removed
+return false;
     }
   }
 
@@ -139,12 +131,12 @@ class SecureStorageService {
           await _secureStorage.write(key: key, value: value);
           // SharedPreferences에서 삭제
           await prefs.remove(key);
-          if (kDebugMode) debugPrint('✅ Migrated "$key" to secure storage');
-        }
+          // Debug removed
+}
       }
     } catch (e) {
-      if (kDebugMode) debugPrint('❌ Migration error: $e');
-    }
+      // Debug removed
+}
   }
 
   /// 저장된 데이터 진단 (개발용)

@@ -11,7 +11,6 @@ class AttendanceScreenRouter extends StatelessWidget {
   Widget build(BuildContext context) {
     final stopwatch = Stopwatch()..start();
 
-    // 리팩토링된 화면만 사용 (기존 화면 삭제됨)
     Widget screen = const AttendanceScreenOptimized();
 
     PerformanceMonitor.trackScreenLoad(

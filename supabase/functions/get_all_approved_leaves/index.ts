@@ -60,7 +60,6 @@ Deno.serve(async (req) => {
       }
     }) || []
 
-    console.log(`✅ 달력용 승인된 leave 조회 완료: ${enrichedLeaves.length}건`)
 
     return new Response(
       JSON.stringify({

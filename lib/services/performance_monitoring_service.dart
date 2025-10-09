@@ -4,12 +4,15 @@ import 'package:flutter/foundation.dart';
 import 'cache_service.dart';
 import 'timer_manager.dart';
 import 'ui_optimization_service.dart';
-import 'async_operation_manager.dart';
+import 'async_operation_manager.dart' as async_ops;
 import 'database_optimization_service.dart';
 
 /// 종합 성능 모니터링 서비스
 /// 실시간으로 앱 성능을 추적하고 분석하여 최적화 기회를 제공
 class PerformanceMonitoringService {
+  
+  // Debug logging function removed
+  
   static final PerformanceMonitoringService _instance =
       PerformanceMonitoringService._internal();
   static PerformanceMonitoringService get instance => _instance;
@@ -39,13 +42,7 @@ class PerformanceMonitoringService {
       await _takePerformanceSnapshot();
     });
 
-    if (kDebugMode) {
-      if (kDebugMode) {
-        print(
-          '🔍 Performance monitoring started - snapshots every ${_snapshotInterval.inSeconds}s',
-        );
-      }
-    }
+    // Debug code removed
   }
 
   /// 성능 모니터링 중지
@@ -56,9 +53,7 @@ class PerformanceMonitoringService {
     _monitoringTimer?.cancel();
     _monitoringTimer = null;
 
-    if (kDebugMode) {
-      if (kDebugMode) print('🛑 Performance monitoring stopped');
-    }
+    // Debug code removed
   }
 
   /// 메트릭 초기화
@@ -123,11 +118,10 @@ class PerformanceMonitoringService {
       final cacheStats = CacheService.instance.getCacheStats();
       final timerStats = TimerManager.instance.getStats();
       final uiStats = UIOptimizationService.instance.getUIPerformanceStats();
-      final asyncStats = AsyncOperationManager.instance.getStats();
+      final asyncStats = async_ops.AsyncOperationManager.instance.getStats();
       final dbStats = DatabaseOptimizationService.instance
           .getPerformanceStats();
 
-      // 메모리 사용량 (시뮬레이션 - 실제로는 플랫폼별 구현 필요)
       final memoryUsage = await _getMemoryUsage();
       final frameRate = await _getFrameRate();
 
@@ -152,9 +146,7 @@ class PerformanceMonitoringService {
       _addSnapshot(snapshot);
       await _analyzePerformance(snapshot);
     } catch (e) {
-      if (kDebugMode) {
-        if (kDebugMode) print('❌ Performance snapshot failed: $e');
-      }
+      // Debug code removed
     }
   }
 
@@ -209,10 +201,8 @@ class PerformanceMonitoringService {
 
     // 이슈가 있으면 디버그 출력
     if (issues.isNotEmpty && kDebugMode) {
-      if (kDebugMode) print('🚨 Performance Issues Detected:');
-      for (final issue in issues) {
-        if (kDebugMode) print('  $issue');
-      }
+      // Debug print removed
+      // Issues processing (debug prints removed)
     }
   }
 
@@ -221,7 +211,6 @@ class PerformanceMonitoringService {
     try {
       // 실제 구현에서는 플랫폼별 메모리 API 사용
       // iOS: mach_task_basic_info
-      // Android: Debug.getMemoryInfo()
 
       // 시뮬레이션: 100-400MB 범위의 랜덤 값
       return 150.0 + (DateTime.now().millisecondsSinceEpoch % 250);
@@ -340,7 +329,6 @@ class PerformanceMonitoringService {
   ) {
     double score = 100.0;
 
-    // 메모리 사용량 (30% 가중치)
     if (avgMemory > 400) {
       score -= 30;
     } else if (avgMemory > 300)
@@ -348,7 +336,6 @@ class PerformanceMonitoringService {
     else if (avgMemory > 200)
       score -= 10;
 
-    // 프레임율 (40% 가중치)
     if (avgFrameRate < 50) {
       score -= 40;
     } else if (avgFrameRate < 55)
@@ -356,7 +343,6 @@ class PerformanceMonitoringService {
     else if (avgFrameRate < 58)
       score -= 10;
 
-    // 캐시 효율성 (20% 가중치)
     if (avgCacheHitRate < 50) {
       score -= 20;
     } else if (avgCacheHitRate < 70)
@@ -364,7 +350,6 @@ class PerformanceMonitoringService {
     else if (avgCacheHitRate < 85)
       score -= 5;
 
-    // 타이머 과다 사용 (10% 가중치)
     if (latest.activeTimers > 20) {
       score -= 10;
     } else if (latest.activeTimers > 10)
@@ -440,6 +425,7 @@ class PerformanceMonitoringService {
 
 /// 성능 메트릭 클래스
 class PerformanceMetric {
+  
   final String name;
   final String unit;
   final MetricType type;
@@ -472,6 +458,7 @@ enum MetricType { timing, memory, cpu, counter, percentage, performance }
 
 /// 성능 스냅샷 클래스
 class PerformanceSnapshot {
+  
   final DateTime timestamp;
   final double memoryUsage;
   final double cacheHitRate;

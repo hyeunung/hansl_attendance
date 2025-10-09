@@ -5,6 +5,9 @@ import 'package:flutter/foundation.dart';
 /// Advanced async operation management with cancellation tokens
 /// Optimizes database queries, prevents memory leaks, and handles timeouts
 class AsyncOperationManager {
+  
+  // Debug logging function removed
+  
   static final AsyncOperationManager _instance =
       AsyncOperationManager._internal();
   static AsyncOperationManager get instance => _instance;
@@ -38,8 +41,8 @@ class AsyncOperationManager {
 
     // Check for duplicate operation
     if (_operations.containsKey(key)) {
-      if (kDebugMode) print('⚠️ Operation already running: $key');
-      throw StateError('Operation already in progress: $key');
+      // Debug print removed
+throw StateError('Operation already in progress: $key');
     }
 
     final token = CancellationToken();
@@ -55,13 +58,7 @@ class AsyncOperationManager {
     _operations[key] = cancellableOp;
     _totalOperationsStarted++;
 
-    if (kDebugMode) {
-      if (kDebugMode) {
-        print(
-          '🚀 Starting operation: $key${description != null ? ' ($description)' : ''}',
-        );
-      }
-    }
+    // Debug code removed
 
     // Execute with optional timeout
     Future<T> executionFuture = _executeWithCancellation(operation, token, key);
@@ -84,22 +81,17 @@ class AsyncOperationManager {
         completer.complete(result);
         _totalOperationsCompleted++;
 
-        if (kDebugMode) {
-          final duration = DateTime.now().difference(cancellableOp.startTime);
-          if (kDebugMode) {
-            print('✅ Operation completed: $key (${duration.inMilliseconds}ms)');
-          }
-        }
+        // Debug code removed
       }
 
       return result;
     } catch (e) {
       if (token.isCancelled) {
         _totalOperationsCancelled++;
-        if (kDebugMode) print('❌ Operation cancelled: $key');
-      } else {
-        if (kDebugMode) print('❌ Operation failed: $key - $e');
-      }
+        // Debug print removed
+} else {
+        // Debug print removed
+}
 
       if (!completer.isCompleted) {
         completer.completeError(e);
@@ -205,10 +197,8 @@ class AsyncOperationManager {
                 timeout: timeout,
                 cancelPrevious: cancelPrevious,
               ).catchError((e) {
-                if (kDebugMode) {
-                  print('⚠️ Batch operation failed: ${entry.key} - $e');
-                }
-                throw e;
+                // Debug code removed
+                return null as T;
               });
         }
 
@@ -257,9 +247,7 @@ class AsyncOperationManager {
     }
 
     if (cancelledCount > 0 && kDebugMode) {
-      if (kDebugMode) {
-        print('❌ Cancelled $cancelledCount operations with prefix: $prefix');
-      }
+      // Debug code removed
     }
 
     return cancelledCount;
@@ -277,9 +265,7 @@ class AsyncOperationManager {
     }
 
     if (cancelledCount > 0 && kDebugMode) {
-      if (kDebugMode) {
-        print('❌ Cancelled all operations: $cancelledCount operations');
-      }
+      // Debug code removed
     }
 
     return cancelledCount;
@@ -334,26 +320,16 @@ class AsyncOperationManager {
         final operation = queue.removeFirst();
 
         if (operation.token.isCancelled) {
-          if (kDebugMode)
-            if (kDebugMode) {
-              print('⏭️ Skipping cancelled queued operation: ${operation.key}');
-            }
+          // Debug code removed
           continue;
         }
 
-        if (kDebugMode) {
-          if (kDebugMode) {
-            print('🔄 Processing queued operation: ${operation.key}');
-          }
-        }
+        // Debug code removed
 
         try {
           await operation.operation();
         } catch (e) {
-          if (kDebugMode)
-            if (kDebugMode) {
-              print('❌ Queued operation failed: ${operation.key} - $e');
-            }
+          // Debug code removed
         }
       }
     } finally {
@@ -380,8 +356,8 @@ class AsyncOperationManager {
     _queues.clear();
     _queueProcessing.clear();
 
-    if (kDebugMode) print('🗑️ AsyncOperationManager disposed');
-  }
+    // Debug print removed
+}
 }
 
 /// Cancellation token for async operations
@@ -404,8 +380,8 @@ class CancellationToken {
       try {
         listener();
       } catch (e) {
-        if (kDebugMode) print('⚠️ Error in cancellation listener: $e');
-      }
+        // Debug print removed
+}
     }
 
     _listeners.clear();
@@ -560,11 +536,7 @@ mixin AsyncOperationMixin {
   Future<void> disposeScopedOperations() async {
     final cancelledCount = await cancelAllScopedOperations();
     if (kDebugMode && cancelledCount > 0) {
-      if (kDebugMode) {
-        print(
-          '🗑️ Disposed $cancelledCount scoped operations for ${runtimeType.toString()}',
-        );
-      }
+      // Debug code removed
     }
   }
 }

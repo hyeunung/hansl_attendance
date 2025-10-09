@@ -9,10 +9,11 @@ import '../../providers/notification_provider.dart';
 import '../../utils/responsive_utils.dart';
 import '../../services/timer_manager.dart';
 import '../../services/ui_optimization_service.dart';
-import '../../widgets/attendance/attendance_status_card.dart';
 import '../../widgets/attendance/attendance_action_buttons.dart';
 import '../../widgets/attendance/attendance_summary_card.dart';
 import '../../widgets/attendance/attendance_history_card.dart';
+import '../../widgets/attendance/attendance_statistics_widget.dart';
+import '../../widgets/attendance/personal_late_statistics.dart';
 import '../notification/notification_center_screen.dart';
 
 class AttendanceScreenOptimized extends StatefulWidget {
@@ -61,22 +62,25 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
       key: 'ui_update',
       interval: _uiUpdateInterval,
       callback: (timer) {
-        if (mounted && _shouldUpdateUI) {
-          setState(() {
-            // Only update if there are active working states that need time updates
-            final provider = Provider.of<AttendanceProvider>(
-              context,
-              listen: false,
-            );
-            _shouldUpdateUI =
-                provider.status == AttendanceStatus.working ||
-                provider.status == AttendanceStatus.late;
-          });
+        if (mounted) {
+          final provider = Provider.of<AttendanceProvider>(
+            context,
+            listen: false,
+          );
+          final shouldUpdate =
+              provider.status == AttendanceStatus.working ||
+              provider.status == AttendanceStatus.late;
+          
+          // 상태가 변경되었을 때만 setState 호출
+          if (shouldUpdate != _shouldUpdateUI) {
+            setState(() {
+              _shouldUpdateUI = shouldUpdate;
+            });
+          }
         }
       },
     );
 
-    // Add a fast timer for critical UI updates (only when actively working)
     _scheduleSmartUIUpdates();
   }
 
@@ -99,13 +103,16 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
         );
 
         // Increase frequency when actively working, decrease when idle
-        if (provider.status == AttendanceStatus.working ||
-            provider.status == AttendanceStatus.late) {
-          _shouldUpdateUI = true;
-          // Trigger immediate update for work duration display
-          if (mounted) setState(() {});
-        } else {
-          _shouldUpdateUI = false;
+        final shouldBeActive = provider.status == AttendanceStatus.working ||
+            provider.status == AttendanceStatus.late;
+        
+        // 상태가 변경되었을 때만 setState 호출
+        if (shouldBeActive != _shouldUpdateUI) {
+          if (mounted) {
+            setState(() {
+              _shouldUpdateUI = shouldBeActive;
+            });
+          }
         }
       },
     );
@@ -266,9 +273,10 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // 현재 상태 카드
-                        const AttendanceStatusCard(),
-                        SizedBox(height: ResponsiveUtils.spacing(context, 25)),
+                        // 출근 현황 통계 - 모든 직원에게 표시
+                        const AttendanceStatisticsWidget(),
+
+                        const PersonalLateStatistics(),
 
                         // 출근/퇴근 버튼
                         AttendanceActionButtons(onShowBanner: _showBanner),

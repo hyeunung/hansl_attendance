@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'attendance/attendance_screen_router.dart';
 import 'leave/leave_status_screen.dart';
 import 'approval/approval_screen.dart';
+// import 'purchase/purchase_management_screen.dart'; // 제거됨
 import 'calendar/calendar_screen.dart';
 import 'settings/settings_screen.dart';
 import '../theme/app_colors.dart';
@@ -13,6 +14,7 @@ import '../providers/leave_provider.dart';
 import '../providers/notification_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../utils/responsive_utils.dart';
+import '../utils/user_role_helper.dart';
 import '../services/notification_service.dart';
 import '../services/badge_count_service.dart';
 
@@ -67,67 +69,49 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    debugPrint('🔵 MainTab initState 시작');
-    debugPrint('🔵 initialIndex: ${widget.initialIndex}');
-    debugPrint('🔵 initialEmployee: ${widget.initialEmployee}');
-    
-    // 초기 인덱스는 나중에 권한 확인 후 설정
-    _currentIndex = 0; // 일단 0으로 초기화
+    _currentIndex = 0;
     _pageController = PageController(
-      initialPage: 0, // 일단 0으로 초기화
-      keepPage: true, // 페이지 상태 유지
+      initialPage: 0,
+      keepPage: true,
     );
 
-    // MainTab이 생성되었다는 것은 이미 인증된 상태
-    // 바로 초기화 진행
+    // 빠른 초기화를 위해 즉시 화면 구성
+    _quickInitialize();
+    
+    // 나머지 비동기 작업은 프레임 후에
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      debugPrint('🔵 PostFrameCallback 시작 - _initialize() 호출');
-      _initialize();
+      _initializeServices();
     });
   }
 
-  Future<void> _initialize() async {
-    debugPrint('🟡 _initialize() 시작');
-    // MainTab이 생성되었다는 것은 이미 인증된 상태
-    // 바로 초기화 진행
-    if (mounted) {
-      // 자동 로그인이나 알림에서 넘어온 경우 바로 설정
-      if (widget.initialEmployee != null) {
-        debugPrint('🟡 initialEmployee가 있음');
-        final userProvider = Provider.of<UserProvider>(context, listen: false);
-
-        // 알림에서 넘어온 경우와 자동 로그인 구분
-        // email이 있으면 자동 로그인, 없으면 알림에서 온 것
-        if (widget.initialEmployee!.containsKey('email') && 
-            widget.initialEmployee!['email'] != null) {
-          debugPrint('🟡 전체 employee 정보가 있는 경우 - 자동 로그인');
-          // 자동 로그인인 경우 - setUser 먼저 호출
-          userProvider.setUser(
-            id: widget.initialEmployee!['id'],
-            name: widget.initialEmployee!['name'],
-            email: widget.initialEmployee!['email'],
-          );
-          userProvider.setEmployee(widget.initialEmployee!);
-        } else {
-          debugPrint('🟡 email이 없는 경우 - 알림에서 온 것');
-          // 알림에서 온 경우 - employee 정보만 설정
-          userProvider.setEmployee(widget.initialEmployee!);
-        }
-
-        // employee 정보가 설정되면 화면 다시 초기화
-        _initializeScreens();
-      } else {
-        // initialEmployee가 없으면 데이터 로드
-        await _loadEmployeeData();
+  void _quickInitialize() {
+    // 빠른 화면 구성 (비동기 작업 없이)
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    
+    if (widget.initialEmployee != null) {
+      // 이미 employee 정보가 있으면 바로 설정
+      if (widget.initialEmployee!.containsKey('email') && 
+          widget.initialEmployee!['email'] != null) {
+        userProvider.setUser(
+          id: widget.initialEmployee!['id'],
+          name: widget.initialEmployee!['name'],
+          email: widget.initialEmployee!['email'],
+        );
       }
-
-      _initializeScreens();
-      
-      // 초기화 완료 표시
-      if (mounted) {
-        setState(() {
-          _isInitialized = true;
-        });
+      userProvider.setEmployee(widget.initialEmployee!);
+    }
+    
+    // 화면 바로 초기화
+    _initializeScreens();
+  }
+  
+  Future<void> _initializeServices() async {
+    // 비동기 서비스 초기화
+    if (mounted) {
+      // employee 데이터 로드가 필요한 경우
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      if (widget.initialEmployee == null && userProvider.employee == null) {
+        await _loadEmployeeData();
       }
 
       // NotificationProvider 초기화
@@ -139,38 +123,28 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
           );
           await notificationProvider.initialize();
         }
-        if (kDebugMode) {
-          print('✅ NotificationProvider 초기화 완료');
-        }
+        // Debug code removed
       } catch (e) {
-        if (kDebugMode) {
-          print('❌ NotificationProvider 초기화 실패: $e');
-        }
+        // Debug code removed
       }
 
-      // FCM 토큰 자동 갱신 (중요!)
       try {
         await NotificationService.refreshTokenAfterLogin();
-        if (kDebugMode) {
-          print('✅ FCM 토큰 자동 갱신 완료');
-        }
+        // Debug code removed
       } catch (e) {
-        if (kDebugMode) {
-          print('❌ FCM 토큰 갱신 실패: $e');
-        }
+        // Debug code removed
       }
 
       // 배지 카운트 초기화 및 실시간 구독 설정
       try {
+        print('🚀 BadgeCountService.updateBadgeCount() 호출 시작');
         await BadgeCountService.updateBadgeCount();
+        print('✅ BadgeCountService.updateBadgeCount() 호출 완료');
         BadgeCountService.setupRealtimeSubscription();
-        if (kDebugMode) {
-          print('✅ 배지 카운트 서비스 초기화 완료');
-        }
+        // Debug code removed
       } catch (e) {
-        if (kDebugMode) {
-          print('❌ 배지 카운트 초기화 실패: $e');
-        }
+        print('❌ BadgeCountService 에러: $e');
+        // Debug code removed
       }
     }
   }
@@ -199,13 +173,10 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
         }
       }
     } catch (e) {
-      if (kDebugMode) {
-        if (kDebugMode) print('직원 정보 로드 중 오류: $e');
-      }
+      // Debug code removed
     }
   }
 
-  // 모든 데이터를 새로고침하는 공통 함수 (현재 미사용 - 추후 활용 가능)
   // ignore: unused_element
   static Future<void> refreshAllData(BuildContext context) async {
     try {
@@ -217,19 +188,23 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
       final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
       final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-      // 모든 데이터 새로고침 (병렬 처리)
-      await Future.wait([
+      final futures = <Future<void>>[
         // 출퇴근 데이터
         attendanceProvider.forceRefreshAll(),
-        // 연차 데이터
-        if (userProvider.email != null) ...[
+      ];
+      
+      // 연차 데이터
+      if (userProvider.email != null) {
+        futures.addAll([
           leaveProvider.fetchAllLeaves(forceRefresh: true),
           leaveProvider.fetchMyLeaves(
             email: userProvider.email!,
             forceRefresh: true,
           ),
-        ],
-      ]);
+        ]);
+      }
+      
+      await Future.wait(futures);
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -240,15 +215,16 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
         );
       }
     } catch (e) {
-      if (kDebugMode) {
-        if (kDebugMode) print('데이터 새로고침 중 오류: $e');
-      }
+      // Debug code removed
     }
   }
 
   void _onTabTapped(int index) {
     if (index != _currentIndex && _pageController.hasClients) {
-      setState(() => _currentIndex = index);
+      // 한 번의 setState로 통합
+      setState(() {
+        _currentIndex = index;
+      });
       _pageController.jumpToPage(index); // animateToPage 대신 jumpToPage 사용
     }
   }
@@ -261,12 +237,14 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    // 초기화가 완료되지 않았으면 로딩 표시
+    // 초기화가 완료되지 않았으면 빈 컨테이너 (깜빡임 방지)
     if (!_isInitialized || _screens == null) {
       return Scaffold(
+        backgroundColor: Colors.white,
         body: Container(
-          color: const Color(0xFFF8F9FA),
-          child: const Center(child: CircularProgressIndicator()),
+          color: Colors.white,
+          width: double.infinity,
+          height: double.infinity,
         ),
       );
     }
@@ -276,21 +254,22 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
   }
 
   void _initializeScreens() {
-    debugPrint('🟢 _initializeScreens() 시작');
-    if (_screens != null) {
-      debugPrint('🟢 이미 화면이 초기화되어 있음 - 리턴');
+    // Debug print removed
+    if (_screens != null && _isInitialized) {
+      // Debug print removed
       return; // 이미 초기화됨
     }
 
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final employee = userProvider.employee;
-    debugPrint('🟢 employee 정보: $employee');
-    
-    final List<dynamic> attendanceRoles =
+    // Debug print removed
+final List<dynamic> attendanceRoles =
         (employee?['attendance_role'] as List<dynamic>?) ?? [];
-    debugPrint('🟢 attendance_roles: $attendanceRoles');
-
-    // 승인관리 탭을 볼 수 있는 역할 확인
+    final List<dynamic> purchaseRoles =
+        (employee?['purchase_role'] as List<dynamic>?) ?? [];
+    // Debug print removed
+// Debug print removed
+// 승인관리 탭을 볼 수 있는 역할 확인
     final approvalRoles = [
       'admin',
       'superadmin',
@@ -304,53 +283,50 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
     final showApprovalTab = attendanceRoles.any(
       (role) => approvalRoles.contains(role),
     );
+    
+    // lead buyer 권한 확인
+    final isLeadBuyer = UserRoleHelper.isPureLeadBuyer(purchaseRoles);
 
     // 디버깅 정보 출력
-    if (kDebugMode) {
-      if (kDebugMode) print('🔍 Employee info: $employee');
-      if (kDebugMode) print('🔍 Attendance roles: $attendanceRoles');
-      if (kDebugMode) print('🔍 Show approval tab: $showApprovalTab');
-      if (kDebugMode) {
-        print('🔍 Requested initialIndex: ${widget.initialIndex}');
-      }
-    }
+    // Debug code removed
 
     setState(() {
-      if (showApprovalTab) {
-        debugPrint('🟢 승인 권한 있음 - 5개 탭 생성');
-        // 승인 권한이 있는 사용자는 5개 탭 모두 표시
+      if (isLeadBuyer && !showApprovalTab) {
+        // Debug print removed
+// lead buyer 권한만 있고 승인권한이 없는 경우
         _screens = [
           const AttendanceScreenRouter(), // 출석
           const LeaveStatusScreen(), // 연차/출장신청
-          ApprovalScreen(initialMainTab: widget.approvalSubTab), // 승인관리
+          const ApprovalScreen(), // 승인관리 (lead buyer는 구매대기와 입고대기 탭만 표시)
           const CalendarScreen(), // 달력
           const SettingsScreen(), // 설정
         ];
-
-        // 권한이 있으면 요청된 인덱스 사용
-        _currentIndex = widget.initialIndex;
-        debugPrint('🟢 초기 인덱스 설정: $_currentIndex');
-        if (_currentIndex >= _screens!.length) {
-          _currentIndex = 0;
-          debugPrint('🟢 인덱스 범위 초과 - 0으로 설정');
-        }
-      } else {
-        debugPrint('🟢 승인 권한 없음 - 4개 탭 생성');
-        // 승인 권한이 없는 사용자는 4개 탭만 표시
-        _screens = [
+      } else if (showApprovalTab) {
+        // Debug print removed
+_screens = [
           const AttendanceScreenRouter(), // 출석
           const LeaveStatusScreen(), // 연차/출장신청
+          ApprovalScreen(initialMainTab: widget.approvalSubTab), // 승인관리 (입고현황 포함)
+          const CalendarScreen(), // 달력
+          const SettingsScreen(), // 설정
+        ];
+      } else {
+        // Debug print removed
+// 일반 사용자도 ApprovalScreen을 사용하지만 입고대기 탭만 표시
+        _screens = [
+          const AttendanceScreenRouter(), // 출속
+          const LeaveStatusScreen(), // 연차/출장신청
+          const ApprovalScreen(), // 입고현황 (일반 직원은 입고대기 탭만 표시)
           const CalendarScreen(), // 달력
           const SettingsScreen(), // 설정
         ];
 
         // 권한이 없으면 인덱스 조정
         if (widget.initialIndex == 2) {
-          debugPrint('🟢 승인 탭 요청했지만 권한 없음 - 홈으로');
-          // 승인 탭을 요청했지만 권한이 없으면 홈으로
+          // Debug print removed
+// 승인 탭을 요청했지만 권한이 없으면 홈으로
           _currentIndex = 0;
         } else if (widget.initialIndex > 2) {
-          // 인덱스 조정 (승인 탭이 없으므로 -1)
           _currentIndex = widget.initialIndex - 1;
         } else {
           _currentIndex = widget.initialIndex;
@@ -361,6 +337,9 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
           _currentIndex = 0;
         }
       }
+      
+      // 초기화 완료
+      _isInitialized = true;
     });
 
     // PageController 업데이트
@@ -379,8 +358,9 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
     final employee = userProvider.employee;
     final List<dynamic> attendanceRoles =
         (employee?['attendance_role'] as List<dynamic>?) ?? [];
+    final List<dynamic> purchaseRoles =
+        (employee?['purchase_role'] as List<dynamic>?) ?? [];
 
-    // 승인관리 탭을 볼 수 있는 역할 확인 (초기화와 동일하게)
     final approvalRoles = [
       'admin',
       'superadmin',
@@ -393,10 +373,12 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
     final showApprovalTab = attendanceRoles.any(
       (role) => approvalRoles.contains(role),
     );
+    
+    // lead buyer 권한 확인
+    final isLeadBuyer = UserRoleHelper.isPureLeadBuyer(purchaseRoles);
 
     final List<BottomNavigationBarItem> items = [];
 
-    // 출퇴근 탭 (인덱스 0)
     items.add(
       BottomNavigationBarItem(
         icon: Padding(
@@ -412,7 +394,6 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
       ),
     );
 
-    // 휴가 탭 (인덱스 1)
     items.add(
       BottomNavigationBarItem(
         icon: Padding(
@@ -426,15 +407,28 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
       ),
     );
 
-    // 승인관리 탭 (attendance_role이 있는 경우만, 인덱스 2)
-    if (showApprovalTab) {
+    if (isLeadBuyer) {
+      // lead buyer는 구매/입고관리 탭
       items.add(
         BottomNavigationBarItem(
           icon: Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Icon(
-              Icons.check_circle,
-              color: _currentIndex == 2 ? const Color(0xFF34C759) : Colors.grey,
+              Icons.shopping_cart,
+              color: _currentIndex == 2 ? const Color(0xFF9C27B0) : Colors.grey,
+            ),
+          ),
+          label: '',
+        ),
+      );
+    } else {
+      items.add(
+        BottomNavigationBarItem(
+          icon: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Icon(
+              showApprovalTab ? Icons.check_circle : Icons.inventory_2,
+              color: _currentIndex == 2 ? (showApprovalTab ? const Color(0xFF34C759) : const Color(0xFF007AFF)) : Colors.grey,
             ),
           ),
           label: '',
@@ -442,15 +436,13 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
       );
     }
 
-    // 캘린더 탭 (동적 인덱스)
-    final calendarIndex = showApprovalTab ? 3 : 2;
     items.add(
       BottomNavigationBarItem(
         icon: Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Icon(
             Icons.calendar_today,
-            color: _currentIndex == calendarIndex
+            color: _currentIndex == 3
                 ? const Color(0xFFFF3B30)
                 : Colors.grey,
           ),
@@ -459,15 +451,13 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
       ),
     );
 
-    // 설정 탭 (동적 인덱스)
-    final settingsIndex = showApprovalTab ? 4 : 3;
     items.add(
       BottomNavigationBarItem(
         icon: Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Icon(
             Icons.settings,
-            color: _currentIndex == settingsIndex
+            color: _currentIndex == 4
                 ? const Color(0xFF8E8E93)
                 : Colors.grey,
           ),
@@ -480,8 +470,10 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
       body: PageView(
         controller: _pageController,
         onPageChanged: (index) {
-          if (mounted) {
-            setState(() => _currentIndex = index);
+          if (mounted && index != _currentIndex) {
+            setState(() {
+              _currentIndex = index;
+            });
           }
         },
         // 모든 화면을 미리 로드하여 깨짐 방지

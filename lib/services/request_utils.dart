@@ -29,7 +29,7 @@ class RequestUtils with TimerManagementMixin {
   }) async {
     // Check if there's already a pending request
     if (_pendingRequests.containsKey(key)) {
-      if (kDebugMode) print('🔄 Deduplicating request: $key');
+      // Debug code removed
       return await _pendingRequests[key]!.future as T;
     }
 
@@ -105,7 +105,7 @@ class RequestUtils with TimerManagementMixin {
 
     if (kDebugMode)
       if (kDebugMode) {
-        print('📦 Executing batch: $groupKey (${group.items.length} requests)');
+        // Debug code removed
       }
 
     // Execute all requests in parallel
@@ -221,12 +221,12 @@ class RequestQueue {
 
     while (_queue.isNotEmpty) {
       final item = _queue.removeFirst();
-      if (kDebugMode) print('🔄 Processing queued request: ${item.key}');
+      // Debug code removed
 
       try {
         await item.request();
       } catch (e) {
-        if (kDebugMode) print('❌ Queue item failed: ${item.key} - $e');
+        // Debug code removed
       }
     }
 
@@ -302,7 +302,7 @@ class RequestAggregator {
           try {
             return await future;
           } catch (e) {
-            if (kDebugMode) print('⚠️ Request failed in aggregate: $e');
+            // Debug code removed
             return null;
           }
         }),
@@ -341,7 +341,7 @@ class ConditionalRequests {
     if (!condition) {
       if (kDebugMode && conditionDescription != null) {
         if (kDebugMode) {
-          print('⏭️ Skipping request due to condition: $conditionDescription');
+          // Debug code removed
         }
       }
       return fallback;
@@ -350,7 +350,7 @@ class ConditionalRequests {
     try {
       return await request();
     } catch (e) {
-      if (kDebugMode) print('❌ Conditional request failed: $e');
+      // Debug code removed
       return fallback;
     }
   }
@@ -372,7 +372,7 @@ class ConditionalRequests {
 
           if (!executeAll) break; // Execute only first matching condition
         } catch (e) {
-          if (kDebugMode) print('❌ Conditional request failed: $e');
+          // Debug code removed
           if (!executeAll) rethrow;
         }
       }

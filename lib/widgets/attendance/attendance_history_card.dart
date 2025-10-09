@@ -61,7 +61,7 @@ class AttendanceHistoryCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(
               ResponsiveUtils.spacing(context, 20),
             ),
-            boxShadow: [AppShadows.card],
+            boxShadow: AppShadows.cardShadow,
             border: Border.all(color: const Color(0xFFE9ECEF)),
           ),
           child: Column(

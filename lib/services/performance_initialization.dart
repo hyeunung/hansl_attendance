@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'timer_manager.dart';
-import 'async_operation_manager.dart';
+import 'async_operation_manager.dart' as async_ops;
 import 'cache_service.dart';
 import 'request_utils.dart';
 import 'database_optimization_service.dart';
@@ -10,57 +11,52 @@ import 'performance_monitoring_service.dart';
 /// Performance services initialization
 /// Call this once at app startup to initialize all performance optimization services
 class PerformanceInitialization {
+  
   static bool _initialized = false;
+  
+  /// Check if performance services are initialized
+  static bool get isInitialized => _initialized;
 
   /// Initialize all performance services
   /// Should be called once during app startup
   static Future<void> initialize() async {
     if (_initialized) {
-      if (kDebugMode) print('⚠️ Performance services already initialized');
-      return;
+      // Debug print removed
+return;
     }
 
     try {
-      if (kDebugMode) print('🚀 Initializing performance services...');
+      // Debug print removed
+// Supabase가 초기화되었는지 확인
+      try {
+        final _ = Supabase.instance.client;
+      } catch (e) {
+        // Debug print removed
+return; // Supabase가 준비되지 않았으면 초기화 건너뛰기
+      }
 
       // Initialize cache service
       await CacheService.instance.init();
-      if (kDebugMode) print('✅ CacheService initialized');
-
-      // Start timer maintenance
+      // Debug print removed
+// Start timer maintenance
       TimerManager.instance.startMaintenanceTimer();
-      if (kDebugMode) print('✅ TimerManager maintenance started');
-
-      // Initialize async operation manager
-      // (No explicit initialization needed, but log for visibility)
-      if (kDebugMode) print('✅ AsyncOperationManager ready');
-
-      // Initialize request utils
-      // (No explicit initialization needed, but log for visibility)
-      if (kDebugMode) print('✅ RequestUtils ready');
-
-      // Initialize database optimization service
-      // (No explicit initialization needed, but log for visibility)
-      if (kDebugMode) print('✅ DatabaseOptimizationService ready');
-
-      // Initialize UI optimization service
-      // (No explicit initialization needed, but log for visibility)
-      if (kDebugMode) print('✅ UIOptimizationService ready');
-
-      // Initialize comprehensive performance monitoring service
+      // Debug print removed
+// Initialize async operation manager
+      // Debug print removed
+// Initialize request utils
+      // Debug print removed
+// Initialize database optimization service
+      // Debug print removed
+// Initialize UI optimization service
+      // Debug print removed
+// Initialize comprehensive performance monitoring service
       await PerformanceMonitoringService.instance.startMonitoring();
-      if (kDebugMode) print('✅ PerformanceMonitoringService started');
+      // Debug print removed
+_initialized = true;
 
-      _initialized = true;
-
-      if (kDebugMode) {
-        if (kDebugMode) {
-          print('🎉 All performance services initialized successfully');
-        }
-        _logInitialStats();
-      }
+      // Debug code removed
     } catch (e) {
-      if (kDebugMode) print('❌ Failed to initialize performance services: $e');
+      // Debug code removed
       rethrow;
     }
   }
@@ -71,14 +67,24 @@ class PerformanceInitialization {
       return {'error': 'Performance services not initialized'};
     }
 
+    // Supabase가 초기화되었는지 확인
+    bool supabaseAvailable = false;
+    try {
+      final _ = Supabase.instance.client;
+      supabaseAvailable = true;
+    } catch (e) {
+      // Supabase not available
+    }
+
     return {
       'initialized': _initialized,
       'timer_stats': TimerManager.instance.getStats().toJson(),
-      'async_stats': AsyncOperationManager.instance.getStats().toJson(),
+      'async_stats': async_ops.AsyncOperationManager.instance.getStats().toJson(),
       'cache_stats': CacheService.instance.getStats(),
       'request_stats': RequestUtils.instance.getStats(),
-      'database_stats': DatabaseOptimizationService.instance
-          .getPerformanceStats(),
+      'database_stats': supabaseAvailable 
+          ? DatabaseOptimizationService.instance.getPerformanceStats()
+          : {'error': 'Supabase not initialized'},
       'ui_stats': UIOptimizationService.instance.getUIPerformanceStats(),
       'performance_monitoring': PerformanceMonitoringService.instance
           .getCurrentStatus(),
@@ -92,88 +98,52 @@ class PerformanceInitialization {
     if (!_initialized) return;
 
     try {
-      if (kDebugMode) print('🛑 Disposing performance services...');
-
-      // Stop timer maintenance
+      // Debug print removed
+// Stop timer maintenance
       TimerManager.instance.stopMaintenanceTimer();
       TimerManager.instance.dispose();
-      if (kDebugMode) print('✅ TimerManager disposed');
-
-      // Dispose async operations
-      await AsyncOperationManager.instance.dispose();
-      if (kDebugMode) print('✅ AsyncOperationManager disposed');
-
-      // Dispose cache service
+      // Debug print removed
+// Dispose async operations
+      await async_ops.AsyncOperationManager.instance.dispose();
+      // Debug print removed
+// Dispose cache service
       CacheService.instance.dispose();
-      if (kDebugMode) print('✅ CacheService disposed');
-
-      // Clear request utils
+      // Debug print removed
+// Clear request utils
       RequestUtils.instance.clear();
-      if (kDebugMode) print('✅ RequestUtils cleared');
-
-      // Dispose database optimization service
+      // Debug print removed
+// Dispose database optimization service
       DatabaseOptimizationService.instance.dispose();
-      if (kDebugMode) print('✅ DatabaseOptimizationService disposed');
-
-      // Dispose UI optimization service
+      // Debug print removed
+// Dispose UI optimization service
       UIOptimizationService.instance.dispose();
-      if (kDebugMode) print('✅ UIOptimizationService disposed');
-
-      // Stop performance monitoring service
+      // Debug print removed
+// Stop performance monitoring service
       PerformanceMonitoringService.instance.stopMonitoring();
       PerformanceMonitoringService.instance.dispose();
-      if (kDebugMode) print('✅ PerformanceMonitoringService stopped');
-
+      // Debug print removed
       _initialized = false;
 
-      if (kDebugMode)
-        if (kDebugMode) {
-          print('🎉 All performance services disposed successfully');
-        }
+      // Debug code removed
     } catch (e) {
-      if (kDebugMode) print('❌ Failed to dispose performance services: $e');
+      // Debug print removed
+      rethrow;
     }
   }
-
-  /// Check if services are initialized
-  static bool get isInitialized => _initialized;
 
   /// Log initial statistics
-  static void _logInitialStats() {
-    if (!kDebugMode) return;
+  // static void _logInitialStats() {
+  //   if (!kDebugMode) return;
 
-    if (kDebugMode) print('📊 Initial Performance Stats:');
-    final stats = getPerformanceStats();
+  //   // Debug print removed
+  // final stats = getPerformanceStats();
 
-    if (kDebugMode) {
-      print(
-        '  📦 Cache: ${stats['cache_stats']['memory_total']} memory entries',
-      );
-    }
-    if (kDebugMode) {
-      print('  ⏱️ Timers: ${stats['timer_stats']['active_timers']} active');
-    }
-    if (kDebugMode) {
-      print(
-        '  🔄 Operations: ${stats['async_stats']['active_operations']} active',
-      );
-    }
-    if (kDebugMode) {
-      print(
-        '  📡 Requests: ${stats['request_stats']['pending_requests']} pending',
-      );
-    }
-    if (kDebugMode) {
-      print(
-        '  🗃️ Database: ${stats['database_stats']['total_queries']} total queries',
-      );
-    }
-    if (kDebugMode) {
-      print(
-        '  🎨 UI: ${stats['ui_stats']['active_components']} active components',
-      );
-    }
-  }
+  //   // Debug code removed
+  //   // Debug code removed
+  //   // Debug code removed
+  //   // Debug code removed
+  //   // Debug code removed
+  // }
 
   /// Log periodic performance statistics
   /// Useful for monitoring performance over time
@@ -181,58 +151,26 @@ class PerformanceInitialization {
     if (!kDebugMode || !_initialized) return;
 
     final stats = getPerformanceStats();
-    final timerStats = stats['timer_stats'];
-    final asyncStats = stats['async_stats'];
-    final cacheStats = stats['cache_stats'];
-    final requestStats = stats['request_stats'];
-    final databaseStats = stats['database_stats'];
-    final uiStats = stats['ui_stats'];
+    // final timerStats = stats['timer_stats'];
+    // final asyncStats = stats['async_stats'];
+    // final cacheStats = stats['cache_stats'];
+    // final requestStats = stats['request_stats'];
+    // final databaseStats = stats['database_stats'];
+    // final uiStats = stats['ui_stats'];
 
-    if (kDebugMode) print('📊 Performance Stats:');
-    if (kDebugMode) {
-      print(
-        '  ⏱️ Timers: ${timerStats['active_timers']} active, ${timerStats['net_timers']} net created',
-      );
-    }
-    if (kDebugMode) {
-      print(
-        '  🔄 Operations: ${asyncStats['active_operations']} active, ${(asyncStats['success_rate'] * 100).toStringAsFixed(1)}% success rate',
-      );
-    }
-    if (kDebugMode) {
-      print(
-        '  📦 Cache: ${cacheStats['memory_valid']}/${cacheStats['memory_total']} valid entries',
-      );
-    }
-    if (kDebugMode) {
-      print(
-        '  📡 Requests: ${requestStats['pending_requests']} pending, ${requestStats['batch_groups']} batch groups',
-      );
-    }
-    if (kDebugMode) {
-      print(
-        '  🗃️ Database: ${databaseStats['total_queries']} queries, ${(databaseStats['cache_hit_rate'] * 100).toStringAsFixed(1)}% cache hit rate',
-      );
-    }
-    if (kDebugMode) {
-      print(
-        '  🎨 UI: ${uiStats['active_components']} components, ${(uiStats['rebuild_savings_percentage']).toStringAsFixed(1)}% rebuilds saved',
-      );
-    }
+    // Debug print removed
+// Debug code removed
+    // Debug code removed
+    // Debug code removed
+    // Debug code removed
+    // Debug code removed
+    // Debug code removed
 
     // Show comprehensive monitoring status
     final monitoringStats = stats['performance_monitoring'];
     if (monitoringStats != null && monitoringStats['monitoring'] == true) {
-      if (kDebugMode) {
-        print(
-          '  📊 Monitoring: ${monitoringStats['snapshots_collected']} snapshots collected',
-        );
-      }
-      if (kDebugMode) {
-        print(
-          '  📈 Current: ${monitoringStats['memory_mb']}MB RAM, ${monitoringStats['fps']} FPS, ${monitoringStats['cache_hit_rate']} cache',
-        );
-      }
+      // Debug code removed
+      // Debug code removed
     }
   }
 
@@ -242,14 +180,10 @@ class PerformanceInitialization {
     Duration interval = const Duration(minutes: 10),
   }) {
     if (!_initialized) {
-      if (kDebugMode)
-        if (kDebugMode) {
-          print('⚠️ Cannot enable monitoring: services not initialized');
-        }
+      // Debug code removed
       return;
     }
 
-    // Enable comprehensive monitoring (already started in initialize())
     if (!PerformanceMonitoringService.instance.isMonitoring) {
       PerformanceMonitoringService.instance.startMonitoring();
     }
@@ -261,14 +195,7 @@ class PerformanceInitialization {
       callback: (_) => logPerformanceStats(),
     );
 
-    if (kDebugMode) {
-      if (kDebugMode) {
-        print(
-          '📈 Comprehensive performance monitoring enabled (interval: ${interval.inMinutes}m)',
-        );
-      }
-      if (kDebugMode) print('📊 Real-time monitoring: snapshots every 30s');
-    }
+    // Debug code removed
   }
 
   /// Disable comprehensive performance monitoring
@@ -280,9 +207,7 @@ class PerformanceInitialization {
       PerformanceMonitoringService.instance.stopMonitoring();
     }
 
-    if (kDebugMode) {
-      if (kDebugMode) print('📈 Comprehensive performance monitoring disabled');
-    }
+    // Debug code removed
   }
 
   /// Force cleanup of all services
@@ -290,14 +215,13 @@ class PerformanceInitialization {
   static Future<void> performMaintenance() async {
     if (!_initialized) return;
 
-    if (kDebugMode) print('🧹 Performing maintenance...');
-
-    // Get stats before cleanup
-    final statsBefore = getPerformanceStats();
+    // Debug print removed
+// Get stats before cleanup
+    // final statsBefore = getPerformanceStats();
 
     // Force cleanup
     await CacheService.instance.clearAll();
-    await AsyncOperationManager.instance.cancelAllOperations();
+    await async_ops.AsyncOperationManager.instance.cancelAllOperations();
     RequestUtils.instance.clear();
     DatabaseOptimizationService.instance.clearPerformanceStats();
     UIOptimizationService.instance.cleanup();
@@ -308,28 +232,14 @@ class PerformanceInitialization {
       final report = PerformanceMonitoringService.instance
           .generatePerformanceReport();
       if (kDebugMode && report.containsKey('performance_score')) {
-        if (kDebugMode) {
-          print('📊 Performance Score: ${report['performance_score']}/100');
-        }
+        // Debug code removed
       }
     }
 
     // Get stats after cleanup
-    final statsAfter = getPerformanceStats();
+    // final statsAfter = getPerformanceStats();
 
-    if (kDebugMode) {
-      final timersBefore = statsBefore['timer_stats']['active_timers'];
-      final timersAfter = statsAfter['timer_stats']['active_timers'];
-      final operationsBefore = statsBefore['async_stats']['active_operations'];
-      final operationsAfter = statsAfter['async_stats']['active_operations'];
-
-      if (kDebugMode) print('🧹 Maintenance completed:');
-      if (kDebugMode) print('  ⏱️ Timers: $timersBefore → $timersAfter');
-      if (kDebugMode) {
-        print('  🔄 Operations: $operationsBefore → $operationsAfter');
-      }
-      if (kDebugMode) print('  📦 Cache: cleared all entries');
-    }
+    // Debug code removed
   }
 
   /// Get comprehensive performance report
@@ -360,7 +270,6 @@ class PerformanceInitialization {
     final issues = <String>[];
     final recommendations = <String>[];
 
-    // Cache health (25% weight)
     final cacheStats = baseStats['cache_stats'] as Map<String, dynamic>?;
     if (cacheStats != null) {
       final hitRate = (cacheStats['hit_rate'] as double?) ?? 0.0;
@@ -375,7 +284,6 @@ class PerformanceInitialization {
       }
     }
 
-    // Timer health (20% weight)
     final timerStats = baseStats['timer_stats'] as Map<String, dynamic>?;
     if (timerStats != null) {
       final activeTimers = timerStats['active_timers'] as int? ?? 0;
@@ -386,7 +294,6 @@ class PerformanceInitialization {
       }
     }
 
-    // Async operations health (20% weight)
     final asyncStats = baseStats['async_stats'] as Map<String, dynamic>?;
     if (asyncStats != null) {
       final successRate = (asyncStats['success_rate'] as double?) ?? 1.0;
@@ -407,7 +314,6 @@ class PerformanceInitialization {
       }
     }
 
-    // Database health (20% weight)
     final dbStats = baseStats['database_stats'] as Map<String, dynamic>?;
     if (dbStats != null) {
       final dbHitRate = (dbStats['cache_hit_rate'] as double?) ?? 0.0;
@@ -428,7 +334,6 @@ class PerformanceInitialization {
       }
     }
 
-    // Performance monitoring health (15% weight)
     if (monitoringReport.containsKey('performance_score')) {
       final perfScore =
           monitoringReport['performance_score'] as double? ?? 100.0;

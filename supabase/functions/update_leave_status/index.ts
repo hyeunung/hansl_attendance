@@ -47,7 +47,6 @@ Deno.serve(async (req) => {
     }
 
     const userEmail = userData.user.email
-    console.log(`🔍 권한 확인: ${userEmail}이 ID ${id}를 ${status}로 변경 시도`)
 
     // 사용자의 관리자 권한 확인
     const { data: employee, error: empError } = await supabase
@@ -70,8 +69,6 @@ Deno.serve(async (req) => {
       throw new Error('승인/반려 권한이 없습니다.')
     }
 
-    console.log(`🔑 사용자 권한: ${JSON.stringify(attendanceRoles)}`)
-    console.log(`📋 권한 체크 결과: superadmin=${isSuperAdmin}, admin=${isAdmin}, manager=${isManager}`)
 
     // 대상 leave 정보 조회 (JOIN 없이 간단하게)
     const { data: leaveData, error: leaveError } = await supabase
@@ -85,7 +82,6 @@ Deno.serve(async (req) => {
       throw new Error('신청 정보를 찾을 수 없습니다.')
     }
     
-    console.log(`📋 Leave 데이터 조회 성공: ID ${id}, User: ${leaveData.user_email}, Type: ${leaveData.type}`)
     
     // 신청자의 부서 정보 별도 조회
     const { data: requesterEmployee, error: requesterEmpError } = await supabase
@@ -98,7 +94,6 @@ Deno.serve(async (req) => {
       console.error('신청자 부서 정보 조회 실패:', requesterEmpError)
     } else {
       leaveData.department = requesterEmployee.department
-      console.log(`👤 신청자 부서: ${requesterEmployee.department}`)
     }
 
     // 신청자의 권한도 확인
@@ -118,14 +113,12 @@ Deno.serve(async (req) => {
     // 권한별 승인 가능 범위 체크
     if (isSuperAdmin) {
       // superadmin은 모든 직원의 신청 승인 가능 (제한 없음)
-      console.log(`✅ superadmin → 모든 직원 승인 권한 확인`)
       
     } else if (isAdmin) {
       // admin은 모든 부서 가능 (superadmin 제외)
       if (isRequesterSuperAdmin) {
         throw new Error('admin은 superadmin 신청을 승인할 수 없습니다.')
       }
-      console.log(`✅ admin 승인 권한 확인 (non-superadmin 대상)`)
       
     } else if (isManager) {
       // 부서 관리자는 해당 부서만 (superadmin 제외)
@@ -157,7 +150,6 @@ Deno.serve(async (req) => {
         throw new Error('해당 부서의 승인 권한이 없습니다.')
       }
       
-      console.log(`✅ ${targetDepartment} 관리자 승인 권한 확인`)
     }
 
     // 승인자/반려자 이름 가져오기
@@ -191,39 +183,9 @@ Deno.serve(async (req) => {
       throw updateError
     }
 
-    console.log(`✅ Leave 상태 업데이트 성공: ID ${id} -> ${status}`)
-    console.log('업데이트 결과:', updateResult)
 
-    // 신청자에게 승인/반려 결과 알림 발송
-    try {
-      const leaveType = leaveData.type === 'annual' ? '연차' : '출장'
-      const statusKorean = status === 'approved' ? '승인' : '반려'
-      // approverName은 이미 위에서 올바르게 설정됨 (line 170)
-      
-      console.log(`📱 신청자 ${leaveData.user_email}에게 ${statusKorean} 알림 발송 시작`)
-      
-      await supabase.functions.invoke('send_fcm_notification', {
-        body: {
-          type: 'user',
-          user_email: leaveData.user_email,
-          title: `${leaveType} ${statusKorean} 알림`,
-          body: status === 'approved' 
-            ? `${leaveType} 신청이 승인되었습니다. (승인자: ${approverName})`
-            : `${leaveType} 신청이 반려되었습니다. (처리자: ${approverName})`,
-          data: {
-            type: 'leave_result',
-            leave_id: id.toString(),
-            status: status,
-            leave_type: leaveData.type
-          }
-        }
-      })
-      
-      console.log(`✅ 신청자 알림 발송 완료: ${leaveData.user_email} → ${statusKorean}`)
-    } catch (notificationError) {
-      console.error('❌ 신청자 알림 발송 실패:', notificationError)
-      // 알림 실패해도 메인 프로세스는 성공으로 처리
-    }
+    // 신청자에게 승인/반려 결과 알림은 이제 DB 트리거에서 자동으로 처리됨
+    // leave_status_change_notification_trigger가 상태 변경 시 알림 발송
 
     return new Response(
       JSON.stringify({

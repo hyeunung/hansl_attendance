@@ -1,4 +1,3 @@
-// 출퇴근(근태) 데이터 모델 정의
 class Attendance {
   // 출퇴근 정보 필드 및 생성자 작성 예정
 }
@@ -31,7 +30,6 @@ class AttendanceRecord {
     this.isLate = false,
   });
 
-  // Map(JSON)에서 AttendanceRecord 객체로 변환
   factory AttendanceRecord.fromJson(Map<String, dynamic> json) {
     return AttendanceRecord(
       id: json['id'] as int?,
@@ -56,7 +54,6 @@ class AttendanceRecord {
     );
   }
 
-  // AttendanceRecord 객체를 Map(JSON)으로 변환
   Map<String, dynamic> toJson() {
     return {
       if (id != null) 'id': id,

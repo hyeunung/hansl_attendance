@@ -132,7 +132,6 @@ Deno.serve(async (req: Request) => {
     };
 
     // 로그 기록 (보안 감사용)
-    console.log({
       employeeId,
       latitude,
       longitude,

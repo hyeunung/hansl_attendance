@@ -26,6 +26,101 @@ class PurchaseProvider extends ChangeNotifier {
   int get rawMaterialPendingCount => _rawMaterialPendingCount;
   int get consumablePendingCount => _consumablePendingCount;
   int get totalPendingCount => _totalPendingCount;
+  
+  // 구매대기/입고대기 탭을 위한 모든 구매요청 데이터 로드
+  Future<void> loadAllPurchaseRequests() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      // 모든 구매요청 가져오기 (승인 상태와 관계없이)
+      final response = await _supabase
+          .from('purchase_requests')
+          .select()
+          .order('request_date', ascending: false);
+      
+      final allRequests = List<Map<String, dynamic>>.from(response);
+      
+      // 각 발주번호별로 품목 정보 가져오기
+      final List<PurchaseOrderGroup> groups = [];
+      
+      for (final request in allRequests) {
+        final purchaseOrderNumber = request['purchase_order_number'];
+        if (purchaseOrderNumber == null) continue;
+        
+        // 해당 발주번호의 모든 품목 가져오기
+        final itemsResponse = await _supabase
+            .from('purchase_request_items')
+            .select()
+            .eq('purchase_order_number', purchaseOrderNumber)
+            .order('line_number');
+        
+        final items = (itemsResponse as List).map((itemJson) {
+          final Map<String, dynamic> item = Map<String, dynamic>.from(
+            itemJson as Map,
+          );
+          
+          // 헤더 정보를 품목 정보와 병합
+          final Map<String, dynamic> mergedJson = {
+            ...item,
+            'request_date': request['request_date'],
+            'delivery_request_date': request['delivery_request_date'],
+            'middle_manager_status': request['middle_manager_status'],
+            'final_manager_status': request['final_manager_status'],
+            'payment_category': request['payment_category'],
+            'requester_name': request['requester_name'],
+            'is_payment_completed': request['is_payment_completed'],
+            'is_received': request['is_received'],
+            'progress_type': request['progress_type'],
+            'vendor_name': request['vendor_name'] ?? item['vendor_name'],
+            'project_vendor': request['project_vendor'] ?? item['project_vendor'],
+            'sales_order_number': request['sales_order_number'] ?? item['sales_order_number'],
+            'project_item': request['project_item'] ?? item['project_item'],
+          };
+          
+          return PurchaseRequest.fromJson(mergedJson);
+        }).toList();
+        
+        if (items.isEmpty) continue;
+        
+        final totalAmount = items.fold<double>(
+          0,
+          (sum, item) => sum + item.amountValue,
+        );
+        
+        final headerItem = items.firstWhere(
+          (item) => item.lineNumber == 1,
+          orElse: () => items.first,
+        );
+        
+        groups.add(
+          PurchaseOrderGroup(
+            purchaseOrderNumber: purchaseOrderNumber,
+            items: items,
+            totalAmount: totalAmount,
+            vendorName: headerItem.vendorName,
+            requesterName: headerItem.requesterName,
+            requestDate: DateTime.parse(request['request_date']),
+            paymentCategory: request['payment_category'] ?? '',
+            middleManagerStatus: request['middle_manager_status'],
+            finalManagerStatus: request['final_manager_status'],
+            progressType: request['progress_type'],
+            isPaymentCompleted: request['is_payment_completed'] ?? false,
+            isReceived: request['is_received'] ?? false,
+          ),
+        );
+      }
+      
+      _pendingOrders = groups;
+      
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 
   // 승인 대기 발주 목록 조회
   Future<void> fetchPendingPurchases({
@@ -60,8 +155,19 @@ class PurchaseProvider extends ChangeNotifier {
               'and(middle_manager_status.eq.approved,final_manager_status.eq.pending)',
             )
             .order('request_date', ascending: false);
-        pendingRequests = List<Map<String, dynamic>>.from(response);
-        if (kDebugMode) print('✅ app_admin 조회 완료: ${pendingRequests.length}건');
+        
+        // 중복 제거: 발주번호별로 하나씩만 가져오기
+        final allRequests = List<Map<String, dynamic>>.from(response);
+        final Map<String, Map<String, dynamic>> uniqueRequests = {};
+        for (final request in allRequests) {
+          final orderNumber = request['purchase_order_number'];
+          if (orderNumber != null && !uniqueRequests.containsKey(orderNumber)) {
+            uniqueRequests[orderNumber] = request;
+          }
+        }
+        pendingRequests = uniqueRequests.values.toList();
+        
+        if (kDebugMode) print('✅ app_admin 조회 완료: ${pendingRequests.length}건 (중복 제거)');
       }
       // middle_manager: 1차 승인 대기
       else if (purchaseRole.contains('middle_manager')) {
@@ -71,9 +177,20 @@ class PurchaseProvider extends ChangeNotifier {
             .select()
             .eq('middle_manager_status', 'pending')
             .order('request_date', ascending: false);
-        pendingRequests = List<Map<String, dynamic>>.from(response);
+        
+        // 중복 제거: 발주번호별로 하나씩만 가져오기
+        final allRequests = List<Map<String, dynamic>>.from(response);
+        final Map<String, Map<String, dynamic>> uniqueRequests = {};
+        for (final request in allRequests) {
+          final orderNumber = request['purchase_order_number'];
+          if (orderNumber != null && !uniqueRequests.containsKey(orderNumber)) {
+            uniqueRequests[orderNumber] = request;
+          }
+        }
+        pendingRequests = uniqueRequests.values.toList();
+        
         if (kDebugMode) {
-          print('✅ middle_manager 조회 완료: ${pendingRequests.length}건');
+          print('✅ middle_manager 조회 완료: ${pendingRequests.length}건 (중복 제거)');
         }
       }
       // final_approver + raw_material_manager: '발주'만
@@ -89,9 +206,20 @@ class PurchaseProvider extends ChangeNotifier {
             .eq('final_manager_status', 'pending')
             .eq('payment_category', '발주')
             .order('request_date', ascending: false);
-        pendingRequests = List<Map<String, dynamic>>.from(response);
+        
+        // 중복 제거: 발주번호별로 하나씩만 가져오기
+        final allRequests = List<Map<String, dynamic>>.from(response);
+        final Map<String, Map<String, dynamic>> uniqueRequests = {};
+        for (final request in allRequests) {
+          final orderNumber = request['purchase_order_number'];
+          if (orderNumber != null && !uniqueRequests.containsKey(orderNumber)) {
+            uniqueRequests[orderNumber] = request;
+          }
+        }
+        pendingRequests = uniqueRequests.values.toList();
+        
         if (kDebugMode) {
-          print('✅ raw_material 조회 완료: ${pendingRequests.length}건');
+          print('✅ raw_material 조회 완료: ${pendingRequests.length}건 (중복 제거)');
         }
       }
       // final_approver + consumable_manager: '구매 요청'만
@@ -107,8 +235,19 @@ class PurchaseProvider extends ChangeNotifier {
             .eq('final_manager_status', 'pending')
             .eq('payment_category', '구매 요청')
             .order('request_date', ascending: false);
-        pendingRequests = List<Map<String, dynamic>>.from(response);
-        if (kDebugMode) print('✅ consumable 조회 완료: ${pendingRequests.length}건');
+        
+        // 중복 제거: 발주번호별로 하나씩만 가져오기
+        final allRequests = List<Map<String, dynamic>>.from(response);
+        final Map<String, Map<String, dynamic>> uniqueRequests = {};
+        for (final request in allRequests) {
+          final orderNumber = request['purchase_order_number'];
+          if (orderNumber != null && !uniqueRequests.containsKey(orderNumber)) {
+            uniqueRequests[orderNumber] = request;
+          }
+        }
+        pendingRequests = uniqueRequests.values.toList();
+        
+        if (kDebugMode) print('✅ consumable 조회 완료: ${pendingRequests.length}건 (중복 제거)');
       } else {
         if (kDebugMode) print('⚠️ 권한 없음: purchase_role에 해당 권한이 없습니다');
       }
@@ -243,7 +382,7 @@ class PurchaseProvider extends ChangeNotifier {
         await _sendPurchaseApprovalNotification(
           purchaseOrderNumber: purchaseOrderNumber,
           requesterName: orderInfo.requesterName,
-          paymentCategory: orderInfo.paymentCategory,
+          paymentCategory: orderInfo.paymentCategory ?? '',
           status: 'middle_approved',
           isMiddleManager: true,
         );
@@ -280,7 +419,7 @@ class PurchaseProvider extends ChangeNotifier {
         await _sendPurchaseApprovalNotification(
           purchaseOrderNumber: purchaseOrderNumber,
           requesterName: orderInfo.requesterName,
-          paymentCategory: orderInfo.paymentCategory,
+          paymentCategory: orderInfo.paymentCategory ?? '',
           status: 'final_approved',
           isMiddleManager: false,
         );
@@ -344,7 +483,7 @@ class PurchaseProvider extends ChangeNotifier {
         await _sendPurchaseApprovalNotification(
           purchaseOrderNumber: purchaseOrderNumber,
           requesterName: orderInfo.requesterName,
-          paymentCategory: orderInfo.paymentCategory,
+          paymentCategory: orderInfo.paymentCategory ?? '',
           status: 'rejected',
           isMiddleManager: isMiddleManager,
           rejectionReason: reason,

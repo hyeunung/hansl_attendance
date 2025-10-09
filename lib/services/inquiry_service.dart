@@ -1,11 +1,12 @@
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/user_role_helper.dart';
 
 /// 문의하기 서비스
 /// - 일반 직원: 문의 작성 및 본인 문의 조회
 /// - app_admin: 모든 문의 조회 및 답변/상태 변경
 class InquiryService {
+  
   final _supabase = Supabase.instance.client;
 
   /// 사용자 권한 확인 (app_admin 여부)
@@ -23,21 +24,10 @@ class InquiryService {
       if (response == null) return false;
       final purchaseRole = response['purchase_role'];
 
-      // purchase_role이 문자열 배열 또는 쉼표로 구분된 문자열일 수 있음
-      if (purchaseRole is List) {
-        return purchaseRole.contains('app_admin');
-      } else if (purchaseRole is String) {
-        return purchaseRole
-            .split(',')
-            .map((e) => e.trim())
-            .contains('app_admin');
-      }
-
-      return false;
+      // UserRoleHelper를 사용하여 app_admin 권한 확인
+      return UserRoleHelper.isAppAdmin(purchaseRole);
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ 권한 확인 실패: $e');
-      }
+      // Debug code removed
       return false;
     }
   }
@@ -60,12 +50,7 @@ class InquiryService {
         };
       }
 
-      if (kDebugMode) {
-        print('📝 문의 생성 시작...');
-        print('- 유형: $inquiryType');
-        print('- 제목: $subject');
-        print('- 작성자: $userName ($userEmail)');
-      }
+      // Debug code removed
 
       final user = _supabase.auth.currentUser;
 
@@ -95,9 +80,7 @@ class InquiryService {
           .select()
           .single();
 
-      if (kDebugMode) {
-        print('✅ 문의 생성 성공: #${response['id']}');
-      }
+      // Debug code removed
 
       return {
         'success': true,
@@ -105,9 +88,7 @@ class InquiryService {
         'message': '문의가 성공적으로 등록되었습니다.\n관리자가 확인 후 답변드리겠습니다.',
       };
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ 문의 생성 실패: $e');
-      }
+      // Debug code removed
       return {
         'success': false,
         'error': e.toString(),
@@ -124,9 +105,7 @@ class InquiryService {
 
       final isAdmin = await isAppAdmin();
 
-      if (kDebugMode) {
-        print('📋 문의 목록 조회 (관리자: $isAdmin)');
-      }
+      // Debug code removed
 
       // 관리자는 모든 문의 조회
       if (isAdmin) {
@@ -135,13 +114,10 @@ class InquiryService {
             .select('*')
             .order('created_at', ascending: false);
 
-        if (kDebugMode) {
-          print('✅ 전체 문의 ${response.length}건 조회 완료');
-        }
+        // Debug code removed
 
         return List<Map<String, dynamic>>.from(response);
       }
-      // 일반 직원은 본인 문의만 조회 (Flutter + 웹에서 작성한 것 모두)
       else {
         final response = await _supabase
             .from('support_inquiries')
@@ -149,16 +125,12 @@ class InquiryService {
             .eq('user_id', user.id)
             .order('created_at', ascending: false);
 
-        if (kDebugMode) {
-          print('✅ 내 문의 ${response.length}건 조회 완료');
-        }
+        // Debug code removed
 
         return List<Map<String, dynamic>>.from(response);
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ 문의 목록 조회 실패: $e');
-      }
+      // Debug code removed
       return [];
     }
   }
@@ -179,9 +151,7 @@ class InquiryService {
         };
       }
 
-      if (kDebugMode) {
-        print('📝 문의 #$inquiryId 상태 업데이트: $status');
-      }
+      // Debug code removed
 
       final user = _supabase.auth.currentUser;
       final userEmail = user?.email ?? '';
@@ -221,15 +191,11 @@ class InquiryService {
           .select()
           .single();
 
-      if (kDebugMode) {
-        print('✅ 문의 상태 업데이트 성공');
-      }
+      // Debug code removed
 
       return {'success': true, 'data': response, 'message': '상태가 업데이트되었습니다.'};
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ 문의 상태 업데이트 실패: $e');
-      }
+      // Debug code removed
       return {
         'success': false,
         'error': e.toString(),
@@ -249,9 +215,7 @@ class InquiryService {
 
       return response;
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ 문의 상세 조회 실패: $e');
-      }
+      // Debug code removed
       return null;
     }
   }
@@ -263,15 +227,11 @@ class InquiryService {
     try {
       final user = _supabase.auth.currentUser;
       if (user == null) {
-        if (kDebugMode) {
-          print('❌ 실시간 구독 실패: 사용자 인증 필요');
-        }
+        // Debug code removed
         return null;
       }
 
-      if (kDebugMode) {
-        print('🔔 실시간 문의 업데이트 구독 시작');
-      }
+      // Debug code removed
 
       // 일반 사용자는 본인 문의만, 관리자는 모든 문의 구독
       return _supabase
@@ -291,18 +251,14 @@ class InquiryService {
                 return;
               }
 
-              if (kDebugMode) {
-                print('🔔 문의 업데이트 수신: #${newRecord['id']}');
-              }
+              // Debug code removed
 
               onUpdate(newRecord);
             },
           )
           .subscribe();
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ 실시간 구독 설정 실패: $e');
-      }
+      // Debug code removed
       return null;
     }
   }
@@ -311,9 +267,7 @@ class InquiryService {
   void unsubscribe(RealtimeChannel? channel) {
     if (channel != null) {
       _supabase.removeChannel(channel);
-      if (kDebugMode) {
-        print('🔕 실시간 구독 해제');
-      }
+      // Debug code removed
     }
   }
 
@@ -404,9 +358,7 @@ class InquiryService {
 
       return (response as List).length;
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ 미처리 문의 개수 조회 실패: $e');
-      }
+      // Debug code removed
       return 0;
     }
   }
@@ -422,7 +374,6 @@ class InquiryService {
 
       // 본인의 resolved 또는 closed 상태 문의 중
       // resolution_note가 있고 아직 확인하지 않은 것
-      // (확인 여부는 별도 필드가 없으므로 resolved/closed 상태인 것으로 판단)
       final response = await _supabase
           .from('support_inquiries')
           .select('*')
@@ -431,7 +382,6 @@ class InquiryService {
           .not('resolution_note', 'is', null);
 
       // 로컬 스토리지에서 읽은 문의 ID 목록 가져오기
-      // (SharedPreferences 필요)
       final readInquiries = await _getReadInquiries();
 
       final unreadCount = (response as List)
@@ -440,9 +390,7 @@ class InquiryService {
 
       return unreadCount;
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ 미확인 답변 개수 조회 실패: $e');
-      }
+      // Debug code removed
       return 0;
     }
   }
@@ -458,9 +406,7 @@ class InquiryService {
         await prefs.setStringList('read_inquiries', readList);
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ 문의 읽음 처리 실패: $e');
-      }
+      // Debug code removed
     }
   }
 
@@ -487,9 +433,7 @@ class InquiryService {
         };
       }
 
-      if (kDebugMode) {
-        print('🗑️ 문의 #$inquiryId 삭제 요청');
-      }
+      // Debug code removed
 
       // 문의 정보 확인
       final inquiry = await _supabase
@@ -497,14 +441,6 @@ class InquiryService {
           .select('*')
           .eq('id', inquiryId)
           .single();
-
-      if (inquiry == null) {
-        return {
-          'success': false,
-          'error': '문의를 찾을 수 없습니다.',
-          'message': '문의가 존재하지 않거나 이미 삭제되었습니다.',
-        };
-      }
 
       final isAdmin = await isAppAdmin();
 
@@ -517,15 +453,12 @@ class InquiryService {
         };
       }
 
-      // 삭제 실행 (답변 유무와 관계없이 삭제 가능)
       await _supabase
           .from('support_inquiries')
           .delete()
           .eq('id', inquiryId);
 
-      if (kDebugMode) {
-        print('✅ 문의 #$inquiryId 삭제 완료');
-      }
+      // Debug code removed
 
       // 읽음 처리 목록에서도 제거
       try {
@@ -542,9 +475,7 @@ class InquiryService {
         'message': '문의가 성공적으로 삭제되었습니다.',
       };
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ 문의 삭제 실패: $e');
-      }
+      // Debug code removed
       return {
         'success': false,
         'error': e.toString(),
@@ -569,13 +500,6 @@ class InquiryService {
           .select('*')
           .eq('id', inquiryId)
           .single();
-
-      if (inquiry == null) {
-        return {
-          'canDelete': false,
-          'reason': '문의를 찾을 수 없습니다.',
-        };
-      }
 
       final isAdmin = await isAppAdmin();
 

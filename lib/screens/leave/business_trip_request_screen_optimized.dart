@@ -4,7 +4,6 @@ import '../../providers/leave_provider.dart';
 import '../../providers/user_provider.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/app_colors.dart';
-import '../../utils/logger.dart';
 import '../../utils/validators/leave_validators.dart';
 import '../../widgets/business_trip/trip_calendar_widget.dart';
 import '../../widgets/business_trip/trip_date_chips_widget.dart';
@@ -90,9 +89,9 @@ class _BusinessTripRequestScreenOptimizedState
         }
       });
 
-      AppLogger.debug('직원 목록 로드 완료', '총 ${response.length}명');
+      // Debug code removed
     } catch (e) {
-      AppLogger.error('직원 목록 로드 실패', e);
+      // Debug code removed
       showBanner('직원 목록을 불러오는데 실패했습니다', type: BannerType.error);
     }
   }
@@ -114,15 +113,15 @@ class _BusinessTripRequestScreenOptimizedState
   }
 
   Future<void> _submitRequest() async {
-    print('✅ _submitRequest 메서드 시작됨');
+    // Debug print removed
 
     // 유효성 검사
     if (!_validateInputs()) {
-      print('❌ 유효성 검사 실패');
+      // Debug print removed
       return;
     }
 
-    print('✅ 유효성 검사 통과');
+    // Debug print removed
     setState(() => _isSubmitting = true);
 
     try {
@@ -212,7 +211,7 @@ class _BusinessTripRequestScreenOptimizedState
         );
       }
     } catch (e) {
-      AppLogger.error('출장 신청 실패', e);
+      // Debug code removed
       showBanner('출장 신청에 실패했습니다. 다시 시도해주세요.', type: BannerType.error);
     } finally {
       setState(() => _isSubmitting = false);

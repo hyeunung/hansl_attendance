@@ -7,6 +7,7 @@ import 'timer_manager.dart';
 /// Comprehensive caching service for network requests and data optimization
 /// Implements in-memory cache with TTL, persistent cache, and request deduplication
 class CacheService with TimerManagementMixin {
+  
   static final CacheService _instance = CacheService._internal();
   static CacheService get instance => _instance;
   CacheService._internal();
@@ -37,9 +38,9 @@ class CacheService with TimerManagementMixin {
       _prefs = await SharedPreferences.getInstance();
       _startCleanupTimer();
       _initialized = true;
-      if (kDebugMode) print('✅ CacheService initialized successfully');
-    } catch (e) {
-      if (kDebugMode) print('❌ CacheService initialization failed: $e');
+      // Debug print removed
+} catch (e) {
+      // Debug code removed
       rethrow;
     }
   }
@@ -65,8 +66,8 @@ class CacheService with TimerManagementMixin {
       final memoryData = _getFromMemory<T>(key);
       if (memoryData != null) {
         _hits++;
-        if (kDebugMode) print('🎯 Cache HIT (memory): $key');
-        return memoryData;
+        // Debug print removed
+return memoryData;
       }
     }
 
@@ -79,20 +80,19 @@ class CacheService with TimerManagementMixin {
         if (useMemoryCache) {
           _storeInMemory(key, persistentData, effectiveTtl);
         }
-        if (kDebugMode) print('🎯 Cache HIT (persistent): $key');
-        return persistentData;
+        // Debug print removed
+return persistentData;
       }
     }
 
-    // 3. Check for pending request (deduplication)
     if (_pendingRequests.containsKey(key)) {
-      if (kDebugMode) print('⏳ Request deduplication: $key');
-      return await _pendingRequests[key] as T?;
+      // Debug print removed
+return await _pendingRequests[key] as T?;
     }
 
     // 4. Execute fallback function
-    if (kDebugMode) print('🔄 Cache MISS, fetching: $key');
-    final future = _executeFallback<T>(key, fallback);
+    // Debug print removed
+final future = _executeFallback<T>(key, fallback);
     _pendingRequests[key] = future;
 
     try {
@@ -149,8 +149,8 @@ class CacheService with TimerManagementMixin {
     await _prefs?.remove('$_persistentPrefix$key');
     await _prefs?.remove('$_persistentPrefix${key}_expires');
 
-    if (kDebugMode) print('🗑️ Cache invalidated: $key');
-  }
+    // Debug print removed
+}
 
   /// Invalidate cache entries by pattern
   Future<void> invalidatePattern(String pattern) async {
@@ -174,12 +174,7 @@ class CacheService with TimerManagementMixin {
       await _prefs?.remove(key);
     }
 
-    if (kDebugMode)
-      if (kDebugMode) {
-        print(
-          '🗑️ Cache pattern invalidated: $pattern (${memoryKeys.length + persistentKeys.length} entries)',
-        );
-      }
+    // Debug code removed
   }
 
   /// Clear all cache
@@ -199,10 +194,7 @@ class CacheService with TimerManagementMixin {
       await _prefs?.remove(key);
     }
 
-    if (kDebugMode)
-      if (kDebugMode) {
-        print('🗑️ All cache cleared (${cacheKeys.length} persistent entries)');
-      }
+    // Debug code removed
   }
 
   /// Get cache statistics
@@ -294,8 +286,8 @@ class CacheService with TimerManagementMixin {
       final dataMap = json.decode(dataStr) as Map<String, dynamic>;
       return fromJson(dataMap);
     } catch (e) {
-      if (kDebugMode) print('⚠️ Error reading persistent cache for $key: $e');
-      return null;
+      // Debug print removed
+return null;
     }
   }
 
@@ -328,8 +320,8 @@ class CacheService with TimerManagementMixin {
         expiresAt.toIso8601String(),
       );
     } catch (e) {
-      if (kDebugMode) print('⚠️ Error storing persistent cache for $key: $e');
-    }
+      // Debug print removed
+}
   }
 
   Future<T> _executeFallback<T>(
@@ -340,8 +332,8 @@ class CacheService with TimerManagementMixin {
       final result = await fallback();
       return result;
     } catch (e) {
-      if (kDebugMode) print('❌ Fallback function failed for $key: $e');
-      rethrow;
+      // Debug print removed
+rethrow;
     }
   }
 
@@ -361,8 +353,8 @@ class CacheService with TimerManagementMixin {
 
     if (oldestKey != null) {
       _memoryCache.remove(oldestKey);
-      if (kDebugMode) print('🗑️ LRU evicted: $oldestKey');
-    }
+      // Debug print removed
+}
   }
 
   void _startCleanupTimer() {
@@ -385,9 +377,7 @@ class CacheService with TimerManagementMixin {
     }
 
     if (expiredKeys.isNotEmpty && kDebugMode) {
-      if (kDebugMode) {
-        print('🧹 Cleanup: removed ${expiredKeys.length} expired entries');
-      }
+      // Debug code removed
     }
   }
 
@@ -400,6 +390,7 @@ class CacheService with TimerManagementMixin {
 
 /// Internal cache item with TTL
 class _CacheItem {
+  
   final dynamic data;
   final DateTime expiresAt;
 
@@ -408,6 +399,7 @@ class _CacheItem {
 
 /// Cache configuration presets for different data types
 class CacheConfig {
+  
   // Employee data - long-lived, changes infrequently
   static const Duration employeeDataTtl = Duration(hours: 2);
 
@@ -424,6 +416,7 @@ class CacheConfig {
 
 /// Retry configuration with exponential backoff
 class RetryConfig {
+  
   final int maxAttempts;
   final Duration initialDelay;
   final double backoffMultiplier;
@@ -447,6 +440,7 @@ class RetryConfig {
 
 /// Network request utilities with retry and exponential backoff
 class NetworkUtils {
+  
   static Future<T> withRetry<T>({
     required Future<T> Function() operation,
     RetryConfig config = RetryConfig.standard,
@@ -466,12 +460,7 @@ class NetworkUtils {
           rethrow;
         }
 
-        if (kDebugMode)
-          if (kDebugMode) {
-            print(
-              '⚠️ Retry attempt $attempt/${config.maxAttempts} after ${delay.inMilliseconds}ms: $e',
-            );
-          }
+    // Debug code removed
 
         await Future.delayed(delay);
         delay = Duration(

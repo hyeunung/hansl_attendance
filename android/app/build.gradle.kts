@@ -72,3 +72,12 @@ dependencies {
     implementation("com.google.firebase:firebase-messaging")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }
+
+// flutter_app_badger namespace 문제 해결
+configurations.all {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "fr.g123k" && requested.name == "flutter_app_badger") {
+            // namespace 설정이 필요한 라이브러리
+        }
+    }
+}

@@ -47,7 +47,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
 
       // 테이블이 없는 에러가 아닌 경우에만 로그 출력
       if (!e.toString().contains('42P01')) {
-        print('알림 로드 실패: $e');
+        // Debug print removed
       }
     } finally {
       setState(() => _isLoading = false);
@@ -75,7 +75,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
         }
       });
     } catch (e) {
-      print('읽음 처리 실패: $e');
+      // Debug print removed
     }
   }
 
@@ -108,7 +108,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
         context,
       ).showSnackBar(const SnackBar(content: Text('모든 알림을 읽음으로 표시했습니다')));
     } catch (e) {
-      print('모두 읽음 처리 실패: $e');
+      // Debug print removed
     }
   }
 
@@ -124,7 +124,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
         context,
       ).showSnackBar(const SnackBar(content: Text('알림을 삭제했습니다')));
     } catch (e) {
-      print('알림 삭제 실패: $e');
+      // Debug print removed
     }
   }
 
@@ -138,7 +138,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
         return '🚗';
       case 'leave_result':
         return '✅';
-      case 'new_purchase_request':
+      case 'purchase_requests':
       case 'purchase_approval':
       case 'final_approval_request':
         return '📦';
@@ -164,7 +164,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
         return Colors.orange;
       case 'leave_result':
         return Colors.green;
-      case 'new_purchase_request':
+      case 'purchase_requests':
       case 'purchase_approval':
       case 'final_approval_request':
         return Colors.purple;
@@ -388,7 +388,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
             .eq('email', user.email!)
             .single();
       } catch (e) {
-        print('Employee data fetch failed: $e');
+        // Debug print removed
       }
     }
 
@@ -430,7 +430,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
         }
         break;
 
-      case 'new_purchase_request':
+      case 'purchase_requests':
       case 'purchase_approval':
       case 'final_approval_request':
         // 발주 승인 권한 확인

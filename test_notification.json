@@ -1,0 +1,10 @@
+{
+  "type": "user",
+  "user_email": "kej@hansl.com",
+  "title": "긴급 푸시 알림 테스트",
+  "body": "이 알림이 보이면 시스템이 정상 작동 중입니다!",
+  "data": {
+    "type": "emergency_test",
+    "timestamp": "1728001140"
+  }
+}

@@ -1,9 +1,11 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 
 /// Centralized timer management service for efficient timer operations
 /// Prevents memory leaks, reduces battery usage, and optimizes timer creation
 class TimerManager {
+  
+  // Debug logging function removed
+  
   static final TimerManager _instance = TimerManager._internal();
   static TimerManager get instance => _instance;
   TimerManager._internal();
@@ -32,8 +34,8 @@ class TimerManager {
     if (_activeTimers.containsKey(key)) {
       final existingTimer = _activeTimers[key]!;
       if (existingTimer.isActive) {
-        if (kDebugMode) print('🔄 Reusing existing timer: $key');
-        return existingTimer;
+        // Debug print removed
+return existingTimer;
       } else {
         // Remove inactive timer
         _activeTimers.remove(key);
@@ -46,10 +48,7 @@ class TimerManager {
     _activeTimers[key] = timer;
     _totalTimersCreated++;
 
-    if (kDebugMode)
-      if (kDebugMode) {
-        print('✅ Created periodic timer: $key (${interval.inMilliseconds}ms)');
-      }
+    // Debug code removed
     return timer;
   }
 
@@ -65,12 +64,11 @@ class TimerManager {
       cancelTimer(key);
     }
 
-    // Return existing timer if already active (rare case for one-time timers)
     if (_activeTimers.containsKey(key)) {
       final existingTimer = _activeTimers[key]!;
       if (existingTimer.isActive) {
-        if (kDebugMode) print('🔄 Existing one-time timer still active: $key');
-        return existingTimer;
+        // Debug print removed
+return existingTimer;
       } else {
         _activeTimers.remove(key);
         _totalTimersDestroyed++;
@@ -88,10 +86,7 @@ class TimerManager {
     _activeTimers[key] = timer;
     _totalTimersCreated++;
 
-    if (kDebugMode)
-      if (kDebugMode) {
-        print('✅ Created one-time timer: $key (${delay.inMilliseconds}ms)');
-      }
+    // Debug code removed
     return timer;
   }
 
@@ -101,8 +96,8 @@ class TimerManager {
     if (timer != null) {
       timer.cancel();
       _totalTimersDestroyed++;
-      if (kDebugMode) print('❌ Cancelled timer: $key');
-      return true;
+      // Debug print removed
+return true;
     }
     return false;
   }
@@ -120,11 +115,7 @@ class TimerManager {
       }
     }
 
-    if (cancelledCount > 0 && kDebugMode) {
-      if (kDebugMode) {
-        print('❌ Cancelled $cancelledCount timers with prefix: $prefix');
-      }
-    }
+    // Debug code removed
 
     return cancelledCount;
   }
@@ -140,9 +131,7 @@ class TimerManager {
     _activeTimers.clear();
     _totalTimersDestroyed += count;
 
-    if (count > 0 && kDebugMode) {
-      if (kDebugMode) print('❌ Cancelled all timers: $count timers');
-    }
+    // Debug code removed
 
     return count;
   }
@@ -227,8 +216,8 @@ class TimerManager {
     required void Function() callback,
   }) {
     if (isTimerActive(key)) {
-      if (kDebugMode) print('⏸️ Throttled execution: $key (cooldown active)');
-      return false;
+      // Debug print removed
+return false;
     }
 
     // Execute immediately
@@ -240,8 +229,8 @@ class TimerManager {
       delay: cooldown,
       callback: () {
         // Timer auto-cleans up itself
-        if (kDebugMode) print('⏰ Throttle cooldown ended: $key');
-      },
+        // Debug print removed
+},
     );
 
     return true;
@@ -252,9 +241,7 @@ class TimerManager {
     final pausedKeys = getActiveTimerKeys();
     cancelAllTimers();
 
-    if (pausedKeys.isNotEmpty && kDebugMode) {
-      if (kDebugMode) print('⏸️ Paused ${pausedKeys.length} timers');
-    }
+    // Debug code removed
 
     return pausedKeys;
   }
@@ -274,27 +261,21 @@ class TimerManager {
   }
 
   void _performMaintenance() {
-    final stats = getStats(); // This also cleans up inactive timers
+    getStats(); // This also cleans up inactive timers
 
-    if (kDebugMode) {
-      if (kDebugMode) {
-        print(
-          '🧹 Timer maintenance: ${stats.activeTimers} active, '
-          '${stats.totalCreated - stats.totalDestroyed} net created',
-        );
-      }
-    }
+    // Debug code removed
   }
 
   /// Dispose all resources
   void dispose() {
     cancelAllTimers();
-    if (kDebugMode) debugPrint('🗑️ TimerManager disposed');
-  }
+    // Debug removed
+}
 }
 
 /// Timer statistics data class
 class TimerStats {
+  
   final int activeTimers;
   final int totalCreated;
   final int totalDestroyed;
@@ -403,13 +384,7 @@ mixin TimerManagementMixin {
 
   /// Dispose scoped timers (call from dispose method)
   void disposeScopedTimers() {
-    final cancelledCount = cancelAllScopedTimers();
-    if (kDebugMode && cancelledCount > 0) {
-      if (kDebugMode) {
-        print(
-          '🗑️ Disposed $cancelledCount scoped timers for ${runtimeType.toString()}',
-        );
-      }
-    }
+    cancelAllScopedTimers();
+    // Debug code removed
   }
 }

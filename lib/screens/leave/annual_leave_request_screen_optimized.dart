@@ -12,7 +12,6 @@ import '../../widgets/leave/leave_info_card_widget.dart';
 import '../../widgets/leave/leave_memo_input_widget.dart';
 import '../../widgets/leave/leave_date_chips_widget.dart';
 import '../../widgets/common/notification_banner_widget.dart';
-import '../../utils/logger.dart';
 import '../../utils/validators/leave_validators.dart';
 
 /// 성능 최적화된 연차 신청 화면
@@ -85,13 +84,13 @@ class _AnnualLeaveRequestScreenOptimizedState
         );
 
         stopwatch.stop();
-        AppLogger.performance('연차 정보 로드', stopwatch.elapsed);
+        // Debug code removed
 
         // 캐시 업데이트
         _updateDisabledDatesCache(leaveProvider.myLeaves);
       }
-    } catch (e, stackTrace) {
-      AppLogger.error('연차 정보 로드 실패', e, stackTrace);
+    } catch (e) {
+      // Debug code removed
       showBanner(
         '연차 정보를 불러오는데 실패했습니다.',
         type: BannerType.error,
@@ -106,7 +105,6 @@ class _AnnualLeaveRequestScreenOptimizedState
 
   /// 비활성화된 날짜 캐시 업데이트 (반려된 연차는 제외)
   void _updateDisabledDatesCache(List<Map<String, dynamic>> myLeaves) {
-    // pending이나 approved 상태인 연차만 비활성화 (rejected는 다시 신청 가능)
     _cachedDisabledDates = myLeaves
         .where((l) => l['status'] != 'rejected') // 반려된 연차는 제외
         .map((l) {
@@ -254,7 +252,6 @@ class _AnnualLeaveRequestScreenOptimizedState
       bool hasError = false;
       List<Future<void>> requestFutures = [];
 
-      // 선택된 휴가 유형만 처리 (불필요한 순회 제거)
       final typesToProcess = _selectedDatesMap.entries
           .where((e) => e.value.isNotEmpty)
           .map((e) => e.key);
@@ -277,7 +274,7 @@ class _AnnualLeaveRequestScreenOptimizedState
                   reason: sanitizedMemo,
                 )
                 .catchError((e) {
-                  AppLogger.error('연차 신청 실패', e);
+                  // Debug code removed
                   hasError = true;
                   return Future.value();
                 }),
@@ -297,7 +294,6 @@ class _AnnualLeaveRequestScreenOptimizedState
           duration: const Duration(seconds: 3),
         );
 
-        // 즉시 화면 전환 (출장 신청과 동일하게)
         if (mounted) {
           Navigator.pop(context);
         }
@@ -356,7 +352,6 @@ class _AnnualLeaveRequestScreenOptimizedState
         ),
         const SizedBox(height: 18),
 
-        // 연차 정보 카드 (Provider 사용 최소화)
         Selector<LeaveProvider, Map<String, double>>(
           selector: (_, provider) => {
             'remain': provider.remainAnnual,
@@ -384,7 +379,6 @@ class _AnnualLeaveRequestScreenOptimizedState
         ),
         const SizedBox(height: 20),
 
-        // 캘린더 (캐시된 데이터 사용)
         Selector<LeaveProvider, List<Map<String, dynamic>>>(
           selector: (_, provider) => provider.myLeaves,
           builder: (context, myLeaves, _) {

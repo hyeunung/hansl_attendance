@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'cache_service.dart';
 import 'timer_manager.dart';
@@ -15,7 +14,13 @@ class DatabaseOptimizationService
   static DatabaseOptimizationService get instance => _instance;
   DatabaseOptimizationService._internal();
 
-  final SupabaseClient _client = Supabase.instance.client;
+  // Lazy initialization - Supabase client 접근을 지연시킴
+  SupabaseClient? _client;
+  SupabaseClient get client {
+    _client ??= Supabase.instance.client;
+    return _client!;
+  }
+  
   final CacheService _cache = CacheService.instance;
 
   // Query performance tracking
@@ -43,7 +48,7 @@ class DatabaseOptimizationService
       fallback: () => _executeWithTimeout(
         operation: () async {
           _recordQueryStart('getEmployeeByEmail');
-          final response = await _client
+          final response = await client
               .from('employees')
               .select(fieldsStr)
               .eq('email', email)
@@ -71,7 +76,7 @@ class DatabaseOptimizationService
       fallback: () => _executeWithTimeout(
         operation: () async {
           _recordQueryStart('getEmployeeRole');
-          final response = await _client
+          final response = await client
               .from('employees')
               .select('role, is_admin, department')
               .eq('id', userId)
@@ -121,7 +126,7 @@ class DatabaseOptimizationService
               _recordQueryStart('getAttendanceRecords');
 
               // Build query step by step without reassigning different types
-              dynamic query = _client
+              dynamic query = client
                   .from('attendance_records')
                   .select()
                   .eq('employee_id', employeeId);
@@ -181,7 +186,7 @@ class DatabaseOptimizationService
             operation: () async {
               _recordQueryStart('getLeaveRequests');
 
-              dynamic query = _client.from('leave').select('*');
+              dynamic query = client.from('leave').select('*');
 
               if (userEmail != null) {
                 query = query.eq('user_email', userEmail);
@@ -247,7 +252,7 @@ class DatabaseOptimizationService
     if (emails.isEmpty) return;
 
     // Single query to get all employee data
-    final employeeData = await _client
+    final employeeData = await client
         .from('employees')
         .select('email, name, role, is_admin, department, attendance_role')
         .inFilter('email', emails.toList());
@@ -292,8 +297,8 @@ class DatabaseOptimizationService
         _recordQueryStart('optimizedInsert_$table');
 
         final response = upsert
-            ? await _client.from(table).upsert(data).select()
-            : await _client.from(table).insert(data).select();
+            ? await client.from(table).upsert(data).select()
+            : await client.from(table).insert(data).select();
 
         // Invalidate related cache patterns
         if (invalidateCachePatterns != null) {
@@ -322,7 +327,7 @@ class DatabaseOptimizationService
       operation: () async {
         _recordQueryStart('optimizedUpdate_$table');
 
-        dynamic query = _client.from(table).update(data);
+        dynamic query = client.from(table).update(data);
 
         for (final entry in match.entries) {
           query = query.eq(entry.key, entry.value);
@@ -364,8 +369,8 @@ class DatabaseOptimizationService
           try {
             return await future;
           } catch (e) {
-            if (kDebugMode) print('⚠️ Batch query failed: $e');
-            return null;
+            // Debug print removed
+return null;
           }
         }),
         eagerError: false,
@@ -491,12 +496,12 @@ class DatabaseOptimizationService
     if (patterns != null && patterns.isNotEmpty) {
       for (final pattern in patterns) {
         await _cache.invalidatePattern(pattern);
-        if (kDebugMode) print('🗑️ Cache invalidated: $pattern');
-      }
+        // Debug print removed
+}
     } else {
       await _cache.clearAll();
-      if (kDebugMode) print('🗑️ All cache cleared');
-    }
+      // Debug print removed
+}
   }
 
   /// Dispose resources

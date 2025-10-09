@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 
 /// 에러 메시지를 한글로 번역하는 유틸리티
 class ErrorTranslator {
@@ -7,9 +6,7 @@ class ErrorTranslator {
     final errorStr = error.toString().toLowerCase();
 
     // 디버그 모드에서는 원본 에러도 출력
-    if (kDebugMode) {
-      print('🔴 원본 에러: $error');
-    }
+    // Debug code removed
 
     // 인증 관련 에러
     if (errorStr.contains('invalid login credentials') ||
@@ -96,7 +93,6 @@ class ErrorTranslator {
       return '데이터 제약 조건을 위반했습니다';
     }
 
-    // Row Level Security (RLS) 에러
     if (errorStr.contains('new row violates row-level security') ||
         errorStr.contains('rls')) {
       return '데이터 접근 권한이 없습니다. 관리자에게 문의하세요';
@@ -196,7 +192,6 @@ class ErrorTranslator {
       return '오류가 발생했습니다. 관리자에게 문의하세요';
     }
 
-    // 짧은 에러는 그대로 반환 (이미 한글일 수 있음)
     return error.toString();
   }
 

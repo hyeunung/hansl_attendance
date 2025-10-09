@@ -33,7 +33,7 @@ class LeaveCalendarWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [AppShadows.card],
+        boxShadow: AppShadows.cardShadow,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
@@ -157,7 +157,6 @@ class LeaveCalendarWidget extends StatelessWidget {
         final selectedWidget = _buildDayWidget(day);
         if (selectedWidget != null) return selectedWidget;
 
-        // 공휴일인 경우 빨간색으로 표시 (심플하게)
         if (leaveProvider.isHoliday(day)) {
           return Container(
             margin: const EdgeInsets.all(4),
@@ -400,7 +399,6 @@ class LeaveCalendarWidget extends StatelessWidget {
   }
 
   Set<DateTime> _getDisabledDates() {
-    // pending이나 approved 상태인 연차만 비활성화 (rejected는 다시 신청 가능)
     return myLeaves
         .where((l) => l['status'] != 'rejected') // 반려된 연차는 제외
         .map((l) {
@@ -430,7 +428,6 @@ class LeaveCalendarWidget extends StatelessWidget {
     DateTime day,
     Set<DateTime> disabledDates,
   ) {
-    // 주말(토요일, 일요일)은 비활성화
     if (day.weekday == DateTime.saturday || day.weekday == DateTime.sunday) {
       return false;
     }

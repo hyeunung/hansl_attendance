@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -8,6 +7,7 @@ import '../../providers/user_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../utils/responsive_utils.dart';
+import '../../utils/user_role_helper.dart';
 
 class PurchaseApprovalWidget extends StatefulWidget {
   const PurchaseApprovalWidget({super.key});
@@ -17,7 +17,9 @@ class PurchaseApprovalWidget extends StatefulWidget {
 }
 
 class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   final NumberFormat currencyFormat = NumberFormat('#,###');
   late TabController _tabController;
 
@@ -28,22 +30,33 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
 
     // 탭 변경 리스너 추가
     _tabController.addListener(() {
-      if (_tabController.indexIsChanging) {
-        // UI 업데이트를 위한 setState 추가
-        setState(() {});
+      // indexIsChanging 조건 제거 - 탭이 완전히 변경된 후에도 처리
+      // Debug code removed
+      
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final purchaseProvider = Provider.of<PurchaseProvider>(
+        context,
+        listen: false,
+      );
 
-        final userProvider = Provider.of<UserProvider>(context, listen: false);
-        final purchaseProvider = Provider.of<PurchaseProvider>(
-          context,
-          listen: false,
+      // employee가 없으면 아무것도 하지 않음
+      if (userProvider.employee == null) {
+        // Debug print removed
+return;
+      }
+      
+      // Debug code removed
+
+      if (_tabController.index == 1) {
+        // Debug print removed
+        purchaseProvider.fetchCompletedPurchases(
+          employee: userProvider.employee,
         );
-
-        if (_tabController.index == 1) {
-          // 처리완료 탭으로 이동 시 금일 처리 데이터 로드
-          purchaseProvider.fetchCompletedPurchases(
-            employee: userProvider.employee,
-          );
-        }
+      } else if (_tabController.index == 0) {
+        // Debug print removed
+        purchaseProvider.fetchPendingPurchases(
+          employee: userProvider.employee,
+        );
       }
     });
 
@@ -55,12 +68,13 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
         listen: false,
       );
 
-      if (kDebugMode) {
-        print('🔄 PurchaseApprovalWidget - 초기 데이터 로드');
-        print('📋 employee: ${userProvider.employee}');
+      // employee가 있을 때만 로드
+      if (userProvider.employee != null) {
+        // Debug print removed
+        purchaseProvider.fetchPendingPurchases(employee: userProvider.employee);
+      } else {
+        // Debug code removed
       }
-
-      purchaseProvider.fetchPendingPurchases(employee: userProvider.employee);
     });
   }
 
@@ -72,18 +86,19 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
 
   // 승인 권한 체크
   bool canApproveMiddle(List<dynamic> roles) {
-    return roles.contains('middle_manager') || roles.contains('app_admin');
+    return UserRoleHelper.isMiddleManager(roles) || UserRoleHelper.isAppAdmin(roles);
   }
 
-  bool canApproveFinal(List<dynamic> roles, String paymentCategory) {
-    if (roles.contains('app_admin')) return true;
-    if (!roles.contains('final_approver')) return false;
+  bool canApproveFinal(List<dynamic> roles, String? paymentCategory) {
+    if (UserRoleHelper.isAppAdmin(roles)) return true;
+    if (!UserRoleHelper.isFinalApprover(roles)) return false;
+    if (paymentCategory == null || paymentCategory.isEmpty) return false;
 
     // final_approver가 있는 경우 세부 권한 체크
-    if (roles.contains('raw_material_manager')) {
+    if (UserRoleHelper.isRawMaterialManager(roles)) {
       return paymentCategory == '발주';
     }
-    if (roles.contains('consumable_manager')) {
+    if (UserRoleHelper.isConsumableManager(roles)) {
       return paymentCategory == '구매 요청';
     }
 
@@ -153,7 +168,7 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                         ),
                       ),
                       child: Text(
-                        group.paymentCategory,
+                        group.paymentCategory ?? '',
                         style: ResponsiveUtils.getTextStyle(
                           context,
                           fontSize: 12,
@@ -270,7 +285,6 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // 품목 번호와 이름 (DB의 line_number 사용)
                                 Text(
                                   '${item.lineNumber}. ${item.itemName.isNotEmpty ? item.itemName : "품목명 없음"}',
                                   style: ResponsiveUtils.getTextStyle(
@@ -532,6 +546,7 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // AutomaticKeepAliveClientMixin 필수
     return Consumer2<PurchaseProvider, UserProvider>(
       builder: (context, purchaseProvider, userProvider, _) {
         final purchaseRoles =
@@ -541,7 +556,7 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
         int pendingCount = 0;
         String pendingDetail = '';
 
-        if (purchaseRoles.contains('app_admin')) {
+        if (UserRoleHelper.isAppAdmin(purchaseRoles)) {
           pendingCount = purchaseProvider.totalPendingCount;
           if (purchaseProvider.middleManagerPendingCount > 0 ||
               purchaseProvider.rawMaterialPendingCount > 0 ||
@@ -552,14 +567,14 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                 '구매: ${purchaseProvider.consumablePendingCount})';
           }
         } else {
-          if (purchaseRoles.contains('middle_manager')) {
+          if (UserRoleHelper.isMiddleManager(purchaseRoles)) {
             pendingCount += purchaseProvider.middleManagerPendingCount;
           }
-          if (purchaseRoles.contains('final_approver')) {
-            if (purchaseRoles.contains('raw_material_manager')) {
+          if (UserRoleHelper.isFinalApprover(purchaseRoles)) {
+            if (UserRoleHelper.isRawMaterialManager(purchaseRoles)) {
               pendingCount += purchaseProvider.rawMaterialPendingCount;
             }
-            if (purchaseRoles.contains('consumable_manager')) {
+            if (UserRoleHelper.isConsumableManager(purchaseRoles)) {
               pendingCount += purchaseProvider.consumablePendingCount;
             }
           }
@@ -567,7 +582,6 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
 
         return Column(
           children: [
-            // 상태별 탭 (대기중/처리완료)
             Container(
               padding: EdgeInsets.symmetric(
                 horizontal: ResponsiveUtils.spacing(context, 20),
@@ -676,7 +690,7 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
             ),
 
             // app_admin인 경우 세부 개수 표시
-            if (purchaseRoles.contains('app_admin') &&
+            if (UserRoleHelper.isAppAdmin(purchaseRoles) &&
                 pendingDetail.isNotEmpty &&
                 _tabController.index == 0)
               Padding(
@@ -720,7 +734,16 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
             userProvider.employee?['purchase_role'] as List<dynamic>? ?? [];
 
         if (purchaseProvider.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('대기중 데이터를 불러오고 있습니다...'),
+              ],
+            ),
+          );
         }
 
         if (purchaseProvider.error != null) {
@@ -740,7 +763,18 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
           );
         }
 
-        final orders = purchaseProvider.pendingOrders;
+        final orders = List<PurchaseOrderGroup>.from(purchaseProvider.pendingOrders)
+          ..sort((a, b) {
+            // 1차 승인 대기가 우선
+            final aIsMiddlePending = a.middleManagerStatus == 'pending';
+            final bIsMiddlePending = b.middleManagerStatus == 'pending';
+            
+            if (aIsMiddlePending && !bIsMiddlePending) return -1;
+            if (!aIsMiddlePending && bIsMiddlePending) return 1;
+            
+            // 같은 승인 단계면 날짜 역순으로 정렬
+            return b.requestDate.compareTo(a.requestDate);
+          });
 
         if (orders.isEmpty) {
           return Center(
@@ -777,10 +811,13 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
         }
 
         return RefreshIndicator(
-          onRefresh: () => purchaseProvider.fetchPendingPurchases(
-            employee: userProvider.employee,
-          ),
+          onRefresh: () async {
+            await purchaseProvider.fetchPendingPurchases(
+              employee: userProvider.employee,
+            );
+          },
           child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: EdgeInsets.symmetric(
               horizontal: ResponsiveUtils.spacing(context, 20),
               vertical: ResponsiveUtils.spacing(context, 20),
@@ -805,8 +842,18 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
   Widget _buildCompletedTab() {
     return Consumer2<PurchaseProvider, UserProvider>(
       builder: (context, purchaseProvider, userProvider, _) {
+        // Debug code removed
         if (purchaseProvider.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('처리완료 데이터를 불러오고 있습니다...'),
+              ],
+            ),
+          );
         }
 
         if (purchaseProvider.error != null) {
@@ -827,6 +874,8 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
         }
 
         final orders = purchaseProvider.completedOrders;
+        
+        // Debug code removed
 
         if (orders.isEmpty) {
           return Center(
@@ -891,16 +940,6 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
   ) {
     final headerItem = group.headerItem;
 
-    if (kDebugMode) {
-      print('🎨 카드 렌더링: ${group.purchaseOrderNumber}');
-      print('  - 아이템 수: ${group.items.length}');
-      print('  - 헤더 아이템: ${headerItem.itemName}');
-      print('  - 규격: ${headerItem.specification}');
-      print('  - 수량: ${headerItem.quantity}');
-      print('  - 라인 넘버: ${headerItem.lineNumber}');
-      print('  - 추가 아이템: ${group.additionalItemCount}개');
-    }
-
     // payment_category에 따른 색상 설정
     final Color categoryBgColor;
     final Color categoryTextColor;
@@ -937,7 +976,7 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
         borderRadius: BorderRadius.circular(
           ResponsiveUtils.spacing(context, 14),
         ),
-        boxShadow: [AppShadows.card],
+        boxShadow: AppShadows.cardShadow,
       ),
       child: InkWell(
         onTap: () => _showOrderDetails(context, group),
@@ -980,7 +1019,7 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                       ),
                     ),
                     child: Text(
-                      group.paymentCategory,
+                      group.paymentCategory ?? '',
                       style: ResponsiveUtils.getTextStyle(
                         context,
                         fontSize: 14,
@@ -1420,16 +1459,109 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                               ),
                             );
 
-                            if (confirmed == true) {
+                            if (confirmed == true && context.mounted) {
+                              // BuildContext 저장
+                              final scaffoldContext = context;
+                              
+                              // 로딩 다이얼로그 표시
+                              showDialog(
+                                context: scaffoldContext,
+                                barrierDismissible: false,
+                                builder: (dialogContext) => const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                              
                               final success = await purchaseProvider
                                   .approveMiddle(group.purchaseOrderNumber);
-                              if (success && context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('1차 승인 완료')),
-                                );
-                                await purchaseProvider.fetchPendingPurchases(
-                                  employee: userProvider.employee,
-                                );
+                              
+                              // 로딩 다이얼로그 닫기
+                              if (scaffoldContext.mounted) {
+                                Navigator.of(scaffoldContext).pop();
+                              }
+                              
+                              if (scaffoldContext.mounted) {
+                                if (success) {
+                                  // 성공 모달 표시
+                                  showDialog(
+                                    context: scaffoldContext,
+                                    barrierDismissible: false,
+                                    builder: (dialogContext) => Dialog(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(24),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Container(
+                                              width: 60,
+                                              height: 60,
+                                              decoration: BoxDecoration(
+                                                color: Colors.green.withValues(alpha: 0.1),
+                                                borderRadius: BorderRadius.circular(30),
+                                              ),
+                                              child: const Icon(
+                                                Icons.check_circle,
+                                                color: Colors.green,
+                                                size: 40,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            const Text(
+                                              '1차 승인 완료',
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              '발주번호: ${group.purchaseOrderNumber}',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.grey[600],
+                                              ),
+                                            ),
+                                            const SizedBox(height: 20),
+                                            ElevatedButton(
+                                              onPressed: () {
+                                                Navigator.of(dialogContext).pop();
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.green,
+                                                padding: const EdgeInsets.symmetric(
+                                                  horizontal: 32,
+                                                  vertical: 12,
+                                                ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                              child: const Text(
+                                                '확인',
+                                                style: TextStyle(color: Colors.white),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                  
+                                  // 실시간 데이터 업데이트
+                                  await purchaseProvider.fetchPendingPurchases(
+                                    employee: userProvider.employee,
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+                                    SnackBar(
+                                      content: Text('1차 승인 실패: ${purchaseProvider.error ?? "알 수 없는 오류"}'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
                               }
                             }
                           },
@@ -1725,16 +1857,109 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                               ),
                             );
 
-                            if (confirmed == true) {
+                            if (confirmed == true && context.mounted) {
+                              // BuildContext 저장
+                              final scaffoldContext = context;
+                              
+                              // 로딩 다이얼로그 표시
+                              showDialog(
+                                context: scaffoldContext,
+                                barrierDismissible: false,
+                                builder: (dialogContext) => const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                              
                               final success = await purchaseProvider
                                   .approveFinal(group.purchaseOrderNumber);
-                              if (success && context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('최종 승인 완료')),
-                                );
-                                await purchaseProvider.fetchPendingPurchases(
-                                  employee: userProvider.employee,
-                                );
+                              
+                              // 로딩 다이얼로그 닫기
+                              if (scaffoldContext.mounted) {
+                                Navigator.of(scaffoldContext).pop();
+                              }
+                              
+                              if (scaffoldContext.mounted) {
+                                if (success) {
+                                  // 성공 모달 표시
+                                  showDialog(
+                                    context: scaffoldContext,
+                                    barrierDismissible: false,
+                                    builder: (dialogContext) => Dialog(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(24),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Container(
+                                              width: 60,
+                                              height: 60,
+                                              decoration: BoxDecoration(
+                                                color: AppColors.primary.withValues(alpha: 0.1),
+                                                borderRadius: BorderRadius.circular(30),
+                                              ),
+                                              child: Icon(
+                                                Icons.check_circle,
+                                                color: AppColors.primary,
+                                                size: 40,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            const Text(
+                                              '최종 승인 완료',
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              '발주번호: ${group.purchaseOrderNumber}',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.grey[600],
+                                              ),
+                                            ),
+                                            const SizedBox(height: 20),
+                                            ElevatedButton(
+                                              onPressed: () {
+                                                Navigator.of(dialogContext).pop();
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: AppColors.primary,
+                                                padding: const EdgeInsets.symmetric(
+                                                  horizontal: 32,
+                                                  vertical: 12,
+                                                ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                              child: const Text(
+                                                '확인',
+                                                style: TextStyle(color: Colors.white),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                  
+                                  // 실시간 데이터 업데이트
+                                  await purchaseProvider.fetchPendingPurchases(
+                                    employee: userProvider.employee,
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+                                    SnackBar(
+                                      content: Text('최종 승인 실패: ${purchaseProvider.error ?? "알 수 없는 오류"}'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
                               }
                             }
                           },
@@ -1864,7 +2089,7 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
         borderRadius: BorderRadius.circular(
           ResponsiveUtils.spacing(context, 14),
         ),
-        boxShadow: [AppShadows.card],
+        boxShadow: AppShadows.cardShadow,
       ),
       child: InkWell(
         onTap: () => _showOrderDetails(context, group),
@@ -1907,7 +2132,7 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                       ),
                     ),
                     child: Text(
-                      group.paymentCategory,
+                      group.paymentCategory ?? '',
                       style: ResponsiveUtils.getTextStyle(
                         context,
                         fontSize: 14,
@@ -2085,7 +2310,6 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
     UserProvider userProvider,
     PurchaseProvider purchaseProvider,
   ) {
-    final TextEditingController reasonController = TextEditingController();
 
     showDialog(
       context: context,
@@ -2206,6 +2430,10 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () async {
+                        // BuildContext 저장
+                        final dialogContext = context;
+                        final scaffoldContext = context;
+                        
                         final isMiddleManager =
                             canApproveMiddle(purchaseRoles) &&
                             group.middleManagerStatus == 'pending';
@@ -2216,14 +2444,16 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
                           reason: '확인 후 반려',
                         );
 
-                        if (success && context.mounted) {
-                          Navigator.of(context).pop();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('반려 처리되었습니다')),
-                          );
-                          await purchaseProvider.fetchPendingPurchases(
-                            employee: userProvider.employee,
-                          );
+                        if (success && dialogContext.mounted) {
+                          Navigator.of(dialogContext).pop();
+                          if (scaffoldContext.mounted) {
+                            ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+                              const SnackBar(content: Text('반려 처리되었습니다')),
+                            );
+                            await purchaseProvider.fetchPendingPurchases(
+                              employee: userProvider.employee,
+                            );
+                          }
                         }
                       },
                       style: ElevatedButton.styleFrom(

@@ -218,7 +218,6 @@ serve(async (req) => {
     const results = [];
 
     for (const year of years) {
-      console.log(`Processing year ${year}...`);
       
       // 음력-양력 변환으로 공휴일 계산
       const holidays = calculateKoreanHolidays(year);

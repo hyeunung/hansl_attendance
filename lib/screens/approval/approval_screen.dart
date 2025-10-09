@@ -10,9 +10,11 @@ import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
 import '../../providers/user_provider.dart';
 import '../../widgets/purchase/purchase_approval_widget.dart';
+import '../../widgets/purchase/purchase_waiting_widget.dart';
+import '../../widgets/purchase/receiving_waiting_widget.dart';
 
 class ApprovalScreen extends StatefulWidget {
-  final int? initialMainTab; // 0: 연차/출장, 1: 발주승인
+  final int? initialMainTab; // 0: 연차/출장, 1: 발주승인, 2: 구매대기, 3: 입고대기
   const ApprovalScreen({super.key, this.initialMainTab});
 
   @override
@@ -23,21 +25,20 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-  late TabController _mainTabController; // 메인 탭 (연차/출장, 발주승인)
+  late TabController _mainTabController; // 메인 탭 (연차/출장, 발주승인, 구매대기, 입고대기)
   late TabController _subTabController; // 서브 탭 (대기중, 처리완료)
   bool _hasPurchaseApprovalAuth = false; // 발주 승인 권한 여부
 
   @override
   void initState() {
     super.initState();
-    // 초기값은 1개 탭으로 설정, build에서 권한 확인 후 조정
-    // initialIndex가 length보다 크면 0으로 설정
+    // 4개 탭으로 설정 (연차/출장, 발주승인, 구매대기, 입고대기)
     int safeInitialIndex = widget.initialMainTab ?? 0;
-    if (safeInitialIndex >= 1) {
-      safeInitialIndex = 0; // length가 1이므로 0만 가능
+    if (safeInitialIndex >= 4) {
+      safeInitialIndex = 0;
     }
     _mainTabController = TabController(
-      length: 1,
+      length: 4,
       vsync: this,
       initialIndex: safeInitialIndex,
     );
@@ -154,7 +155,8 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     // 탭 개수 조정 (초기화 시점과 다른 경우)
     if (_hasPurchaseApprovalAuth != hasPurchaseApproval) {
       _hasPurchaseApprovalAuth = hasPurchaseApproval;
-      final tabCount = hasPurchaseApproval ? 2 : 1;
+      // 항상 4개 탭 유지 (연차/출장, 발주승인, 구매대기, 입고대기)
+      const tabCount = 4;
 
       if (kDebugMode) {
         debugPrint('🔄 탭 개수 조정 필요: $tabCount개 탭으로 변경');
@@ -460,6 +462,89 @@ class _ApprovalScreenState extends State<ApprovalScreen>
               .where((l) => l['status'] == 'pending')
               .toList();
 
+          // 발주승인 탭 뱃지 계산
+          int pendingApprovalCount = 0;
+          if (_hasPurchaseApprovalAuth) {
+            // PurchaseProvider에서 대기 중인 발주 데이터 가져오기
+            final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
+            final pendingOrders = purchaseProvider.pendingOrders;
+            
+            // 권한에 따른 필터링
+            if (purchaseRoles.contains('app_admin') || purchaseRoles.contains('lead buyer')) {
+              // app_admin, lead buyer: 모든 대기 발주
+              pendingApprovalCount = pendingOrders.length;
+            } else {
+              // 기타 권한: 본인이 신청한 발주만
+              final currentEmployeeName = userProvider.employee?['name'];
+              pendingApprovalCount = pendingOrders
+                  .where((group) => group.requesterName == currentEmployeeName)
+                  .length;
+            }
+            
+            if (kDebugMode) {
+              debugPrint('📊 발주승인 뱃지: $pendingApprovalCount개');
+            }
+          }
+
+          // 구매대기 탭 뱃지 계산
+          int purchaseWaitingCount = 0;
+          if (_hasPurchaseApprovalAuth) {
+            final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
+            final pendingOrders = purchaseProvider.pendingOrders;
+            
+            // 구매대기 조건: final_manager_status == 'approved' && progress_type 필터링
+            final waitingPurchases = pendingOrders.where((group) {
+              final isApproved = group.finalManagerStatus == 'approved';
+              final progressType = group.progressType ?? '';
+              final isEligible = progressType == 'advance' || 
+                  (progressType == 'general' && isApproved);
+              
+              // 권한에 따른 필터링
+              final currentEmployeeName = userProvider.employee?['name'];
+              final isAuthorized = purchaseRoles.contains('app_admin') || 
+                  purchaseRoles.contains('lead buyer') ||
+                  group.requesterName == currentEmployeeName;
+              
+              return isApproved && isEligible && isAuthorized;
+            }).toList();
+            
+            purchaseWaitingCount = waitingPurchases.length;
+            
+            if (kDebugMode) {
+              debugPrint('📊 구매대기 뱃지: $purchaseWaitingCount개');
+            }
+          }
+
+          // 입고대기 탭 뱃지 계산
+          int receivingWaitingCount = 0;
+          if (_hasPurchaseApprovalAuth) {
+            final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
+            final pendingOrders = purchaseProvider.pendingOrders;
+            
+            // 입고대기 조건: final_manager_status == 'approved' && is_payment_completed == true && is_received == false
+            final receivingPurchases = pendingOrders.where((group) {
+              final isApproved = group.finalManagerStatus == 'approved';
+              final isPaymentCompleted = group.isPaymentCompleted == true;
+              final isNotReceived = group.isReceived != true;
+              
+              // 권한에 따른 필터링: app_admin, middle_manager, final_approver, ceo는 모든 건, 나머지는 본인 건만
+              final currentEmployeeName = userProvider.employee?['name'];
+              final isAuthorized = purchaseRoles.contains('app_admin') || 
+                  purchaseRoles.contains('middle_manager') ||
+                  purchaseRoles.contains('final_approver') ||
+                  purchaseRoles.contains('ceo') ||
+                  group.requesterName == currentEmployeeName;
+              
+              return isApproved && isPaymentCompleted && isNotReceived && isAuthorized;
+            }).toList();
+            
+            receivingWaitingCount = receivingPurchases.length;
+            
+            if (kDebugMode) {
+              debugPrint('📊 입고대기 뱃지: $receivingWaitingCount개');
+            }
+          }
+
           // Admin/SuperAdmin은 전체 직원의 처리완료 건을 보여줌
           List<Map<String, dynamic>> done;
           if (isAdminOrSuper) {
@@ -614,7 +699,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                         ),
                       ),
                     ),
-                    // 발주 탭 (권한이 있는 경우만 표시)
+                    // 발주승인 탭 (권한이 있는 경우만 표시)
                     if (_hasPurchaseApprovalAuth)
                       Expanded(
                         child: GestureDetector(
@@ -671,11 +756,223 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                         : const Color(0xFF8E8E93),
                                   ),
                                 ),
+                                if (pendingApprovalCount > 0) ...[
+                                  SizedBox(
+                                    width: ResponsiveUtils.spacing(context, 6),
+                                  ),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: ResponsiveUtils.spacing(
+                                        context,
+                                        6,
+                                      ),
+                                      vertical: ResponsiveUtils.spacing(
+                                        context,
+                                        2,
+                                      ),
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFF3B30),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      '$pendingApprovalCount',
+                                      style: ResponsiveUtils.getTextStyle(
+                                        context,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),
                         ),
                       ),
+                    // 구매대기 탭
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          _mainTabController.animateTo(2);
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: EdgeInsets.symmetric(
+                            vertical: ResponsiveUtils.spacing(context, 14),
+                          ),
+                          decoration: BoxDecoration(
+                            color: _mainTabController.index == 2
+                                ? Colors.white
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(
+                              ResponsiveUtils.spacing(context, 10),
+                            ),
+                            boxShadow: _mainTabController.index == 2
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.08,
+                                      ),
+                                      blurRadius: 3,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.shopping_cart_outlined,
+                                size: ResponsiveUtils.iconSize(context, 18),
+                                color: _mainTabController.index == 2
+                                    ? AppColors.primary
+                                    : const Color(0xFF8E8E93),
+                              ),
+                              SizedBox(
+                                width: ResponsiveUtils.spacing(context, 6),
+                              ),
+                              Text(
+                                '구매대기',
+                                style: ResponsiveUtils.getTextStyle(
+                                  context,
+                                  fontSize: 15,
+                                  fontWeight: _mainTabController.index == 2
+                                      ? FontWeight.w600
+                                      : FontWeight.w500,
+                                  color: _mainTabController.index == 2
+                                      ? const Color(0xFF1C1C1E)
+                                      : const Color(0xFF8E8E93),
+                                ),
+                              ),
+                              if (purchaseWaitingCount > 0) ...[
+                                SizedBox(
+                                  width: ResponsiveUtils.spacing(context, 6),
+                                ),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: ResponsiveUtils.spacing(
+                                      context,
+                                      6,
+                                    ),
+                                    vertical: ResponsiveUtils.spacing(
+                                      context,
+                                      2,
+                                    ),
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFF3B30),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    '$purchaseWaitingCount',
+                                    style: ResponsiveUtils.getTextStyle(
+                                      context,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    // 입고대기 탭
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          _mainTabController.animateTo(3);
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: EdgeInsets.symmetric(
+                            vertical: ResponsiveUtils.spacing(context, 14),
+                          ),
+                          decoration: BoxDecoration(
+                            color: _mainTabController.index == 3
+                                ? Colors.white
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(
+                              ResponsiveUtils.spacing(context, 10),
+                            ),
+                            boxShadow: _mainTabController.index == 3
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.08,
+                                      ),
+                                      blurRadius: 3,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.inventory_2_outlined,
+                                size: ResponsiveUtils.iconSize(context, 18),
+                                color: _mainTabController.index == 3
+                                    ? AppColors.primary
+                                    : const Color(0xFF8E8E93),
+                              ),
+                              SizedBox(
+                                width: ResponsiveUtils.spacing(context, 6),
+                              ),
+                              Text(
+                                '입고대기',
+                                style: ResponsiveUtils.getTextStyle(
+                                  context,
+                                  fontSize: 15,
+                                  fontWeight: _mainTabController.index == 3
+                                      ? FontWeight.w600
+                                      : FontWeight.w500,
+                                  color: _mainTabController.index == 3
+                                      ? const Color(0xFF1C1C1E)
+                                      : const Color(0xFF8E8E93),
+                                ),
+                              ),
+                              if (receivingWaitingCount > 0) ...[
+                                SizedBox(
+                                  width: ResponsiveUtils.spacing(context, 6),
+                                ),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: ResponsiveUtils.spacing(
+                                      context,
+                                      6,
+                                    ),
+                                    vertical: ResponsiveUtils.spacing(
+                                      context,
+                                      2,
+                                    ),
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFF3B30),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    '$receivingWaitingCount',
+                                    style: ResponsiveUtils.getTextStyle(
+                                      context,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -1027,6 +1324,10 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                     ),
                     // 발주승인 탭
                     const PurchaseApprovalWidget(),
+                    // 구매대기 탭
+                    const PurchaseWaitingWidget(),
+                    // 입고대기 탭
+                    const ReceivingWaitingWidget(),
                   ],
                 ),
               ),

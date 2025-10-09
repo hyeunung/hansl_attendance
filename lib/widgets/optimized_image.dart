@@ -258,7 +258,7 @@ class ImagePreloader {
           await precacheImage(AssetImage(asset), context);
           _preloadedAssets.add(asset);
         } catch (e) {
-          debugPrint('Failed to preload asset: $asset - $e');
+          // Debug print removed
         }
       }
     }

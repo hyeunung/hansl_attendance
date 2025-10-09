@@ -46,8 +46,8 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
       }
 
       if (userProvider.email != null && userProvider.email!.isNotEmpty) {
-        // 연차 데이터와 함께 가져오기 (forceRefresh는 첫 로드시에만)
-        await provider.fetchMyLeaves(email: userProvider.email!, forceRefresh: false);
+        // 연차 데이터와 함께 가져오기 (캐시 문제 해결을 위해 forceRefresh: true)
+        await provider.fetchMyLeaves(email: userProvider.email!, forceRefresh: true);
       }
       provider.fetchTodayLeaves(DateTime.now());
       // 관리자의 경우 전체 leave 데이터도 가져옴 (승인 대기 카운트를 위해)
@@ -62,8 +62,8 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context); // AutomaticKeepAliveClientMixin 필수
-    final userEmail = Provider.of<UserProvider>(context, listen: false).email;
-    print('userProvider.email: $userEmail');
+    // final userEmail = Provider.of<UserProvider>(context, listen: false).email;
+    // Debug print removed
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7FA),
       appBar: AppBar(
@@ -84,13 +84,13 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
             !provider.isLoading && provider.error == null,
         builder: (context, provider, _) {
           // 사용자 권한 확인
-          final userProvider = Provider.of<UserProvider>(
-            context,
-            listen: false,
-          );
-          final employee = userProvider.employee;
-          final attendanceRole = employee?['attendance_role'];
-          final name = employee?['name'] ?? '';
+          // final userProvider = Provider.of<UserProvider>(
+          //   context,
+          //   listen: false,
+          // );
+          // final employee = userProvider.employee;  // 미사용
+          // final attendanceRole = employee?['attendance_role'];  // 미사용
+          // final name = employee?['name'] ?? '';  // 미사용
 
           // 승인 권한이 있는 경우 (Admin 또는 Manager)
           // final bool hasApprovalAuth = isAdmin || isManager; // 미사용 변수 주석 처리
@@ -541,45 +541,51 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
     final isAnnual = idx == 0;
     return SizedBox(
       height: ResponsiveUtils.spacing(context, 54),
-      child: GestureDetector(
-        onTap: () {
-          if (idx == 0) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const LeaveScreenRouter()),
-            );
-          } else {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const BusinessTripScreenRouter(),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(r),
+          onTap: () {
+            if (idx == 0) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const LeaveScreenRouter(),
+                ),
+              );
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const BusinessTripScreenRouter(),
+                ),
+              );
+            }
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: isAnnual ? AppColors.primaryGradient : null,
+              color: isAnnual ? null : Colors.white,
+              borderRadius: BorderRadius.circular(r),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.36),
+                  blurRadius: ResponsiveUtils.spacing(context, 6),
+                  offset: Offset(0, ResponsiveUtils.spacing(context, 2)),
+                ),
+              ],
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              label,
+              style: ResponsiveUtils.getTextStyle(
+                context,
+                fontWeight: FontWeight.w700,
+                fontSize: 21,
+                letterSpacing: 0.1,
+                height: 1.2,
+                color: isAnnual ? Colors.white : AppColors.primary,
               ),
-            );
-          }
-        },
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: isAnnual ? AppColors.primaryGradient : null,
-            color: isAnnual ? null : Colors.white,
-            borderRadius: BorderRadius.circular(r),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.36),
-                blurRadius: ResponsiveUtils.spacing(context, 6),
-                offset: Offset(0, ResponsiveUtils.spacing(context, 2)),
-              ),
-            ],
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: ResponsiveUtils.getTextStyle(
-              context,
-              fontWeight: FontWeight.w700,
-              fontSize: 21,
-              letterSpacing: 0.1,
-              height: 1.2,
-              color: isAnnual ? Colors.white : AppColors.primary,
             ),
           ),
         ),

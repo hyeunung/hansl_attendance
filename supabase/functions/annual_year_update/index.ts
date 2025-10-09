@@ -100,7 +100,6 @@ Deno.serve(async (req) => {
     
     const updateYear = targetYear || kstDate.getFullYear();
 
-    console.log(`🗓️ ${updateYear}년 연차 일괄 업데이트 시작 ${dryRun ? '(시뮬레이션)' : ''}`);
 
     // 모든 직원 조회 (입사일이 있는 직원만)
     const { data: allEmployees, error: employeeError } = await supabase
@@ -124,7 +123,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`👥 총 ${allEmployees.length}명 직원 연차 업데이트 시작`);
 
     const results: YearUpdateResult[] = [];
     let successCount = 0;
@@ -227,7 +225,6 @@ async function updateEmployeeAnnualLeave(
     await performActualUpdate(supabase, employee.id, newLeave);
   }
 
-  console.log(`${dryRun ? '[시뮬레이션] ' : ''}✅ ${employee.name}: ${result.message}`);
   
   return result;
 }

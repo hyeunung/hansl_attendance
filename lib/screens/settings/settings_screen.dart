@@ -16,7 +16,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../auth/login_screen.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../services/cache_recovery_service.dart';
-import 'package:flutter/foundation.dart';
 import '../../providers/attendance_provider.dart';
 import '../../services/badge_count_service.dart';
 
@@ -338,13 +337,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     final userProvider = Provider.of<UserProvider>(context);
     final leaveProvider = Provider.of<LeaveProvider>(context);
 
-    // 디버그: 현재 UserProvider 상태 확인
-    if (kDebugMode) {
-      print('🔍 SettingsScreen - UserProvider 상태:');
-      print('  - email: ${userProvider.email}');
-      print('  - name: ${userProvider.name}');
-      print('  - id: ${userProvider.id}');
-    }
+    // Debug code removed
 
     // 데이터가 없으면 여기서 로드
     if (!leaveProvider.isLoading && leaveProvider.myLeaves.isEmpty) {

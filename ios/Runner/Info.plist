@@ -18,12 +18,12 @@
 		<string>HANSL</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
-			<key>CFBundleShortVersionString</key>
-	<string>2.1.1</string>
+		<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
 		<key>CFBundleSignature</key>
 		<string>????</string>
-			<key>CFBundleVersion</key>
-	<string>12</string>
+		<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>NSAppTransportSecurity</key>
@@ -67,16 +67,22 @@
 		<key>UIStatusBarStyle</key>
 		<string></string>
 		<key>UISupportedInterfaceOrientations</key>
-				<array>
+		<array>
 			<string>UIInterfaceOrientationPortrait</string>
-			<string>UIInterfaceOrientationLandscapeLeft</string>
-			<string>UIInterfaceOrientationLandscapeRight</string>
+		</array>
+		<key>UISupportedInterfaceOrientations~ipad</key>
+		<array>
+			<string>UIInterfaceOrientationPortrait</string>
+			<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		</array>
 	<key>UIStatusBarHidden</key>
 	<true/>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
 	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<!-- Impeller 렌더러 비활성화 (iOS 18 성능 문제 해결) -->
+	<key>FLTEnableImpeller</key>
 	<false/>
 	<!-- Deep link configuration for Supabase Auth -->
 	<key>CFBundleURLTypes</key>

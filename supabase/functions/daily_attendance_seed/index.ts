@@ -7,7 +7,6 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-console.log("Hello from Functions!")
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -47,7 +46,6 @@ async function createDailyAttendanceRecords() {
   const kstDate = new Date(now.getTime() + kstOffset)
   const today = kstDate.toISOString().split('T')[0]
   
-  console.log(`🕐 Processing date: ${today} (KST)`)
 
   try {
     // 4. 모든 직원 조회 (is_active 컬럼 없으므로 모든 직원)
@@ -63,7 +61,6 @@ async function createDailyAttendanceRecords() {
       throw new Error('No employees found')
     }
 
-    console.log(`👥 Found ${employees.length} employees`)
 
     // 5. 오늘의 승인된 연차/출장 기록 조회
     const { data: leaveRecords, error: leaveError } = await supabase
@@ -82,7 +79,6 @@ async function createDailyAttendanceRecords() {
       leaveRecords.forEach((leave: LeaveRecord) => {
         leaveMap.set(leave.user_email, leave)
       })
-      console.log(`🏖️ Found ${leaveRecords.length} approved leave records for today`)
     }
 
     // 6. 각 직원에 대해 출근 기록 생성
@@ -152,7 +148,6 @@ async function createDailyAttendanceRecords() {
     )
 
     if (newRecords.length === 0) {
-      console.log(`✅ All attendance records already exist for ${today}`)
       return {
         success: true,
         message: `All ${employees.length} attendance records already exist for ${today}`,
@@ -171,7 +166,6 @@ async function createDailyAttendanceRecords() {
       throw new Error(`Failed to insert attendance records: ${insertError.message}`)
     }
 
-    console.log(`✅ Successfully created ${newRecords.length} attendance records for ${today}`)
     
     return {
       success: true,
@@ -195,7 +189,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log(`🚀 Starting daily attendance seed process...`)
     const result = await createDailyAttendanceRecords()
     
     return new Response(

@@ -99,7 +99,6 @@ Deno.serve(async (req) => {
     const checkDate = targetDate ? new Date(targetDate) : kstDate;
     const checkDateStr = checkDate.toISOString().split('T')[0]; // YYYY-MM-DD
 
-    console.log(`🎂 입사 기념일 체크 시작: ${checkDateStr}`);
 
     // 정확히 1년 전 오늘 입사한 직원들 찾기
     const oneYearAgo = new Date(checkDate);
@@ -126,7 +125,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`🎉 입사 12개월 완성 직원 ${anniversaryEmployees.length}명 발견`);
 
     const results: AnniversaryResult[] = [];
 
@@ -183,7 +181,6 @@ async function processAnniversary(
       throw new Error(`연차 업데이트 실패: ${updateError.message}`);
     }
 
-    console.log(`✅ ${employee.name} 입사 12개월 완성 - 연차 ${previousLeave}개 → ${newLeave}개`);
 
     return {
       employeeId: employee.id,
@@ -240,7 +237,6 @@ async function callUpdateUsedAnnualLeave(
     if (!response.ok) {
       console.error('사용연차 업데이트 호출 실패:', response.status);
     } else {
-      console.log('✅ 사용연차 업데이트 완료');
     }
   } catch (error) {
     console.error('사용연차 업데이트 중 오류:', error);

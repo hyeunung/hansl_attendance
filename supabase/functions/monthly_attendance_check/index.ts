@@ -63,7 +63,6 @@ Deno.serve(async (req) => {
     const targetYear = year || kstDate.getFullYear();
     const targetMonth = month || kstDate.getMonth() + 1;
 
-    console.log(`🕐 월별 만근 체크 시작: ${targetYear}년 ${targetMonth}월`);
 
     // 신입 직원 조회 (입사년도 = 대상년도)
     const { data: newEmployees, error: employeeError } = await supabase
@@ -87,7 +86,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`👥 신입 직원 ${newEmployees.length}명 발견`);
 
     const results: MonthlyResult[] = [];
 
@@ -294,5 +292,4 @@ async function updateMonthlyAttendance(
     throw new Error(`월별 출근 기록 업데이트 실패: ${error.message}`);
   }
 
-  console.log(`✅ ${employeeId}번 직원 ${year}년 ${month}월 기록 업데이트 완료`);
 }

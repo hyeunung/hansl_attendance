@@ -241,7 +241,7 @@ class LeaveProvider extends ChangeNotifier
       if (forceRefresh) {
         // 캐시 무효화
         await _cache.invalidate(cacheKey);
-        if (kDebugMode) print('🔄 My leaves 캐시 무효화됨 (forceRefresh: true)');
+        // Debug print removed
 
         // DB에서 직접 가져오기
         newLeaves = await _service.fetchMyLeavesRaw(email);
@@ -274,17 +274,13 @@ class LeaveProvider extends ChangeNotifier
           isLoading = false;
         });
 
-        if (kDebugMode) {
-          print(
-            '✅ My leaves updated from ${forceRefresh ? 'DB' : 'cache'}: ${newLeaves.length} items',
-          );
-        }
+        // Debug print removed
       } else {
         _updateLoadingState(false, null);
       }
     } catch (e) {
       _updateLoadingState(false, e.toString());
-      if (kDebugMode) print('❌ Failed to fetch my leaves: $e');
+      // Debug print removed
     }
   }
 
@@ -323,9 +319,7 @@ class LeaveProvider extends ChangeNotifier
           isLoading = false;
         });
 
-        if (kDebugMode) {
-          print('✅ Today leaves updated: ${newTodayLeaves.length} items');
-        }
+        // Debug print removed
       } else {
         _updateLoadingState(false, null);
       }
@@ -335,7 +329,7 @@ class LeaveProvider extends ChangeNotifier
       }
     } catch (e) {
       _updateLoadingState(false, e.toString());
-      if (kDebugMode) print('❌ Failed to fetch today leaves: $e');
+      // Debug print removed
     }
   }
 
@@ -375,20 +369,13 @@ class LeaveProvider extends ChangeNotifier
           isLoading = false;
         });
 
-        if (kDebugMode) {
-          if (kDebugMode) {
-            print('✅ 달력용 승인된 연차/출장 로드: ${approvedLeaves.length}개');
-          }
-          if (kDebugMode) {
-            print('🔧 allLeaves는 변경되지 않음 (${allLeaves.length}개 유지)');
-          }
-        }
+        // Debug print removed
       } else {
         _updateLoadingState(false, null);
       }
     } catch (e) {
       _updateLoadingState(false, e.toString());
-      if (kDebugMode) print('❌ Failed to fetch approved leaves: $e');
+      // Debug print removed
     }
   }
 
@@ -406,7 +393,7 @@ class LeaveProvider extends ChangeNotifier
       if (forceRefresh) {
         // 캐시 무효화
         await _cache.invalidate(_allLeavesCacheKey);
-        if (kDebugMode) print('🔄 All leaves 캐시 무효화됨 (forceRefresh: true)');
+        // Debug print removed
 
         // DB에서 직접 가져오기
         newAllLeaves = await _service.fetchAllLeavesRaw(approvedOnly: false);
@@ -471,42 +458,13 @@ class LeaveProvider extends ChangeNotifier
           isLoading = false;
         });
 
-        if (kDebugMode) {
-          if (kDebugMode) {
-            print(
-              '✅ All leaves updated: ${newAllLeaves.length} items -> ${allGroupedLeaves.length} after grouping',
-            );
-          }
-          // pending 상태의 출장 신청 확인
-          final pendingBiztrips = allGroupedLeaves
-              .where((l) => l['status'] == 'pending' && l['type'] == 'biztrip')
-              .toList();
-          if (kDebugMode) {
-            print('📋 Pending biztrip requests: ${pendingBiztrips.length}');
-          }
-          for (final trip in pendingBiztrips) {
-            final groupedCount = trip['grouped_count'] ?? 1;
-            if (groupedCount > 1) {
-              if (kDebugMode) {
-                print(
-                  '  - ${trip['name']} (${trip['start_date']} ~ ${trip['end_date']}) [연속 $groupedCount건]',
-                );
-              }
-            } else {
-              if (kDebugMode) {
-                print(
-                  '  - ${trip['name']} (${trip['start_date']} ~ ${trip['end_date']})',
-                );
-              }
-            }
-          }
-        }
+        // Debug print removed
       } else {
         _updateLoadingState(false, null);
       }
     } catch (e) {
       _updateLoadingState(false, e.toString());
-      if (kDebugMode) print('❌ Failed to fetch all leaves: $e');
+      // Debug print removed
     }
   }
 
@@ -537,31 +495,15 @@ class LeaveProvider extends ChangeNotifier
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         if (responseData['success'] == true) {
-          if (kDebugMode) {
-            if (kDebugMode) {
-              print('✅ 서버 사용연차 업데이트 완료: ${responseData['message']}');
-            }
-          }
+          // Debug print removed
         } else {
-          if (kDebugMode) {
-            if (kDebugMode) {
-              print('❌ 서버 사용연차 업데이트 실패: ${responseData['error']}');
-            }
-          }
+          // Debug print removed
         }
       } else {
-        if (kDebugMode) {
-          if (kDebugMode) {
-            print(
-              '❌ 사용연차 업데이트 Edge Function 호출 실패: ${response.statusCode} - ${response.body}',
-            );
-          }
-        }
+        // Debug print removed
       }
     } catch (e) {
-      if (kDebugMode) {
-        if (kDebugMode) print('❌ 사용연차 업데이트 중 오류: $e');
-      }
+      // Debug print removed
       // 사용연차 업데이트 실패는 전체 프로세스를 중단시키지 않음
     }
   }
@@ -577,7 +519,7 @@ class LeaveProvider extends ChangeNotifier
       // forceRefresh일 경우 먼저 캐시 무효화
       if (forceRefresh) {
         await _cache.invalidate(cacheKey);
-        if (kDebugMode) debugPrint('🗑️ 연차 정보 캐시 무효화: $cacheKey');
+        // Debug print removed
       }
 
       final employee = await _cache.getOrFetch<Map<String, dynamic>>(
@@ -602,18 +544,11 @@ class LeaveProvider extends ChangeNotifier
         // 직원 정보를 별도로 캐싱 (requestLeave에서 빠르게 접근하기 위해)
         // CacheService는 getOrFetch만 제공하므로 _employee 변수에 저장
 
-        if (kDebugMode) {
-          debugPrint('🔍 DB에서 가져온 Employee 데이터:');
-          debugPrint(
-            '   - used_annual_leave: ${employee['used_annual_leave']}',
-          );
-          debugPrint(
-            '   - annual_leave_granted_current_year: ${employee['annual_leave_granted_current_year']}',
-          );
-          debugPrint(
-            '   - remaining_annual_leave: ${employee['remaining_annual_leave']}',
-          );
-        }
+        // Debug code removed
+        // Debug code removed
+        // Debug code removed
+        // Debug code removed
+        // Debug code removed
 
         final newGrantedAnnual =
             (employee['annual_leave_granted_current_year'] ?? 0).toDouble();
@@ -627,26 +562,27 @@ class LeaveProvider extends ChangeNotifier
             ) ??
             0.0;
 
-        // Only update if values changed
-        if (_currentGrantedAnnual != newGrantedAnnual ||
-            _usedAnnual != newUsedAnnual ||
-            _remainAnnual != newRemainAnnual) {
-          _currentGrantedAnnual = newGrantedAnnual;
-          _usedAnnual = newUsedAnnual;
-          _remainAnnual = newRemainAnnual;
-          _annualLeaveLoaded = true;  // 연차 데이터 로드 완료 플래그 설정
+        // Always update values (캐시 문제 해결을 위해 항상 업데이트)
+        _currentGrantedAnnual = newGrantedAnnual;
+        _usedAnnual = newUsedAnnual;
+        _remainAnnual = newRemainAnnual;
+        _annualLeaveLoaded = true;  // 연차 데이터 로드 완료 플래그 설정
 
-          if (kDebugMode) {
-            print(
-              '📊 연차 정보 업데이트: 지급=$_currentGrantedAnnual, 사용=$_usedAnnual, 잔여=$_remainAnnual',
-            );
-          }
-          // Only notify when annual leave data actually changes
-          _debouncedNotify();
-        }
+        // Debug code removed
+        // Debug code removed
+        // Debug code removed
+        // Debug code removed
+        
+        // Always notify to ensure UI updates
+        _debouncedNotify();
+      } else {
+        // employee가 null인 경우도 처리
+        // Debug code removed
+        _annualLeaveLoaded = true;
+        _debouncedNotify();
       }
     } catch (e) {
-      if (kDebugMode) print('❌ DB 연차 정보 로드 실패: $e');
+        // Debug code removed
       // 기본값 유지
       _currentGrantedAnnual = 0;
       _usedAnnual = 0;
@@ -730,102 +666,39 @@ class LeaveProvider extends ChangeNotifier
       // 캐시 무효화 - 신청 직후 새로운 데이터를 가져올 수 있도록
       await _cache.invalidate(_allLeavesCacheKey);
       await _cache.invalidate('$_myLeavesCacheKey$userEmail');
-      if (kDebugMode) print('🔄 Leave 신청 후 캐시 무효화 완료');
+      // Debug print removed
 
-      // 푸시 알림 전송
-      try {
-        final typeLabel = _getTypeLabel(type);
-        final period = _formatPeriod(startDate, endDate);
-
-        // 신청자 구분: Manager / Admin / 일반직원
-        final isManager = AppStrings.managerNames.contains(name);
-        final isAdmin = userEmail == AppStrings.adminEmail;
-
-        if (isAdmin) {
-          // Admin 신청 → 본인에게 확인 알림 전송
-          await NotificationService.sendNotificationToAdmins(
-            title: '✅ $typeLabel 신청 완료',
-            body: '귀하의 $typeLabel 신청이 접수되었습니다.\n기간: $period',
-            data: {
-              'type': type == 'biztrip' ? 'business_trip' : 'leave_request',
-              'requester_email': userEmail,
-              'requester_name': name,
-              'start_date': startDate.toIso8601String().substring(0, 10),
-              'end_date': endDate.toIso8601String().substring(0, 10),
-              'leave_type': type,
-              'requester_is_admin': 'true',
-            },
-            requesterDepartment: department,
-            requesterEmail: userEmail,
-            isManagerRequest: false,
-          );
-          if (kDebugMode) {
-            if (kDebugMode) {
-              print('👑 Admin 본인에게 확인 알림 전송: $name님의 $typeLabel 신청');
-            }
-          }
-        } else if (isManager) {
-          // Manager 신청 → Admin에게만 알림
-          await NotificationService.sendNotificationToAdmins(
-            title: '👑 Manager $typeLabel 신청',
-            body: '$name 매니저님이 $typeLabel을 신청했습니다.\n기간: $period',
-            data: {
-              'type': type == 'biztrip' ? 'business_trip' : 'leave_request',
-              'requester_email': userEmail,
-              'requester_name': name,
-              'start_date': startDate.toIso8601String().substring(0, 10),
-              'end_date': endDate.toIso8601String().substring(0, 10),
-              'leave_type': type,
-              'requester_is_manager': 'true',
-            },
-            requesterDepartment: department,
-            requesterEmail: userEmail,
-            isManagerRequest: true, // Manager 신청임을 명시
-          );
-          if (kDebugMode) {
-            if (kDebugMode) {
-              print('✅ Admin 알림 전송 완료: $name 매니저님의 $typeLabel 신청');
-            }
-          }
-        } else {
-          // 일반직원 신청 → 해당 부서 Manager + Admin 둘 다 알림
-          await NotificationService.sendNotificationToAdmins(
-            title: '📝 새로운 $typeLabel 신청',
-            body: '$name님이 $typeLabel을 신청했습니다.\n기간: $period',
-            data: {
-              'type': type == 'biztrip' ? 'business_trip' : 'leave_request',
-              'requester_email': userEmail,
-              'requester_name': name,
-              'start_date': startDate.toIso8601String().substring(0, 10),
-              'end_date': endDate.toIso8601String().substring(0, 10),
-              'leave_type': type,
-              'requester_is_manager': 'false',
-            },
-            requesterDepartment: department,
-            requesterEmail: userEmail,
-            isManagerRequest: false, // 일반직원 신청임을 명시
-          );
-          if (kDebugMode) {
-            if (kDebugMode) {
-              print('✅ 부서 관리자 + Admin 알림 전송 완료: $name님의 $typeLabel 신청');
-            }
-          }
-        }
-      } catch (notificationError) {
-        if (kDebugMode) {
-          if (kDebugMode) print('⚠️ 알림 전송 실패: $notificationError');
-        }
-        // 알림 실패는 전체 프로세스를 중단시키지 않음
-      }
+      // 푸시 알림은 백엔드 트리거에서 자동으로 처리됨
 
       // 사용연차 업데이트와 캐시 무효화를 병렬 처리
-      await Future.wait([
-        _updateUsedAnnualLeave(userEmail),
-        _invalidateUserRelatedCaches(userEmail),
-      ]);
+      try {
+        await Future.wait([
+          _updateUsedAnnualLeave(userEmail),
+          _invalidateUserRelatedCaches(userEmail),
+        ]);
+      } catch (e) {
+        print('[ERROR] 사용연차 업데이트 실패: $e');
+        // 에러가 나도 계속 진행
+      }
 
-      // fetchMyLeaves 호출 (사용자 연차 정보 갱신)
-      await fetchMyLeaves(email: userEmail, forceRefresh: true);
+      // 데이터 새로고침 (fetchAllLeaves는 fetchMyLeaves 내부에서 자동 호출됨)
+      try {
+        await fetchMyLeaves(email: userEmail, forceRefresh: true);
+      } catch (e) {
+        print('[ERROR] fetchMyLeaves 실패: $e');
+      }
+      
+      // 전체 연차/출장 목록 새로고침 (대시보드 업데이트용)
+      try {
+        await fetchAllLeaves(forceRefresh: true);
+      } catch (e) {
+        print('[ERROR] fetchAllLeaves 실패: $e');
+      }
+      
+      // UI 업데이트 알림
+      notifyListeners();
+      
+      _updateLoadingState(false, null);
     } catch (e) {
       _updateLoadingState(false, e.toString());
     }
@@ -866,9 +739,7 @@ class LeaveProvider extends ChangeNotifier
     bool skipNotification = false,
   }) async {
     try {
-      if (kDebugMode) {
-        if (kDebugMode) print('🔄 승인/반려 처리 시작: ID $id -> $status');
-      }
+      // Debug print removed
 
       // 1. 원본 데이터에서 찾기 (_allLeavesRaw 사용)
       final rawLeaveIndex = _allLeavesRaw.indexWhere(
@@ -876,9 +747,7 @@ class LeaveProvider extends ChangeNotifier
       );
 
       if (rawLeaveIndex == -1) {
-        if (kDebugMode) {
-          if (kDebugMode) print('❌ 신청 정보를 찾을 수 없습니다: ID $id');
-        }
+        // Debug print removed
         return;
       }
 
@@ -891,9 +760,7 @@ class LeaveProvider extends ChangeNotifier
 
       // 2. DB 상태 업데이트
       await _service.updateLeaveStatus(id, status);
-      if (kDebugMode) {
-        if (kDebugMode) print('✅ DB 업데이트 완료: ID $id -> $status');
-      }
+      // Debug print removed
 
       // 2-1. 원본 데이터 즉시 업데이트
       _allLeavesRaw[rawLeaveIndex]['status'] = status;
@@ -945,68 +812,17 @@ class LeaveProvider extends ChangeNotifier
 
       // 5. UI 즉시 업데이트를 위해 notifyListeners 호출은 유지
 
-      // 6. 신청자에게 승인/반려 결과 알림 전송 (선택적 - 실패해도 프로세스 계속)
-      if (requesterEmail != null &&
-          requesterEmail.isNotEmpty &&
-          !skipNotification) {
-        // 알림 전송
-        try {
-          final typeLabel = _getTypeLabel(leaveType);
-          final statusLabel = status == 'approved' ? '승인' : '반려';
-          final statusEmoji = status == 'approved' ? '✅' : '❌';
-
-          String period = '';
-          if (startDate.isNotEmpty && endDate.isNotEmpty) {
-            final start = DateTime.parse(startDate);
-            final end = DateTime.parse(endDate);
-            period = _formatPeriod(start, end);
-          }
-
-          await NotificationService.sendNotificationToUser(
-            userEmail: requesterEmail,
-            title: '$statusEmoji $typeLabel $statusLabel',
-            body:
-                '$requesterName님의 $typeLabel 신청이 $statusLabel되었습니다.${period.isNotEmpty ? '\n기간: $period' : ''}',
-            data: {
-              'type': 'leave_result',
-              'leave_id': id.toString(),
-              'status': status,
-              'leave_type': leaveType,
-              'start_date': startDate,
-              'end_date': endDate,
-            },
-          );
-          if (kDebugMode) {
-            if (kDebugMode) {
-              print(
-                '✅ 신청자 알림 전송 완료: $requesterName님에게 $typeLabel $statusLabel 알림',
-              );
-            }
-          }
-        } catch (notificationError) {
-          if (kDebugMode) {
-            if (kDebugMode) {
-              print('⚠️ 신청자 알림 전송 실패 (무시하고 계속): $notificationError');
-            }
-          }
-          // 알림 실패는 전체 프로세스를 중단시키지 않음 - 무시하고 계속
-        }
-      }
+      // 6. 신청자에게 승인/반려 결과 알림은 백엔드 트리거에서 자동으로 처리됨
+      // send_leave_status_change_notification 트리거가 상태 변경 시 알림 발송
 
       // 7. 승인/반려 처리 완료
-      if (kDebugMode) {
-        if (kDebugMode) print('✅ 승인/반려 처리 완료: 로컬 데이터 업데이트 완료');
-      }
+      // Debug print removed
 
       // 8. UI 업데이트를 위한 notifyListeners 호출
       notifyListeners();
-      if (kDebugMode) {
-        if (kDebugMode) print('✅ UI 업데이트 알림 완료');
-      }
+      // Debug print removed
     } catch (e) {
-      if (kDebugMode) {
-        if (kDebugMode) print('❌ 승인/반려 처리 실패: $e');
-      }
+      // Debug print removed
       rethrow;
     }
   }
@@ -1021,22 +837,16 @@ class LeaveProvider extends ChangeNotifier
     required String endDate,
   }) async {
     try {
-      if (kDebugMode) {
-        if (kDebugMode) print('🗑️ 연차/출장 신청 삭제 시작: ID=$leaveId');
-      }
+      // Debug print removed
 
       // 1. Edge Function을 통해 삭제 (RLS 우회)
-      final response = await _service.deleteLeaveViaEdgeFunction(
+      await _service.deleteLeaveViaEdgeFunction(
         leaveId: leaveId,
         userEmail: userEmail,
         isAdmin: false,
       );
 
-      if (kDebugMode) {
-        if (kDebugMode) {
-          print('✅ Edge Function을 통한 삭제 완료: ${response['message']}');
-        }
-      }
+      // Debug print removed
 
       // 2. 로컬 데이터 업데이트
       myLeaves.removeWhere((leave) => leave['id'] == leaveId);
@@ -1048,35 +858,10 @@ class LeaveProvider extends ChangeNotifier
       final dateStr = DateTime.now().toIso8601String().substring(0, 10);
       await _cache.invalidate('$_todayLeavesCacheKey$dateStr');
 
-      if (kDebugMode) {
-        if (kDebugMode) print('🔄 캐시 무효화 완료');
-      }
+      // Debug print removed
 
-      // 4. SuperAdmin에게 알림 전송
-      try {
-        await NotificationService.sendNotificationToAdmins(
-          title: '📝 연차/출장 신청 취소',
-          body:
-              '$userName님이 ${leaveType == 'biztrip' ? '출장' : '연차'} 신청을 취소했습니다.\n기간: $startDate ~ $endDate',
-          data: {
-            'type': 'leave_cancelled',
-            'user_email': userEmail,
-            'user_name': userName,
-            'leave_type': leaveType,
-            'start_date': startDate,
-            'end_date': endDate,
-          },
-          requesterEmail: userEmail,
-        );
-        if (kDebugMode) {
-          if (kDebugMode) print('✅ SuperAdmin 알림 전송 완료');
-        }
-      } catch (notificationError) {
-        if (kDebugMode) {
-          if (kDebugMode) print('⚠️ 알림 전송 실패 (무시하고 계속): $notificationError');
-        }
-        // 알림 실패는 전체 프로세스를 중단시키지 않음
-      }
+      // 4. 푸시 알림은 백엔드 트리거에서 자동으로 처리됨
+      // send_leave_cancel_notification 트리거가 DELETE 시 알림 발송
 
       // 5. 사용연차 재계산
       await _updateUsedAnnualLeave(userEmail);
@@ -1084,13 +869,9 @@ class LeaveProvider extends ChangeNotifier
       // 6. UI 업데이트 (이미 로컬 데이터 삭제했으므로 추가 새로고침 불필요)
       notifyListeners();
 
-      if (kDebugMode) {
-        if (kDebugMode) print('✅ 연차/출장 신청 삭제 완료');
-      }
+      // Debug print removed
     } catch (e) {
-      if (kDebugMode) {
-        if (kDebugMode) print('❌ 연차/출장 신청 삭제 실패: $e');
-      }
+      // Debug print removed
       throw Exception('신청 취소 중 오류가 발생했습니다: $e');
     }
   }
@@ -1105,9 +886,7 @@ class LeaveProvider extends ChangeNotifier
     required String reason,
   }) async {
     try {
-      if (kDebugMode) {
-        print('📝 연차/출장 수정 시작: ID=$leaveId');
-      }
+      // Debug print removed
 
       // Edge Function을 통해 수정
       final response = await Supabase.instance.client.functions.invoke(
@@ -1123,9 +902,7 @@ class LeaveProvider extends ChangeNotifier
       );
 
       if (response.status == 200) {
-        if (kDebugMode) {
-          print('✅ 연차/출장 수정 완료');
-        }
+        // Debug print removed
 
         // 로컬 데이터 업데이트
         final index = allLeaves.indexWhere((leave) => leave['id'] == leaveId);
@@ -1161,9 +938,7 @@ class LeaveProvider extends ChangeNotifier
         throw Exception('수정 실패: ${response.data?['error'] ?? '알 수 없는 오류'}');
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ 연차/출장 수정 실패: $e');
-      }
+      // Debug print removed
       throw Exception('수정 중 오류가 발생했습니다: $e');
     }
   }
@@ -1177,13 +952,7 @@ class LeaveProvider extends ChangeNotifier
     required String reason,
   }) async {
     try {
-      if (kDebugMode) {
-        print('📝 연차/출장 세부사항 수정 시작: ID=$leaveId');
-        print('📝 Type: $type');
-        print('📝 Start Date: $startDate');
-        print('📝 End Date: $endDate');
-        print('📝 Reason: $reason');
-      }
+      // Debug print removed
 
       // 현재 leave 정보 찾기
       final currentLeave = _allLeavesRaw.firstWhere(
@@ -1192,12 +961,11 @@ class LeaveProvider extends ChangeNotifier
       );
 
       if (currentLeave.isEmpty) {
-        print('❌ 수정할 연차/출장 정보를 찾을 수 없습니다. ID: $leaveId');
+        // Debug print removed
         throw Exception('수정할 연차/출장 정보를 찾을 수 없습니다.');
       }
 
-      print('📝 현재 leave 정보: $currentLeave');
-      print('📝 Edge Function 호출 시작');
+      // Debug print removed
 
       // Edge Function을 통해 수정 - 타임아웃 설정
       final response = await Supabase.instance.client.functions.invoke(
@@ -1213,18 +981,15 @@ class LeaveProvider extends ChangeNotifier
       ).timeout(
         const Duration(seconds: 30),
         onTimeout: () {
-          print('⏰ Edge Function 타임아웃 (30초)');
+          // Debug print removed
           throw Exception('요청 시간이 초과되었습니다. 다시 시도해주세요.');
         },
       );
       
-      print('📝 Edge Function 응답: ${response.status}');
-      print('📝 Edge Function 응답 데이터: ${response.data}');
+      // Debug print removed
 
       if (response.status == 200) {
-        if (kDebugMode) {
-          print('✅ 연차/출장 세부사항 수정 완료');
-        }
+        // Debug print removed
 
         // 로컬 데이터 업데이트
         final rawIndex = _allLeavesRaw.indexWhere((leave) => leave['id'] == leaveId);
@@ -1268,11 +1033,8 @@ class LeaveProvider extends ChangeNotifier
       } else {
         throw Exception('수정 실패: ${response.data?['error'] ?? '알 수 없는 오류'}');
       }
-    } catch (e, stackTrace) {
-      if (kDebugMode) {
-        print('❌ 연차/출장 세부사항 수정 실패: $e');
-        print('❌ Stack trace: $stackTrace');
-      }
+    } catch (e) {
+      // Debug print removed
       throw Exception('수정 중 오류가 발생했습니다: $e');
     }
   }
@@ -1289,21 +1051,17 @@ class LeaveProvider extends ChangeNotifier
   }) async {
     try {
       if (kDebugMode) {
-        if (kDebugMode) print('🗑️ 관리자 처리완료 항목 삭제 시작: ID=$leaveId');
+        // Debug print removed
       }
 
       // 1. Edge Function을 통해 삭제 (RLS 우회, 관리자 권한)
-      final response = await _service.deleteLeaveViaEdgeFunction(
+      await _service.deleteLeaveViaEdgeFunction(
         leaveId: leaveId,
         userEmail: null, // 관리자는 userEmail 체크 불필요
         isAdmin: true,
       );
 
-      if (kDebugMode) {
-        if (kDebugMode) {
-          print('✅ Edge Function을 통한 관리자 삭제 완료: ${response['message']}');
-        }
-      }
+      // Debug print removed
 
       // 2. 로컬 데이터 업데이트
       myLeaves.removeWhere((leave) => leave['id'] == leaveId);
@@ -1315,9 +1073,7 @@ class LeaveProvider extends ChangeNotifier
       final dateStr = DateTime.now().toIso8601String().substring(0, 10);
       await _cache.invalidate('$_todayLeavesCacheKey$dateStr');
 
-      if (kDebugMode) {
-        if (kDebugMode) print('🔄 캐시 무효화 완료');
-      }
+      // Debug print removed
 
       // 4. 신청자 알림은 Edge Function에서 이미 처리됨 (FCM 푸시)
       // 중복 알림 방지를 위해 Provider에서 추가 알림은 제거
@@ -1328,13 +1084,9 @@ class LeaveProvider extends ChangeNotifier
       // 6. UI 업데이트 (이미 로컬 데이터 삭제했으므로 추가 새로고침 불필요)
       notifyListeners();
 
-      if (kDebugMode) {
-        if (kDebugMode) print('✅ 관리자 처리완료 항목 삭제 완료');
-      }
+      // Debug print removed
     } catch (e) {
-      if (kDebugMode) {
-        if (kDebugMode) print('❌ 관리자 처리완료 항목 삭제 실패: $e');
-      }
+      // Debug print removed
       throw Exception('삭제 중 오류가 발생했습니다: $e');
     }
   }
@@ -1407,13 +1159,7 @@ class LeaveProvider extends ChangeNotifier
     // 업데이트
     allLeaves = allGroupedLeaves;
 
-    if (kDebugMode) {
-      if (kDebugMode) {
-        print(
-          '✅ 그룹화 데이터 재처리 완료 (최적화): ${_allLeavesRaw.length} -> ${allGroupedLeaves.length}',
-        );
-      }
-    }
+    // Debug print removed
   }
 
   // 리스트 비교 헬퍼
@@ -1437,10 +1183,7 @@ class LeaveProvider extends ChangeNotifier
     await _cache.invalidate('$_myLeavesCacheKey$userEmail');
     await _cache.invalidate('$_annualLeaveCacheKey$userEmail');
     await _cache.invalidate('$_employeeCacheKey$userEmail');
-    if (kDebugMode)
-      if (kDebugMode) {
-        print('🗑️ User related caches invalidated for: $userEmail');
-      }
+    // Debug print removed
   }
 
   Future<void> _invalidateRelatedCaches(String? userEmail) async {
@@ -1456,7 +1199,7 @@ class LeaveProvider extends ChangeNotifier
       await _invalidateUserRelatedCaches(userEmail);
     }
 
-    if (kDebugMode) print('🗑️ Related leave caches invalidated');
+    // Debug print removed
   }
 
   /// Force refresh all data by clearing cache and reloading
@@ -1479,7 +1222,7 @@ class LeaveProvider extends ChangeNotifier
 
     await Future.wait(futures);
 
-    if (kDebugMode) print('🔄 Force refreshed leave data');
+    // Debug print removed
   }
 
   /// Get cache statistics for debugging
@@ -1504,7 +1247,7 @@ class LeaveProvider extends ChangeNotifier
 
       // 데이터가 부족한 경우 자동 동기화 실행
       if (holidays.isEmpty || !_hasHolidaysForYear(currentYear + 1)) {
-        if (kDebugMode) print('🔄 공휴일 데이터 부족, 자동 동기화 실행 중...');
+        // Debug print removed
         await _triggerHolidaySync();
 
         // 동기화 후 다시 조회
@@ -1520,7 +1263,7 @@ class LeaveProvider extends ChangeNotifier
 
       // 여전히 데이터가 없으면 하드코딩 데이터 사용 (fallback)
       if (holidays.isEmpty) {
-        if (kDebugMode) print('⚠️ DB에서 공휴일을 가져올 수 없어 기본 데이터 사용');
+        // Debug print removed
         holidays = [
           {
             'date': '2025-01-01',
@@ -1622,7 +1365,7 @@ class LeaveProvider extends ChangeNotifier
       }
 
       // 항상 로그 출력 (디버깅용)
-      if (kDebugMode) print('🎌 공휴일 데이터 로드 결과: ${holidays.length}개');
+      // Debug print removed
 
       if (kDebugMode) {
         if (holidays.isNotEmpty) {
@@ -1634,22 +1377,15 @@ class LeaveProvider extends ChangeNotifier
           }).toList();
 
           if (currentMonthHolidays.isNotEmpty) {
-            if (kDebugMode) print('🎌 이번 달 공휴일:');
-            for (final holiday in currentMonthHolidays) {
-              if (kDebugMode) {
-                print('  - ${holiday['date']}: ${holiday['name']}');
-              }
-            }
+            // Debug print removed
+            // Process holidays (debug prints removed)
           }
         }
       }
 
       notifyListeners();
     } catch (e) {
-      if (kDebugMode) {
-        if (kDebugMode) print('❌ 공휴일 데이터 로드 실패: $e');
-        if (kDebugMode) print('ℹ️ 공휴일 기능을 사용할 수 없습니다.');
-      }
+      // Debug print removed
 
       // 에러 발생시 빈 배열로 설정
       holidays = [];
@@ -1687,13 +1423,12 @@ class LeaveProvider extends ChangeNotifier
       );
 
       if (response.data != null && response.data['success'] == true) {
-        if (kDebugMode) print('✅ 공휴일 자동 동기화 완료');
-        if (kDebugMode) print('📊 ${response.data['summary']}');
+        // Debug print removed
       } else {
-        if (kDebugMode) print('⚠️ 공휴일 동기화 실패: ${response.data}');
+        // Debug print removed
       }
     } catch (e) {
-      if (kDebugMode) print('❌ 공휴일 동기화 오류: $e');
+      // Debug print removed
     }
   }
 }

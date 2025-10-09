@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "firebase": {
+      "command": "node",
+      "args": [
+        "/Users/scott/workspace/hansl/mcp-firebase/index.js"
+      ],
+      "env": {
+        "FIREBASE_SERVICE_ACCOUNT": "/Users/scott/workspace/hansl/mcp-firebase/firebase-service-account.json"
+      }
+    }
+  }
+}

@@ -110,8 +110,6 @@ Deno.serve(async (req) => {
     
     const updateYear = targetYear || kstDate.getFullYear();
 
-    console.log(`📊 ${updateYear}년 사용연차 업데이트 시작`);
-    console.log(`🎯 대상: ${userEmail ? `특정 직원(${userEmail})` : '모든 직원'}`);
 
     // 업데이트 대상 직원 조회
     let employeeQuery = supabase
@@ -140,7 +138,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`👥 총 ${employees.length}명 직원 사용연차 업데이트 시작`);
 
     const results: UpdateResult[] = [];
     let successCount = 0;
@@ -249,7 +246,6 @@ async function updateEmployeeUsedLeave(
     throw new Error(`DB 업데이트 실패: ${updateError.message}`);
   }
 
-  console.log(`✅ ${employee.name}: 사용연차 ${previousUsed} → ${totalUsed}, 잔여 ${remainingLeave}`);
 
   return {
     employeeId: employee.id,

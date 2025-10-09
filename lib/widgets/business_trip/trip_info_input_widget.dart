@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../utils/validators/leave_validators.dart';
@@ -42,161 +41,19 @@ class TripInfoInputWidget extends StatelessWidget {
   }
 
   // 현재 사용되지 않는 메서드 - 필요시 활성화
-  // Widget _buildDateSection() {
-  //   return Container(
-  //     decoration: BoxDecoration(
   //       color: Colors.white,
-  //       borderRadius: BorderRadius.circular(14),
-  //       boxShadow: [AppShadows.card],
-  //     ),
-  //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-  //     child: Column(
+  //       boxShadow: AppShadows.cardShadow,
   //       crossAxisAlignment: CrossAxisAlignment.start,
   //       children: [
-  //         _buildSectionHeader('날짜', isRequired: true),
-  //         const SizedBox(height: 10),
-  //         _buildDateSelector(),
-  //         if (selectedDates.isNotEmpty) _buildDateChips(),
-  //       ],
-  //     ),
-  //   );
-  // }
 
-  Widget _buildDateSelector() {
-    return InkWell(
-      onTap: onSelectDates,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFFF4F5F7),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selectedDates.isNotEmpty
-                ? AppColors.primary.withValues(alpha: 0.3)
-                : Colors.transparent,
-            width: 1,
-          ),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-        child: Row(
-          children: [
-            Icon(
-              Icons.calendar_today,
-              color: selectedDates.isNotEmpty ? AppColors.primary : Colors.grey,
-              size: 20,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                _getDateDisplayText(),
-                style: TextStyle(
-                  fontSize: 15,
-                  color: selectedDates.isNotEmpty
-                      ? AppColors.primary
-                      : Colors.grey,
-                  fontWeight: selectedDates.isNotEmpty
-                      ? FontWeight.w600
-                      : FontWeight.normal,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            if (selectedDates.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${selectedDates.length}일',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  String _getDateDisplayText() {
-    if (selectedDates.isEmpty) {
-      return '출장 날짜를 선택하세요';
-    }
-
-    final sortedDates = selectedDates.toList()..sort();
-
-    // 연속된 날짜인지 확인
-    bool isConsecutive = true;
-    for (int i = 1; i < sortedDates.length; i++) {
-      if (sortedDates[i].difference(sortedDates[i - 1]).inDays != 1) {
-        isConsecutive = false;
-        break;
-      }
-    }
-
-    if (isConsecutive && sortedDates.length > 1) {
-      // 연속된 날짜면 "시작일 ~ 종료일" 형식으로 표시
-      final start = DateFormat('yyyy.MM.dd').format(sortedDates.first);
-      final end = DateFormat('yyyy.MM.dd').format(sortedDates.last);
-      return '$start ~ $end';
-    } else if (sortedDates.length == 1) {
-      // 하루만 선택된 경우
-      return DateFormat('yyyy.MM.dd').format(sortedDates.first);
-    } else {
-      // 불연속 날짜들
-      return sortedDates
-              .take(3)
-              .map((d) => DateFormat('MM.dd').format(d))
-              .join(', ') +
-          (sortedDates.length > 3 ? ' 외 ${sortedDates.length - 3}일' : '');
-    }
-  }
-
-  Widget _buildDateChips() {
-    final sortedDates = selectedDates.toList()..sort();
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: sortedDates.map((date) {
-          return Chip(
-            label: Text(
-              DateFormat('yyyy.MM.dd (E)', 'ko').format(date),
-              style: const TextStyle(fontSize: 13),
-            ),
-            backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-            deleteIcon: const Icon(Icons.close, size: 16),
-            deleteIconColor: AppColors.primary,
-            onDeleted: onRemoveDate != null ? () => onRemoveDate!(date) : null,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: BorderSide(
-                color: AppColors.primary.withValues(alpha: 0.3),
-                width: 1,
-              ),
-            ),
-            padding: EdgeInsets.zero,
-            visualDensity: VisualDensity.compact,
-          );
-        }).toList(),
-      ),
-    );
-  }
 
   Widget _buildPlaceSection() {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [AppShadows.card],
+        boxShadow: AppShadows.cardShadow,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
@@ -300,7 +157,7 @@ class TripInfoInputWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [AppShadows.card],
+        boxShadow: AppShadows.cardShadow,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
