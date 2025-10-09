@@ -620,36 +620,7 @@ return;
                                   : const Color(0xFF1C1C1E),
                             ),
                           ),
-                          if (pendingCount > 0) ...[
-                            SizedBox(
-                              width: ResponsiveUtils.spacing(context, 6),
-                            ),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: ResponsiveUtils.spacing(context, 6),
-                                vertical: ResponsiveUtils.spacing(context, 2),
-                              ),
-                              decoration: BoxDecoration(
-                                color: _tabController.index == 0
-                                    ? Colors.white.withValues(alpha: 0.255)
-                                    : AppColors.primary.withValues(
-                                        alpha: 0.153,
-                                      ),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                '$pendingCount',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: _tabController.index == 0
-                                      ? Colors.white
-                                      : AppColors.primary,
-                                ),
-                              ),
-                            ),
-                          ],
+                          // 배지 제거됨 (메인 탭에 이미 표시되므로 중복 제거)
                         ],
                       ),
                     ),

@@ -12,6 +12,7 @@ import '../providers/user_provider.dart';
 import '../providers/attendance_provider.dart';
 import '../providers/leave_provider.dart';
 import '../providers/notification_provider.dart';
+import '../providers/purchase_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../utils/responsive_utils.dart';
 import '../utils/user_role_helper.dart';
@@ -142,6 +143,9 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
       } catch (e) {
         // Badge service error - silently fail
       }
+
+      // 승인관리 데이터 미리 로드 (배지 즉시 표시를 위해)
+      _preloadApprovalData();
     }
   }
 
@@ -170,6 +174,42 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
       }
     } catch (e) {
       // Debug code removed
+    }
+  }
+
+  // 승인관리 데이터 미리 로드 (배지 즉시 표시를 위해)
+  void _preloadApprovalData() {
+    if (!mounted) return;
+    
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
+      
+      // 권한 확인
+      final employee = userProvider.employee;
+      if (employee == null) return;
+      
+      final attendanceRoles = employee['attendance_role'] as List<dynamic>? ?? [];
+      final purchaseRoles = employee['purchase_role'] as List<dynamic>? ?? [];
+      
+      // 연차/출장 승인 권한이 있으면 미리 로드
+      if (UserRoleHelper.isAnyManager(attendanceRoles) || 
+          UserRoleHelper.isSuperAdmin(attendanceRoles) ||
+          UserRoleHelper.isAdmin(attendanceRoles)) {
+        leaveProvider.fetchAllLeaves(forceRefresh: false).catchError((e) {
+          // 실패해도 UI에 영향 없음
+        });
+      }
+      
+      // 발주 승인 권한이 있으면 미리 로드
+      if (UserRoleHelper.hasPurchaseApprovalAuth(purchaseRoles)) {
+        final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
+        purchaseProvider.fetchPendingPurchases(employee: employee).catchError((e) {
+          // 실패해도 UI에 영향 없음
+        });
+      }
+    } catch (e) {
+      // 에러 발생해도 앱 동작에 영향 없음
     }
   }
 

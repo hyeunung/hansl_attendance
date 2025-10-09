@@ -12,6 +12,7 @@ import '../../providers/user_provider.dart';
 import '../../widgets/purchase/purchase_approval_widget.dart';
 import '../../widgets/purchase/purchase_waiting_widget.dart';
 import '../../widgets/purchase/receiving_waiting_widget.dart';
+import '../../services/badge_cache_service.dart';
 
 class ApprovalScreen extends StatefulWidget {
   final int? initialMainTab; // 0: 연차/출장, 1: 발주승인, 2: 구매대기, 3: 입고대기
@@ -28,6 +29,13 @@ class _ApprovalScreenState extends State<ApprovalScreen>
   late TabController _mainTabController; // 메인 탭 (연차/출장, 발주승인, 구매대기, 입고대기)
   late TabController _subTabController; // 서브 탭 (대기중, 처리완료)
   bool _hasPurchaseApprovalAuth = false; // 발주 승인 권한 여부
+  
+  // 배지 카운트 즉시 표시를 위한 로컬 캐시
+  Map<String, int> _cachedBadgeCounts = {
+    'leave_count': 0,
+    'purchase_waiting_count': 0,
+    'receiving_waiting_count': 0,
+  };
 
   @override
   void initState() {
@@ -52,7 +60,48 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       if (mounted) setState(() {});
     });
 
+    // 로컬 캐시에서 배지 카운트 즉시 로드
+    _loadCachedBadgeCounts();
+    
     _loadData();
+  }
+  
+  // 로컬 캐시에서 배지 카운트 즉시 로드
+  void _loadCachedBadgeCounts() {
+    BadgeCacheService.loadCachedBadgeCounts().then((cachedCounts) {
+      if (mounted) {
+        setState(() {
+          _cachedBadgeCounts = cachedCounts;
+        });
+      }
+    }).catchError((e) {
+      // 캐시 로드 실패해도 무시
+    });
+  }
+  
+  // 현재 배지 카운트를 로컬에 저장
+  void _saveBadgeCounts() {
+    try {
+      final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
+      final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
+      
+      BadgeCacheService.saveBadgeCounts(
+        leaveCount: leaveProvider.allPendingCount,
+        purchaseWaitingCount: purchaseProvider.purchaseWaitingCount,
+        receivingWaitingCount: purchaseProvider.receivingWaitingCount,
+      );
+      
+      // 메모리 캐시도 업데이트
+      setState(() {
+        _cachedBadgeCounts = {
+          'leave_count': leaveProvider.allPendingCount,
+          'purchase_waiting_count': purchaseProvider.purchaseWaitingCount,
+          'receiving_waiting_count': purchaseProvider.receivingWaitingCount,
+        };
+      });
+    } catch (e) {
+      // 저장 실패해도 무시
+    }
   }
 
   @override
@@ -91,6 +140,8 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             .fetchAllLeaves(forceRefresh: true)
             .then((_) {
               if (kDebugMode) debugPrint('✅ 연차 데이터 로드 완료');
+              // 배지 카운트 저장
+              _saveBadgeCounts();
             })
             .catchError((e) {
               if (kDebugMode) debugPrint('❌ 연차 데이터 로드 실패: $e');
@@ -103,6 +154,8 @@ class _ApprovalScreenState extends State<ApprovalScreen>
               .fetchPendingPurchases(employee: userProvider.employee)
               .then((_) {
                 if (kDebugMode) debugPrint('✅ 발주 데이터 로드 완료');
+                // 배지 카운트 저장
+                _saveBadgeCounts();
               })
               .catchError((e) {
                 if (kDebugMode) debugPrint('❌ 발주 데이터 로드 실패: $e');
@@ -677,7 +730,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                         ),
                                         child: Center(
                                           child: Text(
-                                            '${pending.length}',
+                                            '${pending.isNotEmpty ? pending.length : (_cachedBadgeCounts['leave_count'] ?? 0)}',
                                             style: ResponsiveUtils.getTextStyle(
                                               context,
                                               fontSize: 10,
@@ -866,10 +919,12 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                         ? AppColors.primary
                                         : const Color(0xFF8E8E93),
                                   ),
-                                  // 구매대기 배지 - PurchaseProvider에서 직접 수 가져오기
+                                  // 구매대기 배지 - 로컬 캐시 + Provider 조합으로 즉시 표시
                                   Consumer<PurchaseProvider>(
                                     builder: (context, purchaseProvider, _) {
-                                      final count = purchaseProvider.purchaseWaitingCount;
+                                      final providerCount = purchaseProvider.purchaseWaitingCount;
+                                      final cachedCount = _cachedBadgeCounts['purchase_waiting_count'] ?? 0;
+                                      final count = providerCount > 0 ? providerCount : cachedCount;
                                       if (count > 0) {
                                         return Positioned(
                                           right: -8,
@@ -981,10 +1036,12 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                         ? AppColors.primary
                                         : const Color(0xFF8E8E93),
                                   ),
-                                  // 입고대기 배지 - PurchaseProvider에서 직접 수 가져오기
+                                  // 입고대기 배지 - 로컬 캐시 + Provider 조합으로 즉시 표시
                                   Consumer<PurchaseProvider>(
                                     builder: (context, purchaseProvider, _) {
-                                      final count = purchaseProvider.receivingWaitingCount;
+                                      final providerCount = purchaseProvider.receivingWaitingCount;
+                                      final cachedCount = _cachedBadgeCounts['receiving_waiting_count'] ?? 0;
+                                      final count = providerCount > 0 ? providerCount : cachedCount;
                                       if (count > 0) {
                                         return Positioned(
                                           right: -8,
