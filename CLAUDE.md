@@ -309,6 +309,49 @@ All backend business logic runs in Supabase edge functions (Deno/TypeScript):
 ### Firebase Setup
 - **FCM**: Push notifications for leave approvals, attendance reminders
 - **Multi-platform**: Configured for iOS (`GoogleService-Info.plist`) and Android (`google-services.json`)
+- **Firebase Service Account Keys**: Firebase 서비스 계정 키는 만료되지 않고 유효합니다! 수동으로 삭제하지 않는 한 만료되지 않습니다
+
+### 🚨 Firebase 서비스 계정 키 관리 규칙 (Critical - 2025년 10월 11일 사고 방지)
+**환경변수 손상 방지를 위한 필수 지침**
+
+#### ❌ 절대 하지 말아야 할 것:
+```bash
+# 위험: 직접 cat으로 환경변수 설정 (줄바꿈 손상 위험)
+npx supabase secrets set FIREBASE_SERVICE_ACCOUNT_JSON="$(cat firebase.json)"
+
+# 위험: Dashboard에서 복사/붙여넣기 (자동 포맷팅으로 손상)
+# Supabase Dashboard → Settings → Secrets에서 직접 입력 금지
+```
+
+#### ✅ 올바른 Firebase 키 설정 방법:
+```bash
+# 1. 새 키 생성 시 (Firebase Console에서)
+#    - JSON 형식 선택
+#    - 파일명: hansl-attendance-firebase-adminsdk.json
+
+# 2. 환경변수 설정 (반드시 이 방법 사용!)
+npx supabase secrets set FIREBASE_SERVICE_ACCOUNT_JSON="$(cat hansl-attendance-firebase-adminsdk.json)" --project-ref qvhbigvdfyvhoegkhvef
+
+# 3. 즉시 테스트 (필수!)
+node test_fcm_final.js  # 또는 ./test_fcm_detailed.sh
+```
+
+#### 🔍 문제 발생 시 진단 방법:
+```javascript
+// JWT Signature 에러가 발생하면:
+// 1. 로컬 파일 정상 여부 확인
+cat hansl-attendance-firebase-adminsdk.json | jq .  // JSON 파싱 되면 정상
+
+// 2. 새 키 생성 및 교체
+// Firebase Console → 프로젝트 설정 → 서비스 계정 → 새 비공개 키 생성
+
+// 3. 환경변수 재설정 (위의 올바른 방법 사용)
+```
+
+#### 📊 사고 이력:
+- **2025년 10월 11일**: 환경변수 저장 시 Private Key 손상으로 JWT 서명 실패
+- **원인**: 이스케이프 처리 문제로 `\n`이 `\\n`으로 변환됨
+- **해결**: 새 키 생성 후 올바른 방법으로 재설정
 
 ### Location Services
 - **GPS Tracking**: Uses `geolocator` package for attendance verification

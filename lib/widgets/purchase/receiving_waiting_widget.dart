@@ -42,13 +42,21 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       final isAppAdmin = UserRoleHelper.isAppAdmin(purchaseRoles);
       final isMiddleManager = UserRoleHelper.isMiddleManager(purchaseRoles);
       final isFinalApprover = UserRoleHelper.isFinalApprover(purchaseRoles);
+      final isRawMaterialManager = UserRoleHelper.isRawMaterialManager(purchaseRoles);
+      final isConsumableManager = UserRoleHelper.isConsumableManager(purchaseRoles);
       final isCeo = purchaseRoles.contains('ceo');
+      final isLeadBuyer = UserRoleHelper.isPureLeadBuyer(purchaseRoles);
       
       // 권한별 필터:
-      // - purchase_manager: 본인 요청 건만
-      // - app_admin, middle_manager, final_approver, ceo: 전체 보기
+      // - app_admin: 전체 보기
+      // - final_approver + raw_material_manager: '발주' 카테고리만
+      // - final_approver + consumable_manager: '구매 요청' 카테고리만
+      // - final_approver (세부권한 없음): 전체 보기
+      // - middle_manager, ceo: 전체 보기
+      // - lead buyer: 본인 요청 건만
       // - 그 외: 본인 요청 건만
-      final hasFullAccess = isAppAdmin || isMiddleManager || isFinalApprover || isCeo;
+      final hasFullAccess = isAppAdmin || isMiddleManager || isCeo || 
+                           (isFinalApprover && !isRawMaterialManager && !isConsumableManager);
       
       // 입고대기: 미입고 AND (선진행 OR 최종승인)
       var query = _supabase
@@ -56,8 +64,15 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
           .select('*, purchase_request_items(*)')
           .eq('is_received', false);  // 미입고만 체크
 
-      // 권한에 따른 필터링: 전체 보기 권한이 없는 경우 본인 것만 조회
-      if (!hasFullAccess) {
+      // 권한에 따른 필터링
+      if (isFinalApprover && isRawMaterialManager && !isConsumableManager) {
+        // final_approver + raw_material_manager: '발주' 카테고리만
+        query = query.eq('payment_category', '발주');
+      } else if (isFinalApprover && isConsumableManager && !isRawMaterialManager) {
+        // final_approver + consumable_manager: '구매 요청' 카테고리만
+        query = query.eq('payment_category', '구매 요청');
+      } else if (!hasFullAccess) {
+        // lead buyer 또는 일반 직원: 본인 것만 조회
         query = query.eq('requester_name', userName);
       }
 

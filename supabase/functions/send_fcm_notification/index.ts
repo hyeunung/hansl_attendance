@@ -14,16 +14,41 @@ async function getFirebaseAccessToken() {
     console.log('🔑 [DEBUG] Firebase 접근 토큰 요청 시작');
     
     // 환경변수에서 가져오기 (원래대로 복원)
+    console.log('🔍 [DEBUG] 환경변수 확인 시작');
     const serviceAccountJson = Deno.env.get('FIREBASE_SERVICE_ACCOUNT_JSON');
     
+    console.log('🔍 [DEBUG] 환경변수 확인:');
+    console.log(`   FIREBASE_SERVICE_ACCOUNT_JSON 존재: ${!!serviceAccountJson}`);
+    console.log(`   길이: ${serviceAccountJson ? serviceAccountJson.length : 0}`);
+    
     if (!serviceAccountJson) {
+      console.error('❌ [ERROR] FIREBASE_SERVICE_ACCOUNT_JSON 환경변수가 없습니다');
+      console.log('🔍 [DEBUG] 사용 가능한 환경변수들:');
+      for (const [key, value] of Object.entries(Deno.env.toObject())) {
+        if (key.includes('FIREBASE') || key.includes('SUPABASE')) {
+          console.log(`   ${key}: ${value ? '설정됨 (길이: ' + value.length + ')' : '없음'}`);
+        }
+      }
       throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON not found in environment variables');
     }
     
-    console.log('✅ [DEBUG] 환경변수에서 Firebase 키 로드 완료');
+    console.log('✅ [DEBUG] 환경변수 존재 확인 완료');
     
-    const serviceAccount = JSON.parse(serviceAccountJson);
+    // JSON 파싱 단계
+    console.log('🔍 [DEBUG] JSON 파싱 시작');
+    let serviceAccount;
+    try {
+      serviceAccount = JSON.parse(serviceAccountJson);
+      console.log('✅ [DEBUG] JSON 파싱 성공');
+    } catch (parseError) {
+      console.error('❌ [ERROR] JSON 파싱 실패:', parseError);
+      throw new Error(`Failed to parse service account JSON: ${parseError.message}`);
+    }
+    
     console.log(`📋 [DEBUG] 서비스 계정 로드 완료: ${serviceAccount.client_email}`);
+    console.log(`   프로젝트 ID: ${serviceAccount.project_id}`);
+    console.log(`   Private Key 존재: ${!!serviceAccount.private_key}`);
+    console.log(`   Private Key 길이: ${serviceAccount.private_key ? serviceAccount.private_key.length : 0}`);
     // JWT 헤더와 페이로드 생성
     const header = {
       alg: 'RS256',
@@ -40,9 +65,29 @@ async function getFirebaseAccessToken() {
     };
     
     console.log('📋 [DEBUG] JWT Payload:', JSON.stringify(payload, null, 2));
-    // JWT 생성 - Private Key 처리 수정
-    const privateKeyPem = serviceAccount.private_key
-      .replace(/\\n/g, '\n');
+    
+    // Private Key 처리
+    console.log('🔍 [DEBUG] Private Key 처리 시작');
+    let privateKeyPem = serviceAccount.private_key;
+    
+    console.log('🔍 [DEBUG] Private Key 분석:');
+    console.log(`   원본 길이: ${privateKeyPem.length}`);
+    console.log(`   이스케이프된 \\n 포함: ${privateKeyPem.includes('\\n')}`);
+    console.log(`   실제 newline 포함: ${privateKeyPem.includes('\n')}`);
+    console.log(`   시작 부분: ${privateKeyPem.substring(0, 30)}...`);
+    
+    // 이중 이스케이프된 newline 처리 (DB에서 가져온 경우)
+    if (privateKeyPem.includes('\\\\n')) {
+      console.log('🔄 [DEBUG] Converting double-escaped newlines');
+      privateKeyPem = privateKeyPem.replace(/\\\\n/g, '\n');
+      console.log(`   변환 후 길이: ${privateKeyPem.length}`);
+    } else if (privateKeyPem.includes('\\n') && !privateKeyPem.includes('\n')) {
+      console.log('🔄 [DEBUG] Converting single-escaped newlines');
+      privateKeyPem = privateKeyPem.replace(/\\n/g, '\n');
+      console.log(`   변환 후 길이: ${privateKeyPem.length}`);
+    } else {
+      console.log('✅ [DEBUG] Private key already has real newlines');
+    }
     
     // PEM 형식에서 base64 부분만 추출
     const pemContents = privateKeyPem
@@ -54,19 +99,46 @@ async function getFirebaseAccessToken() {
     const binaryDer = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
     
     // crypto.subtle.importKey 사용
-    const key = await crypto.subtle.importKey(
-      'pkcs8',
-      binaryDer,
-      {
-        name: 'RSASSA-PKCS1-v1_5',
-        hash: 'SHA-256'
-      },
-      false,
-      ['sign']
-    );
-    const jwt = await create(header, payload, key);
-    console.log('🔐 [DEBUG] JWT 생성 완료');
+    console.log('🔑 [DEBUG] Private Key import 시작');
+    console.log(`   binaryDer 길이: ${binaryDer.length}`);
+    
+    let key;
+    try {
+      key = await crypto.subtle.importKey(
+        'pkcs8',
+        binaryDer,
+        {
+          name: 'RSASSA-PKCS1-v1_5',
+          hash: 'SHA-256'
+        },
+        false,
+        ['sign']
+      );
+      console.log('✅ [DEBUG] Private Key import 성공');
+    } catch (importError) {
+      console.error('❌ [ERROR] Private key import 실패:', importError);
+      throw new Error(`Failed to import private key: ${importError.message}`);
+    }
+    
+    // JWT 생성 - djwt 라이브러리 사용
+    console.log('🔐 [DEBUG] Creating JWT with djwt library');
+    let jwt;
+    try {
+      // djwt의 create 함수 사용
+      jwt = await create(header, payload, key);
+      
+      console.log('✅ [DEBUG] JWT 생성 완료 (djwt)');
+      console.log(`   JWT 길이: ${jwt.length}`);
+      console.log(`   JWT 첫 50자: ${jwt.substring(0, 50)}...`);
+      console.log(`   Header: ${JSON.stringify(header)}`);
+      console.log(`   Payload: ${JSON.stringify(payload)}`);
+    } catch (jwtError) {
+      console.error('❌ [ERROR] JWT 생성 실패:', jwtError);
+      throw new Error(`Failed to create JWT: ${jwtError.message}`);
+    }
+      
     // Google OAuth2 토큰 요청
+    console.log('🌐 [DEBUG] Google OAuth2 토큰 요청 시작');
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: {
@@ -77,6 +149,10 @@ async function getFirebaseAccessToken() {
         assertion: jwt
       })
     });
+    
+    console.log(`🔍 [DEBUG] OAuth2 응답 상태: ${tokenResponse.status}`);
+    console.log(`🔍 [DEBUG] OAuth2 응답 헤더:`, Object.fromEntries(tokenResponse.headers.entries()));
+    
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
       console.error('❌ [ERROR] OAuth2 토큰 요청 실패:', errorText);
@@ -84,9 +160,14 @@ async function getFirebaseAccessToken() {
       console.error('🔍 [DEBUG] Response headers:', Object.fromEntries(tokenResponse.headers.entries()));
       throw new Error(`Failed to get access token: ${tokenResponse.status} - ${errorText}`);
     }
+    
+    console.log('✅ [DEBUG] OAuth2 응답 성공, JSON 파싱 시작');
     const tokenData = await tokenResponse.json();
     console.log('✅ [DEBUG] OAuth2 토큰 획득 성공');
+    console.log(`   Access Token 존재: ${!!tokenData.access_token}`);
+    console.log(`   Access Token 길이: ${tokenData.access_token ? tokenData.access_token.length : 0}`);
     console.log(`   만료 시간: ${tokenData.expires_in}초`);
+    
     return {
       accessToken: tokenData.access_token,
       projectId: serviceAccount.project_id
@@ -124,6 +205,15 @@ async function sendFCMMessage(accessToken, fcmToken, title, body, data = {}, ema
     if (!projectId) {
       throw new Error('Project ID not provided');
     }
+    
+    // FCM data 필드는 모든 값이 문자열이어야 함
+    const stringData = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== null && value !== undefined) {
+        stringData[key] = typeof value === 'string' ? value : JSON.stringify(value);
+      }
+    }
+    
     const message = {
       message: {
         token: fcmToken,
@@ -131,7 +221,7 @@ async function sendFCMMessage(accessToken, fcmToken, title, body, data = {}, ema
           title: title,
           body: body
         },
-        data: data,
+        data: stringData,
         android: {
           priority: 'high',
           notification: {
@@ -160,6 +250,10 @@ async function sendFCMMessage(accessToken, fcmToken, title, body, data = {}, ema
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`❌ [ERROR] FCM 전송 실패 (${email || 'unknown'}):`, errorText);
+      console.error(`   Response Status: ${response.status}`);
+      console.error(`   Response Headers:`, Object.fromEntries(response.headers.entries()));
+      console.error(`   Project ID: ${projectId}`);
+      console.error(`   Access Token (first 20 chars): ${accessToken.substring(0, 20)}...`);
       // 토큰 관련 에러 체크
       if (errorText.includes('UNREGISTERED') || errorText.includes('INVALID_ARGUMENT')) {
         console.log(`🗑️ [INFO] 유효하지 않은 FCM 토큰 감지: ${email || 'unknown'}`);
@@ -192,28 +286,47 @@ async function sendFCMMessage(accessToken, fcmToken, title, body, data = {}, ema
 // 역할별 FCM 토큰 조회 함수
 async function getRoleTokens(supabase, role, excludeEmail) {
   try {
-    let query = supabase.from('employees').select('email, name, fcm_token').eq('role', role).not('fcm_token', 'is', null);
+    console.log(`🔍 [DB 조회] ${role} 역할의 직원 조회 시작`);
+    console.log(`   제외 이메일: ${excludeEmail || 'none'}`);
+    
+    // attendance_role 배열에서 역할 확인 (role 컬럼은 존재하지 않음)
+    let query = supabase.from('employees')
+      .select('email, name, fcm_token')
+      .contains('attendance_role', [role])
+      .not('fcm_token', 'is', null);
     // 제외할 이메일이 있는 경우
     if (excludeEmail) {
       query = query.neq('email', excludeEmail);
     }
+    
+    console.log('🔍 [DB 조회] 쿼리 실행 중...');
     const { data: employees, error } = await query;
+    
     if (error) {
-      console.error('Error fetching employees:', error);
+      console.error('❌ [ERROR] 직원 조회 실패:', error);
+      console.error('   Error details:', JSON.stringify(error, null, 2));
       return {
         tokens: [],
         emails: []
       };
     }
+    
+    console.log(`✅ [DB 조회] ${employees.length}명의 직원 조회 완료`);
+    console.log('🔍 [DB 조회] 조회된 직원들:');
+    employees.forEach((emp, index) => {
+      console.log(`   ${index + 1}. ${emp.name} (${emp.email}): ${emp.fcm_token ? '토큰 있음' : '토큰 없음'}`);
+    });
+    
     const tokens = employees.map((emp)=>emp.fcm_token).filter(Boolean);
     const emails = employees.map((emp)=>emp.email).filter(Boolean);
-    console.log(`Found ${tokens.length} ${role} FCM tokens`);
+    console.log(`📊 [DB 조회] 최종 결과: ${tokens.length}개 토큰, ${emails.length}개 이메일`);
+    
     return {
       tokens,
       emails
     };
   } catch (error) {
-    console.error('Error in getRoleTokens:', error);
+    console.error('❌ [ERROR] getRoleTokens 실행 중 오류:', error);
     return {
       tokens: [],
       emails: []
@@ -389,25 +502,54 @@ Deno.serve(async (req)=>{
   }
   try {
     // 환경변수 검증
+    console.log('🔍 [DEBUG] Supabase 환경변수 확인 시작');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    console.log(`   SUPABASE_URL 존재: ${!!supabaseUrl}`);
+    console.log(`   SUPABASE_URL: ${supabaseUrl || '없음'}`);
+    console.log(`   SUPABASE_SERVICE_ROLE_KEY 존재: ${!!supabaseServiceKey}`);
+    console.log(`   SUPABASE_SERVICE_ROLE_KEY 길이: ${supabaseServiceKey ? supabaseServiceKey.length : 0}`);
+    
     if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('❌ [ERROR] Supabase 환경변수 누락');
       throw new Error('Missing Supabase environment variables');
     }
+    
     // Supabase 클라이언트 초기화
+    console.log('🔍 [DEBUG] Supabase 클라이언트 초기화 시작');
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    console.log('✅ [DEBUG] Supabase 클라이언트 초기화 완료');
     // 요청 파싱
     const requestData = await req.json();
-    let { type, title, body, data = {}, requester_department, requester_name, user_email, fcm_tokens, is_manager_request, skip_db_notification, purchase_order_number, vendor_name, payment_category, status, middle_manager_status, progress_type } = requestData;
+    let { type, title, body, data = {}, requester_department, requester_name, user_email, fcm_tokens, is_manager_request, skip_db_notification, purchase_order_number, vendor_name, payment_category, status, middle_manager_status, progress_type, targetEmail, notificationType } = requestData;
     // Firebase Access Token 획득 (실패해도 계속 진행)
     let accessToken = null;
     let projectId = null;
     try {
+      console.log('🔑 [DEBUG] Firebase 토큰 획득 시작');
       const firebaseAuth = await getFirebaseAccessToken();
       accessToken = firebaseAuth.accessToken;
       projectId = firebaseAuth.projectId;
+      console.log('✅ [DEBUG] Firebase 토큰 획득 성공');
+      console.log(`   Project ID: ${projectId}`);
+      console.log(`   Access Token (first 20 chars): ${accessToken.substring(0, 20)}...`);
     } catch (error) {
-      console.error('Firebase 토큰 획득 실패, 알림은 DB에만 저장됩니다:', error);
+      console.error('❌ [ERROR] Firebase 토큰 획득 실패:', error);
+      console.error('   Error details:', JSON.stringify(error, null, 2));
+      console.error('   Error name:', error?.name);
+      console.error('   Error message:', error?.message);
+      console.error('   Error stack:', error?.stack);
+      
+      // 환경변수 직접 확인
+      console.log('🔍 [DEBUG] 환경변수 직접 확인:');
+      const envVars = Deno.env.toObject();
+      for (const [key, value] of Object.entries(envVars)) {
+        if (key.includes('FIREBASE') || key.includes('SUPABASE')) {
+          console.log(`   ${key}: ${value ? '설정됨 (길이: ' + value.length + ')' : '없음'}`);
+        }
+      }
+      
       // Firebase 오류가 있어도 계속 진행
     }
     let targetTokens = [];
@@ -621,6 +763,17 @@ Deno.serve(async (req)=>{
     } else if (fcm_tokens && Array.isArray(fcm_tokens)) {
       // 직접 토큰 리스트 제공 (기존 로직)
       targetTokens = fcm_tokens;
+    } else if (targetEmail) {
+      // targetEmail로 특정 사용자에게 전송
+      console.log('🎯 [targetEmail 처리] 대상 이메일:', targetEmail);
+      const userToken = await getUserToken(supabase, targetEmail);
+      if (userToken) {
+        targetTokens = [userToken];
+        targetEmails = [targetEmail];
+        console.log('✅ [targetEmail] 토큰 조회 성공');
+      } else {
+        console.log('❌ [targetEmail] 토큰 조회 실패');
+      }
     }
     if (targetTokens.length === 0) {
       return new Response(JSON.stringify({
@@ -638,13 +791,21 @@ Deno.serve(async (req)=>{
     console.log(`   총 ${targetTokens.length}명에게 전송`);
     // FCM 메시지 전송 (accessToken이 있는 경우만)
     let successCount = 0;
+    console.log(`📤 [FCM 전송] 시작 - 토큰 수: ${targetTokens.length}`);
+    console.log(`   Access Token 존재: ${!!accessToken}`);
+    console.log(`   Project ID: ${projectId}`);
+    
     if (accessToken && projectId && targetTokens.length > 0) {
+      console.log('🚀 [FCM 전송] Firebase 토큰과 프로젝트 ID 확인됨, 전송 시작');
       const results = await Promise.all(targetTokens.map((token, index)=>sendFCMMessage(accessToken, token, title || '', body || '', data, targetEmails[index], projectId)));
       // 성공한 전송 수 계산
       successCount = results.filter((result)=>result).length;
       console.log(`📊 [전송 결과] ${successCount}/${targetTokens.length} 성공`);
     } else {
-      console.log('📊 [전송 결과] Firebase 토큰 또는 프로젝트 ID 없음, FCM 전송 건너뜀');
+      console.log('❌ [FCM 전송] Firebase 토큰 또는 프로젝트 ID 없음, FCM 전송 건너뜀');
+      console.log(`   Access Token: ${accessToken ? '있음' : '없음'}`);
+      console.log(`   Project ID: ${projectId || '없음'}`);
+      console.log(`   Target Tokens: ${targetTokens.length}개`);
     }
     // DB에 알림 기록 저장 (skip_db_notification이 true가 아닌 경우)
     if (!skip_db_notification && type !== 'custom') {

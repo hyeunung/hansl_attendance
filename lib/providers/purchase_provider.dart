@@ -603,7 +603,7 @@ class PurchaseProvider extends ChangeNotifier {
       }).toList();
       
       // 권한에 따른 필터링
-      if (!isAppAdmin && !isMiddleManager && !isFinalApprover && !isCeo) {
+      if (!isAppAdmin && !isLeadBuyer && !isMiddleManager && !isFinalApprover && !isCeo) {
         _receivingWaitingCount = receivingPurchases.where((p) => 
           p['requester_name'] == userName
         ).length;
@@ -811,7 +811,7 @@ class PurchaseProvider extends ChangeNotifier {
       } else if (status == 'final_approved') {
         // 최종 승인 완료 -> 신청자에게 알림
         title = '✅ 발주 승인 완료';
-        body = '$purchaseOrderNumber 발주가 최종 승인되었습니다.';
+        body = '$purchaseOrderNumber 발주가 최종 승인되었습니다. 발주 진행을 해주세요.';
         // 신청자에게 직접 알림 (targetRoles 비워둠)
       } else if (status == 'rejected') {
         // 반려 -> 신청자에게 알림
