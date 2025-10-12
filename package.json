@@ -3,9 +3,11 @@
     "@supabase/supabase-js": "^2.57.4",
     "axios": "^1.11.0",
     "dotenv": "^17.2.1",
-    "firebase-admin": "^13.4.0",
     "node-fetch": "^2.7.0",
     "pg": "^8.16.3",
     "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "firebase-admin": "^13.5.0"
   }
 }

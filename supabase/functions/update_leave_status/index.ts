@@ -30,9 +30,8 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // 먼저 현재 사용자가 관리자 권한이 있는지 확인
-    // Anon key를 사용하여 사용자 정보 확인
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+    // Service key를 사용하여 사용자 정보 확인
+    const userClient = createClient(supabaseUrl, supabaseServiceKey, {
       global: {
         headers: {
           Authorization: authHeader

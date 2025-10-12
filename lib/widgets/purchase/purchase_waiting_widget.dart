@@ -41,6 +41,9 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
       // UserRoleHelper 사용하여 권한 체크
       final isAppAdmin = UserRoleHelper.isAppAdmin(purchaseRoles);
       final isLeadBuyer = UserRoleHelper.isLeadBuyer(purchaseRoles);
+      final isFinalApprover = UserRoleHelper.isFinalApprover(purchaseRoles);
+      final isRawMaterialManager = UserRoleHelper.isRawMaterialManager(purchaseRoles);
+      final isConsumableManager = UserRoleHelper.isConsumableManager(purchaseRoles);
 
       // 구매현황 조회 권한이 있는 경우만 접근 가능
       if (!UserRoleHelper.canViewPurchaseStatus(purchaseRoles)) {
@@ -50,16 +53,20 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
         return;
       }
 
-      // payment_category가 '구매 요청'이고 is_payment_completed가 false인 항목들 조회
+      // is_payment_completed가 false인 항목들 조회
       // progress_type 조건: 선진행은 무조건, 일반은 승인완료된 것만
       var query = _supabase
           .from('purchase_requests')
           .select('*, purchase_request_items(*)')
-          .eq('payment_category', '구매 요청')
+          .eq('payment_category', '구매 요청')  // 구매대기는 '구매 요청' 카테고리만
           .eq('is_payment_completed', false);
 
-      // 권한에 따른 필터링: lead buyer, app_admin이 아닌 경우 본인 것만 조회
-      if (!isAppAdmin && !isLeadBuyer) {
+      // 권한에 따른 필터링
+      // final_approver + raw_material_manager는 구매대기 탭에서 데이터 없음 (발주만 관리)
+      // final_approver + consumable_manager는 '구매 요청' 카테고리 조회 가능
+      // lead buyer, app_admin은 모든 구매 요청 조회 가능
+      if (!isAppAdmin && !isLeadBuyer && !(isFinalApprover && isConsumableManager)) {
+        // 일반 직원: 본인 것만 조회
         query = query.eq('requester_name', userName);
       }
 

@@ -67,3 +67,6 @@ GoogleService-Info.plist
 *-E
 *.backup
 *.tmp
+hansl-attendance-firebase-adminsdk.json
+hansl-attendance-firebase-adminsdk.json.old
+*.apk

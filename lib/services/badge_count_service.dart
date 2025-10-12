@@ -194,7 +194,7 @@ class BadgeCountService {
         final isFinalApprover = UserRoleHelper.isFinalApprover(purchaseRoles);
         final isPurchaseManager = purchaseRoles.contains('purchase_manager');
         final isCeo = purchaseRoles.contains('ceo');
-        final hasFullAccess = isAppAdmin || isMiddleManager || isFinalApprover || isCeo;
+        final hasFullAccess = isAppAdmin || isLeadBuyer || isMiddleManager || isFinalApprover || isCeo;
         
         if (!hasFullAccess) {
           final userName = employee['name'] as String? ?? '';

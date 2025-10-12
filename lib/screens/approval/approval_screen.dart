@@ -13,6 +13,7 @@ import '../../widgets/purchase/purchase_approval_widget.dart';
 import '../../widgets/purchase/purchase_waiting_widget.dart';
 import '../../widgets/purchase/receiving_waiting_widget.dart';
 import '../../services/badge_cache_service.dart';
+import '../../utils/user_role_helper.dart';
 
 class ApprovalScreen extends StatefulWidget {
   final int? initialMainTab; // 0: 연차/출장, 1: 발주승인, 2: 구매대기, 3: 입고대기
@@ -29,6 +30,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
   late TabController _mainTabController; // 메인 탭 (연차/출장, 발주승인, 구매대기, 입고대기)
   late TabController _subTabController; // 서브 탭 (대기중, 처리완료)
   bool _hasPurchaseApprovalAuth = false; // 발주 승인 권한 여부
+  bool _hasLeaveApprovalAuth = false; // 연차 승인 권한 여부
   
   // 배지 카운트 즉시 표시를 위한 로컬 캐시
   Map<String, int> _cachedBadgeCounts = {
@@ -147,22 +149,19 @@ class _ApprovalScreenState extends State<ApprovalScreen>
               if (kDebugMode) debugPrint('❌ 연차 데이터 로드 실패: $e');
             });
 
-        // 발주 데이터 비동기 로드 (권한이 있는 경우)
-        if (_hasPurchaseApprovalAuth) {
-          if (kDebugMode) debugPrint('🔐 발주 데이터 로드 시작');
-          purchaseProvider
-              .fetchPendingPurchases(employee: userProvider.employee)
-              .then((_) {
-                if (kDebugMode) debugPrint('✅ 발주 데이터 로드 완료');
-                // 배지 카운트 저장
-                _saveBadgeCounts();
-              })
-              .catchError((e) {
-                if (kDebugMode) debugPrint('❌ 발주 데이터 로드 실패: $e');
-              });
-        } else {
-          if (kDebugMode) debugPrint('⚠️ 발주 승인 권한 없음');
-        }
+        // 발주 데이터 비동기 로드 (모든 역할에서 필요 - 구매대기/입고대기 표시를 위해)
+        // app_admin, lead buyer, 발주승인권한자, 일반직원 모두 각자 볼 수 있는 데이터가 필요
+        if (kDebugMode) debugPrint('🔐 발주 데이터 로드 시작 (모든 역할)');
+        purchaseProvider
+            .fetchPendingPurchases(employee: userProvider.employee)
+            .then((_) {
+              if (kDebugMode) debugPrint('✅ 발주 데이터 로드 완료');
+              // 배지 카운트 저장
+              _saveBadgeCounts();
+            })
+            .catchError((e) {
+              if (kDebugMode) debugPrint('❌ 발주 데이터 로드 실패: $e');
+            });
       }
     });
   }
@@ -276,6 +275,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
         isSupportManager ||
         isLabManager;
     final bool hasApprovalRole = isAdminOrSuper || isManager;
+    
+    // 연차 승인 권한 업데이트
+    _hasLeaveApprovalAuth = hasApprovalRole;
 
     // attendance_role에 따른 승인 가능 부서 매핑
     final List<String> approvalDepartments = [];
@@ -306,13 +308,31 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       '경영지원팀_manager',
       '연구소_manager',
     ];
+    // UserRoleHelper 사용하여 역할 체크
+    final bool isAppAdmin = UserRoleHelper.isAppAdmin(purchaseRoles);
+    final bool isPureLeadBuyer = UserRoleHelper.isPureLeadBuyer(purchaseRoles);
+    final bool isRegularEmployee = UserRoleHelper.isRegularEmployee(purchaseRoles);
+    
+    // PurchaseProvider 가져오기 (일반 직원의 입고대기 개수 표시를 위해)
+    final purchaseProvider = Provider.of<PurchaseProvider>(context);
+    
+    // 타이틀 결정 (일반 직원의 경우 입고대기 개수 포함)
+    String appBarTitle = '승인 관리';
+    if (isRegularEmployee) {
+      // 일반 직원은 입고대기 개수를 제목에 표시
+      final receivingCount = purchaseProvider.receivingWaitingCount;
+      appBarTitle = receivingCount > 0 ? '입고대기 ($receivingCount)' : '입고대기';
+    } else if (isPureLeadBuyer) {
+      appBarTitle = '구매/입고 대기';
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('승인 관리', style: AppTextStyles.appBarTitle(context)),
+            Text(appBarTitle, style: AppTextStyles.appBarTitle(context)),
             if (isAdminOrSuper) ...[
               SizedBox(width: ResponsiveUtils.spacing(context, 8)),
               Container(
@@ -539,9 +559,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             }
           }
 
-          // 구매대기 탭 뱃지 계산
+          // 구매대기 탭 뱃지 계산 (lead buyer도 포함)
           int purchaseWaitingCount = 0;
-          if (_hasPurchaseApprovalAuth) {
+          if (isAppAdmin || isPureLeadBuyer) {
             final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
             final pendingOrders = purchaseProvider.pendingOrders;
             
@@ -568,9 +588,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             }
           }
 
-          // 입고대기 탭 뱃지 계산
+          // 입고대기 탭 뱃지 계산 (모든 역할에서 계산)
           int receivingWaitingCount = 0;
-          if (_hasPurchaseApprovalAuth) {
+          if (!isRegularEmployee) {
             final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
             final pendingOrders = purchaseProvider.pendingOrders;
             
@@ -648,25 +668,28 @@ class _ApprovalScreenState extends State<ApprovalScreen>
 
           return Column(
             children: [
-              // 통합된 탭 디자인 - Segmented Control 스타일
-              Container(
-                margin: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
-                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 4)),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF2F3F5),
-                  borderRadius: BorderRadius.circular(
-                    ResponsiveUtils.spacing(context, 12),
+              // 일반 직원은 탭 표시 안 함 (입고대기만 표시)
+              if (!isRegularEmployee) // 일반 직원이 아닌 경우만 탭 표시
+                // 통합된 탭 디자인 - Segmented Control 스타일
+                Container(
+                  margin: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
+                  padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 4)),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF2F3F5),
+                    borderRadius: BorderRadius.circular(
+                      ResponsiveUtils.spacing(context, 12),
+                    ),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    // 연차/출장 탭
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          _mainTabController.animateTo(0);
-                        },
-                        child: AnimatedContainer(
+                  child: Row(
+                    children: [
+                      // 연차/출장 탭 (attendance_role 권한이 있는 경우만 표시)
+                      if (_hasLeaveApprovalAuth)
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            _mainTabController.animateTo(0);
+                          },
+                          child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           padding: EdgeInsets.symmetric(
                             vertical: ResponsiveUtils.spacing(context, 16),
@@ -875,8 +898,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                           ),
                         ),
                       ),
-                    // 구매대기 탭
-                    Expanded(
+                    // 구매대기 탭 (lead buyer와 app_admin만 표시)
+                    if (isAppAdmin || isPureLeadBuyer)
+                      Expanded(
                       child: GestureDetector(
                         onTap: () {
                           _mainTabController.animateTo(2);
@@ -992,8 +1016,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                         ),
                       ),
                     ),
-                    // 입고대기 탭
-                    Expanded(
+                    // 입고대기 탭 (일반 직원 제외한 모든 역할에서 표시)
+                    if (!isRegularEmployee)
+                      Expanded(
                       child: GestureDetector(
                         onTap: () {
                           _mainTabController.animateTo(3);
@@ -1114,12 +1139,15 @@ class _ApprovalScreenState extends State<ApprovalScreen>
               ),
 
               Expanded(
-                child: TabBarView(
-                  controller: _mainTabController,
-                  children: [
-                    // 연차/출장 탭 콘텐츠
-                    Column(
+                child: isRegularEmployee 
+                  ? const ReceivingWaitingWidget() // 일반 직원은 입고대기만 표시
+                  : TabBarView(
+                      controller: _mainTabController,
                       children: [
+                        // 연차/출장 탭 콘텐츠 (권한이 있는 경우만 표시)
+                        _hasLeaveApprovalAuth
+                          ? Column(
+                          children: [
                         // 심플한 필터 칩 스타일의 서브 탭
                         Container(
                           height: ResponsiveUtils.spacing(context, 40),
@@ -1457,15 +1485,18 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                           ),
                         ),
                       ],
+                    )
+                      : const SizedBox.shrink(), // 권한 없으면 빈 공간
+                    // 발주승인 탭 (권한이 있는 경우만 표시)
+                    _hasPurchaseApprovalAuth
+                      ? const PurchaseApprovalWidget()
+                      : const SizedBox.shrink(), // 권한 없으면 빈 공간
+                        // 구매대기 탭
+                        const PurchaseWaitingWidget(),
+                        // 입고대기 탭
+                        const ReceivingWaitingWidget(),
+                      ],
                     ),
-                    // 발주승인 탭
-                    const PurchaseApprovalWidget(),
-                    // 구매대기 탭
-                    const PurchaseWaitingWidget(),
-                    // 입고대기 탭
-                    const ReceivingWaitingWidget(),
-                  ],
-                ),
               ),
             ],
           );
