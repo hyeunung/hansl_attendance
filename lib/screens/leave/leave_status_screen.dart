@@ -499,7 +499,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                                           Icon(
                                             l['type'] == 'biztrip'
                                                 ? Icons.flight_takeoff
-                                                : Icons.beach_access,
+                                                : Icons.calendar_today,
                                             size: 20,
                                             color: l['type'] == 'biztrip'
                                                 ? const Color(0xFF1976D2)
@@ -670,24 +670,34 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
               Icon(
                 l['type'] == 'biztrip'
                     ? Icons.flight_takeoff
-                    : Icons.beach_access,
+                    : Icons.calendar_today,
                 size: 20,
                 color: l['type'] == 'biztrip'
                     ? const Color(0xFF1976D2)
                     : const Color(0xFF34C759),
               ),
               const SizedBox(width: 10),
-              Text(
-                l['name'] ?? l['user_email'] ?? '-',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                  color: Color(0xFF222222),
+              Expanded(
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        l['name'] ?? l['user_email'] ?? '-',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                          color: Color(0xFF222222),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _leaveTypeChip(l['type']),
+                  ],
                 ),
               ),
               const SizedBox(width: 8),
-              _leaveTypeChip(l['type']),
-              Spacer(),
               if (status == 'pending')
                 IconButton(
                   onPressed: () => _deleteLeaveRequest(l),
@@ -783,9 +793,21 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
         textColor = const Color(0xFF1976D2); // 파란색 글자
         break;
       default:
-        label = type;
-        bgColor = const Color(0xFFE3F2FD);
-        textColor = const Color(0xFF1976D2);
+        // 혹시 영어로 들어온 경우를 대비한 처리
+        if (type == 'annual_leave' || type == 'annual leave') {
+          label = '연차';
+          bgColor = const Color(0xFF34C759).withValues(alpha: 0.15);
+          textColor = const Color(0xFF34C759);
+        } else if (type == 'business_trip' || type == 'business trip') {
+          label = '출장';
+          bgColor = const Color(0xFF1976D2).withValues(alpha: 0.15);
+          textColor = const Color(0xFF1976D2);
+        } else {
+          // 알 수 없는 타입인 경우 한글로 기본값 표시
+          label = '기타';
+          bgColor = const Color(0xFFE3F2FD);
+          textColor = const Color(0xFF1976D2);
+        }
     }
     return Container(
       margin: EdgeInsets.only(left: ResponsiveUtils.spacing(context, 8)),
