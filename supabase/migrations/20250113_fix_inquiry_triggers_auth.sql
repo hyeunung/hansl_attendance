@@ -1,20 +1,33 @@
--- 문의 알림 시스템 트리거
--- 1. 새 문의 생성 시 → app_admin에게 알림
--- 2. 문의 상태 변경 시 → 문의자에게 알림
+-- 문의 알림 트리거 인증 문제 수정
+-- service_role_key 설정 및 헤더 수정
+
+-- 기존 트리거 제거
+DROP TRIGGER IF EXISTS trigger_notify_new_inquiry ON support_inquires CASCADE;
+DROP TRIGGER IF EXISTS trigger_notify_inquiry_status_change ON support_inquires CASCADE;
+DROP FUNCTION IF EXISTS notify_new_inquiry_to_admins CASCADE;
+DROP FUNCTION IF EXISTS notify_inquiry_status_change CASCADE;
 
 -- ============================================
--- 1. 새 문의 생성 시 app_admin에게 알림
+-- 1. 새 문의 생성 시 app_admin에게 알림 (인증 수정)
 -- ============================================
 
 CREATE OR REPLACE FUNCTION notify_new_inquiry_to_admins()
 RETURNS TRIGGER AS $$
+DECLARE
+  service_key TEXT;
 BEGIN
+  -- service_role_key 가져오기
+  SELECT decrypted_secret INTO service_key 
+  FROM vault.decrypted_secrets 
+  WHERE name = 'service_role_key'
+  LIMIT 1;
+
   -- 새 문의가 생성되면 모든 app_admin에게 알림
   PERFORM net.http_post(
     url := 'https://qvhbigvdfyvhoegkhvef.supabase.co/functions/v1/notify_new_inquiry',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || current_setting('app.supabase_service_role_key', true)
+      'Authorization', 'Bearer ' || service_key
     ),
     body := jsonb_build_object(
       'inquiryId', NEW.id,
@@ -27,36 +40,45 @@ BEGIN
   RAISE NOTICE '새 문의 알림 전송: inquiry_id=%, user=%', NEW.id, NEW.user_name;
   
   RETURN NEW;
+EXCEPTION
+  WHEN OTHERS THEN
+    -- 에러 발생해도 문의 생성은 계속 진행
+    RAISE WARNING '알림 전송 실패: %', SQLERRM;
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 기존 트리거 삭제
-DROP TRIGGER IF EXISTS trigger_notify_new_inquiry ON support_inquiries;
-
--- 새 문의 생성 트리거
+-- 트리거 생성
 CREATE TRIGGER trigger_notify_new_inquiry
-AFTER INSERT ON support_inquiries
+AFTER INSERT ON support_inquires
 FOR EACH ROW
 EXECUTE FUNCTION notify_new_inquiry_to_admins();
 
 -- ============================================
--- 2. 문의 상태 변경 시 문의자에게 알림
+-- 2. 문의 상태 변경 시 문의자에게 알림 (인증 수정)
 -- ============================================
 
 CREATE OR REPLACE FUNCTION notify_inquiry_status_change()
 RETURNS TRIGGER AS $$
+DECLARE
+  service_key TEXT;
 BEGIN
   -- 상태가 변경되거나 답변이 추가된 경우만 처리
-  -- 특히 resolved(해결됨) 상태일 때 중점적으로 알림
   IF (NEW.status IS DISTINCT FROM OLD.status) OR 
      (NEW.resolution_note IS DISTINCT FROM OLD.resolution_note AND NEW.resolution_note IS NOT NULL) THEN
+    
+    -- service_role_key 가져오기
+    SELECT decrypted_secret INTO service_key 
+    FROM vault.decrypted_secrets 
+    WHERE name = 'service_role_key'
+    LIMIT 1;
     
     -- 문의자에게 알림 전송
     PERFORM net.http_post(
       url := 'https://qvhbigvdfyvhoegkhvef.supabase.co/functions/v1/notify_inquiry_response',
       headers := jsonb_build_object(
         'Content-Type', 'application/json',
-        'Authorization', 'Bearer ' || current_setting('app.supabase_service_role_key', true)
+        'Authorization', 'Bearer ' || service_key
       ),
       body := jsonb_build_object(
         'inquiryId', NEW.id,
@@ -71,47 +93,26 @@ BEGIN
   END IF;
   
   RETURN NEW;
+EXCEPTION
+  WHEN OTHERS THEN
+    -- 에러 발생해도 상태 변경은 계속 진행
+    RAISE WARNING '알림 전송 실패: %', SQLERRM;
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 기존 트리거 삭제
-DROP TRIGGER IF EXISTS trigger_notify_inquiry_response ON support_inquiries;
-DROP TRIGGER IF EXISTS trigger_notify_inquiry_status_change ON support_inquiries;
-
--- 문의 상태 변경 트리거
+-- 트리거 생성
 CREATE TRIGGER trigger_notify_inquiry_status_change
-AFTER UPDATE ON support_inquiries
+AFTER UPDATE ON support_inquires
 FOR EACH ROW
 EXECUTE FUNCTION notify_inquiry_status_change();
 
 -- ============================================
--- 3. 트리거 설명
+-- 트리거 설명
 -- ============================================
 
-COMMENT ON TRIGGER trigger_notify_new_inquiry ON support_inquiries IS 
+COMMENT ON TRIGGER trigger_notify_new_inquiry ON support_inquires IS 
 '새 문의가 생성되면 모든 app_admin 권한자에게 푸시 알림을 전송합니다.';
 
-COMMENT ON TRIGGER trigger_notify_inquiry_status_change ON support_inquiries IS 
+COMMENT ON TRIGGER trigger_notify_inquiry_status_change ON support_inquires IS 
 '문의 상태가 변경되거나 답변이 추가되면 문의자에게 푸시 알림을 전송합니다.';
-
--- ============================================
--- 4. 테스트용 쿼리
--- ============================================
-
-/*
--- 새 문의 생성 테스트
-INSERT INTO support_inquiries (
-  user_id, user_email, user_name, 
-  inquiry_type, subject, message
-) VALUES (
-  auth.uid(), 'test@example.com', '테스트 사용자',
-  'other', '테스트 문의', '테스트 내용입니다'
-);
-
--- 문의 상태 변경 테스트
-UPDATE support_inquiries 
-SET status = 'resolved', 
-    resolution_note = '처리 완료되었습니다',
-    handled_by = '관리자'
-WHERE id = 1;
-*/

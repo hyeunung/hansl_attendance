@@ -912,48 +912,23 @@ class _SettingsScreenState extends State<SettingsScreen>
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Row(
-                                            children: [
-                                              Text(
-                                                _isAdmin ? '문의 관리' : '문의하기',
-                                                style: ResponsiveUtils.getTextStyle(
-                                                  context,
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: const Color(0xFF1C1C1E),
-                                                ),
-                                              ),
-                                              if (_inquiryBadgeCount > 0) ...[
-                                                SizedBox(
-                                                  width: ResponsiveUtils.spacing(context, 8),
-                                                ),
-                                                Container(
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: ResponsiveUtils.spacing(context, 6),
-                                                    vertical: ResponsiveUtils.spacing(context, 2),
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: const Color(0xFFFF3B30),
-                                                    borderRadius: BorderRadius.circular(10),
-                                                  ),
-                                                  child: Text(
-                                                    _inquiryBadgeCount.toString(),
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: ResponsiveUtils.fontSize(context, 11),
-                                                      fontWeight: FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ],
+                                          Text(
+                                            _isAdmin ? '문의 관리' : '문의하기',
+                                            style: ResponsiveUtils.getTextStyle(
+                                              context,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                              color: const Color(0xFF1C1C1E),
+                                            ),
                                           ),
                                           SizedBox(
                                             height: ResponsiveUtils.spacing(context, 2),
                                           ),
                                           Text(
                                             _isAdmin 
-                                              ? '새로운 문의 ${_inquiryBadgeCount}건' 
+                                              ? (_inquiryBadgeCount > 0 
+                                                  ? '미처리 문의 $_inquiryBadgeCount건' 
+                                                  : '모든 문의가 처리되었습니다')
                                               : '앱 사용 중 궁금한 점을 문의하세요',
                                             style: ResponsiveUtils.getTextStyle(
                                               context,
@@ -964,6 +939,27 @@ class _SettingsScreenState extends State<SettingsScreen>
                                         ],
                                       ),
                                     ),
+                                    if (_inquiryBadgeCount > 0) ...[
+                                      Container(
+                                        width: ResponsiveUtils.spacing(context, 24),
+                                        height: ResponsiveUtils.spacing(context, 24),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFF3B30),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            _inquiryBadgeCount.toString(),
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: ResponsiveUtils.fontSize(context, 12),
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                                    ],
                                     Icon(
                                       Icons.chevron_right,
                                       color: const Color(0xFFC7C7CC),

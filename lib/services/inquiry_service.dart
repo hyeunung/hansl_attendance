@@ -55,13 +55,17 @@ class InquiryService {
       final user = _supabase.auth.currentUser;
 
       // Flutter 앱 문의 유형을 DB 유형으로 매핑
+      // 앱에서 전달되는 문의 유형을 DB 유형으로 매핑
       String dbInquiryType = inquiryType;
-      if (inquiryType == '앱관련') {
-        dbInquiryType = 'other'; // 앱관련은 other로 저장
-      } else if (inquiryType == '오류') {
-        dbInquiryType = 'bug';
-      } else if (inquiryType == '기타') {
-        dbInquiryType = 'other';
+      switch (inquiryType) {
+        case '연차':
+        case '근태':
+        case '기타':
+          dbInquiryType = 'other';
+          break;
+        case '오류':
+          dbInquiryType = 'bug';
+          break;
       }
 
       final data = {
@@ -75,7 +79,7 @@ class InquiryService {
       };
 
       final response = await _supabase
-          .from('support_inquiries')
+          .from('support_inquires')
           .insert(data)
           .select()
           .single();
@@ -110,7 +114,7 @@ class InquiryService {
       // 관리자는 모든 문의 조회
       if (isAdmin) {
         final response = await _supabase
-            .from('support_inquiries')
+            .from('support_inquires')
             .select('*')
             .order('created_at', ascending: false);
 
@@ -120,7 +124,7 @@ class InquiryService {
       }
       else {
         final response = await _supabase
-            .from('support_inquiries')
+            .from('support_inquires')
             .select('*')
             .eq('user_id', user.id)
             .order('created_at', ascending: false);
@@ -185,7 +189,7 @@ class InquiryService {
       }
 
       final response = await _supabase
-          .from('support_inquiries')
+          .from('support_inquires')
           .update(updateData)
           .eq('id', inquiryId)
           .select()
@@ -208,7 +212,7 @@ class InquiryService {
   Future<Map<String, dynamic>?> getInquiryDetail(int inquiryId) async {
     try {
       final response = await _supabase
-          .from('support_inquiries')
+          .from('support_inquires')
           .select('*')
           .eq('id', inquiryId)
           .single();
@@ -352,7 +356,7 @@ class InquiryService {
       if (!await isAppAdmin()) return 0;
 
       final response = await _supabase
-          .from('support_inquiries')
+          .from('support_inquires')
           .select('*')
           .or('status.eq.open,status.eq.in_progress');
 
@@ -375,7 +379,7 @@ class InquiryService {
       // 본인의 resolved 또는 closed 상태 문의 중
       // resolution_note가 있고 아직 확인하지 않은 것
       final response = await _supabase
-          .from('support_inquiries')
+          .from('support_inquires')
           .select('*')
           .eq('user_id', user.id)
           .or('status.eq.resolved,status.eq.closed')
@@ -437,7 +441,7 @@ class InquiryService {
 
       // 문의 정보 확인
       final inquiry = await _supabase
-          .from('support_inquiries')
+          .from('support_inquires')
           .select('*')
           .eq('id', inquiryId)
           .single();
@@ -454,7 +458,7 @@ class InquiryService {
       }
 
       await _supabase
-          .from('support_inquiries')
+          .from('support_inquires')
           .delete()
           .eq('id', inquiryId);
 
@@ -496,7 +500,7 @@ class InquiryService {
       }
 
       final inquiry = await _supabase
-          .from('support_inquiries')
+          .from('support_inquires')
           .select('*')
           .eq('id', inquiryId)
           .single();

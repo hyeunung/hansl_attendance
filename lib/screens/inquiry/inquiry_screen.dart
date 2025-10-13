@@ -214,9 +214,17 @@ class _InquiryScreenState extends State<InquiryScreen>
                 controller: _tabController!,
                 indicatorColor: Colors.white,
                 indicatorWeight: 3,
-                labelStyle: const TextStyle(
-                  fontSize: 16,
+                labelStyle: ResponsiveUtils.getTextStyle(
+                  context,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+                unselectedLabelStyle: ResponsiveUtils.getTextStyle(
+                  context,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withValues(alpha: 0.8),
                 ),
                 tabs: const [
                   Tab(text: '문의 작성'),
@@ -283,7 +291,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                         '어떻게 도와드릴까요?',
                         style: ResponsiveUtils.getTextStyle(
                           context,
-                          fontSize: 16,
+                          fontSize: 17,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF1C1C1E),
                         ),
@@ -293,7 +301,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                         '궁금한 점이나 불편한 사항을 알려주세요',
                         style: ResponsiveUtils.getTextStyle(
                           context,
-                          fontSize: 13,
+                          fontSize: 14,
                           color: const Color(0xFF6E6E73),
                         ),
                       ),
@@ -342,7 +350,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                         '문의 유형',
                         style: ResponsiveUtils.getTextStyle(
                           context,
-                          fontSize: 15,
+                          fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF1C1C1E),
                         ),
@@ -431,7 +439,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                         '문의 내용',
                         style: ResponsiveUtils.getTextStyle(
                           context,
-                          fontSize: 15,
+                          fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF1C1C1E),
                         ),
@@ -478,7 +486,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                       maxLines: 8,
                       style: ResponsiveUtils.getTextStyle(
                         context,
-                        fontSize: 15,
+                        fontSize: 16,
                         color: const Color(0xFF1C1C1E),
                         height: 1.5,
                       ),
@@ -486,7 +494,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                         hintText: '문의하실 내용을 자유롭게 작성해주세요.\n\n예시:\n• 앱 사용 중 발생한 오류\n• 기능 개선 제안\n• 사용 방법 문의\n• 기타 불편 사항',
                         hintStyle: ResponsiveUtils.getTextStyle(
                           context,
-                          fontSize: 14,
+                          fontSize: 15,
                           color: const Color(0xFFAEAEB2),
                           height: 1.5,
                         ),
@@ -617,7 +625,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                         '빠른 답변을 위한 팁',
                         style: ResponsiveUtils.getTextStyle(
                           context,
-                          fontSize: 14,
+                          fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF48484A),
                         ),
@@ -627,7 +635,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                         '• 문제 발생 시간과 상황을 구체적으로 작성\n• 오류 메시지가 있다면 함께 첨부\n• 업무 시간 내 1~2시간 이내 답변',
                         style: ResponsiveUtils.getTextStyle(
                           context,
-                          fontSize: 12,
+                          fontSize: 13,
                           color: const Color(0xFF8E8E93),
                           height: 1.4,
                         ),
