@@ -1,4 +1,5 @@
--- 문의 알림 최종 수정 (처음 약속한대로)
+-- 문의 알림 시스템 (최종 버전)
+-- 이전 버전들은 모두 삭제됨
 
 CREATE OR REPLACE FUNCTION notify_new_inquiry_to_admins()
 RETURNS TRIGGER AS $$
