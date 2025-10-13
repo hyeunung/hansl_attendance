@@ -243,7 +243,7 @@ class InquiryService {
           .onPostgresChanges(
             event: PostgresChangeEvent.update,
             schema: 'public',
-            table: 'support_inquiries',
+            table: 'support_inquires',  // 올바른 테이블명
             callback: (payload) async {
               final newRecord = payload.newRecord;
 

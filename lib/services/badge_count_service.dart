@@ -232,7 +232,7 @@ class BadgeCountService {
   static Future<int> _getUnprocessedInquiryCount() async {
     try {
       final response = await _supabase
-          .from('support_inquiries')
+          .from('support_inquires')
           .select()
           .or('status.eq.open,status.eq.in_progress')
           .count();
@@ -284,11 +284,11 @@ class BadgeCountService {
 
     // 문의 변경 감지
     _supabase
-        .channel('support_inquiries_badge')
+        .channel('support_inquires_badge')
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
-          table: 'support_inquiries',
+          table: 'support_inquires',
           callback: (_) => updateBadgeCount(),
         )
         .subscribe();
@@ -298,6 +298,6 @@ class BadgeCountService {
   static void removeSubscriptions() {
     _supabase.removeChannel(_supabase.channel('leave_requests_badge'));
     _supabase.removeChannel(_supabase.channel('purchase_requests_badge'));
-    _supabase.removeChannel(_supabase.channel('support_inquiries_badge'));
+    _supabase.removeChannel(_supabase.channel('support_inquires_badge'));
   }
 }

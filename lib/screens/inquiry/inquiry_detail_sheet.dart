@@ -222,13 +222,20 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
     final statusLabel = InquiryService.getStatusLabel(status);
     final statusColor = Color(InquiryService.getStatusColor(status));
 
+    // 키보드 높이 가져오기
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final isKeyboardVisible = keyboardHeight > 0;
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.9,
       decoration: const BoxDecoration(
         color: Color(0xFFF8F9FA),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: Column(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        resizeToAvoidBottomInset: true, // 키보드가 올라올 때 화면 리사이즈
+        body: Column(
         children: [
           // 핸들 바
           Container(
@@ -584,12 +591,47 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                                   color: Color(0xFF007AFF),
                                 ),
                               ),
+                              const Spacer(),
+                              // 키보드 닫기 버튼
+                              if (isKeyboardVisible)
+                                GestureDetector(
+                                  onTap: () {
+                                    FocusScope.of(context).unfocus();
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF007AFF).withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: const [
+                                        Icon(
+                                          Icons.keyboard_hide_rounded,
+                                          size: 16,
+                                          color: Color(0xFF007AFF),
+                                        ),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          '키보드 닫기',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF007AFF),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                           const SizedBox(height: 12),
                           TextField(
                             controller: _resolutionController,
                             maxLines: 5,
+                            textInputAction: TextInputAction.done,  // Done 버튼 추가
                             style: const TextStyle(
                               fontSize: 15,
                               color: Color(0xFF1C1C1E),
@@ -625,6 +667,9 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                             ),
                             onChanged: (value) {
                               setState(() {});  // 버튼 상태 업데이트
+                            },
+                            onEditingComplete: () {
+                              FocusScope.of(context).unfocus();  // 키보드 내리기
                             },
                           ),
                         ],
@@ -735,7 +780,12 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
           // 하단 버튼 (관리자만)
           if (widget.isAdmin)
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 20,
+                bottom: isKeyboardVisible ? 20 : 20,  // 키보드가 있을 때도 같은 패딩 유지
+              ),
               decoration: BoxDecoration(
                 color: Colors.white,
                 border: const Border(
@@ -812,6 +862,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
               ),
             ),
         ],
+      ),
       ),
     );
   }

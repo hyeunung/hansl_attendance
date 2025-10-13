@@ -3,9 +3,9 @@
 
 -- 1. 기존 중복/잘못된 RLS 정책 제거
 DROP POLICY IF EXISTS "app_admin_select_all" ON support_inquires;
-DROP POLICY IF EXISTS "support_inquiries_select" ON support_inquires;
-DROP POLICY IF EXISTS "support_inquiries_update" ON support_inquires;
-DROP POLICY IF EXISTS "support_inquiries_insert" ON support_inquires;
+DROP POLICY IF EXISTS "support_inquires_select" ON support_inquires;
+DROP POLICY IF EXISTS "support_inquires_update" ON support_inquires;
+DROP POLICY IF EXISTS "support_inquires_insert" ON support_inquires;
 
 -- 2. 깔끔하게 정리된 RLS 정책 다시 생성
 
