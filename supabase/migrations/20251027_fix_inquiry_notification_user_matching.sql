@@ -31,7 +31,7 @@ BEGIN
     
     -- 상태에 따른 알림 메시지 설정
     IF NEW.status = 'resolved' THEN
-      v_title := '✅ 문의 답변 완료';
+      v_title := '문의가 완료 처리되었습니다.';
       v_body := LEFT(COALESCE(NEW.resolution_note, '답변이 등록되었습니다. 확인해주세요.'), 100);
     ELSIF NEW.status = 'closed' THEN
       v_title := '📋 문의 종료';
