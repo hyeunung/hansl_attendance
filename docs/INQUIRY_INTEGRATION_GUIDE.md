@@ -6,7 +6,7 @@ Flutter 앱(hansl)과 웹앱(hanslworkspace)의 문의하기 시스템을 통합
 ## 🏗️ 시스템 구조
 
 ### 데이터베이스
-- **테이블**: `support_inquiries`
+- **테이블**: `support_inquires`
 - **위치**: Supabase (공유 DB)
 - **RLS**: 활성화됨 (사용자별 권한 제어)
 
@@ -156,18 +156,18 @@ open (대기중) → in_progress (처리중) → resolved (해결됨) → closed
 ### 로그 확인
 ```sql
 -- 최근 문의 조회
-SELECT * FROM support_inquiries 
+SELECT * FROM support_inquires 
 ORDER BY created_at DESC 
 LIMIT 20;
 
 -- 미처리 문의 확인
-SELECT * FROM support_inquiries 
+SELECT * FROM support_inquires 
 WHERE status = 'open' 
 ORDER BY created_at ASC;
 
 -- 관리자별 처리 건수
 SELECT handled_by, COUNT(*) as count 
-FROM support_inquiries 
+FROM support_inquires 
 WHERE handled_by IS NOT NULL 
 GROUP BY handled_by;
 ```

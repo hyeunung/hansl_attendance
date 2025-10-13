@@ -36,6 +36,7 @@ class _InquiryScreenState extends State<InquiryScreen>
   // 문의 목록
   List<Map<String, dynamic>> _inquiries = [];
   bool _isLoadingInquiries = true;
+  int _hiddenOldInquiriesCount = 0; // 30일 이전 해결된 문의 수
 
   // 실시간 구독
   dynamic _realtimeSubscription;
@@ -73,10 +74,40 @@ class _InquiryScreenState extends State<InquiryScreen>
       _isLoadingInquiries = true;
     });
 
-    final inquiries = await _inquiryService.getInquiries();
+    final allInquiries = await _inquiryService.getInquiries();
+    
+    // 해결된 문의는 최근 30일치만 필터링
+    final now = DateTime.now();
+    final oneMonthAgo = now.subtract(const Duration(days: 30));
+    
+    int hiddenCount = 0;
+    final inquiries = allInquiries.where((inquiry) {
+      final status = inquiry['status'] ?? 'open';
+      
+      // 대기중(open) 또는 진행중(in_progress)은 모두 표시
+      if (status == 'open' || status == 'in_progress') {
+        return true;
+      }
+      
+      // 해결됨(resolved)은 최근 30일 이내만 표시
+      if (status == 'resolved') {
+        final createdAt = DateTime.parse(inquiry['created_at']);
+        final isRecent = createdAt.isAfter(oneMonthAgo);
+        if (!isRecent) {
+          hiddenCount++; // 30일 이전 해결된 문의 카운트
+        }
+        return isRecent;
+      }
+      
+      return true; // 기타 상태는 모두 표시
+    }).toList();
+    
+    // 정렬 적용
+    _sortInquiriesList(inquiries);
 
     setState(() {
       _inquiries = inquiries;
+      _hiddenOldInquiriesCount = hiddenCount;
       _isLoadingInquiries = false;
     });
   }
@@ -91,17 +122,50 @@ class _InquiryScreenState extends State<InquiryScreen>
             (i) => i['id'] == updatedInquiry['id'],
           );
           if (index != -1) {
+            // 이전 상태 저장 (업데이트 전에!)
+            final previousInquiry = Map<String, dynamic>.from(_inquiries[index]);
+            
+            // 업데이트 적용
             _inquiries[index] = updatedInquiry;
+            
+            // 업데이트 후 재정렬
+            _sortInquiries();
 
-            // 답변이 왔을 때 알림 표시
-            if (updatedInquiry['resolution_note'] != null &&
-                updatedInquiry['resolution_note'].isNotEmpty) {
-              _showNotification('답변이 도착했습니다!');
+            // app_admin이 아닌 모든 사용자: 문의가 resolved 상태가 되면 알림
+            if (!_isAdmin && 
+                updatedInquiry['status'] == 'resolved' &&
+                previousInquiry['status'] != 'resolved') {
+              _showNotification('문의가 완료 처리되었습니다.');
             }
           }
         });
       },
     );
+  }
+
+  /// 문의 목록 정렬 (리스트 직접)
+  void _sortInquiriesList(List<Map<String, dynamic>> list) {
+    list.sort((a, b) {
+      // 먼저 상태로 정렬 (open이 우선)
+      final statusA = a['status'] ?? 'open';
+      final statusB = b['status'] ?? 'open';
+      
+      if (statusA == 'open' && statusB != 'open') {
+        return -1; // a가 open이면 앞으로
+      } else if (statusA != 'open' && statusB == 'open') {
+        return 1; // b가 open이면 앞으로
+      }
+      
+      // 같은 상태라면 최신순으로 정렬
+      final dateA = DateTime.parse(a['created_at']);
+      final dateB = DateTime.parse(b['created_at']);
+      return dateB.compareTo(dateA); // 최신이 앞으로
+    });
+  }
+
+  /// 문의 목록 정렬 (인스턴스 변수)
+  void _sortInquiries() {
+    _sortInquiriesList(_inquiries);
   }
 
   /// 알림 표시
@@ -733,8 +797,61 @@ class _InquiryScreenState extends State<InquiryScreen>
       color: const Color(0xFF007AFF),
       child: ListView.builder(
         padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
-        itemCount: _inquiries.length,
+        itemCount: _inquiries.length + (_hiddenOldInquiriesCount > 0 ? 1 : 0), // 숨겨진 문의가 있으면 정보 카드 추가
         itemBuilder: (context, index) {
+          // 마지막 아이템이고 숨겨진 문의가 있으면 정보 카드 표시
+          if (index == _inquiries.length && _hiddenOldInquiriesCount > 0) {
+            return Container(
+              margin: EdgeInsets.only(top: ResponsiveUtils.spacing(context, 8)),
+              padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF2F2F7).withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(
+                  ResponsiveUtils.spacing(context, 12),
+                ),
+                border: Border.all(
+                  color: const Color(0xFFE5E5EA),
+                  width: 0.5,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    color: const Color(0xFF8E8E93),
+                    size: ResponsiveUtils.iconSize(context, 20),
+                  ),
+                  SizedBox(width: ResponsiveUtils.spacing(context, 10)),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '30일 이전 해결된 문의',
+                          style: ResponsiveUtils.getTextStyle(
+                            context,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF48484A),
+                          ),
+                        ),
+                        SizedBox(height: ResponsiveUtils.spacing(context, 2)),
+                        Text(
+                          '$_hiddenOldInquiriesCount건의 문의가 숨겨졌습니다',
+                          style: ResponsiveUtils.getTextStyle(
+                            context,
+                            fontSize: 13,
+                            color: const Color(0xFF8E8E93),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+          
           final inquiry = _inquiries[index];
           return _buildInquiryCard(inquiry);
         },
@@ -749,6 +866,7 @@ class _InquiryScreenState extends State<InquiryScreen>
     final status = inquiry['status'] ?? 'open';
     final statusLabel = InquiryService.getStatusLabel(status);
     final statusColor = Color(InquiryService.getStatusColor(status));
+    final isOpen = status == 'open';  // 대기중 상태 체크
     
     // 읽지 않은 답변이 있는지 확인
     final hasUnreadResponse = !_isAdmin && 
@@ -764,17 +882,21 @@ class _InquiryScreenState extends State<InquiryScreen>
           ResponsiveUtils.spacing(context, 16),
         ),
         border: Border.all(
-          color: hasUnreadResponse 
-              ? const Color(0xFF007AFF).withValues(alpha: 0.3)
-              : const Color(0xFFE5E5EA),
-          width: hasUnreadResponse ? 1.5 : 1,
+          color: isOpen  // 대기중이면 주황색 테두리
+              ? const Color(0xFFFF9500).withValues(alpha: 0.3)
+              : hasUnreadResponse 
+                  ? const Color(0xFF007AFF).withValues(alpha: 0.3)
+                  : const Color(0xFFE5E5EA),
+          width: isOpen || hasUnreadResponse ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: hasUnreadResponse
-                ? const Color(0xFF007AFF).withValues(alpha: 0.1)
-                : Colors.black.withValues(alpha: 0.04),
-            blurRadius: ResponsiveUtils.spacing(context, hasUnreadResponse ? 8 : 4),
+            color: isOpen  // 대기중이면 주황색 그림자
+                ? const Color(0xFFFF9500).withValues(alpha: 0.1)
+                : hasUnreadResponse
+                    ? const Color(0xFF007AFF).withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.04),
+            blurRadius: ResponsiveUtils.spacing(context, isOpen || hasUnreadResponse ? 8 : 4),
             offset: Offset(0, ResponsiveUtils.spacing(context, 2)),
           ),
         ],
@@ -835,7 +957,9 @@ class _InquiryScreenState extends State<InquiryScreen>
                       decoration: BoxDecoration(
                         color: hasUnreadResponse 
                             ? const Color(0xFFFF3B30).withValues(alpha: 0.15)
-                            : statusColor.withValues(alpha: 0.15),
+                            : isOpen
+                                ? const Color(0xFFFF9500).withValues(alpha: 0.15)  // 대기중이면 주황색
+                                : statusColor.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(
                           ResponsiveUtils.spacing(context, 20),
                         ),
@@ -843,26 +967,41 @@ class _InquiryScreenState extends State<InquiryScreen>
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Container(
-                            width: ResponsiveUtils.spacing(context, 6),
-                            height: ResponsiveUtils.spacing(context, 6),
-                            decoration: BoxDecoration(
-                              color: hasUnreadResponse 
-                                  ? const Color(0xFFFF3B30)
-                                  : statusColor,
-                              shape: BoxShape.circle,
+                          if (isOpen && !hasUnreadResponse) ...[  // 대기중이면 시계 아이콘
+                            Icon(
+                              Icons.schedule_rounded,
+                              size: ResponsiveUtils.iconSize(context, 14),
+                              color: const Color(0xFFFF9500),
                             ),
-                          ),
-                          SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+                            SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+                          ] else ...[
+                            Container(
+                              width: ResponsiveUtils.spacing(context, 6),
+                              height: ResponsiveUtils.spacing(context, 6),
+                              decoration: BoxDecoration(
+                                color: hasUnreadResponse 
+                                    ? const Color(0xFFFF3B30)
+                                    : statusColor,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+                          ],
                           Text(
-                            hasUnreadResponse ? 'NEW 답변' : statusLabel,
+                            hasUnreadResponse 
+                                ? 'NEW 답변' 
+                                : isOpen 
+                                    ? '답변 대기중'  // 대기중 텍스트 명확하게
+                                    : statusLabel,
                             style: ResponsiveUtils.getTextStyle(
                               context,
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                               color: hasUnreadResponse 
                                   ? const Color(0xFFFF3B30)
-                                  : statusColor,
+                                  : isOpen
+                                      ? const Color(0xFFFF9500)  // 대기중이면 주황색
+                                      : statusColor,
                             ),
                           ),
                           if (hasUnreadResponse) ...[

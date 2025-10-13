@@ -1,12 +1,12 @@
--- 030_add_support_inquiries_delete_policy.sql
--- support_inquiries 테이블에 DELETE 정책 추가
+-- 030_add_support_inquires_delete_policy.sql
+-- support_inquires 테이블에 DELETE 정책 추가
 
 -- 먼저 기존 정책 제거 (있을 경우)
-DROP POLICY IF EXISTS "Users can delete their own inquiries" ON support_inquiries;
+DROP POLICY IF EXISTS "Users can delete their own inquiries" ON support_inquires;
 
 -- DELETE 정책 - 본인이 작성한 문의는 언제든 삭제 가능
 -- app_admin은 모든 문의 삭제 가능
-CREATE POLICY "Users can delete their own inquiries" ON support_inquiries
+CREATE POLICY "Users can delete their own inquiries" ON support_inquires
 FOR DELETE
 TO public
 USING (
@@ -25,5 +25,5 @@ USING (
 -- 완료 메시지
 DO $$
 BEGIN
-    RAISE NOTICE 'support_inquiries 테이블에 DELETE 정책이 추가되었습니다.';
+    RAISE NOTICE 'support_inquires 테이블에 DELETE 정책이 추가되었습니다.';
 END $$;
