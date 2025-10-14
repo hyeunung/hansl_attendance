@@ -480,9 +480,9 @@
 			baseConfigurationReference = F6C9B2FF2FF602265D042302 /* Pods-RunnerTests.debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 244;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 3.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.hansl.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -495,9 +495,9 @@
 			baseConfigurationReference = F1B8A0908239D68823A66715 /* Pods-RunnerTests.release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 244;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 3.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.hansl.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -510,9 +510,9 @@
 			baseConfigurationReference = B6A4B9211D836A942121CE04 /* Pods-RunnerTests.profile.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 244;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 3.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.hansl.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
