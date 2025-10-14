@@ -311,7 +311,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     // UserRoleHelper 사용하여 역할 체크
     final bool isAppAdmin = UserRoleHelper.isAppAdmin(purchaseRoles);
     final bool isPureLeadBuyer = UserRoleHelper.isPureLeadBuyer(purchaseRoles);
-    final bool isRegularEmployee = UserRoleHelper.isRegularEmployee(purchaseRoles);
+    final bool isRegularEmployee = UserRoleHelper.isRegularEmployee(purchaseRoles) && !hasApprovalRole;
     
     // PurchaseProvider 가져오기 (일반 직원의 입고대기 개수 표시를 위해)
     final purchaseProvider = Provider.of<PurchaseProvider>(context);
