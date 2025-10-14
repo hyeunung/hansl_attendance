@@ -316,9 +316,12 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     // PurchaseProvider 가져오기 (일반 직원의 입고대기 개수 표시를 위해)
     final purchaseProvider = Provider.of<PurchaseProvider>(context);
     
-    // 타이틀 결정 (일반 직원의 경우 입고대기 개수 포함)
+    // 타이틀 결정 (app_admin 최우선, 일반 직원의 경우 입고대기 개수 포함)
     String appBarTitle = '승인 관리';
-    if (isRegularEmployee) {
+    if (isAppAdmin) {
+      // app_admin은 항상 '승인 관리'
+      appBarTitle = '승인 관리';
+    } else if (isRegularEmployee) {
       // 일반 직원은 입고대기 개수를 제목에 표시
       final receivingCount = purchaseProvider.receivingWaitingCount;
       appBarTitle = receivingCount > 0 ? '입고대기 ($receivingCount)' : '입고대기';
