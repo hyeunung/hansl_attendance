@@ -22,11 +22,28 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
   bool get wantKeepAlive => true;
   final NumberFormat currencyFormat = NumberFormat('#,###');
   late TabController _tabController;
+  
+  // 처리완료 탭 검색 및 필터링을 위한 상태 변수들
+  final TextEditingController _searchController = TextEditingController();
+  DateTime? _startDate;
+  DateTime? _endDate;
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    
+    // 기본 날짜 설정 (최근 1개월)
+    _endDate = DateTime.now();
+    _startDate = DateTime(_endDate!.year, _endDate!.month - 1, _endDate!.day);
+    
+    // 검색 리스너 추가
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text;
+      });
+    });
 
     // 탭 변경 리스너 추가
     _tabController.addListener(() {
@@ -51,6 +68,8 @@ return;
         // Debug print removed
         purchaseProvider.fetchCompletedPurchases(
           employee: userProvider.employee,
+          startDate: _startDate,
+          endDate: _endDate,
         );
       } else if (_tabController.index == 0) {
         // Debug print removed
@@ -81,6 +100,7 @@ return;
   @override
   void dispose() {
     _tabController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -122,57 +142,86 @@ return;
           ),
           child: Column(
             children: [
-              // 헤더
+              // 헤더 (개선된 모던 디자인)
               Container(
-                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
+                padding: EdgeInsets.fromLTRB(
+                  ResponsiveUtils.spacing(context, 24),
+                  ResponsiveUtils.spacing(context, 20),
+                  ResponsiveUtils.spacing(context, 16),
+                  ResponsiveUtils.spacing(context, 20),
+                ),
                 decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
+                  color: AppColors.primary,
                   borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(
-                      ResponsiveUtils.spacing(context, 16),
-                    ),
-                    topRight: Radius.circular(
-                      ResponsiveUtils.spacing(context, 16),
-                    ),
+                    topLeft: Radius.circular(ResponsiveUtils.spacing(context, 16)),
+                    topRight: Radius.circular(ResponsiveUtils.spacing(context, 16)),
                   ),
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.receipt_long,
-                      color: Colors.white,
-                      size: ResponsiveUtils.iconSize(context, 24),
-                    ),
-                    SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                    Expanded(
-                      child: Text(
-                        group.purchaseOrderNumber,
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    Container(
+                      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 8)),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+                      ),
+                      child: Icon(
+                        Icons.description_outlined,
+                        color: Colors.white,
+                        size: ResponsiveUtils.iconSize(context, 20),
                       ),
                     ),
-                    // 결제구분 칩
+                    SizedBox(width: ResponsiveUtils.spacing(context, 12)),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '발주 상세정보',
+                            style: ResponsiveUtils.getTextStyle(
+                              context,
+                              color: Colors.white.withValues(alpha: 0.7),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          SizedBox(height: ResponsiveUtils.spacing(context, 2)),
+                          Text(
+                            group.purchaseOrderNumber,
+                            style: ResponsiveUtils.getTextStyle(
+                              context,
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // 결제구분 칩 (개선된 디자인)
                     Container(
                       padding: EdgeInsets.symmetric(
-                        horizontal: ResponsiveUtils.spacing(context, 10),
-                        vertical: ResponsiveUtils.spacing(context, 4),
+                        horizontal: ResponsiveUtils.spacing(context, 12),
+                        vertical: ResponsiveUtils.spacing(context, 6),
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.255),
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveUtils.spacing(context, 12),
+                        color: group.paymentCategory == '발주' 
+                            ? const Color(0xFF10B981).withValues(alpha: 0.2)
+                            : const Color(0xFF8B5CF6).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 16)),
+                        border: Border.all(
+                          color: group.paymentCategory == '발주' 
+                              ? const Color(0xFF10B981).withValues(alpha: 0.5)
+                              : const Color(0xFF8B5CF6).withValues(alpha: 0.5),
+                          width: 1,
                         ),
                       ),
                       child: Text(
                         group.paymentCategory ?? '',
                         style: ResponsiveUtils.getTextStyle(
                           context,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
                           color: Colors.white,
                         ),
                       ),
@@ -180,84 +229,80 @@ return;
                     SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                     IconButton(
                       icon: Icon(
-                        Icons.close,
+                        Icons.close_rounded,
                         color: Colors.white,
                         size: ResponsiveUtils.iconSize(context, 24),
                       ),
                       onPressed: () => Navigator.of(context).pop(),
+                      splashRadius: ResponsiveUtils.spacing(context, 20),
                     ),
                   ],
                 ),
               ),
 
-              // 상세 내역
+              // 상세 내역 (개선된 디자인)
               Expanded(
                 child: ListView(
                   padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
                   children: [
-                    // 기본 정보
-                    _buildInfoRow(context, '요청자', group.requesterName),
-                    _buildInfoRow(context, '업체명', group.vendorName),
-                    _buildInfoRow(
-                      context,
-                      '요청일',
-                      DateFormat('yyyy.MM.dd').format(group.requestDate),
-                    ),
-                    if (group.items.isNotEmpty &&
-                        group.headerItem.deliveryRequestDate != DateTime(1970))
-                      _buildInfoRow(
-                        context,
-                        '입고요청일',
-                        DateFormat(
-                          'yyyy.MM.dd',
-                        ).format(group.headerItem.deliveryRequestDate),
+                    // 기본 정보 카드
+                    Container(
+                      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFAFAFA),
+                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
                       ),
-                    if (group.headerItem.projectVendor != null &&
-                        group.headerItem.projectVendor!.isNotEmpty)
-                      _buildInfoRow(
-                        context,
-                        'PJ업체',
-                        group.headerItem.projectVendor!,
-                      ),
-                    if (group.headerItem.salesOrderNumber != null &&
-                        group.headerItem.salesOrderNumber!.isNotEmpty)
-                      _buildInfoRow(
-                        context,
-                        '수주번호',
-                        group.headerItem.salesOrderNumber!,
-                      ),
-                    if (group.headerItem.projectItem != null &&
-                        group.headerItem.projectItem!.isNotEmpty)
-                      _buildInfoRow(
-                        context,
-                        'Item',
-                        group.headerItem.projectItem!,
-                      ),
-                    Divider(height: ResponsiveUtils.spacing(context, 32)),
-
-                    // 품목 리스트
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '품목 상세 (${group.items.length}개)',
-                          style: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF1C1C1E),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '기본 정보',
+                            style: ResponsiveUtils.getTextStyle(
+                              context,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF1F2937),
+                            ),
                           ),
-                        ),
-                        Text(
-                          '₩${currencyFormat.format(group.totalAmount)}',
-                          style: ResponsiveUtils.getTextStyle(
+                          SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+                          _buildInfoRow(context, '요청자', group.requesterName),
+                          _buildInfoRow(context, '업체명', group.vendorName),
+                          _buildInfoRow(
                             context,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
+                            '요청일',
+                            DateFormat('yyyy.MM.dd').format(group.requestDate),
                           ),
-                        ),
-                      ],
+                          if (group.items.isNotEmpty &&
+                              group.headerItem.deliveryRequestDate != DateTime(1970))
+                            _buildInfoRow(
+                              context,
+                              '입고요청일',
+                              DateFormat('yyyy.MM.dd').format(group.headerItem.deliveryRequestDate),
+                            ),
+                          if (group.headerItem.projectVendor != null &&
+                              group.headerItem.projectVendor!.isNotEmpty)
+                            _buildInfoRow(
+                              context,
+                              'PJ업체',
+                              group.headerItem.projectVendor!,
+                            ),
+                          if (group.headerItem.salesOrderNumber != null &&
+                              group.headerItem.salesOrderNumber!.isNotEmpty)
+                            _buildInfoRow(
+                              context,
+                              '수주번호',
+                              group.headerItem.salesOrderNumber!,
+                            ),
+                          if (group.headerItem.projectItem != null &&
+                              group.headerItem.projectItem!.isNotEmpty)
+                            _buildInfoRow(
+                              context,
+                              'Item',
+                              group.headerItem.projectItem!,
+                            ),
+                        ],
+                      ),
                     ),
                     SizedBox(height: ResponsiveUtils.spacing(context, 16)),
 
@@ -274,13 +319,20 @@ return;
                               ResponsiveUtils.spacing(context, 12),
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF8F9FA),
+                              color: Colors.white,
                               borderRadius: BorderRadius.circular(
-                                ResponsiveUtils.spacing(context, 8),
+                                ResponsiveUtils.spacing(context, 10),
                               ),
                               border: Border.all(
-                                color: const Color(0xFFE0E0E0),
+                                color: const Color(0xFFE5E7EB),
                               ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.02),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -656,6 +708,47 @@ return;
                       ),
                     ),
                   ),
+                  // 처리완료 탭에서만 기간선택 버튼 표시
+                  if (_tabController.index == 1) ...[
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: _showDateRangePicker,
+                      child: Container(
+                        constraints: BoxConstraints(minWidth: ResponsiveUtils.spacing(context, 90)),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: ResponsiveUtils.spacing(context, 14),
+                          vertical: ResponsiveUtils.spacing(context, 8),
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8F9FA),
+                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 18)),
+                          border: Border.all(color: const Color(0xFFE5E7EB)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.calendar_today,
+                              size: ResponsiveUtils.iconSize(context, 16),
+                              color: AppColors.primary,
+                            ),
+                            SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+                            Text(
+                              _startDate != null && _endDate != null
+                                  ? '${DateFormat('MM/dd').format(_startDate!)} - ${DateFormat('MM/dd').format(_endDate!)}'
+                                  : '한달',
+                              style: ResponsiveUtils.getTextStyle(
+                                context,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -882,21 +975,136 @@ return;
           );
         }
 
-        return RefreshIndicator(
-          onRefresh: () => purchaseProvider.fetchCompletedPurchases(
-            employee: userProvider.employee,
-          ),
-          child: ListView.builder(
-            padding: EdgeInsets.symmetric(
-              horizontal: ResponsiveUtils.spacing(context, 20),
-              vertical: ResponsiveUtils.spacing(context, 20),
+        // 검색어로 필터링된 주문 목록
+        final filteredOrders = orders.where((group) {
+          if (_searchQuery.isEmpty) return true;
+          
+          final query = _searchQuery.toLowerCase();
+          return group.purchaseOrderNumber.toLowerCase().contains(query) ||
+                 group.vendorName.toLowerCase().contains(query) ||
+                 group.items.any((item) => 
+                   item.itemName.toLowerCase().contains(query) ||
+                   item.specification.toLowerCase().contains(query)
+                 );
+        }).toList();
+
+        return Column(
+          children: [
+            // 검색창
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: ResponsiveUtils.spacing(context, 20),
+                vertical: ResponsiveUtils.spacing(context, 12),
+              ),
+              child: SizedBox(
+                height: ResponsiveUtils.spacing(context, 36),
+                child: TextField(
+                  controller: _searchController,
+                  style: ResponsiveUtils.getTextStyle(context, fontSize: 13),
+                  decoration: InputDecoration(
+                    hintText: '발주번호, 업체명, 품목명, 규격으로 검색',
+                    hintStyle: ResponsiveUtils.getTextStyle(context, 
+                      fontSize: 12, 
+                      color: const Color(0xFF8E8E93)
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      size: ResponsiveUtils.iconSize(context, 18),
+                      color: const Color(0xFF8E8E93),
+                    ),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(
+                              Icons.clear,
+                              size: ResponsiveUtils.iconSize(context, 18),
+                              color: const Color(0xFF8E8E93),
+                            ),
+                            onPressed: () {
+                              _searchController.clear();
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+                      borderSide: BorderSide(color: AppColors.primary),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: ResponsiveUtils.spacing(context, 12),
+                      vertical: ResponsiveUtils.spacing(context, 6),
+                    ),
+                    isDense: true,
+                  ),
+                ),
+              ),
             ),
-            itemCount: orders.length,
-            itemBuilder: (context, index) {
-              final group = orders[index];
-              return _buildCompletedCard(context, group);
-            },
-          ),
+            
+            // 리스트 뷰
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () => purchaseProvider.fetchCompletedPurchases(
+                  employee: userProvider.employee,
+                  startDate: _startDate,
+                  endDate: _endDate,
+                ),
+                child: filteredOrders.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _searchQuery.isNotEmpty ? Icons.search_off : Icons.task_alt,
+                              size: ResponsiveUtils.iconSize(context, 80),
+                              color: const Color(0xFFE0E0E0),
+                            ),
+                            SizedBox(height: ResponsiveUtils.spacing(context, 20)),
+                            Text(
+                              _searchQuery.isNotEmpty 
+                                  ? '검색 결과가 없습니다'
+                                  : '선택한 기간에 처리한 발주가 없습니다',
+                              style: ResponsiveUtils.getTextStyle(
+                                context,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF8E8E93),
+                              ),
+                            ),
+                            SizedBox(height: ResponsiveUtils.spacing(context, 8)),
+                            Text(
+                              _searchQuery.isNotEmpty
+                                  ? '다른 검색어를 시도해보세요'
+                                  : '다른 기간을 선택해보세요',
+                              style: ResponsiveUtils.getTextStyle(
+                                context,
+                                fontSize: 14,
+                                color: const Color(0xFFB0B0B0),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: EdgeInsets.only(
+                          left: ResponsiveUtils.spacing(context, 20),
+                          right: ResponsiveUtils.spacing(context, 20),
+                          bottom: ResponsiveUtils.spacing(context, 20),
+                        ),
+                        itemCount: filteredOrders.length,
+                        itemBuilder: (context, index) {
+                          final group = filteredOrders[index];
+                          return _buildCompletedCard(context, group);
+                        },
+                      ),
+              ),
+            ),
+          ],
         );
       },
     );
@@ -2456,5 +2664,47 @@ return;
         ),
       ),
     );
+  }
+  
+  // 기간 선택 다이얼로그
+  void _showDateRangePicker() async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      initialDateRange: _startDate != null && _endDate != null
+          ? DateTimeRange(start: _startDate!, end: _endDate!)
+          : null,
+      locale: const Locale('ko', 'KR'),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: AppColors.primary,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _startDate = picked.start;
+        _endDate = picked.end;
+      });
+
+      // 새로운 기간으로 데이터 다시 로드
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
+      
+      if (userProvider.employee != null) {
+        await purchaseProvider.fetchCompletedPurchases(
+          employee: userProvider.employee,
+          startDate: _startDate,
+          endDate: _endDate,
+        );
+      }
+    }
   }
 }

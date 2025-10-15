@@ -619,6 +619,8 @@ class PurchaseProvider extends ChangeNotifier {
   // 금일 처리완료 발주 목록 조회
   Future<void> fetchCompletedPurchases({
     required Map<String, dynamic>? employee,
+    DateTime? startDate,
+    DateTime? endDate,
   }) async {
     _isLoading = true;
     _error = null;
@@ -627,34 +629,50 @@ class PurchaseProvider extends ChangeNotifier {
     try {
       final purchaseRole = employee?['purchase_role'] as List<dynamic>? ?? [];
 
-      // 오늘 날짜 범위 설정 (한국 시간 기준)
+      // 날짜 범위 설정 (한국 시간 기준)
       final now = DateTime.now();
-      final todayStart = DateTime(now.year, now.month, now.day);
+      final DateTime filterStartDate;
+      final DateTime filterEndDate;
+      
+      if (startDate != null && endDate != null) {
+        // 사용자 지정 날짜 범위
+        filterStartDate = DateTime(startDate.year, startDate.month, startDate.day);
+        filterEndDate = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59);
+      } else {
+        // 기본: 최근 1개월
+        filterEndDate = DateTime(now.year, now.month, now.day, 23, 59, 59);
+        filterStartDate = DateTime(now.year, now.month - 1, now.day);
+      }
+      
       List<Map<String, dynamic>> completedRequests = [];
 
-      // 역할별 처리완료 항목 조회
+      // 성능 최적화: 조인 쿼리로 한 번에 품목 정보까지 가져오기
       if (purchaseRole.contains('app_admin')) {
-        // app_admin은 모든 승인/반려 항목 조회
+        // app_admin은 모든 승인/반려 항목 조회 (품목 정보 포함)
         final response = await _supabase
             .from('purchase_requests')
-            .select()
+            .select('*, purchase_request_items(*)')
             .or(
               'middle_manager_status.eq.approved,middle_manager_status.eq.rejected,final_manager_status.eq.approved,final_manager_status.eq.rejected',
             )
+            .gte('request_date', filterStartDate.toIso8601String())
+            .lte('request_date', filterEndDate.toIso8601String())
             .order('request_date', ascending: false);
         completedRequests = List<Map<String, dynamic>>.from(response);
       } else if (purchaseRole.contains('middle_manager')) {
-        // 1차 승인자가 처리한 항목
+        // 1차 승인자가 처리한 항목 (품목 정보 포함)
         final response = await _supabase
             .from('purchase_requests')
-            .select()
+            .select('*, purchase_request_items(*)')
             .or(
               'middle_manager_status.eq.approved,middle_manager_status.eq.rejected',
             )
+            .gte('request_date', filterStartDate.toIso8601String())
+            .lte('request_date', filterEndDate.toIso8601String())
             .order('request_date', ascending: false);
         completedRequests = List<Map<String, dynamic>>.from(response);
       } else if (purchaseRole.contains('final_approver')) {
-        // 최종 승인자가 오늘 처리한 항목
+        // 최종 승인자가 처리한 항목 (품목 정보 포함)
         List<String> categories = [];
         if (purchaseRole.contains('raw_material_manager')) {
           categories.add('발주');
@@ -666,86 +684,86 @@ class PurchaseProvider extends ChangeNotifier {
         if (categories.isNotEmpty) {
           final response = await _supabase
               .from('purchase_requests')
-              .select()
+              .select('*, purchase_request_items(*)')
               .inFilter('payment_category', categories)
               .or(
                 'final_manager_status.eq.approved,final_manager_status.eq.rejected',
               )
+              .gte('request_date', filterStartDate.toIso8601String())
+              .lte('request_date', filterEndDate.toIso8601String())
               .order('request_date', ascending: false);
           completedRequests = List<Map<String, dynamic>>.from(response);
         }
       }
 
-      // 중복 제거를 위해 발주번호로 그룹화
-      final Map<String, Map<String, dynamic>> uniqueRequests = {};
+      // 성능 최적화: 이미 조인으로 가져온 데이터를 바로 그룹화
+      final Map<String, List<Map<String, dynamic>>> groupedData = {};
+      
       for (final request in completedRequests) {
         final orderNumber = request['purchase_order_number'];
-        if (orderNumber != null && !uniqueRequests.containsKey(orderNumber)) {
-          uniqueRequests[orderNumber] = request;
+        if (orderNumber == null) continue;
+        
+        final items = request['purchase_request_items'] as List<dynamic>? ?? [];
+        if (items.isNotEmpty) {
+          groupedData[orderNumber] = items.cast<Map<String, dynamic>>();
         }
       }
 
-      // 각 발주번호별로 품목 정보 가져오기
+      // 발주번호별로 PurchaseOrderGroup 생성
       final List<PurchaseOrderGroup> groups = [];
 
-      for (final request in uniqueRequests.values) {
-        final purchaseOrderNumber = request['purchase_order_number'];
-        if (purchaseOrderNumber == null) continue;
+      for (final entry in groupedData.entries) {
+        final orderNumber = entry.key;
+        final items = entry.value;
+        
+        // 헤더 정보는 첫 번째 요청에서 가져오기
+        final headerRequest = completedRequests.firstWhere(
+          (req) => req['purchase_order_number'] == orderNumber,
+        );
 
-        // 해당 발주번호의 모든 품목 가져오기
-        final itemsResponse = await _supabase
-            .from('purchase_request_items')
-            .select()
-            .eq('purchase_order_number', purchaseOrderNumber)
-            .order('line_number');
-
-        final items = (itemsResponse as List).map((itemJson) {
-          final Map<String, dynamic> item = Map<String, dynamic>.from(
-            itemJson as Map,
-          );
+        // 품목 데이터를 PurchaseRequest 객체로 변환
+        final purchaseItems = items.map((itemJson) {
           final Map<String, dynamic> mergedJson = {
-            ...item,
-            'request_date': request['request_date'],
-            'delivery_request_date': request['delivery_request_date'],
-            'middle_manager_status': request['middle_manager_status'],
-            'final_manager_status': request['final_manager_status'],
-            'payment_category': request['payment_category'],
-            'requester_name': request['requester_name'],
-            'is_payment_completed': request['is_payment_completed'],
-            'is_received': request['is_received'],
-            'vendor_name': request['vendor_name'] ?? item['vendor_name'],
-            'project_vendor':
-                request['project_vendor'] ?? item['project_vendor'],
-            'sales_order_number':
-                request['sales_order_number'] ?? item['sales_order_number'],
-            'project_item': request['project_item'] ?? item['project_item'],
+            ...itemJson,
+            'request_date': headerRequest['request_date'],
+            'delivery_request_date': headerRequest['delivery_request_date'],
+            'middle_manager_status': headerRequest['middle_manager_status'],
+            'final_manager_status': headerRequest['final_manager_status'],
+            'payment_category': headerRequest['payment_category'],
+            'requester_name': headerRequest['requester_name'],
+            'is_payment_completed': headerRequest['is_payment_completed'],
+            'is_received': headerRequest['is_received'],
+            'vendor_name': headerRequest['vendor_name'] ?? itemJson['vendor_name'],
+            'project_vendor': headerRequest['project_vendor'] ?? itemJson['project_vendor'],
+            'sales_order_number': headerRequest['sales_order_number'] ?? itemJson['sales_order_number'],
+            'project_item': headerRequest['project_item'] ?? itemJson['project_item'],
           };
           return PurchaseRequest.fromJson(mergedJson);
         }).toList();
 
-        if (items.isEmpty) continue;
+        if (purchaseItems.isEmpty) continue;
 
-        final totalAmount = items.fold<double>(
+        final totalAmount = purchaseItems.fold<double>(
           0,
           (sum, item) => sum + item.amountValue,
         );
 
-        final headerItem = items.firstWhere(
+        final headerItem = purchaseItems.firstWhere(
           (item) => item.lineNumber == 1,
-          orElse: () => items.first,
+          orElse: () => purchaseItems.first,
         );
 
         groups.add(
           PurchaseOrderGroup(
-            purchaseOrderNumber: purchaseOrderNumber,
-            items: items,
+            purchaseOrderNumber: orderNumber,
+            items: purchaseItems,
             totalAmount: totalAmount,
             vendorName: headerItem.vendorName,
             requesterName: headerItem.requesterName,
-            requestDate: DateTime.parse(request['request_date']),
-            paymentCategory: request['payment_category'] ?? '',
-            middleManagerStatus: request['middle_manager_status'],
-            finalManagerStatus: request['final_manager_status'],
+            requestDate: DateTime.parse(headerRequest['request_date']),
+            paymentCategory: headerRequest['payment_category'] ?? '',
+            middleManagerStatus: headerRequest['middle_manager_status'],
+            finalManagerStatus: headerRequest['final_manager_status'],
           ),
         );
       }
