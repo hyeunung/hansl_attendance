@@ -734,38 +734,73 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                           ],
                         ),
                         SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-                        // 요청자와 날짜 정보
+                        // 요청자와 입고요청일 정보
                         Row(
                           children: [
-                            Icon(
-                              Icons.person_outline,
-                              color: const Color(0xFF8E8E93),
-                              size: ResponsiveUtils.iconSize(context, 16),
-                            ),
-                            SizedBox(width: ResponsiveUtils.spacing(context, 6)),
-                            Text(
-                              firstItem['requester_name'] ?? '요청자 없음',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: const Color(0xFF4B5563),
+                            // 요청자 정보
+                            Expanded(
+                              flex: 1,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.person_outline,
+                                    color: const Color(0xFF8E8E93),
+                                    size: ResponsiveUtils.iconSize(context, 16),
+                                  ),
+                                  SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+                                  Flexible(
+                                    child: Text(
+                                      firstItem['requester_name'] ?? '요청자 없음',
+                                      style: ResponsiveUtils.getTextStyle(
+                                        context,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: const Color(0xFF4B5563),
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            SizedBox(width: ResponsiveUtils.spacing(context, 16)),
-                            Icon(
-                              Icons.calendar_today_outlined,
-                              color: const Color(0xFF8E8E93),
-                              size: ResponsiveUtils.iconSize(context, 16),
-                            ),
-                            SizedBox(width: ResponsiveUtils.spacing(context, 6)),
-                            Text(
-                              dateFormat.format(DateTime.parse(firstItem['request_date'])),
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: const Color(0xFF4B5563),
+                            SizedBox(width: ResponsiveUtils.spacing(context, 12)),
+                            // 입고요청일 정보
+                            Expanded(
+                              flex: 1,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.schedule_outlined,
+                                    color: const Color(0xFF8E8E93),
+                                    size: ResponsiveUtils.iconSize(context, 16),
+                                  ),
+                                  SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+                                  Flexible(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '입고요청일',
+                                          style: ResponsiveUtils.getTextStyle(
+                                            context,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                            color: const Color(0xFF8E8E93),
+                                          ),
+                                        ),
+                                        Text(
+                                          dateFormat.format(DateTime.parse(firstItem['request_date'])),
+                                          style: ResponsiveUtils.getTextStyle(
+                                            context,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.primary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
