@@ -671,6 +671,8 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                           ),
                                         ),
                                       ),
+                                      // 수정요청 버튼 (요청자 본인만 표시)
+                                      _buildEditRequestButton(context, orderNumber, firstItem),
                                     ],
                                   ),
                                   SizedBox(height: ResponsiveUtils.spacing(context, 8)),
@@ -699,8 +701,6 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                 ],
                               ),
                             ),
-                            // 수정요청 버튼 (요청자 본인만 표시)
-                            _buildEditRequestButton(context, orderNumber, firstItem),
                           ],
                         ),
                         SizedBox(height: ResponsiveUtils.spacing(context, 12)),
