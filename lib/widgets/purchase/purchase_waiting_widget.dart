@@ -329,7 +329,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
             ],
           ),
         ),
-        SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+        SizedBox(height: ResponsiveUtils.spacing(context, 6)),
         // 전체구매완료 버튼
         _buildCompleteAllButton(items),
       ],
@@ -723,7 +723,12 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                     bottom: isExpanded ? Radius.zero : Radius.circular(ResponsiveUtils.spacing(context, 12)),
                   ),
                   child: Container(
-                    padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
+                    padding: EdgeInsets.fromLTRB(
+                      ResponsiveUtils.spacing(context, 20),
+                      ResponsiveUtils.spacing(context, 20),
+                      ResponsiveUtils.spacing(context, 20),
+                      ResponsiveUtils.spacing(context, 8),
+                    ),
                     decoration: BoxDecoration(
                       color: isExpanded ? const Color(0xFFF8FAFC) : Colors.white,
                       borderRadius: BorderRadius.vertical(
@@ -790,44 +795,6 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                                 ],
                               ),
                             ),
-                            // 우측 - 확장 아이콘과 상태
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: ResponsiveUtils.spacing(context, 12),
-                                    vertical: ResponsiveUtils.spacing(context, 6),
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isExpanded 
-                                      ? AppColors.primary
-                                      : AppColors.primary.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        isExpanded ? Icons.expand_less : Icons.expand_more,
-                                        color: isExpanded ? Colors.white : AppColors.primary,
-                                        size: ResponsiveUtils.iconSize(context, 20),
-                                      ),
-                                      SizedBox(width: ResponsiveUtils.spacing(context, 4)),
-                                      Text(
-                                        isExpanded ? '접기' : '펼치기',
-                                        style: ResponsiveUtils.getTextStyle(
-                                          context,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                          color: isExpanded ? Colors.white : AppColors.primary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
                           ],
                         ),
                         SizedBox(height: ResponsiveUtils.spacing(context, 12)),
@@ -867,9 +834,18 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                             ),
                           ],
                         ),
-                        SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+                        SizedBox(height: ResponsiveUtils.spacing(context, 6)),
                         // 진행률 표시
                         _buildProgressSection(items),
+                        SizedBox(height: ResponsiveUtils.spacing(context, 2)),
+                        // 하단 꺽쇠 아이콘 (컴팩하게)
+                        Center(
+                          child: Icon(
+                            isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                            color: const Color(0xFF8E8E93),
+                            size: ResponsiveUtils.iconSize(context, 20),
+                          ),
+                        ),
                       ],
                     ),
                   ),

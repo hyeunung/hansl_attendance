@@ -5,6 +5,7 @@ import '../../providers/user_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/responsive_utils.dart';
 import '../../utils/user_role_helper.dart';
+import '../../services/inquiry_service.dart';
 import 'package:intl/intl.dart';
 
 // 입고대기 위젯
@@ -626,7 +627,12 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                     bottom: isExpanded ? Radius.zero : Radius.circular(ResponsiveUtils.spacing(context, 12)),
                   ),
                   child: Container(
-                    padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
+                    padding: EdgeInsets.fromLTRB(
+                      ResponsiveUtils.spacing(context, 20),
+                      ResponsiveUtils.spacing(context, 20),
+                      ResponsiveUtils.spacing(context, 20),
+                      ResponsiveUtils.spacing(context, 8),
+                    ),
                     decoration: BoxDecoration(
                       color: isExpanded ? const Color(0xFFF8FAFC) : Colors.white,
                       borderRadius: BorderRadius.vertical(
@@ -693,44 +699,8 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                 ],
                               ),
                             ),
-                            // 우측 - 확장 아이콘과 상태
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: ResponsiveUtils.spacing(context, 12),
-                                    vertical: ResponsiveUtils.spacing(context, 6),
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isExpanded 
-                                      ? AppColors.primary
-                                      : AppColors.primary.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        isExpanded ? Icons.expand_less : Icons.expand_more,
-                                        color: isExpanded ? Colors.white : AppColors.primary,
-                                        size: ResponsiveUtils.iconSize(context, 20),
-                                      ),
-                                      SizedBox(width: ResponsiveUtils.spacing(context, 4)),
-                                      Text(
-                                        isExpanded ? '접기' : '펼치기',
-                                        style: ResponsiveUtils.getTextStyle(
-                                          context,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                          color: isExpanded ? Colors.white : AppColors.primary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
+                            // 수정요청 버튼 (요청자 본인만 표시)
+                            _buildEditRequestButton(context, orderNumber, firstItem),
                           ],
                         ),
                         SizedBox(height: ResponsiveUtils.spacing(context, 12)),
@@ -805,9 +775,18 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                             ),
                           ],
                         ),
-                        SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+                        SizedBox(height: ResponsiveUtils.spacing(context, 6)),
                         // 진행률 바와 퍼센트 표시
                         _buildProgressSection(items),
+                        SizedBox(height: ResponsiveUtils.spacing(context, 2)),
+                        // 하단 꺽쇠 아이콘 (컴팩하게)
+                        Center(
+                          child: Icon(
+                            isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                            color: const Color(0xFF8E8E93),
+                            size: ResponsiveUtils.iconSize(context, 20),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -1105,7 +1084,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
             ],
           ),
         ),
-        SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+        SizedBox(height: ResponsiveUtils.spacing(context, 6)),
         // 전체입고완료 버튼
         _buildCompleteAllButton(items),
       ],
@@ -1179,5 +1158,359 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
           ),
       ],
     );
+  }
+
+  // 수정요청 버튼 빌드 (요청자 본인만 표시)
+  Widget _buildEditRequestButton(BuildContext context, String orderNumber, Map<String, dynamic> firstItem) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final employee = userProvider.employee;
+    final currentUserName = employee?['name'] as String? ?? '';
+    final requesterName = firstItem['requester_name'] as String? ?? '';
+    
+    // 본인이 요청한 발주만 수정요청 가능
+    if (currentUserName != requesterName) {
+      return const SizedBox.shrink();
+    }
+    
+    return Container(
+      margin: EdgeInsets.only(left: ResponsiveUtils.spacing(context, 8)),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showEditRequestDialog(context, orderNumber, firstItem),
+          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: ResponsiveUtils.spacing(context, 12),
+              vertical: ResponsiveUtils.spacing(context, 6),
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.edit_outlined,
+                  color: AppColors.primary,
+                  size: ResponsiveUtils.iconSize(context, 16),
+                ),
+                SizedBox(width: ResponsiveUtils.spacing(context, 4)),
+                Text(
+                  '수정요청',
+                  style: ResponsiveUtils.getTextStyle(
+                    context,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 수정요청 다이얼로그 표시
+  Future<void> _showEditRequestDialog(BuildContext context, String orderNumber, Map<String, dynamic> firstItem) async {
+    final TextEditingController contentController = TextEditingController();
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final employee = userProvider.employee;
+    final userName = employee?['name'] as String? ?? '';
+    final userEmail = employee?['email'] as String? ?? '';
+    final vendorName = firstItem['vendor_name'] as String? ?? '업체명 없음';
+    
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 16)),
+          ),
+          title: Container(
+            padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(ResponsiveUtils.spacing(context, 16)),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.edit_document,
+                  color: Colors.white,
+                  size: ResponsiveUtils.iconSize(context, 24),
+                ),
+                SizedBox(width: ResponsiveUtils.spacing(context, 12)),
+                Expanded(
+                  child: Text(
+                    '발주 수정요청',
+                    style: ResponsiveUtils.getTextStyle(
+                      context,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          titlePadding: EdgeInsets.zero,
+          contentPadding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 발주 정보 표시
+                Container(
+                  padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                    border: Border.all(
+                      color: const Color(0xFFE2E8F0),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.receipt_long,
+                            color: AppColors.primary,
+                            size: ResponsiveUtils.iconSize(context, 18),
+                          ),
+                          SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                          Text(
+                            '발주번호: $orderNumber',
+                            style: ResponsiveUtils.getTextStyle(
+                              context,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF1E293B),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: ResponsiveUtils.spacing(context, 8)),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.business,
+                            color: const Color(0xFF64748B),
+                            size: ResponsiveUtils.iconSize(context, 18),
+                          ),
+                          SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                          Text(
+                            '업체명: $vendorName',
+                            style: ResponsiveUtils.getTextStyle(
+                              context,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFF475569),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: ResponsiveUtils.spacing(context, 20)),
+                // 수정요청 내용 입력
+                Row(
+                  children: [
+                    Icon(
+                      Icons.edit_note,
+                      color: AppColors.primary,
+                      size: ResponsiveUtils.iconSize(context, 20),
+                    ),
+                    SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                    Text(
+                      '수정요청 내용 *',
+                      style: ResponsiveUtils.getTextStyle(
+                        context,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1E293B),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+                TextField(
+                  controller: contentController,
+                  maxLines: 4,
+                  decoration: InputDecoration(
+                    hintText: '예: 품목 변경, 수량 조정, 배송지 변경 등\n상세한 수정 내용을 입력해주세요.',
+                    hintStyle: ResponsiveUtils.getTextStyle(
+                      context,
+                      fontSize: 14,
+                      color: const Color(0xFF94A3B8),
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                      borderSide: const BorderSide(
+                        color: Color(0xFFE2E8F0),
+                        width: 1,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                      borderSide: BorderSide(
+                        color: AppColors.primary,
+                        width: 2,
+                      ),
+                    ),
+                    contentPadding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
+                  ),
+                ),
+                SizedBox(height: ResponsiveUtils.spacing(context, 8)),
+                Text(
+                  '필수 입력 항목입니다.',
+                  style: ResponsiveUtils.getTextStyle(
+                    context,
+                    fontSize: 12,
+                    color: const Color(0xFFEF4444),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                '취소',
+                style: ResponsiveUtils.getTextStyle(
+                  context,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF64748B),
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final content = contentController.text.trim();
+                if (content.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('수정요청 내용을 입력해주세요.'),
+                      backgroundColor: Color(0xFFEF4444),
+                    ),
+                  );
+                  return;
+                }
+                Navigator.of(context).pop(true);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                padding: EdgeInsets.symmetric(
+                  horizontal: ResponsiveUtils.spacing(context, 20),
+                  vertical: ResponsiveUtils.spacing(context, 12),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+                ),
+              ),
+              child: Text(
+                '요청 전송',
+                style: ResponsiveUtils.getTextStyle(
+                  context,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    
+    // 사용자가 전송을 눌렀을 때만 수정요청 등록
+    if (result == true && contentController.text.trim().isNotEmpty) {
+      await _submitEditRequest(
+        orderNumber: orderNumber,
+        vendorName: vendorName,
+        content: contentController.text.trim(),
+        userName: userName,
+        userEmail: userEmail,
+      );
+    }
+  }
+  
+  // 수정요청 등록 처리
+  Future<void> _submitEditRequest({
+    required String orderNumber,
+    required String vendorName,
+    required String content,
+    required String userName,
+    required String userEmail,
+  }) async {
+    try {
+      // 로딩 표시
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('수정요청을 등록 중입니다...'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+      
+      final inquiryService = InquiryService();
+      final result = await inquiryService.createInquiry(
+        inquiryType: '기타',  // DB에서 'modify'로 매핑됨
+        subject: '[발주 수정요청] $orderNumber - $vendorName',
+        message: content,
+        userName: userName,
+        userEmail: userEmail,
+      );
+      
+      if (mounted) {
+        if (result['success'] == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? '수정요청이 성공적으로 등록되었습니다.'),
+              backgroundColor: const Color(0xFF10B981),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? '수정요청 등록에 실패했습니다.'),
+              backgroundColor: const Color(0xFFEF4444),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('수정요청 등록 중 오류가 발생했습니다.'),
+            backgroundColor: Color(0xFFEF4444),
+          ),
+        );
+      }
+    }
   }
 }
