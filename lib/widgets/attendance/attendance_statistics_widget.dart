@@ -48,11 +48,18 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
           .select('*')
           .eq('date', todayStr);
 
-      // 오늘 휴가/출장자 조회
-      final allLeaves = await _supabase
-          .from('leave')
-          .select('*')
-          .eq('status', 'approved');
+      // 오늘 휴가/출장자 조회 (RPC 함수 실패시 기존 방식으로 폴백)
+      List<dynamic> allLeaves;
+      try {
+        allLeaves = await _supabase
+            .rpc('get_all_approved_leaves_for_stats');
+      } catch (e) {
+        // RPC 함수 실패시 기존 방식으로 폴백
+        allLeaves = await _supabase
+            .from('leave')
+            .select('*')
+            .eq('status', 'approved');
+      }
 
       // 오늘 날짜에 해당하는 휴가 필터링
       final todayLeaves = <Map<String, dynamic>>[];

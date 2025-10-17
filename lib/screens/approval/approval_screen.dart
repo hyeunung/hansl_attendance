@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/leave_provider.dart';
@@ -128,39 +127,26 @@ class _ApprovalScreenState extends State<ApprovalScreen>
         );
         final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-        if (kDebugMode) {
-          debugPrint('🔄 승인 화면 새로고침 시작');
-          debugPrint('📋 현재 사용자 employee 데이터: ${userProvider.employee}');
-          debugPrint(
-            '📋 purchase_role: ${userProvider.employee?['purchase_role']}',
-          );
-          debugPrint('📋 _hasPurchaseApprovalAuth: $_hasPurchaseApprovalAuth');
-        }
 
         // 연차 데이터 비동기 로드 (await 제거로 UI 즉시 렌더링)
         leaveProvider
             .fetchAllLeaves(forceRefresh: true)
             .then((_) {
-              if (kDebugMode) debugPrint('✅ 연차 데이터 로드 완료');
               // 배지 카운트 저장
               _saveBadgeCounts();
             })
             .catchError((e) {
-              if (kDebugMode) debugPrint('❌ 연차 데이터 로드 실패: $e');
             });
 
         // 발주 데이터 비동기 로드 (모든 역할에서 필요 - 구매대기/입고대기 표시를 위해)
         // app_admin, lead buyer, 발주승인권한자, 일반직원 모두 각자 볼 수 있는 데이터가 필요
-        if (kDebugMode) debugPrint('🔐 발주 데이터 로드 시작 (모든 역할)');
         purchaseProvider
             .fetchPendingPurchases(employee: userProvider.employee)
             .then((_) {
-              if (kDebugMode) debugPrint('✅ 발주 데이터 로드 완료');
               // 배지 카운트 저장
               _saveBadgeCounts();
             })
             .catchError((e) {
-              if (kDebugMode) debugPrint('❌ 발주 데이터 로드 실패: $e');
             });
       }
     });
@@ -178,20 +164,11 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     super.build(context); // AutomaticKeepAliveClientMixin 필수
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final employee = userProvider.employee;
-    final role = employee?['role'];
-    final name = employee?['name'];
-    final department = employee?['department'];
     final attendanceRoles =
         employee?['attendance_role'] as List<dynamic>? ?? [];
     final purchaseRoles = employee?['purchase_role'] as List<dynamic>? ?? [];
 
     // purchase_role에 따른 발주 승인 권한 확인
-    if (kDebugMode) {
-      debugPrint('🔍 ApprovalScreen build - purchaseRoles 체크');
-      debugPrint('📋 purchaseRoles: $purchaseRoles');
-      debugPrint('📋 purchaseRoles 타입: ${purchaseRoles.runtimeType}');
-      debugPrint('📋 purchaseRoles isEmpty: ${purchaseRoles.isEmpty}');
-    }
 
     final bool hasPurchaseApproval =
         purchaseRoles.contains('middle_manager') ||
@@ -200,9 +177,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
         purchaseRoles.contains('consumable_manager') ||
         purchaseRoles.contains('app_admin');
 
-    if (kDebugMode) {
-      debugPrint('📋 hasPurchaseApproval: $hasPurchaseApproval');
-    }
 
     // 탭 개수 조정 (초기화 시점과 다른 경우)
     if (_hasPurchaseApprovalAuth != hasPurchaseApproval) {
@@ -210,9 +184,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       // 항상 4개 탭 유지 (연차/출장, 발주승인, 구매대기, 입고대기)
       const tabCount = 4;
 
-      if (kDebugMode) {
-        debugPrint('🔄 탭 개수 조정 필요: $tabCount개 탭으로 변경');
-      }
 
       // TabController 재생성 필요
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -240,7 +211,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
           });
           // 발주 데이터 로드 (setState 밖에서 실행)
           if (hasPurchaseApproval) {
-            if (kDebugMode) debugPrint('🔐 권한 확인 후 발주 데이터 로드 시작');
             final purchaseProvider = Provider.of<PurchaseProvider>(
               context,
               listen: false,
@@ -384,7 +354,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
         actions: [
           IconButton(
             onPressed: () {
-              if (kDebugMode) debugPrint('🔄 수동 새로고침 버튼 클릭');
               _loadData();
             },
             icon: const Icon(Icons.refresh, color: Colors.white),
@@ -397,49 +366,14 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       ),
       body: Consumer<LeaveProvider>(
         builder: (context, provider, _) {
-          if (kDebugMode) {
-            debugPrint(
-              '🔄 Consumer 빌드 - allLeaves 수: ${provider.allLeaves.length}',
-            );
-          }
           List<Map<String, dynamic>> allLeaves = provider.allLeaves;
 
-          if (kDebugMode) {
-            debugPrint('🔍 ApprovalScreen - 전체 데이터 수: ${allLeaves.length}');
-            debugPrint('👤 현재 사용자: $name (role: $role)');
-            debugPrint('🏢 현재 부서: $department');
-            debugPrint('🔑 Attendance Roles: $attendanceRoles');
-            debugPrint('✅ 승인 가능 부서: $approvalDepartments');
-            debugPrint('🔧 hasApprovalRole: $hasApprovalRole');
-            debugPrint('🔧 isManager: $isManager');
-            debugPrint('🔧 isAdminOrSuper: $isAdminOrSuper');
-
-            // 처음 몇 개 데이터의 상태 출력
-            if (allLeaves.isNotEmpty) {
-              debugPrint('📋 전체 데이터 샘플:');
-              for (
-                int i = 0;
-                i < (allLeaves.length > 5 ? 5 : allLeaves.length);
-                i++
-              ) {
-                final leave = allLeaves[i];
-                final emp = leave['employees'];
-                debugPrint(
-                  '  ${i + 1}. ID: ${leave['id']}, 상태: ${leave['status']}, 신청자: ${leave['user_email']}, 부서: ${emp is Map ? emp['department'] : 'Unknown'}',
-                );
-              }
-            }
-          }
 
           // attendance_role에 따른 필터링
           if (hasApprovalRole) {
-            final beforeFilter = allLeaves.length;
 
             if (attendanceRoles.contains('superadmin')) {
               // SuperAdmin: 모든 직원의 신청 표시 (필터링 없음)
-              if (kDebugMode) {
-                debugPrint('👑 SuperAdmin: 모든 직원의 신청 표시 ($beforeFilter개)');
-              }
             } else if (attendanceRoles.contains('admin')) {
               // Admin: superadmin을 제외한 모든 신청 표시
               allLeaves = allLeaves.where((l) {
@@ -449,11 +383,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                     : [];
                 return !leaveAttendanceRoles.contains('superadmin');
               }).toList();
-              if (kDebugMode) {
-                debugPrint(
-                  '👑 Admin 필터링: $beforeFilter -> ${allLeaves.length} (superadmin 제외한 모든 신청)',
-                );
-              }
             } else if (isManager) {
               // Manager: 해당 부서의 일반 직원만 표시 (매니저 제외, 자신 포함)
               allLeaves = allLeaves.where((l) {
@@ -464,36 +393,19 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                     ? (emp['attendance_role'] as List<dynamic>? ?? [])
                     : [];
 
-                if (kDebugMode && leaveEmail == 'test@hansl.com') {
-                  debugPrint('🔍 test@hansl.com 필터링 디버그:');
-                  debugPrint('  - leaveEmail: $leaveEmail');
-                  debugPrint('  - leaveDept: $leaveDept');
-                  debugPrint('  - leaveAttendanceRoles: $leaveAttendanceRoles');
-                  debugPrint('  - userProvider.email: ${userProvider.email}');
-                  debugPrint('  - approvalDepartments: $approvalDepartments');
-                }
 
                 // 자신의 연차는 제외 (스스로 승인 불가)
                 if (leaveEmail == userProvider.email) {
-                  if (kDebugMode && leaveEmail == 'test@hansl.com') {
-                    debugPrint('  ❌ 자신의 연차라서 제외');
-                  }
                   return false;
                 }
 
                 // superadmin의 연차는 제외 (부서 매니저가 승인 불가)
                 if (leaveAttendanceRoles.contains('superadmin')) {
-                  if (kDebugMode && leaveEmail == 'test@hansl.com') {
-                    debugPrint('  ❌ superadmin이라서 제외');
-                  }
                   return false;
                 }
 
                 // admin의 연차도 제외 (부서 매니저가 승인 불가)
                 if (leaveAttendanceRoles.contains('admin')) {
-                  if (kDebugMode && leaveEmail == 'test@hansl.com') {
-                    debugPrint('  ❌ admin이라서 제외');
-                  }
                   return false;
                 }
 
@@ -502,9 +414,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                   (role) => leaveAttendanceRoles.contains(role),
                 );
                 if (hasManagerRole) {
-                  if (kDebugMode && leaveEmail == 'test@hansl.com') {
-                    debugPrint('  ❌ 매니저라서 제외');
-                  }
                   return false;
                 }
 
@@ -512,26 +421,12 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                 final shouldShow =
                     leaveDept != null &&
                     approvalDepartments.contains(leaveDept);
-                if (kDebugMode && leaveEmail == 'test@hansl.com') {
-                  debugPrint('  - shouldShow: $shouldShow');
-                  if (shouldShow) {
-                    debugPrint('  ✅ 표시됨');
-                  } else {
-                    debugPrint('  ❌ 부서가 맞지 않아서 제외');
-                  }
-                }
                 return shouldShow;
               }).toList();
-              if (kDebugMode) {
-                debugPrint(
-                  '🏢 Manager 필터링: $beforeFilter -> ${allLeaves.length} (부서: $approvalDepartments, 매니저/admin/superadmin 제외)',
-                );
-              }
             }
           } else {
             // 승인 권한이 없으면 비워서 표시
             allLeaves = [];
-            if (kDebugMode) debugPrint('⚠️ 승인 권한 없음 - 데이터 표시 안 함');
           }
 
           final pending = allLeaves
@@ -557,69 +452,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                   .length;
             }
             
-            if (kDebugMode) {
-              debugPrint('📊 발주승인 뱃지: $pendingApprovalCount개');
-            }
           }
 
-          // 구매대기 탭 뱃지 계산 (lead buyer도 포함)
-          int purchaseWaitingCount = 0;
-          if (isAppAdmin || isPureLeadBuyer) {
-            final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
-            final pendingOrders = purchaseProvider.pendingOrders;
-            
-            // 구매대기 조건: final_manager_status == 'approved' && progress_type 필터링
-            final waitingPurchases = pendingOrders.where((group) {
-              final isApproved = group.finalManagerStatus == 'approved';
-              final progressType = group.progressType ?? '';
-              final isEligible = progressType == 'advance' || 
-                  (progressType == 'general' && isApproved);
-              
-              // 권한에 따른 필터링
-              final currentEmployeeName = userProvider.employee?['name'];
-              final isAuthorized = purchaseRoles.contains('app_admin') || 
-                  purchaseRoles.contains('lead buyer') ||
-                  group.requesterName == currentEmployeeName;
-              
-              return isApproved && isEligible && isAuthorized;
-            }).toList();
-            
-            purchaseWaitingCount = waitingPurchases.length;
-            
-            if (kDebugMode) {
-              debugPrint('📊 구매대기 뱃지: $purchaseWaitingCount개');
-            }
-          }
 
-          // 입고대기 탭 뱃지 계산 (모든 역할에서 계산)
-          int receivingWaitingCount = 0;
-          if (!isRegularEmployee) {
-            final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
-            final pendingOrders = purchaseProvider.pendingOrders;
-            
-            // 입고대기 조건: final_manager_status == 'approved' && is_payment_completed == true && is_received == false
-            final receivingPurchases = pendingOrders.where((group) {
-              final isApproved = group.finalManagerStatus == 'approved';
-              final isPaymentCompleted = group.isPaymentCompleted == true;
-              final isNotReceived = group.isReceived != true;
-              
-              // 권한에 따른 필터링: app_admin, middle_manager, final_approver, ceo는 모든 건, 나머지는 본인 건만
-              final currentEmployeeName = userProvider.employee?['name'];
-              final isAuthorized = purchaseRoles.contains('app_admin') || 
-                  purchaseRoles.contains('middle_manager') ||
-                  purchaseRoles.contains('final_approver') ||
-                  purchaseRoles.contains('ceo') ||
-                  group.requesterName == currentEmployeeName;
-              
-              return isApproved && isPaymentCompleted && isNotReceived && isAuthorized;
-            }).toList();
-            
-            receivingWaitingCount = receivingPurchases.length;
-            
-            if (kDebugMode) {
-              debugPrint('📊 입고대기 뱃지: $receivingWaitingCount개');
-            }
-          }
 
           // Admin/SuperAdmin은 전체 직원의 처리완료 건을 보여줌
           List<Map<String, dynamic>> done;
@@ -628,9 +463,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             done = provider.allLeaves
                 .where((l) => l['status'] != 'pending')
                 .toList();
-            if (kDebugMode) {
-              debugPrint('👑 Admin/SuperAdmin: 전체 처리완료 건 표시 (${done.length}개)');
-            }
           } else {
             // Manager: 현재 필터링된 데이터에서만 처리완료 건 표시
             done = allLeaves.where((l) => l['status'] != 'pending').toList();
@@ -651,23 +483,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                 date.month == thisMonth &&
                 l['status'] != 'pending';
           }).toList();
-
-          if (kDebugMode) {
-            debugPrint(
-              '📊 최종 결과: pending=${pending.length}, done=${done.length}, thisMonth=${thisMonthDone.length}',
-            );
-          }
-
-          // pending 데이터 상세 출력
-          for (final leave in pending) {
-            final emp = leave['employees'];
-            final dept = emp is Map ? emp['department'] : 'Unknown';
-            if (kDebugMode) {
-              debugPrint(
-                '⏳ Pending: ${leave['name']} ($dept) - ${leave['type']} (${leave['start_date']} ~ ${leave['end_date']})',
-              );
-            }
-          }
 
           return Column(
             children: [
@@ -1694,12 +1509,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                         ),
                       ),
                       onPressed: () async {
-                        print('🔍 수정 버튼 클릭됨');
-                        print('🔍 Leave data: ${l}');
                         try {
                           await _showEditDialog(context, l, provider);
                         } catch (e) {
-                          print('❌ 수정 다이얼로그 에러: $e');
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
@@ -2119,9 +1931,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     Map<String, dynamic> leave,
     LeaveProvider provider,
   ) async {
-    print('🔍 _showEditDialog 시작');
-    print('🔍 Leave ID: ${leave['id']}');
-    print('🔍 Leave type: ${leave['type']}');
     
     final startDateController = TextEditingController(
       text: leave['start_date'] ?? '',
@@ -2141,7 +1950,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
         ? DateTime.parse(leave['end_date'])
         : null;
 
-    print('🔍 다이얼로그 표시 시작');
     await showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -2565,16 +2373,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                   ),
                                 ),
                                 onPressed: () async {
-                                  print('🟦 수정하기 버튼 클릭');
-                                  print('🟦 Leave ID: ${leave['id']}');
-                                  print('🟦 Selected Type: $selectedType');
-                                  print('🟦 Start Date: $selectedStartDate');
-                                  print('🟦 End Date: $selectedEndDate');
-                                  print('🟦 Reason: ${reasonController.text}');
                                   
                                   // 수정 로직 구현
                                   if (selectedStartDate == null || selectedEndDate == null) {
-                                    print('❌ 날짜가 선택되지 않음');
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                         content: Text('시작일과 종료일을 선택해주세요'),
@@ -2585,7 +2386,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                   }
                                   
                                   if (reasonController.text.trim().isEmpty) {
-                                    print('❌ 사유가 입력되지 않음');
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                         content: Text('사유를 입력해주세요'),
@@ -2595,7 +2395,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     return;
                                   }
                                   
-                                  print('🟦 다이얼로그 닫기');
                                   
                                   // BuildContext를 먼저 저장
                                   final navigatorContext = Navigator.of(context);
@@ -2607,7 +2406,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                   // mounted 체크
                                   await Future.delayed(const Duration(milliseconds: 100));
                                   
-                                  print('🟦 로딩 다이얼로그 표시');
                                   // 로딩 표시 - GlobalKey 사용
                                   late BuildContext loadingContext;
                                   showDialog(
@@ -2622,7 +2420,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                   );
                                   
                                   try {
-                                    print('🟦 updateLeaveDetails 호출 시작');
                                     // 실제 수정 로직 호출
                                     await provider.updateLeaveDetails(
                                       leaveId: leave['id'],
@@ -2632,19 +2429,15 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                       reason: reasonController.text.trim(),
                                     );
                                     
-                                    print('✅ updateLeaveDetails 완료');
                                     
                                     // 로딩 닫기 - loadingContext 사용
                                     if (loadingContext.mounted) {
                                       Navigator.of(loadingContext).pop();
-                                      print('🟦 로딩 다이얼로그 닫기 완료');
                                     } else {
                                       // 백업 방법 - navigatorContext 사용
                                       try {
                                         navigatorContext.pop();
-                                        print('🟦 로딩 다이얼로그 닫기 완료 (백업)');
                                       } catch (e) {
-                                        print('❌ 로딩 다이얼로그 닫기 실패: $e');
                                       }
                                     }
                                     
@@ -2656,24 +2449,18 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                       ),
                                     );
                                     
-                                    print('🟦 데이터 새로고침 시작');
                                     // 데이터 새로고침
                                     await provider.fetchAllLeaves(forceRefresh: true);
-                                    print('✅ 데이터 새로고침 완료');
                                   } catch (e) {
-                                    print('❌ 수정 중 오류 발생: $e');
                                     
                                     // 로딩 닫기 - loadingContext 사용
                                     if (loadingContext.mounted) {
                                       Navigator.of(loadingContext).pop();
-                                      print('🟦 로딩 다이얼로그 닫기 완료 (에러)');
                                     } else {
                                       // 백업 방법 - navigatorContext 사용
                                       try {
                                         navigatorContext.pop();
-                                        print('🟦 로딩 다이얼로그 닫기 완료 (에러-백업)');
                                       } catch (e2) {
-                                        print('❌ 로딩 다이얼로그 닫기 실패 (에러): $e2');
                                       }
                                     }
                                     

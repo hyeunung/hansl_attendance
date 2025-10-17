@@ -38,9 +38,97 @@ HANSL is a Flutter mobile application for attendance management and leave tracki
 flutter pub get                    # Install dependencies
 flutter run                       # Run on connected device/emulator
 flutter build apk --release       # Build release APK
+flutter build appbundle --release # Build release AAB (for Play Store)
 flutter test                      # Run tests
 flutter analyze                   # Run static analysis (should show 0 warnings)
 ```
+
+### 📦 Build & Upload Workflow
+**When user requests build (빌드 해달라고 하면), automatically include upload process:**
+
+#### 🚀 Automatic Build & Upload Process
+```bash
+# 1. Build both APK and AAB
+flutter build apk --release       # For direct installation
+flutter build appbundle --release # For Play Store submission
+
+# 2. Generate versioned filenames with timestamp
+VERSION="v3.0.1"  # Update version as needed
+DATE=$(date +%Y%m%d_%H%M)
+APK_NAME="hansl_${VERSION}_${DATE}.apk"
+AAB_NAME="hansl_${VERSION}_${DATE}.aab"
+
+# 3. Copy files with versioned names
+cp build/app/outputs/flutter-apk/app-release.apk "$APK_NAME"
+cp build/app/outputs/bundle/release/app-release.aab "$AAB_NAME"
+
+# 4. Display build information
+echo "📱 빌드 완료된 파일들:"
+echo "- APK: $APK_NAME (일반 설치용)"
+echo "- AAB: $AAB_NAME (Play Store 업로드용)"
+
+# 5. Automatic Google Drive upload (APK + AAB)
+GOOGLE_DRIVE_PATH="/Users/scott/Library/CloudStorage/GoogleDrive-hyeunung@gmail.com/내 드라이브/한슬_adroid_app"
+
+# Try upload script first (for APK)
+if [ -f "./upload_apk_to_drive.sh" ]; then
+    echo "📤 APK 업로드 스크립트 실행 중..."
+    ./upload_apk_to_drive.sh
+else
+    echo "⚠️ APK 업로드 스크립트 없음"
+fi
+
+# Upload AAB via Google Drive sync folder
+if [ -d "$GOOGLE_DRIVE_PATH" ]; then
+    echo "📤 AAB 파일 Google Drive 업로드 중..."
+    cp "$AAB_NAME" "$GOOGLE_DRIVE_PATH/"
+    if [ $? -eq 0 ]; then
+        echo "✅ AAB 파일 Google Drive 업로드 완료!"
+        echo "📂 위치: 한슬_adroid_app/$AAB_NAME"
+    else
+        echo "❌ AAB 파일 복사 실패"
+    fi
+else
+    echo "📁 AAB 수동 업로드 필요: Google Drive 동기화 폴더 없음"
+fi
+
+# Copy both files to desktop for easy access
+cp "$APK_NAME" ~/Desktop/ 2>/dev/null
+cp "$AAB_NAME" ~/Desktop/ 2>/dev/null
+echo "🖥️ 파일들을 바탕화면에도 복사 완료"
+
+echo "✅ 업로드 프로세스 완료!"
+echo "📊 최종 결과:"
+echo "- APK: Google Drive + 바탕화면"
+echo "- AAB: Google Drive + 바탕화면"
+```
+
+#### 🎯 Build Command Response Pattern
+**When user says "빌드 해줘" or similar build requests:**
+1. **Run full build process** (APK + AAB)
+2. **Generate versioned filenames** with timestamp
+3. **Automatically upload BOTH files to Google Drive** (APK via script, AAB via sync folder)
+4. **Copy both files to desktop** for easy access
+5. **Display final upload status** and file locations
+
+#### 📋 Automatic Upload Process
+- **APK**: Uses `./upload_apk_to_drive.sh` script (if available)
+- **AAB**: Copies to Google Drive sync folder directly
+- **Backup**: Both files copied to desktop
+- **Verification**: Shows final upload status for both files
+
+#### 📋 Upload Methods Available
+- **gdrive CLI**: Automated upload via command line (preferred)
+- **Google Drive Sync Folder**: Copy to synced folder path
+- **Manual Upload**: Web interface instructions
+- **Backup Scripts**: `./upload_apk_to_drive.sh` (existing script)
+
+#### ⚠️ Important Build Notes
+- **Always build both formats**: APK (direct install) + AAB (Play Store)
+- **Version management**: Update version in pubspec.yaml before building
+- **File naming**: Include version and timestamp for easy tracking
+- **Upload verification**: Confirm successful upload with file listing
+- **Storage management**: Archive old builds to free up space
 
 ### Supabase Local Development
 ```bash
@@ -289,6 +377,113 @@ UserRoleHelper.isAnyManager(attendanceRole)  // 부서 매니저
 - **Null Safety 준수**:
   - 불필요한 null 체크 제거
   - Nullable 타입 적절히 처리
+
+## 📦 Version Management Workflow
+
+### 🚀 Complete Version Update Process
+**When user requests version update ("버전 올려달라" or similar):**
+
+#### Step 1: Version Update Across All Files
+```bash
+# Update version in all platform-specific files
+# 1. pubspec.yaml
+version: [NEW_VERSION]+[BUILD_NUMBER]  # e.g., 3.1.0+245
+
+# 2. iOS Xcode project settings (for Xcode archive compatibility)
+# File: ios/Runner.xcodeproj/project.pbxproj
+MARKETING_VERSION = [VERSION];        # e.g., 3.1.0
+CURRENT_PROJECT_VERSION = [BUILD];    # e.g., 245
+
+# 3. Settings screen fallback version
+# File: lib/screens/settings/settings_screen.dart
+_appVersion = '앱 버전 [VERSION]+[BUILD]';  # e.g., 앱 버전 3.1.0+245
+
+# 4. Android automatically inherits from pubspec.yaml via flutter.versionCode/flutter.versionName
+```
+
+#### Step 2: Build & Test Process
+```bash
+# 1. Build both APK and AAB
+flutter build apk --release           # For direct installation  
+flutter build appbundle --release     # For Play Store submission
+
+# 2. Generate versioned filenames with timestamp
+VERSION="v3.1.0"  # Use updated version
+DATE=$(date +%Y%m%d_%H%M)
+APK_NAME="hansl_${VERSION}_${DATE}.apk"
+AAB_NAME="hansl_${VERSION}_${DATE}.aab"
+
+# 3. Copy files with versioned names
+cp build/app/outputs/flutter-apk/app-release.apk "$APK_NAME"
+cp build/app/outputs/bundle/release/app-release.aab "$AAB_NAME"
+
+# 4. Verify build information
+echo "📱 빌드 완료된 파일들:"
+echo "- APK: $APK_NAME (일반 설치용)"
+echo "- AAB: $AAB_NAME (Play Store 업로드용)"
+ls -lh "$APK_NAME" "$AAB_NAME"
+```
+
+#### Step 3: Automatic Google Drive Upload
+```bash
+# Automatic Google Drive upload (APK + AAB)
+GOOGLE_DRIVE_PATH="/Users/scott/Library/CloudStorage/GoogleDrive-hyeunung@gmail.com/내 드라이브/한슬_adroid_app"
+
+# Upload APK via script (if available)
+if [ -f "./upload_apk_to_drive.sh" ]; then
+    echo "📤 APK 업로드 스크립트 실행 중..."
+    ./upload_apk_to_drive.sh
+else
+    echo "⚠️ APK 업로드 스크립트 없음"
+fi
+
+# Upload AAB via Google Drive sync folder
+if [ -d "$GOOGLE_DRIVE_PATH" ]; then
+    echo "📤 AAB 파일 Google Drive 업로드 중..."
+    cp "$AAB_NAME" "$GOOGLE_DRIVE_PATH/"
+    if [ $? -eq 0 ]; then
+        echo "✅ AAB 파일 Google Drive 업로드 완료!"
+        echo "📂 위치: 한슬_adroid_app/$AAB_NAME"
+    else
+        echo "❌ AAB 파일 복사 실패"
+    fi
+else
+    echo "📁 AAB 수동 업로드 필요: Google Drive 동기화 폴더 없음"
+fi
+
+# Copy both files to desktop for easy access
+cp "$APK_NAME" ~/Desktop/ 2>/dev/null
+cp "$AAB_NAME" ~/Desktop/ 2>/dev/null
+echo "🖥️ 파일들을 바탕화면에도 복사 완료"
+
+echo "✅ 버전 업데이트 및 업로드 프로세스 완료!"
+echo "📊 최종 결과:"
+echo "- APK: Google Drive + 바탕화면"
+echo "- AAB: Google Drive + 바탕화면"
+```
+
+#### 🎯 Files That Must Be Updated for Version Changes
+1. **pubspec.yaml** - Main version source (Flutter uses this)
+2. **ios/Runner.xcodeproj/project.pbxproj** - iOS version (MARKETING_VERSION & CURRENT_PROJECT_VERSION)
+3. **lib/screens/settings/settings_screen.dart** - Fallback version display
+4. **android/app/build.gradle.kts** - Already references Flutter version automatically
+
+#### ⚠️ Critical Version Update Rules
+- **Always update ALL 4 files** - pubspec.yaml, iOS project, settings fallback, Android auto-inherits
+- **Xcode Archive Compatibility** - iOS project settings must match pubspec.yaml exactly
+- **Build & Test** - Always build both APK and AAB after version update
+- **Automatic Upload** - Both files automatically uploaded to Google Drive
+- **Verification** - Confirm version appears correctly in built APK/AAB
+
+#### 📋 Version Update Checklist
+- [ ] Update pubspec.yaml version
+- [ ] Update iOS Xcode project MARKETING_VERSION & CURRENT_PROJECT_VERSION (6 locations each)
+- [ ] Update settings screen fallback version
+- [ ] Build APK and AAB
+- [ ] Generate timestamped filenames
+- [ ] Upload both files to Google Drive
+- [ ] Copy files to desktop
+- [ ] Verify version in built files
 
 ## Testing and Quality
 - **Static Analysis**: `flutter analyze` with `flutter_lints` package (0 warnings)
