@@ -8,6 +8,7 @@ class UserRoleHelper {
   static const String FINAL_APPROVER = 'final_approver';
   static const String RAW_MATERIAL_MANAGER = 'raw_material_manager';
   static const String CONSUMABLE_MANAGER = 'consumable_manager';
+  static const String HR = 'hr';
 
   // ============== Attendance Roles ==============
   static const String ADMIN = 'admin';
@@ -64,13 +65,20 @@ class UserRoleHelper {
     return roles.contains(CONSUMABLE_MANAGER);
   }
 
+  /// hr 여부 확인
+  static bool isHr(List<dynamic>? roles) {
+    if (roles == null) return false;
+    return roles.contains(HR);
+  }
+
   /// 일반 직원 여부 확인 (특별 권한 없는 직원)
   static bool isRegularEmployee(List<dynamic>? roles) {
     if (roles == null) return true;
     return !roles.contains(APP_ADMIN) &&
            !roles.contains(MIDDLE_MANAGER) &&
            !roles.contains(FINAL_APPROVER) &&
-           !roles.contains(LEAD_BUYER);
+           !roles.contains(LEAD_BUYER) &&
+           !roles.contains(HR);
   }
 
   /// 구매현황 조회 권한 여부
@@ -239,6 +247,8 @@ class UserRoleHelper {
         return '원자재 관리자';
       case CONSUMABLE_MANAGER:
         return '소모품 관리자';
+      case HR:
+        return 'HR 담당자';
       case ADMIN:
         return '관리자';
       case SUPERADMIN:
@@ -264,6 +274,7 @@ class UserRoleHelper {
     if (isFinalApprover(purchaseRoles)) descriptions.add('최종 승인자');
     if (isRawMaterialManager(purchaseRoles)) descriptions.add('원자재 관리자');
     if (isConsumableManager(purchaseRoles)) descriptions.add('소모품 관리자');
+    if (isHr(purchaseRoles)) descriptions.add('HR 담당자');
     
     // Attendance roles
     if (isSuperAdmin(attendanceRoles)) descriptions.add('최고 관리자');
