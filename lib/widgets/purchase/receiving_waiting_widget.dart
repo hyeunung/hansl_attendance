@@ -130,6 +130,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       final isFinalApprover = UserRoleHelper.isFinalApprover(purchaseRoles);
       final isRawMaterialManager = UserRoleHelper.isRawMaterialManager(purchaseRoles);
       final isConsumableManager = UserRoleHelper.isConsumableManager(purchaseRoles);
+      final isHr = UserRoleHelper.isHr(purchaseRoles);
       final isCeo = purchaseRoles.contains('ceo');
       
       // 권한별 필터:
@@ -137,10 +138,10 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       // - final_approver + raw_material_manager: '발주' 카테고리만
       // - final_approver + consumable_manager: '구매 요청' 카테고리만
       // - final_approver (세부권한 없음): 전체 보기
-      // - middle_manager, ceo: 전체 보기
+      // - middle_manager, ceo, hr: 전체 보기
       // - lead buyer: 본인 요청 건만
       // - 그 외: 본인 요청 건만
-      final hasFullAccess = isAppAdmin || isMiddleManager || isCeo || 
+      final hasFullAccess = isAppAdmin || isMiddleManager || isCeo || isHr ||
                            (isFinalApprover && !isRawMaterialManager && !isConsumableManager);
       
       // 입고대기: 미입고 AND (선진행 OR 최종승인) AND 아직 입고완료되지 않은 항목들만
