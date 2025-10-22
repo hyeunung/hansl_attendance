@@ -471,7 +471,7 @@ class LeaveProvider extends ChangeNotifier
   // 연차 계산은 백엔드 update_used_annual_leave 함수에서 전담
 
   // 서버에서 사용연차 업데이트 (새로운 Edge Function 호출)
-  Future<void> _updateUsedAnnualLeave(String userEmail) async {
+  Future<bool> _updateUsedAnnualLeave(String userEmail) async {
     try {
       const projectId = 'qvhbigvdfyvhoegkhvef';
       final functionUrl =
@@ -487,22 +487,23 @@ class LeaveProvider extends ChangeNotifier
         body: jsonEncode({
           'userEmail': userEmail,
           'targetYear': DateTime.now().year,
+          'forceUpdate': true, // 강제 업데이트로 즉시 반영
         }),
-      );
+      ).timeout(const Duration(seconds: 10)); // 타임아웃 추가
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         if (responseData['success'] == true) {
-          // Debug print removed
+          return true; // 성공 반환
         } else {
-          // Debug print removed
+          return false; // 실패 반환
         }
       } else {
-        // Debug print removed
+        return false; // HTTP 에러 반환
       }
     } catch (e) {
-      // Debug print removed
       // 사용연차 업데이트 실패는 전체 프로세스를 중단시키지 않음
+      return false; // 예외 발생시 실패 반환
     }
   }
 
@@ -653,12 +654,9 @@ class LeaveProvider extends ChangeNotifier
 
       // 푸시 알림은 백엔드 트리거에서 자동으로 처리됨
 
-      // 사용연차 업데이트와 캐시 무효화를 병렬 처리
+      // 사용연차 업데이트와 캐시 무효화 (신청 시에는 승인된 연차만 계산되므로 변화 없음)
       try {
-        await Future.wait([
-          _updateUsedAnnualLeave(userEmail),
-          _invalidateUserRelatedCaches(userEmail),
-        ]);
+        await _invalidateUserRelatedCaches(userEmail);
       } catch (e) {
         // 에러가 나도 계속 진행
       }
@@ -753,24 +751,23 @@ class LeaveProvider extends ChangeNotifier
 
       // 3. 신청자의 사용연차 정보 재계산 (승인/반려 시)
       if (requesterEmail != null && requesterEmail.isNotEmpty) {
-        await _updateUsedAnnualLeave(requesterEmail);
+        final updateSuccess = await _updateUsedAnnualLeave(requesterEmail);
+        
+        // 🔧 FIX: 연차 계산 완료 후 UI 즉시 업데이트
+        await _loadAnnualLeaveFromDB(requesterEmail);
+        notifyListeners(); // 연차 정보 업데이트 후 UI 새로고침
+        
+        // Edge Function 실패시 경고 (UI는 업데이트됨)
+        if (!updateSuccess) {
+          // 실패해도 로컬 캐시는 무효화되어 다음 로드시 최신 데이터 가져옴
+        }
       }
 
-      // 4. 캐시 무효화만 하고 데이터 새로고침은 하지 않음
-      // 로컬 데이터는 이미 업데이트했으므로
-      await _invalidateRelatedCaches(requesterEmail);
+      // 4. 관련 캐시 무효화 (비동기로 처리하여 UI 차단 방지)
+      _invalidateRelatedCaches(requesterEmail);
 
-      // 5. UI 즉시 업데이트를 위해 notifyListeners 호출은 유지
-
-      // 6. 신청자에게 승인/반려 결과 알림은 백엔드 트리거에서 자동으로 처리됨
+      // 5. 신청자에게 승인/반려 결과 알림은 백엔드 트리거에서 자동으로 처리됨
       // send_leave_status_change_notification 트리거가 상태 변경 시 알림 발송
-
-      // 7. 승인/반려 처리 완료
-      // Debug print removed
-
-      // 8. UI 업데이트를 위한 notifyListeners 호출
-      notifyListeners();
-      // Debug print removed
     } catch (e) {
       // Debug print removed
       rethrow;
