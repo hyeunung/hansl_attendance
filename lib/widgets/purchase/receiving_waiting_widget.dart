@@ -27,11 +27,19 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
   // 검색 관련 변수
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  
+  // 부서-이름 필터 관련 변수
+  List<String> _departments = [];
+  List<String> _employees = [];
+  Map<String, List<String>> _departmentEmployees = {}; // 부서별 직원 맵
+  String? _selectedDepartment;
+  String? _selectedEmployee;
+  bool _isLoadingDepartments = false;
 
   @override
   void initState() {
     super.initState();
-    _loadReceivingItems();
+    _initializeFilters();
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -48,6 +56,162 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       _searchQuery = _searchController.text.toLowerCase().trim();
       _filterItems();
     });
+  }
+
+  // 필터 초기화
+  Future<void> _initializeFilters() async {
+    await _loadDepartments();
+    await _setDefaultFilters();
+    await _loadReceivingItems();
+  }
+
+  // 부서 목록과 부서별 직원 목록을 한번에 로드
+  Future<void> _loadDepartments() async {
+    setState(() => _isLoadingDepartments = true);
+    
+    try {
+      // 모든 직원의 부서와 이름을 한번에 가져오기
+      final response = await _supabase
+          .from('employees')
+          .select('department, name')
+          .not('department', 'is', null)
+          .not('name', 'is', null);
+      
+      final Set<String> departmentSet = {};
+      final Map<String, List<String>> departmentEmployeesMap = {};
+      final List<String> allEmployees = [];
+      
+      for (final row in response as List<dynamic>) {
+        final dept = row['department'] as String?;
+        final name = row['name'] as String?;
+        
+        if (dept != null && name != null && dept.trim().isNotEmpty && name.trim().isNotEmpty) {
+          final cleanDept = dept.trim();
+          final cleanName = name.trim();
+          
+          departmentSet.add(cleanDept);
+          allEmployees.add(cleanName);
+          
+          if (!departmentEmployeesMap.containsKey(cleanDept)) {
+            departmentEmployeesMap[cleanDept] = [];
+          }
+          departmentEmployeesMap[cleanDept]!.add(cleanName);
+        }
+      }
+      
+      // 각 부서별 직원 목록 정렬
+      for (final key in departmentEmployeesMap.keys) {
+        departmentEmployeesMap[key]!.sort();
+      }
+      
+      setState(() {
+        _departments = ['전체', ...departmentSet.toList()..sort()];
+        _departmentEmployees = departmentEmployeesMap;
+        // 전체 직원 목록 (중복 제거 후 정렬)
+        _employees = ['전체', ...allEmployees.toSet().toList()..sort()];
+        _isLoadingDepartments = false;
+      });
+    } catch (e) {
+      setState(() {
+        _departments = ['전체'];
+        _employees = ['전체'];
+        _departmentEmployees = {};
+        _isLoadingDepartments = false;
+      });
+    }
+  }
+
+
+  // 기본 필터값 설정 (현재 사용자의 부서-이름)
+  Future<void> _setDefaultFilters() async {
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final employee = userProvider.employee;
+      final userName = employee?['name'] as String? ?? '';
+      final userDepartment = employee?['department'] as String? ?? '';
+      final purchaseRoles = employee?['purchase_role'] as List<dynamic>? ?? [];
+      
+      // app_admin의 경우 기본값을 "전체"로 설정
+      if (UserRoleHelper.isAppAdmin(purchaseRoles)) {
+        setState(() {
+          _selectedDepartment = '전체';
+          _selectedEmployee = '전체';
+        });
+      } else if (userName.isNotEmpty && userDepartment.isNotEmpty) {
+        setState(() {
+          _selectedDepartment = userDepartment;
+          _selectedEmployee = userName;
+        });
+      } else {
+        // 기본값 설정 실패시 전체로 설정
+        setState(() {
+          _selectedDepartment = '전체';
+          _selectedEmployee = '전체';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _selectedDepartment = '전체';
+        _selectedEmployee = '전체';
+      });
+    }
+  }
+
+  // 특정 부서 소속 직원 이름 목록 조회 (필터링용)
+  Future<List<String>> _getDepartmentEmployees(String department) async {
+    try {
+      final response = await _supabase
+          .from('employees')
+          .select('name')
+          .eq('department', department)
+          .not('name', 'is', null);
+      
+      final List<String> employeeNames = [];
+      for (final row in response as List<dynamic>) {
+        final name = row['name'] as String?;
+        if (name != null && name.trim().isNotEmpty) {
+          employeeNames.add(name.trim());
+        }
+      }
+      
+      return employeeNames;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // 부서 선택 변경시 처리 (즉시 필터링, 로딩 없음)
+  void _onDepartmentChanged(String? department) {
+    if (department == null) return;
+    
+    setState(() {
+      _selectedDepartment = department;
+      // 부서에서 "전체"를 선택하면 이름도 자동으로 "전체"로 설정
+      if (department == '전체') {
+        _selectedEmployee = '전체';
+        _employees = ['전체', ..._departmentEmployees.values.expand((e) => e).toSet().toList()..sort()];
+      } else {
+        _selectedEmployee = '전체'; // 부서 변경시 이름은 전체로 리셋
+        // 선택된 부서의 직원 목록으로 업데이트
+        final deptEmployees = _departmentEmployees[department] ?? [];
+        _employees = ['전체', ...deptEmployees];
+      }
+    });
+    
+    // 데이터 다시 로드 (로딩 표시 없이)
+    _loadReceivingItems();
+  }
+
+  // 직원 선택 변경시 처리 (즉시 필터링, 로딩 없음)
+  void _onEmployeeChanged(String? employee) {
+    if (employee == null) return;
+    
+    setState(() {
+      _selectedEmployee = employee;
+    });
+    
+    // 데이터 다시 로드 (로딩 표시 없이)
+    _loadReceivingItems();
   }
 
   // 검색 필터링 로직
@@ -150,17 +314,27 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
           .select('*, purchase_request_items(*)')
           .eq('is_received', false);  // 헤더 레벨에서 미입고만
 
-      // 권한에 따른 필터링
+      // 권한에 따른 카테고리 필터링 (기존 권한 시스템 유지)
       if (isFinalApprover && isRawMaterialManager && !isConsumableManager) {
         // final_approver + raw_material_manager: '발주' 카테고리만
         query = query.eq('payment_category', '발주');
       } else if (isFinalApprover && isConsumableManager && !isRawMaterialManager) {
         // final_approver + consumable_manager: '구매 요청' 카테고리만
         query = query.eq('payment_category', '구매 요청');
-      } else if (!hasFullAccess) {
-        // lead buyer 또는 일반 직원: 본인 것만 조회
-        query = query.eq('requester_name', userName);
       }
+      
+      // 부서-이름 필터 적용 (모든 사용자에게 적용)
+      if (_selectedEmployee != null && _selectedEmployee != '전체') {
+        // 특정 직원 선택시 해당 직원 요청 건만
+        query = query.eq('requester_name', _selectedEmployee!);
+      } else if (_selectedDepartment != null && _selectedDepartment != '전체') {
+        // 특정 부서 선택시 해당 부서 소속 직원들의 요청 건
+        final deptEmployees = await _getDepartmentEmployees(_selectedDepartment!);
+        if (deptEmployees.isNotEmpty) {
+          query = query.inFilter('requester_name', deptEmployees);
+        }
+      }
+      // 부서도 전체, 이름도 전체면 추가 필터링 없이 모든 데이터 조회
 
       final response = await query;
 
@@ -412,6 +586,137 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
     }
   }
 
+  // 부서-직원 필터 UI 구성
+  Widget _buildDepartmentEmployeeFilters() {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        ResponsiveUtils.spacing(context, 20),
+        ResponsiveUtils.spacing(context, 0),
+        ResponsiveUtils.spacing(context, 20),
+        ResponsiveUtils.spacing(context, 15),
+      ),
+      child: Row(
+        children: [
+          // 부서 필터
+          Expanded(
+            flex: 1,
+            child: Container(
+              height: ResponsiveUtils.spacing(context, 36),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F9FA),
+                borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+                border: Border.all(color: const Color(0xFFE0E0E0)),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _selectedDepartment,
+                  hint: Text(
+                    '부서 선택',
+                    style: ResponsiveUtils.getTextStyle(
+                      context,
+                      fontSize: 13,
+                      color: const Color(0xFF8E8E93),
+                    ),
+                  ),
+                  icon: Icon(
+                    Icons.arrow_drop_down,
+                    color: const Color(0xFF8E8E93),
+                    size: ResponsiveUtils.iconSize(context, 18),
+                  ),
+                  style: ResponsiveUtils.getTextStyle(
+                    context,
+                    fontSize: 13,
+                    color: const Color(0xFF1C1C1E),
+                  ),
+                  dropdownColor: Colors.white,
+                  isDense: true,
+                  isExpanded: true,
+                  borderRadius: BorderRadius.circular(12),
+                  elevation: 8,
+                  items: _departments.map<DropdownMenuItem<String>>((String department) {
+                    return DropdownMenuItem<String>(
+                      value: department,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: ResponsiveUtils.spacing(context, 12)),
+                        child: Text(
+                          department,
+                          style: ResponsiveUtils.getTextStyle(
+                            context,
+                            fontSize: 13,
+                            color: const Color(0xFF1C1C1E),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: _isLoadingDepartments ? null : _onDepartmentChanged,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: ResponsiveUtils.spacing(context, 12)),
+          // 직원 필터
+          Expanded(
+            flex: 1,
+            child: Container(
+              height: ResponsiveUtils.spacing(context, 36),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F9FA),
+                borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+                border: Border.all(color: const Color(0xFFE0E0E0)),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _selectedEmployee,
+                  hint: Text(
+                    '이름 선택',
+                    style: ResponsiveUtils.getTextStyle(
+                      context,
+                      fontSize: 13,
+                      color: const Color(0xFF8E8E93),
+                    ),
+                  ),
+                  icon: Icon(
+                    Icons.arrow_drop_down,
+                    color: const Color(0xFF8E8E93),
+                    size: ResponsiveUtils.iconSize(context, 18),
+                  ),
+                  style: ResponsiveUtils.getTextStyle(
+                    context,
+                    fontSize: 13,
+                    color: const Color(0xFF1C1C1E),
+                  ),
+                  dropdownColor: Colors.white,
+                  isDense: true,
+                  isExpanded: true,
+                  borderRadius: BorderRadius.circular(12),
+                  elevation: 8,
+                  items: _employees.map<DropdownMenuItem<String>>((String employee) {
+                    return DropdownMenuItem<String>(
+                      value: employee,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: ResponsiveUtils.spacing(context, 12)),
+                        child: Text(
+                          employee,
+                          style: ResponsiveUtils.getTextStyle(
+                            context,
+                            fontSize: 13,
+                            color: const Color(0xFF1C1C1E),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: _onEmployeeChanged,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -421,9 +726,16 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
     // 검색창과 리스트를 포함하는 컬럼
     return Column(
       children: [
+        // 부서-이름 필터 (검색창 위에 배치)
+        _buildDepartmentEmployeeFilters(),
         // 검색창 (컴팩트 디자인)
         Container(
-          padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
+          padding: EdgeInsets.fromLTRB(
+            ResponsiveUtils.spacing(context, 20),
+            ResponsiveUtils.spacing(context, 0),
+            ResponsiveUtils.spacing(context, 20),
+            ResponsiveUtils.spacing(context, 15),
+          ),
           child: SizedBox(
             height: ResponsiveUtils.spacing(context, 36),
             child: TextField(
@@ -480,12 +792,30 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
             ),
           ),
         ),
-        // 검색 결과 표시
-        if (_searchQuery.isNotEmpty)
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: ResponsiveUtils.spacing(context, 16)),
-            child: Row(
-              children: [
+        // 현재 필터 및 검색 결과 표시
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: ResponsiveUtils.spacing(context, 16)),
+          child: Row(
+            children: [
+              // 현재 필터 정보
+              Icon(
+                Icons.filter_alt_outlined,
+                size: ResponsiveUtils.iconSize(context, 16),
+                color: const Color(0xFF8E8E93),
+              ),
+              SizedBox(width: ResponsiveUtils.spacing(context, 4)),
+              Text(
+                '필터: ${_selectedDepartment ?? "전체"} > ${_selectedEmployee ?? "전체"}',
+                style: ResponsiveUtils.getTextStyle(
+                  context,
+                  fontSize: 12,
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              // 검색 결과 (검색시에만 표시)
+              if (_searchQuery.isNotEmpty) ...[
                 Icon(
                   Icons.search,
                   size: ResponsiveUtils.iconSize(context, 16),
@@ -493,7 +823,16 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                 ),
                 SizedBox(width: ResponsiveUtils.spacing(context, 4)),
                 Text(
-                  '검색결과: ${_filteredItemsByOrder.length}건',
+                  '검색: ${_filteredItemsByOrder.length}건',
+                  style: ResponsiveUtils.getTextStyle(
+                    context,
+                    fontSize: 12,
+                    color: const Color(0xFF8E8E93),
+                  ),
+                ),
+              ] else ...[
+                Text(
+                  '총 ${_filteredItemsByOrder.length}건',
                   style: ResponsiveUtils.getTextStyle(
                     context,
                     fontSize: 12,
@@ -501,8 +840,10 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                   ),
                 ),
               ],
-            ),
+            ],
           ),
+        ),
+        SizedBox(height: ResponsiveUtils.spacing(context, 8)),
         // 리스트 영역
         Expanded(
           child: _buildListContent(),

@@ -958,7 +958,10 @@ class _ApprovalScreenState extends State<ApprovalScreen>
 
               Expanded(
                 child: isRegularEmployee 
-                  ? const ReceivingWaitingWidget() // 일반 직원은 입고대기만 표시
+                  ? Padding(
+                      padding: EdgeInsets.only(top: ResponsiveUtils.spacing(context, 15)),
+                      child: const ReceivingWaitingWidget(),
+                    ) // 일반 직원은 입고대기만 표시 (상단 여백 추가)
                   : TabBarView(
                       controller: _mainTabController,
                       children: [
