@@ -31,6 +31,57 @@ When making changes to the codebase, ALWAYS clearly indicate:
 
 HANSL is a Flutter mobile application for attendance management and leave tracking for Korean company HANSL. The app integrates with Supabase for backend services and Firebase for push notifications.
 
+## 📋 Version Management & Build Commands
+
+### 🎯 올바른 버전 관리 명령어 패턴
+
+#### 📈 **버전만 올리기**
+```bash
+"버전 올려줘"
+"3.2.1로 버전 올려줘" 
+"버전 업데이트 해줘"
+```
+→ **결과**: pubspec.yaml, iOS project, settings screen 버전만 수정
+
+#### 🔨 **버전 올리고 + 빌드 + 업로드 + Git (권장)**
+```bash
+"버전 올리고 빌드해줘" ⭐️ 가장 효율적
+"3.2.1로 버전 올리고 빌드해줘"
+"버전 업하고 빌드 진행해줘"
+```
+→ **결과**: 
+1. 버전 수정 (모든 파일)
+2. APK/AAB 빌드
+3. Google Drive 자동 업로드
+4. 바탕화면 복사
+5. Git 커밋 생성
+6. 원격 저장소 푸시
+7. 전체 상태 리포트
+
+#### 📦 **빌드만 (버전 이미 올린 경우)**
+```bash
+"빌드해줘"
+"빌드 진행해줘"
+"APK/AAB 빌드해줘"
+```
+→ **결과**: 현재 버전으로 빌드 + 업로드만
+
+#### 🚀 **Git 작업만**
+```bash
+"커밋 푸시해줘"
+"커밋 푸시 진행해줘"
+```
+→ **결과**: 커밋 생성 + 원격 저장소 푸시만
+
+### ✅ **자동화된 전체 프로세스 ("버전 올리고 빌드해줘")**
+1. **Version Update**: pubspec.yaml, iOS Xcode project, settings screen
+2. **Build Process**: APK (81MB) + AAB (58MB) 생성
+3. **Auto Upload**: Google Drive 자동 업로드 (APK 스크립트 + AAB 동기화 폴더)
+4. **Desktop Copy**: 바탕화면에 파일 복사
+5. **Git Commit**: 상세한 커밋 메시지로 커밋 생성
+6. **Git Push**: 원격 저장소에 푸시
+7. **Status Report**: 전체 과정 완료 상태 리포트
+
 ## Common Development Commands
 
 ### Flutter App Development
@@ -110,6 +161,17 @@ echo "- AAB: Google Drive + 바탕화면"
 3. **Automatically upload BOTH files to Google Drive** (APK via script, AAB via sync folder)
 4. **Copy both files to desktop** for easy access
 5. **Display final upload status** and file locations
+
+#### 🚀 Version Update + Build + Git Pattern  
+**When user says "버전 올리고 빌드해줘" or "X.X.X로 버전 올리고 빌드해줘":**
+1. **Update version across ALL files** (pubspec.yaml, iOS project, settings screen)
+2. **Run full build process** (APK + AAB)
+3. **Generate versioned filenames** with timestamp
+4. **Automatically upload BOTH files to Google Drive** (APK via script, AAB via sync folder)
+5. **Copy both files to desktop** for easy access
+6. **Commit all changes** with detailed commit message
+7. **Push to remote repository**
+8. **Display complete status** (version, build, upload, git)
 
 #### 📋 Automatic Upload Process
 - **APK**: Uses `./upload_apk_to_drive.sh` script (if available)
@@ -381,7 +443,7 @@ UserRoleHelper.isAnyManager(attendanceRole)  // 부서 매니저
 ## 📦 Version Management Workflow
 
 ### 🚀 Complete Version Update Process
-**When user requests version update ("버전 올려달라" or similar):**
+**UPDATED: When user says "버전 올리고 빌드해줘" - Full automation including Git!**
 
 #### Step 1: Version Update Across All Files
 ```bash
@@ -485,6 +547,70 @@ echo "📊 최종 결과:"
 echo "- APK: Google Drive + 바탕화면"
 echo "- AAB: Google Drive + 바탕화면"
 ```
+
+#### Step 5: Automatic Git Commit & Push (NEW!)
+```bash
+# Git status check and commit preparation
+git status                        # Check all changes
+git diff                         # Review changes
+git log --oneline -n 5           # Check recent commits for style
+
+# Add all changes and create detailed commit
+git add .
+git commit -m "$(cat <<'EOF'
+feat: 버전 X.X.X 업데이트 및 [주요 변경사항]
+
+- 버전 X.X.X+XXX로 업데이트
+- [구체적인 변경사항 나열]
+- [버그 수정 내용]
+- [새로운 기능 추가]
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+EOF
+)"
+
+# Push to remote repository
+git push
+
+echo "✅ Git 커밋 및 푸시 완료!"
+```
+
+#### Step 6: Complete Status Report
+```bash
+echo "🎯 HANSL v{VERSION} 전체 릴리즈 완료!"
+echo "========================="
+echo "📱 새 버전: v{VERSION}+{BUILD}"
+echo "📁 파일명: hansl_v{VERSION}_{TIMESTAMP}.apk/aab"
+echo "📊 크기: APK 81MB / AAB 58MB"
+echo "⏰ 빌드 시간: {TIMESTAMP}"
+echo ""
+echo "🔧 주요 변경사항:"
+echo "- [변경사항 요약]"
+echo ""
+echo "✅ 완료된 작업:"
+echo "- ✅ 버전 업데이트 (모든 파일)"
+echo "- ✅ APK/AAB 빌드"
+echo "- ✅ Google Drive 자동 업로드"
+echo "- ✅ 바탕화면 파일 복사"
+echo "- ✅ Git 커밋 생성"
+echo "- ✅ 원격 저장소 푸시"
+```
+
+#### 🎯 **"버전 올리고 빌드해줘" 명령어 = 전체 자동화**
+- **Step 1**: 버전 업데이트 (3개 파일)
+- **Step 2**: APK/AAB 빌드 (2개 파일)  
+- **Step 3**: Git 브랜치 동기화 (선택적)
+- **Step 4**: Google Drive 업로드 (자동)
+- **Step 5**: Git 커밋 & 푸시 (자동)
+- **Step 6**: 완료 상태 리포트
+
+#### 💡 **가장 효율적인 명령어**
+```bash
+"3.2.1로 버전 올리고 빌드해줘"  ⭐️ 권장
+```
+→ 버전 명시 + 전체 자동화 프로세스 (빌드 + 업로드 + Git)
 
 #### 🎯 Files That Must Be Updated for Version Changes
 1. **pubspec.yaml** - Main version source (Flutter uses this)
