@@ -28,6 +28,10 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
   // 상세 명단
   List<Map<String, dynamic>> _lateEmployees = [];
   List<Map<String, dynamic>> _absentEmployees = [];
+  
+  // 주말/공휴일 관련
+  bool _isNonWorkingDay = false;
+  String? _holidayName;
 
   @override
   void initState() {
@@ -41,6 +45,38 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
 
       final today = DateTime.now();
       final todayStr = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+
+      // 주말 체크 (토요일: 6, 일요일: 7)
+      final isWeekend = today.weekday >= 6;
+      
+      // 공휴일 체크
+      final holiday = await _supabase
+          .from('holidays')
+          .select('name')
+          .eq('date', todayStr)
+          .maybeSingle();
+      final isHoliday = holiday != null;
+
+      // 주말 또는 공휴일인 경우 특별 처리
+      if (isWeekend || isHoliday) {
+        String dayType;
+        if (isWeekend && isHoliday && holiday != null) {
+          dayType = holiday['name'] as String; // 공휴일 이름 우선
+        } else if (isWeekend) {
+          dayType = today.weekday == 6 ? '토요일' : '일요일';
+        } else if (holiday != null) {
+          dayType = holiday['name'] as String;
+        } else {
+          dayType = '휴일';
+        }
+        
+        setState(() {
+          _isNonWorkingDay = true;
+          _holidayName = dayType;
+          _isLoading = false;
+        });
+        return;
+      }
 
       // 오늘자 출근 기록 조회
       final attendanceRecords = await _supabase
@@ -176,6 +212,8 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
       final actualTotalCount = normal + late + absent + actualLeaveCount;
       
       setState(() {
+        _isNonWorkingDay = false;
+        _holidayName = null;
         _totalCount = actualTotalCount;
         _normalCount = normal;
         _lateCount = late;
@@ -209,6 +247,11 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
         ),
         child: const Center(child: CircularProgressIndicator()),
       );
+    }
+
+    // 주말/공휴일인 경우 특별한 UI 표시
+    if (_isNonWorkingDay) {
+      return _buildNonWorkingDayWidget();
     }
 
     return Container(
@@ -420,6 +463,118 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
           ),
         ),
       ],
+    );
+  }
+
+  // 주말/공휴일용 위젯
+  Widget _buildNonWorkingDayWidget() {
+    return Container(
+      margin: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 20)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
+        boxShadow: AppShadows.cardShadow,
+        border: Border.all(color: const Color(0xFFE9ECEF)),
+      ),
+      child: Column(
+        children: [
+          // 헤더
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: ResponsiveUtils.spacing(context, 16),
+              vertical: ResponsiveUtils.spacing(context, 8),
+            ),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF9E9E9E).withValues(alpha: 0.08),
+                  const Color(0xFF9E9E9E).withValues(alpha: 0.03),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(ResponsiveUtils.spacing(context, 20)),
+                topRight: Radius.circular(ResponsiveUtils.spacing(context, 20)),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.free_breakfast_outlined,
+                      color: const Color(0xFF9E9E9E),
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '오늘의 출근 현황',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2C3E50),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          
+          // 근무일이 아닙니다 메시지
+          Container(
+            padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 40)),
+            child: Column(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F5F5),
+                    borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 50)),
+                  ),
+                  child: Icon(
+                    Icons.celebration_outlined,
+                    size: ResponsiveUtils.spacing(context, 48),
+                    color: const Color(0xFF9E9E9E),
+                  ),
+                ),
+                SizedBox(height: ResponsiveUtils.spacing(context, 20)),
+                Text(
+                  '오늘은 근무일이 아닙니다',
+                  style: TextStyle(
+                    fontSize: ResponsiveUtils.fontSize(context, 18),
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF2C3E50),
+                  ),
+                ),
+                SizedBox(height: ResponsiveUtils.spacing(context, 8)),
+                if (_holidayName != null)
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: ResponsiveUtils.spacing(context, 16),
+                      vertical: ResponsiveUtils.spacing(context, 8),
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0F4F8),
+                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
+                      border: Border.all(color: const Color(0xFFE0E6ED)),
+                    ),
+                    child: Text(
+                      _holidayName!,
+                      style: TextStyle(
+                        fontSize: ResponsiveUtils.fontSize(context, 14),
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF64748B),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
