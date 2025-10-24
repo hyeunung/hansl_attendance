@@ -94,11 +94,11 @@ class _SettingsScreenState extends State<SettingsScreen>
     try {
       final packageInfo = await PackageInfo.fromPlatform();
       setState(() {
-        _appVersion = '앱 버전 ${packageInfo.version}+${packageInfo.buildNumber}';
+        _appVersion = '앱 버전 ${packageInfo.version}';
       });
     } catch (e) {
       setState(() {
-        _appVersion = '앱 버전 3.1.4+249';
+        _appVersion = '앱 버전 3.1.4';
       });
     }
   }
