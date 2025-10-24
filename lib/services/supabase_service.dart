@@ -37,15 +37,14 @@ class SupabaseService {
 
     final roleData = await _dbOptim.getEmployeeRole(userId);
 
-    if (roleData == null ||
-        roleData['role'] == null ||
-        roleData['is_admin'] == null) {
+    if (roleData == null) {
       throw Exception('역할 조회 실패: 데이터가 없습니다.');
     }
 
     return {
-      'role': roleData['role'] as String,
-      'isAdmin': roleData['is_admin'] as bool,
+      'department': roleData['department'],
+      'attendance_role': roleData['attendance_role'],
+      'purchase_role': roleData['purchase_role'],
     };
   }
 }
