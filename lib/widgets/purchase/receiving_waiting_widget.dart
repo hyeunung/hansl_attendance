@@ -389,6 +389,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
             'vendor_name': purchase['vendor_name'],
             'requester_name': purchase['requester_name'],
             'request_date': purchase['request_date'],
+            'delivery_request_date': purchase['delivery_request_date'],
             'purchase_id': purchase['id'],
           }).toList();
           
