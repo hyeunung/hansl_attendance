@@ -1016,6 +1016,8 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                       ),
                                       // 수정요청 버튼 (요청자 본인만 표시)
                                       _buildEditRequestButton(context, orderNumber, firstItem),
+                                      // app_admin 직접 수정 버튼
+                                      _buildAdminEditButton(context, orderNumber, items),
                                     ],
                                   ),
                                   SizedBox(height: ResponsiveUtils.spacing(context, 8)),
@@ -1093,7 +1095,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          '입고요청일',
+                                          '입고예정일',
                                           style: ResponsiveUtils.getTextStyle(
                                             context,
                                             fontSize: 12,
@@ -1102,7 +1104,9 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                           ),
                                         ),
                                         Text(
-                                          dateFormat.format(DateTime.parse(firstItem['request_date'])),
+                                          firstItem['delivery_request_date'] != null && firstItem['delivery_request_date'].toString().isNotEmpty
+                                              ? dateFormat.format(DateTime.parse(firstItem['delivery_request_date']))
+                                              : '미정',
                                           style: ResponsiveUtils.getTextStyle(
                                             context,
                                             fontSize: 14,
@@ -1853,6 +1857,726 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
             backgroundColor: Color(0xFFEF4444),
           ),
         );
+      }
+    }
+  }
+
+  // app_admin 직접 수정 버튼 빌드
+  Widget _buildAdminEditButton(BuildContext context, String orderNumber, List<Map<String, dynamic>> items) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final employee = userProvider.employee;
+    final purchaseRole = employee?['purchase_role'] as List<dynamic>? ?? [];
+    
+    // app_admin만 직접 수정 가능
+    if (!UserRoleHelper.isAppAdmin(purchaseRole)) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: EdgeInsets.only(left: ResponsiveUtils.spacing(context, 8)),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showAdminEditDialog(context, orderNumber, items),
+          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: ResponsiveUtils.spacing(context, 12),
+              vertical: ResponsiveUtils.spacing(context, 6),
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFF10B981),
+              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.edit,
+                  color: Colors.white,
+                  size: ResponsiveUtils.iconSize(context, 14),
+                ),
+                SizedBox(width: ResponsiveUtils.spacing(context, 4)),
+                Text(
+                  '수정',
+                  style: ResponsiveUtils.getTextStyle(
+                    context,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // app_admin 직접 수정 다이얼로그 표시
+  void _showAdminEditDialog(BuildContext context, String orderNumber, List<Map<String, dynamic>> items) {
+    final firstItem = items.isNotEmpty ? items.first : {};
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AdminEditDialog(
+          orderNumber: orderNumber,
+          items: items,
+          onSave: () {
+            _loadReceivingItems(); // 저장 후 목록 새로고침
+          },
+        );
+      },
+    );
+  }
+}
+
+// app_admin 수정 다이얼로그
+class AdminEditDialog extends StatefulWidget {
+  final String orderNumber;
+  final List<Map<String, dynamic>> items;
+  final VoidCallback onSave;
+
+  const AdminEditDialog({
+    super.key,
+    required this.orderNumber,
+    required this.items,
+    required this.onSave,
+  });
+
+  @override
+  State<AdminEditDialog> createState() => _AdminEditDialogState();
+}
+
+class _AdminEditDialogState extends State<AdminEditDialog> {
+  final _supabase = Supabase.instance.client;
+  final _formKey = GlobalKey<FormState>();
+  
+  // 공통 정보 수정 필드들
+  late TextEditingController _vendorController;
+  late TextEditingController _categoryController;
+  DateTime? _expectedDeliveryDate;
+  
+  // 품목별 수정 필드들
+  List<Map<String, TextEditingController>> _itemControllers = [];
+  
+  bool _isLoading = false;
+  bool _hasChanges = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeControllers();
+  }
+
+  @override
+  void dispose() {
+    _vendorController.dispose();
+    _categoryController.dispose();
+    for (final controllers in _itemControllers) {
+      controllers.values.forEach((controller) => controller.dispose());
+    }
+    super.dispose();
+  }
+
+  void _initializeControllers() {
+    final firstItem = widget.items.isNotEmpty ? widget.items.first : {};
+    
+    // 공통 정보 초기화
+    _vendorController = TextEditingController(text: firstItem['vendor_name'] ?? '');
+    _categoryController = TextEditingController(text: firstItem['payment_category'] ?? '');
+    
+    // 입고예정일 초기화
+    final expectedDateStr = firstItem['delivery_request_date'] as String?;
+    if (expectedDateStr != null && expectedDateStr.isNotEmpty) {
+      try {
+        _expectedDeliveryDate = DateTime.parse(expectedDateStr);
+      } catch (e) {
+        _expectedDeliveryDate = null;
+      }
+    }
+    
+    // 품목별 컨트롤러 초기화
+    _itemControllers = widget.items.map((item) {
+      return {
+        'item_name': TextEditingController(text: item['item_name'] ?? ''),
+        'specification': TextEditingController(text: item['specification'] ?? ''),
+        'quantity': TextEditingController(text: (item['quantity'] ?? 0).toString()),
+        'unit_price': TextEditingController(text: (item['unit_price_value'] ?? 0).toString()),
+        'remark': TextEditingController(text: item['remark'] ?? ''),
+      };
+    }).toList();
+    
+    // 변경 감지 리스너 추가
+    _vendorController.addListener(_onFieldChanged);
+    _categoryController.addListener(_onFieldChanged);
+    for (final controllers in _itemControllers) {
+      controllers.values.forEach((controller) => controller.addListener(_onFieldChanged));
+    }
+  }
+
+  void _onFieldChanged() {
+    if (!_hasChanges) {
+      setState(() => _hasChanges = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      insetPadding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
+      child: Container(
+        width: double.maxFinite,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.9,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 헤더
+            Container(
+              padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(ResponsiveUtils.spacing(context, 16)),
+                  topRight: Radius.circular(ResponsiveUtils.spacing(context, 16)),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.edit,
+                    color: Colors.white,
+                    size: ResponsiveUtils.iconSize(context, 24),
+                  ),
+                  SizedBox(width: ResponsiveUtils.spacing(context, 12)),
+                  Expanded(
+                    child: Text(
+                      '발주 정보 수정',
+                      style: ResponsiveUtils.getTextStyle(
+                        context,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  if (_hasChanges)
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: ResponsiveUtils.spacing(context, 8),
+                        vertical: ResponsiveUtils.spacing(context, 4),
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.orange,
+                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                      ),
+                      child: Text(
+                        '수정됨',
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            
+            // 내용
+            Expanded(
+              child: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 발주번호 (읽기 전용)
+                      _buildInfoCard('발주번호', widget.orderNumber),
+                      SizedBox(height: ResponsiveUtils.spacing(context, 16)),
+                      
+                      // 공통 정보 수정
+                      _buildSectionHeader('공통 정보'),
+                      SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+                      
+                      _buildTextField(
+                        controller: _vendorController,
+                        label: '업체명',
+                        icon: Icons.business,
+                        validator: (value) => value?.trim().isEmpty == true ? '업체명을 입력해주세요' : null,
+                      ),
+                      SizedBox(height: ResponsiveUtils.spacing(context, 16)),
+                      
+                      _buildTextField(
+                        controller: _categoryController,
+                        label: '카테고리',
+                        icon: Icons.category,
+                        validator: (value) => value?.trim().isEmpty == true ? '카테고리를 입력해주세요' : null,
+                      ),
+                      SizedBox(height: ResponsiveUtils.spacing(context, 16)),
+                      
+                      // 입고예정일 선택
+                      _buildDateField(),
+                      SizedBox(height: ResponsiveUtils.spacing(context, 24)),
+                      
+                      // 품목 정보 수정
+                      _buildSectionHeader('품목 정보'),
+                      SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+                      
+                      ...List.generate(widget.items.length, (index) {
+                        return Column(
+                          children: [
+                            _buildItemCard(index),
+                            if (index < widget.items.length - 1)
+                              SizedBox(height: ResponsiveUtils.spacing(context, 16)),
+                          ],
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            
+            // 버튼
+            Container(
+              padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 16)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                        ),
+                      ),
+                      child: Text(
+                        '취소',
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF6B7280),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: ResponsiveUtils.spacing(context, 12)),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: _isLoading || !_hasChanges ? null : _saveChanges,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 16)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                        ),
+                      ),
+                      child: _isLoading
+                          ? SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : Text(
+                              '저장',
+                              style: ResponsiveUtils.getTextStyle(
+                                context,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoCard(String label, String value) {
+    return Container(
+      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F9FA),
+        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+        border: Border.all(color: const Color(0xFFE9ECEF)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.info_outline,
+            color: AppColors.primary,
+            size: ResponsiveUtils.iconSize(context, 20),
+          ),
+          SizedBox(width: ResponsiveUtils.spacing(context, 12)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: ResponsiveUtils.getTextStyle(
+                    context,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF6B7280),
+                  ),
+                ),
+                SizedBox(height: ResponsiveUtils.spacing(context, 4)),
+                Text(
+                  value,
+                  style: ResponsiveUtils.getTextStyle(
+                    context,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1F2937),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Text(
+      title,
+      style: ResponsiveUtils.getTextStyle(
+        context,
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: const Color(0xFF1F2937),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    String? Function(String?)? validator,
+    TextInputType? keyboardType,
+    int? maxLines,
+  }) {
+    return TextFormField(
+      controller: controller,
+      validator: validator,
+      keyboardType: keyboardType,
+      maxLines: maxLines ?? 1,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: AppColors.primary),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+          borderSide: BorderSide(color: AppColors.primary, width: 2),
+        ),
+        filled: true,
+        fillColor: Colors.white,
+      ),
+    );
+  }
+
+  Widget _buildDateField() {
+    return GestureDetector(
+      onTap: _selectDate,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: ResponsiveUtils.spacing(context, 16),
+          vertical: ResponsiveUtils.spacing(context, 16),
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.calendar_today,
+              color: AppColors.primary,
+              size: ResponsiveUtils.iconSize(context, 20),
+            ),
+            SizedBox(width: ResponsiveUtils.spacing(context, 12)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '입고예정일',
+                    style: ResponsiveUtils.getTextStyle(
+                      context,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF6B7280),
+                    ),
+                  ),
+                  SizedBox(height: ResponsiveUtils.spacing(context, 4)),
+                  Text(
+                    _expectedDeliveryDate != null
+                        ? DateFormat('yyyy년 MM월 dd일').format(_expectedDeliveryDate!)
+                        : '날짜를 선택해주세요',
+                    style: ResponsiveUtils.getTextStyle(
+                      context,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: _expectedDeliveryDate != null
+                          ? const Color(0xFF1F2937)
+                          : const Color(0xFF9CA3AF),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: const Color(0xFF9CA3AF),
+              size: ResponsiveUtils.iconSize(context, 16),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _selectDate() async {
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _expectedDeliveryDate ?? DateTime.now(),
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedDate != null && pickedDate != _expectedDeliveryDate) {
+      setState(() {
+        _expectedDeliveryDate = pickedDate;
+        _onFieldChanged();
+      });
+    }
+  }
+
+  Widget _buildItemCard(int index) {
+    final item = widget.items[index];
+    final controllers = _itemControllers[index];
+    
+    return Container(
+      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 품목 헤더
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: ResponsiveUtils.spacing(context, 8),
+                  vertical: ResponsiveUtils.spacing(context, 4),
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 6)),
+                ),
+                child: Text(
+                  '품목 ${index + 1}',
+                  style: ResponsiveUtils.getTextStyle(
+                    context,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: ResponsiveUtils.spacing(context, 16)),
+          
+          // 품목명
+          _buildTextField(
+            controller: controllers['item_name']!,
+            label: '품목명',
+            icon: Icons.inventory_2,
+            validator: (value) => value?.trim().isEmpty == true ? '품목명을 입력해주세요' : null,
+          ),
+          SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+          
+          // 규격
+          _buildTextField(
+            controller: controllers['specification']!,
+            label: '규격',
+            icon: Icons.straighten,
+          ),
+          SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+          
+          // 수량과 단가
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: controllers['quantity']!,
+                  label: '수량',
+                  icon: Icons.numbers,
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value?.trim().isEmpty == true) return '수량을 입력해주세요';
+                    final num = int.tryParse(value!);
+                    if (num == null || num <= 0) return '유효한 수량을 입력해주세요';
+                    return null;
+                  },
+                ),
+              ),
+              SizedBox(width: ResponsiveUtils.spacing(context, 12)),
+              Expanded(
+                child: _buildTextField(
+                  controller: controllers['unit_price']!,
+                  label: '단가',
+                  icon: Icons.attach_money,
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value?.trim().isEmpty == true) return '단가를 입력해주세요';
+                    final num = double.tryParse(value!);
+                    if (num == null || num < 0) return '유효한 단가를 입력해주세요';
+                    return null;
+                  },
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+          
+          // 비고
+          _buildTextField(
+            controller: controllers['remark']!,
+            label: '비고',
+            icon: Icons.note,
+            maxLines: 2,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _saveChanges() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      // 공통 정보 업데이트
+      final vendorName = _vendorController.text.trim();
+      final category = _categoryController.text.trim();
+      final expectedDate = _expectedDeliveryDate?.toIso8601String().split('T')[0];
+
+      // 각 품목 정보 업데이트
+      for (int i = 0; i < widget.items.length; i++) {
+        final item = widget.items[i];
+        final controllers = _itemControllers[i];
+        
+        final itemName = controllers['item_name']!.text.trim();
+        final specification = controllers['specification']!.text.trim();
+        final quantity = int.tryParse(controllers['quantity']!.text.trim()) ?? 0;
+        final unitPrice = double.tryParse(controllers['unit_price']!.text.trim()) ?? 0.0;
+        final remark = controllers['remark']!.text.trim();
+        final amount = quantity * unitPrice;
+
+        await _supabase
+            .from('purchase_request_items')
+            .update({
+              'vendor_name': vendorName,
+              'payment_category': category,
+              'item_name': itemName,
+              'specification': specification,
+              'quantity': quantity,
+              'unit_price_value': unitPrice,
+              'amount_value': amount,
+              'remark': remark,
+            })
+            .eq('id', item['id']);
+      }
+
+      // 공통 정보는 purchase_requests 테이블 업데이트
+      await _supabase
+          .from('purchase_requests')
+          .update({
+            'delivery_request_date': expectedDate,
+          })
+          .eq('purchase_order_number', widget.orderNumber);
+
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('수정이 완료되었습니다.'),
+            backgroundColor: Color(0xFF10B981),
+          ),
+        );
+        widget.onSave();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('수정 중 오류가 발생했습니다: $e'),
+            backgroundColor: Color(0xFFEF4444),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }

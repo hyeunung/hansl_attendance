@@ -121,7 +121,7 @@ class LeaveService {
       // 2. employees 데이터 조회
       final employeesResponse = await _client
           .from('employees')
-          .select('email, name, role, is_admin, department');
+          .select('email, name, department, attendance_role');
 
       final List<Map<String, dynamic>> employeesList =
           (employeesResponse as List).cast<Map<String, dynamic>>();
@@ -145,9 +145,8 @@ class LeaveService {
           leave['employees'] = {
             'name': leave['name'] ?? '알 수 없음',
             'email': userEmail ?? '',
-            'role': null,
-            'is_admin': false,
             'department': null,
+            'attendance_role': null,
           };
         }
       }
