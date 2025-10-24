@@ -424,7 +424,31 @@ echo "- AAB: $AAB_NAME (Play Store 업로드용)"
 ls -lh "$APK_NAME" "$AAB_NAME"
 ```
 
-#### Step 3: Automatic Google Drive Upload
+#### Step 3: Git Branch Name Update (CRITICAL)
+```bash
+# 🚨 IMPORTANT: 버전 업데이트 시 브랜치 이름도 반드시 동기화 필요
+OLD_VERSION="3.1.3"  # 이전 버전
+NEW_VERSION="3.1.4"  # 새 버전
+
+# 1. 로컬 브랜치 이름 변경
+git branch -m main-v${OLD_VERSION} main-v${NEW_VERSION}
+
+# 2. 새 브랜치 푸시
+git push origin main-v${NEW_VERSION}
+
+# 3. GitHub 기본 브랜치 변경
+gh repo edit --default-branch main-v${NEW_VERSION}
+
+# 4. 구 브랜치 삭제
+git push origin --delete main-v${OLD_VERSION}
+
+# 5. 로컬 원격 추적 브랜치 정리
+git remote prune origin
+
+echo "✅ 브랜치 이름이 버전과 동기화되었습니다!"
+```
+
+#### Step 4: Automatic Google Drive Upload
 ```bash
 # Automatic Google Drive upload (APK + AAB)
 GOOGLE_DRIVE_PATH="/Users/scott/Library/CloudStorage/GoogleDrive-hyeunung@gmail.com/내 드라이브/한슬_adroid_app"
@@ -470,6 +494,7 @@ echo "- AAB: Google Drive + 바탕화면"
 
 #### ⚠️ Critical Version Update Rules
 - **Always update ALL 4 files** - pubspec.yaml, iOS project, settings fallback, Android auto-inherits
+- **🚨 MANDATORY: Git Branch Name Sync** - 버전 변경 시 브랜치 이름도 반드시 동기화 (main-v3.1.4 형태)
 - **Xcode Archive Compatibility** - iOS project settings must match pubspec.yaml exactly
 - **Build & Test** - Always build both APK and AAB after version update
 - **Automatic Upload** - Both files automatically uploaded to Google Drive
@@ -479,6 +504,7 @@ echo "- AAB: Google Drive + 바탕화면"
 - [ ] Update pubspec.yaml version
 - [ ] Update iOS Xcode project MARKETING_VERSION & CURRENT_PROJECT_VERSION (6 locations each)
 - [ ] Update settings screen fallback version
+- [ ] 🚨 **Git Branch Name Update** (main-v[VERSION] 형태로 동기화)
 - [ ] Build APK and AAB
 - [ ] Generate timestamped filenames
 - [ ] Upload both files to Google Drive
