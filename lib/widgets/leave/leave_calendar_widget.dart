@@ -5,6 +5,7 @@ import '../../models/leave_request.dart';
 import '../../providers/leave_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
+import '../../utils/responsive_utils.dart';
 
 /// 연차 신청 화면의 캘린더 위젯
 /// 날짜 선택 및 표시를 담당하는 재사용 가능한 컴포넌트
@@ -39,7 +40,7 @@ class LeaveCalendarWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(),
+          _buildHeader(context),
           const SizedBox(height: 8),
           _buildCalendar(context, now, disabledDates),
         ],
@@ -47,7 +48,7 @@ class LeaveCalendarWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     // 사용연차 계산
     double usedDaysSum = 0;
     for (final type in LeaveType.values) {
@@ -58,17 +59,19 @@ class LeaveCalendarWidget extends StatelessWidget {
 
     return Row(
       children: [
-        const Text(
+        Text(
           '날짜',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+          style: ResponsiveUtils.getTextStyle(context, fontWeight: FontWeight.bold, fontSize: 17),
         ),
-        const Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
+        Text('  *', style: ResponsiveUtils.getTextStyle(context, color: Colors.red, fontSize: 17)),
         const SizedBox(width: 12),
         Text(
           '선택된 일수: ${usedDaysSum % 1 == 0 ? usedDaysSum.toInt() : usedDaysSum}일',
-          style: const TextStyle(
+          style: ResponsiveUtils.getTextStyle(
+            context,
             fontWeight: FontWeight.bold,
             color: AppColors.primary,
+            fontSize: 14,
           ),
         ),
       ],
@@ -87,15 +90,17 @@ class LeaveCalendarWidget extends StatelessWidget {
       focusedDay: DateTime.now(),
       selectedDayPredicate: (day) => _isSelectedDay(day),
       onDaySelected: (selectedDay, _) => onDayTapped(selectedDay),
-      calendarStyle: _getCalendarStyle(),
+      calendarStyle: _getCalendarStyle(context),
       enabledDayPredicate: (day) => _isEnabledDay(context, day, disabledDates),
-      daysOfWeekStyle: const DaysOfWeekStyle(
-        weekdayStyle: TextStyle(
+      daysOfWeekStyle: DaysOfWeekStyle(
+        weekdayStyle: ResponsiveUtils.getTextStyle(
+          context,
           color: Colors.black87,
           fontWeight: FontWeight.w600,
           fontSize: 13,
         ),
-        weekendStyle: TextStyle(
+        weekendStyle: ResponsiveUtils.getTextStyle(
+          context,
           color: Colors.black87, // 요일 헤더는 기본 색상으로
           fontWeight: FontWeight.w600,
           fontSize: 13,
@@ -131,7 +136,7 @@ class LeaveCalendarWidget extends StatelessWidget {
     );
   }
 
-  CalendarStyle _getCalendarStyle() {
+  CalendarStyle _getCalendarStyle(BuildContext context) {
     return CalendarStyle(
       isTodayHighlighted: true,
       selectedDecoration: const BoxDecoration(),
@@ -139,12 +144,14 @@ class LeaveCalendarWidget extends StatelessWidget {
         color: AppColors.primary.withValues(alpha: 0.2),
         shape: BoxShape.circle,
       ),
-      disabledTextStyle: TextStyle(color: Colors.grey.shade400),
+      disabledTextStyle: ResponsiveUtils.getTextStyle(context, fontSize: 14, color: Colors.grey.shade400),
       // 주말 스타일 설정 제거 - defaultBuilder에서 처리
-      weekendTextStyle: const TextStyle(
+      weekendTextStyle: ResponsiveUtils.getTextStyle(
+        context,
+        fontSize: 14,
         color: Colors.black87, // 기본 색상으로 설정
       ),
-      defaultTextStyle: const TextStyle(color: Colors.black87),
+      defaultTextStyle: ResponsiveUtils.getTextStyle(context, fontSize: 14, color: Colors.black87),
     );
   }
 
@@ -154,7 +161,7 @@ class LeaveCalendarWidget extends StatelessWidget {
     return CalendarBuilders(
       defaultBuilder: (context, day, focusedDay) {
         // 선택된 날짜가 있으면 그것을 우선 표시
-        final selectedWidget = _buildDayWidget(day);
+        final selectedWidget = _buildDayWidget(context, day);
         if (selectedWidget != null) return selectedWidget;
 
         if (leaveProvider.isHoliday(day)) {
@@ -163,7 +170,8 @@ class LeaveCalendarWidget extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               '${day.day}',
-              style: const TextStyle(
+              style: ResponsiveUtils.getTextStyle(
+                context,
                 color: Color(0xFFFF5252), // 밝은 빨간색
                 fontWeight: FontWeight.w800,
                 fontSize: 15,
@@ -179,7 +187,8 @@ class LeaveCalendarWidget extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               '${day.day}',
-              style: const TextStyle(
+              style: ResponsiveUtils.getTextStyle(
+                context,
                 color: Color(0xFFEF5350), // 밝은 빨간색
                 fontWeight: FontWeight.w700,
                 fontSize: 14,
@@ -195,7 +204,8 @@ class LeaveCalendarWidget extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               '${day.day}',
-              style: const TextStyle(
+              style: ResponsiveUtils.getTextStyle(
+                context,
                 color: Color(0xFF2196F3), // 밝은 파란색
                 fontWeight: FontWeight.w700,
                 fontSize: 14,
@@ -206,8 +216,8 @@ class LeaveCalendarWidget extends StatelessWidget {
 
         return null; // 평일은 기본 스타일 사용
       },
-      selectedBuilder: (context, day, focusedDay) => _buildDayWidget(day),
-      todayBuilder: (context, day, focusedDay) => _buildTodayWidget(day),
+      selectedBuilder: (context, day, focusedDay) => _buildDayWidget(context, day),
+      todayBuilder: (context, day, focusedDay) => _buildTodayWidget(context, day),
       disabledBuilder: (context, day, focusedDay) {
         // 비활성화된 날짜의 색상 처리
 
@@ -218,7 +228,8 @@ class LeaveCalendarWidget extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               '${day.day}',
-              style: TextStyle(
+              style: ResponsiveUtils.getTextStyle(
+                context,
                 color: const Color(
                   0xFFFF5252,
                 ).withValues(alpha: 0.7), // 밝은 빨간색 70%
@@ -235,7 +246,8 @@ class LeaveCalendarWidget extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               '${day.day}',
-              style: TextStyle(
+              style: ResponsiveUtils.getTextStyle(
+                context,
                 color: const Color(
                   0xFFEF5350,
                 ).withValues(alpha: 0.7), // 밝은 빨간색 70%
@@ -252,7 +264,8 @@ class LeaveCalendarWidget extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               '${day.day}',
-              style: TextStyle(
+              style: ResponsiveUtils.getTextStyle(
+                context,
                 color: const Color(
                   0xFF2196F3,
                 ).withValues(alpha: 0.7), // 밝은 파란색 70%
@@ -269,7 +282,8 @@ class LeaveCalendarWidget extends StatelessWidget {
           alignment: Alignment.center,
           child: Text(
             '${day.day}',
-            style: TextStyle(
+            style: ResponsiveUtils.getTextStyle(
+              context,
               color: Colors.grey.shade400,
               fontWeight: FontWeight.w400,
               fontSize: 12,
@@ -285,7 +299,8 @@ class LeaveCalendarWidget extends StatelessWidget {
         return Center(
           child: Text(
             text,
-            style: TextStyle(
+            style: ResponsiveUtils.getTextStyle(
+              context,
               color: day.weekday == DateTime.sunday
                   ? const Color(0xFFEF5350) // 일요일은 밝은 빨간색
                   : day.weekday == DateTime.saturday
@@ -300,15 +315,15 @@ class LeaveCalendarWidget extends StatelessWidget {
     );
   }
 
-  Widget? _buildDayWidget(DateTime day) {
+  Widget? _buildDayWidget(BuildContext context, DateTime day) {
     LeaveType? type = _getLeaveTypeForDay(day);
-    return type != null ? _buildDayMarker(day, type) : null;
+    return type != null ? _buildDayMarker(context, day, type) : null;
   }
 
-  Widget _buildTodayWidget(DateTime day) {
+  Widget _buildTodayWidget(BuildContext context, DateTime day) {
     LeaveType? type = _getLeaveTypeForDay(day);
     if (type != null) {
-      return _buildDayMarker(day, type);
+      return _buildDayMarker(context, day, type);
     }
     return Container(
       width: 36,
@@ -320,23 +335,23 @@ class LeaveCalendarWidget extends StatelessWidget {
       alignment: Alignment.center,
       child: Text(
         '${day.day}',
-        style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+        style: ResponsiveUtils.getTextStyle(context, fontSize: 14, color: AppColors.primary, fontWeight: FontWeight.bold),
       ),
     );
   }
 
-  Widget _buildDayMarker(DateTime day, LeaveType type) {
+  Widget _buildDayMarker(BuildContext context, DateTime day, LeaveType type) {
     if (type == LeaveType.annual || type == LeaveType.official) {
-      return _buildCircleMarker(day, type);
+      return _buildCircleMarker(context, day, type);
     } else if (type == LeaveType.halfAm) {
-      return _buildHalfCircleMarker(day, type, true);
+      return _buildHalfCircleMarker(context, day, type, true);
     } else if (type == LeaveType.halfPm) {
-      return _buildHalfCircleMarker(day, type, false);
+      return _buildHalfCircleMarker(context, day, type, false);
     }
     return const SizedBox.shrink();
   }
 
-  Widget _buildCircleMarker(DateTime day, LeaveType type) {
+  Widget _buildCircleMarker(BuildContext context, DateTime day, LeaveType type) {
     return SizedBox(
       width: 36,
       height: 36,
@@ -351,7 +366,9 @@ class LeaveCalendarWidget extends StatelessWidget {
           alignment: Alignment.center,
           child: Text(
             '${day.day}',
-            style: const TextStyle(
+            style: ResponsiveUtils.getTextStyle(
+              context,
+              fontSize: 14,
               color: Colors.black,
               fontWeight: FontWeight.bold,
             ),
@@ -361,7 +378,7 @@ class LeaveCalendarWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildHalfCircleMarker(DateTime day, LeaveType type, bool isTop) {
+  Widget _buildHalfCircleMarker(BuildContext context, DateTime day, LeaveType type, bool isTop) {
     return SizedBox(
       width: 36,
       height: 36,
@@ -372,7 +389,9 @@ class LeaveCalendarWidget extends StatelessWidget {
           child: Center(
             child: Text(
               '${day.day}',
-              style: const TextStyle(
+              style: ResponsiveUtils.getTextStyle(
+                context,
+                fontSize: 14,
                 color: Colors.black,
                 fontWeight: FontWeight.bold,
               ),

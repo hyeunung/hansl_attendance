@@ -4,6 +4,7 @@ import '../../providers/leave_provider.dart';
 import '../../providers/user_provider.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/responsive_utils.dart';
 import '../../utils/validators/leave_validators.dart';
 import '../../widgets/business_trip/trip_calendar_widget.dart';
 import '../../widgets/business_trip/trip_date_chips_widget.dart';
@@ -313,9 +314,10 @@ class _BusinessTripRequestScreenOptimizedState
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      title: const Text(
+      title: Text(
         '출장 신청',
-        style: TextStyle(
+        style: ResponsiveUtils.getTextStyle(
+          context,
           fontSize: 20,
           fontWeight: FontWeight.bold,
           color: Colors.white, // 흰색으로 변경
@@ -350,9 +352,9 @@ class _BusinessTripRequestScreenOptimizedState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           '출장 날짜 선택',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: ResponsiveUtils.getTextStyle(context, fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         TripCalendarWidget(
@@ -371,9 +373,9 @@ class _BusinessTripRequestScreenOptimizedState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           '선택된 날짜',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: ResponsiveUtils.getTextStyle(context, fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         TripDateChipsWidget(
@@ -534,7 +536,8 @@ class _BusinessTripRequestScreenOptimizedState
               )
             : Text(
                 '출장 신청하기',
-                style: TextStyle(
+                style: ResponsiveUtils.getTextStyle(
+                  context,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: isValid ? Colors.white : const Color(0xFFB0B0B0),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/responsive_utils.dart';
 import '../main_tab.dart';
 
 class NotificationCenterScreen extends StatefulWidget {
@@ -207,9 +208,9 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           '알림',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          style: ResponsiveUtils.getTextStyle(context, fontSize: 18, fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
@@ -218,7 +219,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
           if (unreadCount > 0)
             TextButton(
               onPressed: _markAllAsRead,
-              child: const Text('모두 읽음', style: TextStyle(fontSize: 14)),
+              child: Text('모두 읽음', style: ResponsiveUtils.getTextStyle(context, fontSize: 14)),
             ),
         ],
       ),
@@ -237,7 +238,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                   const SizedBox(height: 16),
                   Text(
                     '알림이 없습니다',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                    style: ResponsiveUtils.getTextStyle(context, fontSize: 16, color: Colors.grey[600]),
                   ),
                 ],
               ),
@@ -293,7 +294,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                         _getNotificationIcon(
                                           notification['type'] ?? '',
                                         ),
-                                        style: const TextStyle(fontSize: 20),
+                                        style: ResponsiveUtils.getTextStyle(context, fontSize: 20),
                                       ),
                                     ),
                                   ),
@@ -308,7 +309,8 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                             Expanded(
                                               child: Text(
                                                 notification['title'] ?? '',
-                                                style: TextStyle(
+                                                style: ResponsiveUtils.getTextStyle(
+                                                  context,
                                                   fontSize: 15,
                                                   fontWeight: isRead
                                                       ? FontWeight.w500
@@ -334,7 +336,8 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                         const SizedBox(height: 4),
                                         Text(
                                           notification['body'] ?? '',
-                                          style: TextStyle(
+                                          style: ResponsiveUtils.getTextStyle(
+                                            context,
                                             fontSize: 14,
                                             color: isRead
                                                 ? Colors.grey[600]
@@ -348,7 +351,8 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                           _formatDate(
                                             notification['created_at'],
                                           ),
-                                          style: TextStyle(
+                                          style: ResponsiveUtils.getTextStyle(
+                                            context,
                                             fontSize: 12,
                                             color: Colors.grey[500],
                                           ),

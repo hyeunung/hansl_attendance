@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../utils/validators/leave_validators.dart';
+import '../../utils/responsive_utils.dart';
 
 /// 출장 정보 입력 위젯
 /// 출장지와 업무 내용을 입력받는 위젯
@@ -33,9 +34,9 @@ class TripInfoInputWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _buildPlaceSection(),
+        _buildPlaceSection(context),
         const SizedBox(height: 16),
-        _buildPurposeSection(),
+        _buildPurposeSection(context),
       ],
     );
   }
@@ -48,7 +49,7 @@ class TripInfoInputWidget extends StatelessWidget {
 
 
 
-  Widget _buildPlaceSection() {
+  Widget _buildPlaceSection(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -59,15 +60,15 @@ class TripInfoInputWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader('출장지', isRequired: true),
+          _buildSectionHeader(context, '출장지', isRequired: true),
           const SizedBox(height: 10),
-          _buildPlaceInput(),
+          _buildPlaceInput(context),
         ],
       ),
     );
   }
 
-  Widget _buildPlaceInput() {
+  Widget _buildPlaceInput(BuildContext context) {
     final placeError = LeaveValidators.validatePlace(
       placeController.text.isEmpty ? null : placeController.text,
     );
@@ -103,13 +104,14 @@ class TripInfoInputWidget extends StatelessWidget {
                 child: TextField(
                   controller: placeController,
                   focusNode: placeFocusNode,
-                  style: const TextStyle(
+                  style: ResponsiveUtils.getTextStyle(
+                    context,
                     fontSize: 16,
                     color: Color(0xFF222222),
                   ),
                   decoration: const InputDecoration(
                     hintText: '출장지를 입력하세요',
-                    hintStyle: TextStyle(fontSize: 15, color: Colors.grey),
+                    hintStyle: const TextStyle(fontSize: 15, color: Colors.grey),
                     border: InputBorder.none,
                     isDense: true,
                   ),
@@ -125,7 +127,8 @@ class TripInfoInputWidget extends StatelessWidget {
                         if (isFocused && currentLength > 0) {
                           return Text(
                             '$currentLength / $maxLength',
-                            style: TextStyle(
+                            style: ResponsiveUtils.getTextStyle(
+                              context,
                               fontSize: 12,
                               color: currentLength == maxLength
                                   ? Colors.red
@@ -144,7 +147,7 @@ class TripInfoInputWidget extends StatelessWidget {
               padding: const EdgeInsets.only(top: 4, left: 28),
               child: Text(
                 placeError,
-                style: const TextStyle(color: Colors.red, fontSize: 12),
+                style: ResponsiveUtils.getTextStyle(context, color: Colors.red, fontSize: 12),
               ),
             ),
         ],
@@ -152,7 +155,7 @@ class TripInfoInputWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildPurposeSection() {
+  Widget _buildPurposeSection(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -163,15 +166,15 @@ class TripInfoInputWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader('업무', isRequired: true),
+          _buildSectionHeader(context, '업무', isRequired: true),
           const SizedBox(height: 10),
-          _buildPurposeInput(),
+          _buildPurposeInput(context),
         ],
       ),
     );
   }
 
-  Widget _buildPurposeInput() {
+  Widget _buildPurposeInput(BuildContext context) {
     final purposeError = LeaveValidators.validatePurpose(
       purposeController.text.isEmpty ? null : purposeController.text,
     );
@@ -198,14 +201,16 @@ class TripInfoInputWidget extends StatelessWidget {
             focusNode: purposeFocusNode,
             maxLines: 4,
             maxLength: 1000,
-            style: const TextStyle(
+            style: ResponsiveUtils.getTextStyle(
+              context,
               fontSize: 16,
               color: Color(0xFF222222),
               height: 1.5,
             ),
             decoration: InputDecoration(
               hintText: '출장 업무 내용을 상세히 입력하세요\n(최소 10자 이상)',
-              hintStyle: TextStyle(
+              hintStyle: ResponsiveUtils.getTextStyle(
+                context,
                 fontSize: 15,
                 color: Colors.grey[500],
                 height: 1.5,
@@ -230,7 +235,8 @@ class TripInfoInputWidget extends StatelessWidget {
                         Expanded(
                           child: Text(
                             purposeError,
-                            style: const TextStyle(
+                            style: ResponsiveUtils.getTextStyle(
+                              context,
                               color: Colors.red,
                               fontSize: 12,
                             ),
@@ -240,7 +246,8 @@ class TripInfoInputWidget extends StatelessWidget {
                         const Spacer(),
                       Text(
                         '$currentLength / $maxLength',
-                        style: TextStyle(
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
                           fontSize: 12,
                           color: currentLength == maxLength
                               ? Colors.red
@@ -256,15 +263,15 @@ class TripInfoInputWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title, {bool isRequired = false}) {
+  Widget _buildSectionHeader(BuildContext context, String title, {bool isRequired = false}) {
     return Row(
       children: [
         Text(
           title,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+          style: ResponsiveUtils.getTextStyle(context, fontWeight: FontWeight.bold, fontSize: 17),
         ),
         if (isRequired)
-          const Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
+          Text('  *', style: ResponsiveUtils.getTextStyle(context, color: Colors.red, fontSize: 17)),
       ],
     );
   }

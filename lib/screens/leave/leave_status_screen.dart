@@ -683,10 +683,11 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                     Flexible(
                       child: Text(
                         l['name'] ?? l['user_email'] ?? '-',
-                        style: const TextStyle(
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
                           fontWeight: FontWeight.bold,
                           fontSize: 20,
-                          color: Color(0xFF222222),
+                          color: const Color(0xFF222222),
                         ),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
@@ -722,7 +723,8 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                 ),
                 child: Text(
                   statusLabel,
-                  style: TextStyle(
+                  style: ResponsiveUtils.getTextStyle(
+                    context,
                     color: statusColor,
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
@@ -737,12 +739,12 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
           children: [
             Text(
               period,
-              style: const TextStyle(fontSize: 15, color: Color(0xFF666666)),
+              style: ResponsiveUtils.getTextStyle(context, fontSize: 15, color: const Color(0xFF666666)),
             ),
             if (companions != null && companions.isNotEmpty)
               Text(
                 ' ($companions 동행)',
-                style: const TextStyle(fontSize: 15, color: Color(0xFF666666)),
+                style: ResponsiveUtils.getTextStyle(context, fontSize: 15, color: const Color(0xFF666666)),
               ),
           ],
         ),

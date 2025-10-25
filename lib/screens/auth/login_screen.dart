@@ -313,20 +313,24 @@ setState(
                     children: [
                       TextField(
                         controller: _emailController,
-                        style: const TextStyle(
-                          fontFamily: 'NotoSans',
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
                           fontSize: 16,
                         ),
                         decoration: InputDecoration(
                           labelText: '이메일',
-                          labelStyle: const TextStyle(
-                            fontFamily: 'NotoSans',
+                          labelStyle: ResponsiveUtils.getTextStyle(
+                            context,
                             fontWeight: FontWeight.w500,
                             fontSize: 15,
                             color: Color(0xFF222222),
                           ),
                           hintText: '이메일 주소 입력',
-                          hintStyle: const TextStyle(color: Color(0xFFB0B8C1)),
+                          hintStyle: ResponsiveUtils.getTextStyle(
+                            context,
+                            color: Color(0xFFB0B8C1),
+                            fontSize: 14,
+                          ),
                           filled: true,
                           fillColor: Color(0xFFF8F9FA),
                           border: OutlineInputBorder(
@@ -345,20 +349,24 @@ setState(
                       const SizedBox(height: 14),
                       TextField(
                         controller: _passwordController,
-                        style: const TextStyle(
-                          fontFamily: 'NotoSans',
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
                           fontSize: 16,
                         ),
                         decoration: InputDecoration(
                           labelText: '비밀번호',
-                          labelStyle: const TextStyle(
-                            fontFamily: 'NotoSans',
+                          labelStyle: ResponsiveUtils.getTextStyle(
+                            context,
                             fontWeight: FontWeight.w500,
                             fontSize: 15,
                             color: Color(0xFF222222),
                           ),
                           hintText: '비밀번호 입력',
-                          hintStyle: const TextStyle(color: Color(0xFFB0B8C1)),
+                          hintStyle: ResponsiveUtils.getTextStyle(
+                            context,
+                            color: Color(0xFFB0B8C1),
+                            fontSize: 14,
+                          ),
                           filled: true,
                           fillColor: Color(0xFFF8F9FA),
                           border: OutlineInputBorder(
@@ -435,8 +443,8 @@ setState(
                               shape: RoundedRectangleBorder(
                                 borderRadius: boxRadius,
                               ),
-                              textStyle: const TextStyle(
-                                fontFamily: 'NotoSans',
+                              textStyle: ResponsiveUtils.getTextStyle(
+                                context,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
                                 color: Colors.white,
@@ -475,29 +483,30 @@ setState(
                                   );
                                 }
                               },
-                              child: const Text(
+                              child: Text(
                                 '회원가입',
-                                style: TextStyle(
-                                  fontFamily: 'NotoSans',
+                                style: ResponsiveUtils.getTextStyle(
+                                  context,
                                   fontWeight: FontWeight.w500,
                                   fontSize: 15,
                                   color: Color(0xFF1777CB),
                                 ),
                               ),
                             ),
-                            const Text(
+                            Text(
                               '|',
-                              style: TextStyle(
+                              style: ResponsiveUtils.getTextStyle(
+                                context,
                                 fontSize: 16,
                                 color: Color(0xFFB0B8C1),
                               ),
                             ),
                             TextButton(
                               onPressed: _showResetPasswordDialog,
-                              child: const Text(
+                              child: Text(
                                 '비밀번호 재설정',
-                                style: TextStyle(
-                                  fontFamily: 'NotoSans',
+                                style: ResponsiveUtils.getTextStyle(
+                                  context,
                                   fontWeight: FontWeight.w500,
                                   fontSize: 15,
                                   color: Color(0xFF1777CB),
@@ -645,8 +654,8 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 32),
                 Text(
                   'HANSL',
-                  style: TextStyle(
-                    fontFamily: 'NotoSans',
+                  style: ResponsiveUtils.getTextStyle(
+                    context,
                     fontWeight: FontWeight.w700,
                     fontSize: 40,
                     color: Color(0xFF1777CB),
@@ -654,10 +663,10 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Text(
+                Text(
                   '근태 기록 시스템',
-                  style: TextStyle(
-                    fontFamily: 'NotoSans',
+                  style: ResponsiveUtils.getTextStyle(
+                    context,
                     fontWeight: FontWeight.w400,
                     fontSize: 16,
                     color: Color(0xFFB0B8C1),
@@ -687,14 +696,14 @@ class _SignupScreenState extends State<SignupScreen> {
                     children: [
                       TextField(
                         controller: _nameController,
-                        style: const TextStyle(
-                          fontFamily: 'NotoSans',
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
                           fontSize: 16,
                         ),
                         decoration: InputDecoration(
                           labelText: '이름',
-                          labelStyle: const TextStyle(
-                            fontFamily: 'NotoSans',
+                          labelStyle: ResponsiveUtils.getTextStyle(
+                            context,
                             fontWeight: FontWeight.w500,
                             fontSize: 15,
                             color: Color(0xFF222222),
@@ -710,20 +719,24 @@ class _SignupScreenState extends State<SignupScreen> {
                       const SizedBox(height: 14),
                       TextField(
                         controller: _emailController,
-                        style: const TextStyle(
-                          fontFamily: 'NotoSans',
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
                           fontSize: 16,
                         ),
                         decoration: InputDecoration(
                           labelText: '이메일',
-                          labelStyle: const TextStyle(
-                            fontFamily: 'NotoSans',
+                          labelStyle: ResponsiveUtils.getTextStyle(
+                            context,
                             fontWeight: FontWeight.w500,
                             fontSize: 15,
                             color: Color(0xFF222222),
                           ),
                           hintText: '이메일 주소 입력',
-                          hintStyle: const TextStyle(color: Color(0xFFB0B8C1)),
+                          hintStyle: ResponsiveUtils.getTextStyle(
+                            context,
+                            color: Color(0xFFB0B8C1),
+                            fontSize: 14,
+                          ),
                           filled: true,
                           fillColor: Color(0xFFF8F9FA),
                           border: OutlineInputBorder(
@@ -739,20 +752,24 @@ class _SignupScreenState extends State<SignupScreen> {
                       const SizedBox(height: 14),
                       TextField(
                         controller: _passwordController,
-                        style: const TextStyle(
-                          fontFamily: 'NotoSans',
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
                           fontSize: 16,
                         ),
                         decoration: InputDecoration(
                           labelText: '비밀번호',
-                          labelStyle: const TextStyle(
-                            fontFamily: 'NotoSans',
+                          labelStyle: ResponsiveUtils.getTextStyle(
+                            context,
                             fontWeight: FontWeight.w500,
                             fontSize: 15,
                             color: Color(0xFF222222),
                           ),
                           hintText: '비밀번호 입력',
-                          hintStyle: const TextStyle(color: Color(0xFFB0B8C1)),
+                          hintStyle: ResponsiveUtils.getTextStyle(
+                            context,
+                            color: Color(0xFFB0B8C1),
+                            fontSize: 14,
+                          ),
                           filled: true,
                           fillColor: Color(0xFFF8F9FA),
                           border: OutlineInputBorder(
@@ -765,20 +782,24 @@ class _SignupScreenState extends State<SignupScreen> {
                       const SizedBox(height: 14),
                       TextField(
                         controller: _passwordConfirmController,
-                        style: const TextStyle(
-                          fontFamily: 'NotoSans',
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
                           fontSize: 16,
                         ),
                         decoration: InputDecoration(
                           labelText: '비밀번호 확인',
-                          labelStyle: const TextStyle(
-                            fontFamily: 'NotoSans',
+                          labelStyle: ResponsiveUtils.getTextStyle(
+                            context,
                             fontWeight: FontWeight.w500,
                             fontSize: 15,
                             color: Color(0xFF222222),
                           ),
                           hintText: '비밀번호 확인',
-                          hintStyle: const TextStyle(color: Color(0xFFB0B8C1)),
+                          hintStyle: ResponsiveUtils.getTextStyle(
+                            context,
+                            color: Color(0xFFB0B8C1),
+                            fontSize: 14,
+                          ),
                           filled: true,
                           fillColor: Color(0xFFF8F9FA),
                           border: OutlineInputBorder(
@@ -812,8 +833,8 @@ class _SignupScreenState extends State<SignupScreen> {
                               shape: RoundedRectangleBorder(
                                 borderRadius: boxRadius,
                               ),
-                              textStyle: const TextStyle(
-                                fontFamily: 'NotoSans',
+                              textStyle: ResponsiveUtils.getTextStyle(
+                                context,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
                                 color: Colors.white,
