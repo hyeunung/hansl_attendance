@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
+import '../../utils/responsive_utils.dart';
 
 /// 사유 입력 위젯
 /// 휴가 신청 사유를 입력받는 재사용 가능한 컴포넌트
@@ -36,35 +37,35 @@ class LeaveMemoInputWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(),
+          _buildHeader(context),
           const SizedBox(height: 8),
-          _buildInputField(),
-          if (_shouldShowError()) _buildErrorMessage(),
+          _buildInputField(context),
+          if (_shouldShowError()) _buildErrorMessage(context),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Row(
       children: [
-        const Text(
+        Text(
           '사유',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+          style: ResponsiveUtils.getTextStyle(context, fontWeight: FontWeight.bold, fontSize: 17),
         ),
         if (isRequired)
-          const Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
+          Text('  *', style: ResponsiveUtils.getTextStyle(context, color: Colors.red, fontSize: 17)),
         const Spacer(),
         if (controller.text.isNotEmpty)
           Text(
             '${controller.text.length}자',
-            style: TextStyle(color: Colors.grey[600], fontSize: 13),
+            style: ResponsiveUtils.getTextStyle(context, color: Colors.grey[600], fontSize: 13),
           ),
       ],
     );
   }
 
-  Widget _buildInputField() {
+  Widget _buildInputField(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFF6F7FA),
@@ -77,19 +78,19 @@ class LeaveMemoInputWidget extends StatelessWidget {
         focusNode: focusNode,
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: TextStyle(color: Colors.grey[500], fontSize: 15),
+          hintStyle: ResponsiveUtils.getTextStyle(context, color: Colors.grey[500], fontSize: 15),
           border: InputBorder.none,
           isDense: true,
           contentPadding: EdgeInsets.zero,
         ),
         maxLines: maxLines,
         onChanged: onChanged,
-        style: const TextStyle(fontSize: 16, color: Color(0xFF222222)),
+        style: ResponsiveUtils.getTextStyle(context, fontSize: 16, color: Color(0xFF222222)),
       ),
     );
   }
 
-  Widget _buildErrorMessage() {
+  Widget _buildErrorMessage(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: 4.0, left: 4.0),
       child: Row(
@@ -98,7 +99,7 @@ class LeaveMemoInputWidget extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             errorText ?? '사유는 필수 입력 항목입니다.',
-            style: const TextStyle(color: Colors.red, fontSize: 13),
+            style: ResponsiveUtils.getTextStyle(context, color: Colors.red, fontSize: 13),
           ),
         ],
       ),

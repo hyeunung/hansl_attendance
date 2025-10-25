@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'responsive_utils.dart';
 
 /// 전역 에러 처리 유틸리티
 class ErrorHandler {
@@ -154,7 +155,7 @@ class ErrorHandler {
             const Icon(Icons.error_outline, color: Colors.white, size: 20),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(message, style: const TextStyle(fontSize: 14)),
+              child: Text(message, style: ResponsiveUtils.getTextStyle(context, fontSize: 14)),
             ),
           ],
         ),

@@ -6,6 +6,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
 import '../../providers/attendance_provider.dart';
 import '../../providers/notification_provider.dart';
+import '../../providers/font_provider.dart';
 import '../../utils/responsive_utils.dart';
 import '../../services/timer_manager.dart';
 import '../../services/ui_optimization_service.dart';
@@ -173,11 +174,9 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
   Widget build(BuildContext context) {
     super.build(context); // AutomaticKeepAliveClientMixin 필수
 
-    return OptimizedConsumer<AttendanceProvider>(
-      componentKey: 'attendance_main',
-      throttleDuration: const Duration(milliseconds: 100),
-      shouldRebuild: (provider) => !provider.isLoading,
-      builder: (context, provider, _) {
+    // FontProvider와 AttendanceProvider 모두 감지하도록 Consumer2 사용
+    return Consumer2<AttendanceProvider, FontProvider>(
+      builder: (context, attendanceProvider, fontProvider, _) {
         return Scaffold(
           backgroundColor: const Color(0xFFF8F9FB),
           appBar: AppBar(
@@ -238,7 +237,8 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
                                       ? '99+'
                                       : notificationProvider.unreadCount
                                             .toString(),
-                                  style: const TextStyle(
+                                  style: ResponsiveUtils.getTextStyle(
+                                    context,
                                     color: Colors.white,
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
@@ -261,7 +261,7 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: () async {
-                    await provider.forceRefreshAll();
+                    await attendanceProvider.forceRefreshAll();
                     _showBanner('새로고침 완료');
                   },
                   child: SingleChildScrollView(

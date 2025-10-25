@@ -2000,10 +2000,11 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                             ),
                           ),
                           const SizedBox(width: 12),
-                          const Expanded(
+                          Expanded(
                             child: Text(
                               '휴가 정보 수정',
-                              style: TextStyle(
+                              style: ResponsiveUtils.getTextStyle(
+                                context,
                                 color: Colors.white,
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -2041,9 +2042,11 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     backgroundColor: AppColors.primary.withOpacity(0.1),
                                     child: Text(
                                       (leave['name'] ?? '?')[0],
-                                      style: TextStyle(
+                                      style: ResponsiveUtils.getTextStyle(
+                                        context,
                                         color: AppColors.primary,
                                         fontWeight: FontWeight.bold,
+                                        fontSize: 16,
                                       ),
                                     ),
                                   ),
@@ -2053,7 +2056,8 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     children: [
                                       Text(
                                         '신청자: ${leave['name'] ?? '알 수 없음'}',
-                                        style: const TextStyle(
+                                        style: ResponsiveUtils.getTextStyle(
+                                          context,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 16,
                                         ),
@@ -2061,7 +2065,8 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                       const SizedBox(height: 4),
                                       Text(
                                         '신청일: ${leave['created_at']?.substring(0, 10) ?? ''}',
-                                        style: TextStyle(
+                                        style: ResponsiveUtils.getTextStyle(
+                                          context,
                                           color: Colors.grey[600],
                                           fontSize: 14,
                                         ),
@@ -2085,9 +2090,10 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                const Text(
+                                Text(
                                   '휴가 유형',
-                                  style: TextStyle(
+                                  style: ResponsiveUtils.getTextStyle(
+                                    context,
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -2156,9 +2162,10 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                const Text(
+                                Text(
                                   '휴가 기간',
-                                  style: TextStyle(
+                                  style: ResponsiveUtils.getTextStyle(
+                                    context,
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -2205,10 +2212,12 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                               startDateController.text.isEmpty
                                                   ? '시작일'
                                                   : startDateController.text,
-                                              style: TextStyle(
+                                              style: ResponsiveUtils.getTextStyle(
+                                                context,
                                                 color: startDateController.text.isEmpty
                                                     ? Colors.grey
                                                     : Colors.black,
+                                                fontSize: 14,
                                               ),
                                             ),
                                           ),
@@ -2255,10 +2264,12 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                               endDateController.text.isEmpty
                                                   ? '종료일'
                                                   : endDateController.text,
-                                              style: TextStyle(
+                                              style: ResponsiveUtils.getTextStyle(
+                                                context,
                                                 color: endDateController.text.isEmpty
                                                     ? Colors.grey
                                                     : Colors.black,
+                                                fontSize: 14,
                                               ),
                                             ),
                                           ),
@@ -2283,9 +2294,10 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                const Text(
+                                Text(
                                   '사유',
-                                  style: TextStyle(
+                                  style: ResponsiveUtils.getTextStyle(
+                                    context,
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -2338,9 +2350,10 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                 ),
                               ),
                               onPressed: () => Navigator.pop(context),
-                              child: const Text(
+                              child: Text(
                                 '취소',
-                                style: TextStyle(
+                                style: ResponsiveUtils.getTextStyle(
+                                  context,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -2476,9 +2489,10 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     );
                                   }
                                 },
-                                child: const Text(
+                                child: Text(
                                   '수정하기',
-                                  style: TextStyle(
+                                  style: ResponsiveUtils.getTextStyle(
+                                    context,
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -2572,7 +2586,8 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                       // 제목
                       Text(
                         title,
-                        style: const TextStyle(
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1C1C1E),
@@ -2587,7 +2602,8 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Text(
                     message,
-                    style: const TextStyle(
+                    style: ResponsiveUtils.getTextStyle(
+                      context,
                       fontSize: 16,
                       color: Color(0xFF8E8E93),
                       height: 1.5,
@@ -2630,9 +2646,10 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                               ),
                             ),
                             onPressed: () => Navigator.of(context).pop(false),
-                            child: const Text(
+                            child: Text(
                               '취소',
-                              style: TextStyle(
+                              style: ResponsiveUtils.getTextStyle(
+                                context,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -2664,7 +2681,8 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                             onPressed: () => Navigator.of(context).pop(true),
                             child: Text(
                               confirmText,
-                              style: const TextStyle(
+                              style: ResponsiveUtils.getTextStyle(
+                                context,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),

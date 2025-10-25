@@ -297,7 +297,8 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
                     const SizedBox(width: 8),
                     Text(
                       '오늘의 출근 현황',
-                      style: const TextStyle(
+                      style: ResponsiveUtils.getTextStyle(
+                        context,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF2C3E50),
@@ -341,7 +342,8 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
                       const SizedBox(width: 6),
                       Text(
                         '지각 ${_lateEmployees.length}명',
-                        style: const TextStyle(
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF424242),
@@ -367,7 +369,8 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
                         ),
                         child: Text(
                           '${emp['name']} (${emp['time']})',
-                          style: const TextStyle(
+                          style: ResponsiveUtils.getTextStyle(
+                            context,
                             fontSize: 12,
                             color: Color(0xFF424242),
                           ),
@@ -397,7 +400,8 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
                       const SizedBox(width: 6),
                       Text(
                         '미출근 ${_absentEmployees.length}명',
-                        style: const TextStyle(
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF424242),
@@ -423,7 +427,8 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
                         ),
                         child: Text(
                           emp['name'],
-                          style: const TextStyle(
+                          style: ResponsiveUtils.getTextStyle(
+                            context,
                             fontSize: 12,
                             color: Color(0xFF424242),
                           ),
@@ -445,7 +450,8 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
       children: [
         Text(
           count.toString(),
-          style: TextStyle(
+          style: ResponsiveUtils.getTextStyle(
+            context,
             fontSize: 24,
             fontWeight: FontWeight.w700,
             color: color,
@@ -455,7 +461,8 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
         const SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(
+          style: ResponsiveUtils.getTextStyle(
+            context,
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: Colors.grey[700],
@@ -511,7 +518,8 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
                     const SizedBox(width: 8),
                     Text(
                       '오늘의 출근 현황',
-                      style: const TextStyle(
+                      style: ResponsiveUtils.getTextStyle(
+                        context,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF2C3E50),
@@ -543,8 +551,9 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
                 SizedBox(height: ResponsiveUtils.spacing(context, 20)),
                 Text(
                   '오늘은 근무일이 아닙니다',
-                  style: TextStyle(
-                    fontSize: ResponsiveUtils.fontSize(context, 18),
+                  style: ResponsiveUtils.getTextStyle(
+                    context,
+                    fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF2C3E50),
                   ),
@@ -563,8 +572,9 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
                     ),
                     child: Text(
                       _holidayName!,
-                      style: TextStyle(
-                        fontSize: ResponsiveUtils.fontSize(context, 14),
+                      style: ResponsiveUtils.getTextStyle(
+                        context,
+                        fontSize: 14,
                         fontWeight: FontWeight.w500,
                         color: const Color(0xFF64748B),
                       ),

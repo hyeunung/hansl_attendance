@@ -139,11 +139,11 @@ class AttendanceActionButtons extends StatelessWidget {
                                     const SizedBox(height: 4),
                                     Text(
                                       'Status: ${provider.status}',
-                                      style: const TextStyle(fontSize: 10, color: Colors.red),
+                                      style: ResponsiveUtils.getTextStyle(context, fontSize: 10, color: Colors.red),
                                     ),
                                     Text(
                                       'ID: ${provider.userId.isNotEmpty ? "OK" : "없음"}',
-                                      style: const TextStyle(fontSize: 10, color: Colors.red),
+                                      style: ResponsiveUtils.getTextStyle(context, fontSize: 10, color: Colors.red),
                                     ),
                                   ],
                                 ),

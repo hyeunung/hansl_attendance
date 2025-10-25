@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/responsive_utils.dart';
 
 /// 연차 정보를 표시하는 카드 위젯
 /// 남은 연차, 사용 연차, 부여 연차 등의 정보를 시각적으로 표현
@@ -41,17 +42,17 @@ class LeaveInfoCardWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(),
+          _buildHeader(context),
           const SizedBox(height: 12),
-          _buildMainInfo(),
+          _buildMainInfo(context),
           const SizedBox(height: 16),
-          _buildYearlyInfo(),
+          _buildYearlyInfo(context),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Row(
       children: [
         Container(
@@ -60,9 +61,10 @@ class LeaveInfoCardWidget extends StatelessWidget {
             color: Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: const Text(
+          child: Text(
             '신청 가능',
-            style: TextStyle(
+            style: ResponsiveUtils.getTextStyle(
+              context,
               color: Colors.white,
               fontSize: 14,
               fontWeight: FontWeight.bold,
@@ -70,12 +72,12 @@ class LeaveInfoCardWidget extends StatelessWidget {
           ),
         ),
         const Spacer(),
-        _buildUsedIndicator(),
+        _buildUsedIndicator(context),
       ],
     );
   }
 
-  Widget _buildUsedIndicator() {
+  Widget _buildUsedIndicator(BuildContext context) {
     final double usedPercentage = grantedAnnual > 0
         ? (usedAnnual / grantedAnnual * 100)
         : 0.0;
@@ -88,7 +90,8 @@ class LeaveInfoCardWidget extends StatelessWidget {
       ),
       child: Text(
         '사용률 ${usedPercentage.toStringAsFixed(0)}%',
-        style: TextStyle(
+        style: ResponsiveUtils.getTextStyle(
+          context,
           color: Colors.white,
           fontSize: 12,
           fontWeight: FontWeight.bold,
@@ -103,7 +106,7 @@ class LeaveInfoCardWidget extends StatelessWidget {
     return Colors.red;
   }
 
-  Widget _buildMainInfo() {
+  Widget _buildMainInfo(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -113,7 +116,7 @@ class LeaveInfoCardWidget extends StatelessWidget {
           children: [
             Text(
               '사용: ${_formatDays(usedAnnual)}일',
-              style: const TextStyle(color: Colors.white70, fontSize: 14),
+              style: ResponsiveUtils.getTextStyle(context, color: Colors.white70, fontSize: 14),
             ),
             const SizedBox(height: 4),
             Container(
@@ -147,16 +150,18 @@ class LeaveInfoCardWidget extends StatelessWidget {
               children: [
                 Text(
                   _formatDays(remainAnnual),
-                  style: const TextStyle(
+                  style: ResponsiveUtils.getTextStyle(
+                    context,
                     color: Colors.white,
                     fontSize: 40,
                     fontWeight: FontWeight.bold,
                     height: 1,
                   ),
                 ),
-                const Text(
+                Text(
                   '일',
-                  style: TextStyle(
+                  style: ResponsiveUtils.getTextStyle(
+                    context,
                     color: Colors.white,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -166,7 +171,8 @@ class LeaveInfoCardWidget extends StatelessWidget {
             ),
             Text(
               '/ ${_formatDays(grantedAnnual)}일',
-              style: const TextStyle(
+              style: ResponsiveUtils.getTextStyle(
+                context,
                 color: Colors.white70,
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -178,17 +184,17 @@ class LeaveInfoCardWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildYearlyInfo() {
+  Widget _buildYearlyInfo(BuildContext context) {
     return Column(
       children: [
-        _buildYearRow(currentYear, currentYearGranted, true),
+        _buildYearRow(context, currentYear, currentYearGranted, true),
         const SizedBox(height: 4),
-        _buildYearRow(nextYear, nextYearGranted, false),
+        _buildYearRow(context, nextYear, nextYearGranted, false),
       ],
     );
   }
 
-  Widget _buildYearRow(int year, double granted, bool isCurrent) {
+  Widget _buildYearRow(BuildContext context, int year, double granted, bool isCurrent) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -201,7 +207,7 @@ class LeaveInfoCardWidget extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             '$year.01.01 ~ $year.12.31',
-            style: const TextStyle(color: Colors.white, fontSize: 14),
+            style: ResponsiveUtils.getTextStyle(context, color: Colors.white, fontSize: 14),
           ),
           const Spacer(),
           Container(
@@ -212,7 +218,8 @@ class LeaveInfoCardWidget extends StatelessWidget {
             ),
             child: Text(
               '${_formatDays(granted)}일',
-              style: const TextStyle(
+              style: ResponsiveUtils.getTextStyle(
+                context,
                 color: Colors.white,
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
