@@ -1457,12 +1457,24 @@ class _ApprovalScreenState extends State<ApprovalScreen>
           _infoRow(Icons.date_range, '기간', period),
           if (isBiztrip && dest.isNotEmpty) _infoRow(Icons.place, '목적지', dest),
           _infoRow(Icons.calendar_today, '신청일', createdAt),
-          // 최종 승인자 정보 표시 (처리완료 탭에서만)
+          // 최종 승인자 정보 표시 (처리완료 탭에서만 + superadmin만)
           if (!showButtons && status != 'pending') ...[
-            if (l['approved_by'] != null && l['approved_by'].isNotEmpty)
-              _infoRow(Icons.check_circle, '최종승인', l['approved_by'])
-            else if (l['rejected_by'] != null && l['rejected_by'].isNotEmpty)
-              _infoRow(Icons.cancel, '반려처리', l['rejected_by']),
+            Consumer<UserProvider>(
+              builder: (context, userProvider, child) {
+                final attendanceRoles = userProvider.employee?['attendance_role'] as List<dynamic>? ?? [];
+                if (UserRoleHelper.isSuperAdmin(attendanceRoles)) {
+                  return Column(
+                    children: [
+                      if (l['approved_by'] != null && l['approved_by'].isNotEmpty)
+                        _infoRow(Icons.check_circle, '최종승인', l['approved_by'])
+                      else if (l['rejected_by'] != null && l['rejected_by'].isNotEmpty)
+                        _infoRow(Icons.cancel, '반려처리', l['rejected_by']),
+                    ],
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
           ],
           SizedBox(height: ResponsiveUtils.spacing(context, 14)),
           // 사유
