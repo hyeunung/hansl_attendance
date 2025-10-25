@@ -1119,56 +1119,65 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                   ).fetchAllLeaves(forceRefresh: true);
                                 },
                                 child: pending.isEmpty
-                                    ? Center(
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.check_circle_outline,
-                                              size: ResponsiveUtils.iconSize(
-                                                context,
-                                                80,
-                                              ),
-                                              color: const Color(0xFFE0E0E0),
-                                            ),
-                                            SizedBox(
-                                              height: ResponsiveUtils.spacing(
-                                                context,
-                                                20,
-                                              ),
-                                            ),
-                                            Text(
-                                              '승인 대기 중인 항목이 없습니다',
-                                              style:
-                                                  ResponsiveUtils.getTextStyle(
-                                                    context,
-                                                    fontSize: 18,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: const Color(
-                                                      0xFF8E8E93,
-                                                    ),
-                                                  ),
-                                            ),
-                                            SizedBox(
-                                              height: ResponsiveUtils.spacing(
-                                                context,
-                                                8,
-                                              ),
-                                            ),
-                                            Text(
-                                              '새로운 신청이 들어오면 여기에 표시됩니다',
-                                              style:
-                                                  ResponsiveUtils.getTextStyle(
-                                                    context,
-                                                    fontSize: 14,
-                                                    color: const Color(
-                                                      0xFFB0B0B0,
-                                                    ),
-                                                  ),
-                                            ),
-                                          ],
+                                    ? ListView(
+                                        physics: const AlwaysScrollableScrollPhysics(),
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: ResponsiveUtils.spacing(context, 20),
+                                          vertical: ResponsiveUtils.spacing(context, 20),
                                         ),
+                                        children: [
+                                          SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+                                          Center(
+                                            child: Column(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  Icons.check_circle_outline,
+                                                  size: ResponsiveUtils.iconSize(
+                                                    context,
+                                                    80,
+                                                  ),
+                                                  color: const Color(0xFFE0E0E0),
+                                                ),
+                                                SizedBox(
+                                                  height: ResponsiveUtils.spacing(
+                                                    context,
+                                                    20,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  '승인 대기 중인 항목이 없습니다',
+                                                  style:
+                                                      ResponsiveUtils.getTextStyle(
+                                                        context,
+                                                        fontSize: 18,
+                                                        fontWeight: FontWeight.w600,
+                                                        color: const Color(
+                                                          0xFF8E8E93,
+                                                        ),
+                                                      ),
+                                                ),
+                                                SizedBox(
+                                                  height: ResponsiveUtils.spacing(
+                                                    context,
+                                                    8,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  '새로운 신청이 들어오면 여기에 표시됩니다',
+                                                  style:
+                                                      ResponsiveUtils.getTextStyle(
+                                                        context,
+                                                        fontSize: 14,
+                                                        color: const Color(
+                                                          0xFFB0B0B0,
+                                                        ),
+                                                      ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                       )
                                     : ListView.builder(
                                         padding: EdgeInsets.symmetric(
@@ -1226,56 +1235,64 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                   ).fetchAllLeaves(forceRefresh: true);
                                 },
                                 child: thisMonthDone.isEmpty
-                                    ? Center(
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.history,
-                                              size: ResponsiveUtils.iconSize(
-                                                context,
-                                                80,
-                                              ),
-                                              color: const Color(0xFFE0E0E0),
-                                            ),
-                                            SizedBox(
-                                              height: ResponsiveUtils.spacing(
-                                                context,
-                                                20,
-                                              ),
-                                            ),
-                                            Text(
-                                              '이번 달 처리 완료 내역이 없습니다',
-                                              style:
-                                                  ResponsiveUtils.getTextStyle(
-                                                    context,
-                                                    fontSize: 18,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: const Color(
-                                                      0xFF8E8E93,
-                                                    ),
-                                                  ),
-                                            ),
-                                            SizedBox(
-                                              height: ResponsiveUtils.spacing(
-                                                context,
-                                                8,
-                                              ),
-                                            ),
-                                            Text(
-                                              '승인하거나 반려한 항목이 여기에 표시됩니다',
-                                              style:
-                                                  ResponsiveUtils.getTextStyle(
-                                                    context,
-                                                    fontSize: 14,
-                                                    color: const Color(
-                                                      0xFFB0B0B0,
-                                                    ),
-                                                  ),
-                                            ),
-                                          ],
+                                    ? ListView(
+                                        physics: const AlwaysScrollableScrollPhysics(),
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: ResponsiveUtils.spacing(context, 20),
+                                          vertical: ResponsiveUtils.spacing(context, 20),
                                         ),
+                                        children: [
+                                          SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+                                          Center(
+                                            child: Column(
+                                              children: [
+                                                Icon(
+                                                  Icons.history,
+                                                  size: ResponsiveUtils.iconSize(
+                                                    context,
+                                                    80,
+                                                  ),
+                                                  color: const Color(0xFFE0E0E0),
+                                                ),
+                                                SizedBox(
+                                                  height: ResponsiveUtils.spacing(
+                                                    context,
+                                                    20,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  '이번 달 처리 완료 내역이 없습니다',
+                                                  style:
+                                                      ResponsiveUtils.getTextStyle(
+                                                        context,
+                                                        fontSize: 18,
+                                                        fontWeight: FontWeight.w600,
+                                                        color: const Color(
+                                                          0xFF8E8E93,
+                                                        ),
+                                                      ),
+                                                ),
+                                                SizedBox(
+                                                  height: ResponsiveUtils.spacing(
+                                                    context,
+                                                    8,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  '승인하거나 반려한 항목이 여기에 표시됩니다',
+                                                  style:
+                                                      ResponsiveUtils.getTextStyle(
+                                                        context,
+                                                        fontSize: 14,
+                                                        color: const Color(
+                                                          0xFFB0B0B0,
+                                                        ),
+                                                      ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                       )
                                     : ListView.builder(
                                         padding: EdgeInsets.symmetric(
