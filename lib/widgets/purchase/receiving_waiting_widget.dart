@@ -857,23 +857,35 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
     final itemsToShow = _filteredItemsByOrder;
 
     if (_itemsByOrder.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      return RefreshIndicator(
+        onRefresh: _loadReceivingItems,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.symmetric(
+            horizontal: ResponsiveUtils.spacing(context, 20),
+            vertical: ResponsiveUtils.spacing(context, 20),
+          ),
           children: [
-            Icon(
-              Icons.inventory_2_outlined,
-              size: ResponsiveUtils.iconSize(context, 80),
-              color: const Color(0xFFE0E0E0),
-            ),
-            SizedBox(height: ResponsiveUtils.spacing(context, 20)),
-            Text(
-              '입고대기 항목이 없습니다',
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF333333),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+            Center(
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.inventory_2_outlined,
+                    size: ResponsiveUtils.iconSize(context, 80),
+                    color: const Color(0xFFE0E0E0),
+                  ),
+                  SizedBox(height: ResponsiveUtils.spacing(context, 20)),
+                  Text(
+                    '입고대기 항목이 없습니다',
+                    style: ResponsiveUtils.getTextStyle(
+                      context,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF333333),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -882,32 +894,44 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
     }
 
     if (itemsToShow.isEmpty && _searchQuery.isNotEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      return RefreshIndicator(
+        onRefresh: _loadReceivingItems,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.symmetric(
+            horizontal: ResponsiveUtils.spacing(context, 20),
+            vertical: ResponsiveUtils.spacing(context, 20),
+          ),
           children: [
-            Icon(
-              Icons.search_off,
-              size: ResponsiveUtils.iconSize(context, 80),
-              color: const Color(0xFFE0E0E0),
-            ),
-            SizedBox(height: ResponsiveUtils.spacing(context, 20)),
-            Text(
-              '검색 결과가 없습니다',
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF333333),
-              ),
-            ),
-            SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-            Text(
-              '다른 검색어를 시도해보세요',
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 14,
-                color: const Color(0xFF8E8E93),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+            Center(
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.search_off,
+                    size: ResponsiveUtils.iconSize(context, 80),
+                    color: const Color(0xFFE0E0E0),
+                  ),
+                  SizedBox(height: ResponsiveUtils.spacing(context, 20)),
+                  Text(
+                    '검색 결과가 없습니다',
+                    style: ResponsiveUtils.getTextStyle(
+                      context,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF333333),
+                    ),
+                  ),
+                  SizedBox(height: ResponsiveUtils.spacing(context, 8)),
+                  Text(
+                    '다른 검색어를 시도해보세요',
+                    style: ResponsiveUtils.getTextStyle(
+                      context,
+                      fontSize: 14,
+                      color: const Color(0xFF8E8E93),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
