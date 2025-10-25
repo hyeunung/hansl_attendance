@@ -7,7 +7,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../utils/responsive_utils.dart';
 
 class AttendanceStatisticsWidget extends StatefulWidget {
-  const AttendanceStatisticsWidget({super.key});
+  final Function(bool isNonWorkingDay)? onWorkingDayStatusChanged;
+  
+  const AttendanceStatisticsWidget({
+    super.key,
+    this.onWorkingDayStatusChanged,
+  });
 
   @override
   State<AttendanceStatisticsWidget> createState() =>
@@ -75,6 +80,9 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
           _holidayName = dayType;
           _isLoading = false;
         });
+        
+        // 부모 위젯에 휴일 상태 전달
+        widget.onWorkingDayStatusChanged?.call(true);
         return;
       }
 
@@ -223,6 +231,9 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
         _absentEmployees = absentList;
         _isLoading = false;
       });
+      
+      // 부모 위젯에 근무일 상태 전달
+      widget.onWorkingDayStatusChanged?.call(false);
     } catch (e) {
       setState(() => _isLoading = false);
     }
