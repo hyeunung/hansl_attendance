@@ -443,7 +443,7 @@ UserRoleHelper.isAnyManager(attendanceRole)  // 부서 매니저
 ## 📦 Version Management Workflow
 
 ### 🚀 Complete Version Update Process
-**UPDATED: When user says "버전 올리고 빌드해줘" - Full automation including Git!**
+**When user says "버전 올리고 빌드해줘" or "버전 업 빌드 해줘" - Full automation including Git commit & push!**
 
 #### Step 1: Version Update Across All Files
 ```bash
@@ -548,22 +548,23 @@ echo "- APK: Google Drive + 바탕화면"
 echo "- AAB: Google Drive + 바탕화면"
 ```
 
-#### Step 5: Automatic Git Commit & Push (NEW!)
+#### Step 5: Automatic Git Commit & Push 
 ```bash
 # Git status check and commit preparation
 git status                        # Check all changes
-git diff                         # Review changes
+git diff                         # Review changes  
 git log --oneline -n 5           # Check recent commits for style
 
-# Add all changes and create detailed commit
-git add .
-git commit -m "$(cat <<'EOF'
-feat: 버전 X.X.X 업데이트 및 [주요 변경사항]
+# Add all version update files and create commit with current version
+git add pubspec.yaml ios/Runner.xcodeproj/project.pbxproj lib/screens/settings/settings_screen.dart
 
-- 버전 X.X.X+XXX로 업데이트
-- [구체적인 변경사항 나열]
-- [버그 수정 내용]
-- [새로운 기능 추가]
+git commit -m "$(cat <<'EOF'
+chore: 버전 [CURRENT_VERSION] 업데이트
+
+- pubspec.yaml: version [CURRENT_VERSION]+[BUILD_NUMBER]
+- iOS 프로젝트: MARKETING_VERSION [CURRENT_VERSION], CURRENT_PROJECT_VERSION [BUILD_NUMBER]
+- 설정 화면: 폴백 버전 표시 [CURRENT_VERSION] 업데이트
+- APK/AAB 빌드 완료 및 Google Drive 업로드 완료
 
 🤖 Generated with [Claude Code](https://claude.ai/code)
 
@@ -571,10 +572,11 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 EOF
 )"
 
-# Push to remote repository
+# Push to current branch 
 git push
 
-echo "✅ Git 커밋 및 푸시 완료!"
+echo "✅ 버전 [CURRENT_VERSION] Git 커밋 및 푸시 완료!"
+echo "📂 브랜치: $(git branch --show-current)"
 ```
 
 #### Step 6: Complete Status Report
@@ -590,20 +592,20 @@ echo "🔧 주요 변경사항:"
 echo "- [변경사항 요약]"
 echo ""
 echo "✅ 완료된 작업:"
-echo "- ✅ 버전 업데이트 (모든 파일)"
-echo "- ✅ APK/AAB 빌드"
+echo "- ✅ 버전 업데이트 (4개 파일)"
+echo "- ✅ APK/AAB 빌드 완료"
 echo "- ✅ Google Drive 자동 업로드"
 echo "- ✅ 바탕화면 파일 복사"
-echo "- ✅ Git 커밋 생성"
-echo "- ✅ 원격 저장소 푸시"
+echo "- ✅ Git 커밋 (현재 버전명)"
+echo "- ✅ 원격 저장소 푸시 완료"
 ```
 
-#### 🎯 **"버전 올리고 빌드해줘" 명령어 = 전체 자동화**
-- **Step 1**: 버전 업데이트 (3개 파일)
+#### 🎯 **"버전 업 빌드 해줘" 명령어 = 전체 자동화**
+- **Step 1**: 버전 업데이트 (4개 파일)
 - **Step 2**: APK/AAB 빌드 (2개 파일)  
-- **Step 3**: Git 브랜치 동기화 (선택적)
+- **Step 3**: Git 브랜치 동기화 (버전별)
 - **Step 4**: Google Drive 업로드 (자동)
-- **Step 5**: Git 커밋 & 푸시 (자동)
+- **Step 5**: Git 커밋 & 푸시 (현재 버전명으로)
 - **Step 6**: 완료 상태 리포트
 
 #### 💡 **가장 효율적인 명령어**
