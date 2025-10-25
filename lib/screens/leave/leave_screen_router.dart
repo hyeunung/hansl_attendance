@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hansl/services/feature_flag_service.dart';
 import 'package:hansl/services/performance_monitor.dart';
+import '../../utils/responsive_utils.dart';
 import 'annual_leave_request_screen_optimized.dart';
 import 'business_trip_request_screen_optimized.dart';
 
@@ -63,7 +64,7 @@ class _LeaveScreenRouterState extends State<LeaveScreenRouter> {
               ),
               child: Text(
                 'Version: $_screenVersion',
-                style: const TextStyle(color: Colors.white, fontSize: 10),
+                style: ResponsiveUtils.getTextStyle(context, color: Colors.white, fontSize: 10),
               ),
             ),
           ),
@@ -138,7 +139,7 @@ class _BusinessTripScreenRouterState extends State<BusinessTripScreenRouter> {
               ),
               child: Text(
                 'Version: $_screenVersion',
-                style: const TextStyle(color: Colors.white, fontSize: 10),
+                style: ResponsiveUtils.getTextStyle(context, color: Colors.white, fontSize: 10),
               ),
             ),
           ),

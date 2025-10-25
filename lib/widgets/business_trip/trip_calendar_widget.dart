@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/responsive_utils.dart';
 
 /// 출장 달력 위젯
 /// 출장 날짜 선택을 위한 캘린더 컴포넌트
@@ -43,18 +44,19 @@ class TripCalendarWidget extends StatelessWidget {
         pageJumpingEnabled: true,
         sixWeekMonthsEnforced: false, // 6주 강제 표시 해제
         rowHeight: 48, // 행 높이 설정
-        headerStyle: const HeaderStyle(
+        headerStyle: HeaderStyle(
           formatButtonVisible: false,
           titleCentered: true,
-          titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          titleTextStyle: ResponsiveUtils.getTextStyle(context, fontSize: 18, fontWeight: FontWeight.bold),
         ),
         calendarStyle: CalendarStyle(
           outsideDaysVisible: false,
-          defaultTextStyle: const TextStyle(
+          defaultTextStyle: ResponsiveUtils.getTextStyle(
+            context,
             color: Colors.black87,
             fontSize: 15,
           ),
-          weekendTextStyle: TextStyle(color: Colors.red.shade400, fontSize: 15),
+          weekendTextStyle: ResponsiveUtils.getTextStyle(context, color: Colors.red.shade400, fontSize: 15),
           todayDecoration: BoxDecoration(
             color: AppColors.primary.withValues(alpha: 0.3),
             shape: BoxShape.circle,
@@ -63,22 +65,28 @@ class TripCalendarWidget extends StatelessWidget {
             color: AppColors.primary,
             shape: BoxShape.circle,
           ),
-          todayTextStyle: const TextStyle(
+          todayTextStyle: ResponsiveUtils.getTextStyle(
+            context,
             fontWeight: FontWeight.bold,
             color: Colors.white,
+            fontSize: 15,
           ),
-          selectedTextStyle: const TextStyle(
+          selectedTextStyle: ResponsiveUtils.getTextStyle(
+            context,
             color: Colors.white,
             fontWeight: FontWeight.bold,
+            fontSize: 15,
           ),
         ),
         daysOfWeekStyle: DaysOfWeekStyle(
-          weekdayStyle: const TextStyle(
+          weekdayStyle: ResponsiveUtils.getTextStyle(
+            context,
             color: Colors.black87,
             fontWeight: FontWeight.w600,
             fontSize: 13,
           ),
-          weekendStyle: TextStyle(
+          weekendStyle: ResponsiveUtils.getTextStyle(
+            context,
             color: Colors.red.shade400,
             fontWeight: FontWeight.w600,
             fontSize: 13,
@@ -104,9 +112,11 @@ class TripCalendarWidget extends StatelessWidget {
               ),
               child: Text(
                 '${day.day}',
-                style: const TextStyle(
+                style: ResponsiveUtils.getTextStyle(
+                  context,
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
+                  fontSize: 15,
                 ),
               ),
             );
@@ -119,7 +129,8 @@ class TripCalendarWidget extends StatelessWidget {
             return Center(
               child: Text(
                 text,
-                style: TextStyle(
+                style: ResponsiveUtils.getTextStyle(
+                  context,
                   color: day.weekday == DateTime.sunday
                       ? Colors.red
                       : day.weekday == DateTime.saturday

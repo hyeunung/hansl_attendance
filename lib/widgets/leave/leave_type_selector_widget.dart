@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/leave_request.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
+import '../../utils/responsive_utils.dart';
 
 /// 연차 유형 선택 드롭다운 위젯
 /// 연차, 반차, 공가 등을 선택할 수 있는 재사용 가능한 컴포넌트
@@ -49,7 +50,8 @@ class _LeaveTypeSelectorWidgetState extends State<LeaveTypeSelectorWidget> {
               children: [
                 Text(
                   widget.selectedType.label,
-                  style: const TextStyle(
+                  style: ResponsiveUtils.getTextStyle(
+                    context,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -104,7 +106,8 @@ class _LeaveTypeSelectorWidgetState extends State<LeaveTypeSelectorWidget> {
                           ),
                           Text(
                             type.label,
-                            style: TextStyle(
+                            style: ResponsiveUtils.getTextStyle(
+                              context,
                               fontSize: 18,
                               fontWeight: widget.selectedType == type
                                   ? FontWeight.bold
@@ -129,7 +132,8 @@ class _LeaveTypeSelectorWidgetState extends State<LeaveTypeSelectorWidget> {
                               ),
                               child: Text(
                                 '${type.days}일',
-                                style: TextStyle(
+                                style: ResponsiveUtils.getTextStyle(
+                                  context,
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                   color: _getTypeColor(type),

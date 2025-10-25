@@ -207,9 +207,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                     borderRadius: boxRadius,
                                   ),
                                 ),
-                                child: const Text(
+                                child: Text(
                                   '로그인 화면으로',
-                                  style: TextStyle(color: Colors.white),
+                                  style: ResponsiveUtils.getTextStyle(context, fontSize: 16, color: Colors.white),
                                 ),
                               ),
                             ] else ...[
@@ -224,21 +224,20 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                               const SizedBox(height: 20),
                               TextField(
                                 controller: _passwordController,
-                                style: const TextStyle(
-                                  fontFamily: 'NotoSans',
+                                style: ResponsiveUtils.getTextStyle(
+                                  context,
                                   fontSize: 16,
                                 ),
                                 decoration: InputDecoration(
                                   labelText: '새 비밀번호',
-                                  labelStyle: const TextStyle(
-                                    fontFamily: 'NotoSans',
+                                  labelStyle: ResponsiveUtils.getTextStyle(
+                                    context,
                                     fontWeight: FontWeight.w500,
                                     fontSize: 15,
                                     color: Color(0xFF222222),
                                   ),
                                   hintText: '6자 이상 입력',
-                                  hintStyle:
-                                      const TextStyle(color: Color(0xFFB0B8C1)),
+                                  hintStyle: ResponsiveUtils.getTextStyle(context, fontSize: 14, color: Color(0xFFB0B8C1)),
                                   filled: true,
                                   fillColor: const Color(0xFFF8F9FA),
                                   border: OutlineInputBorder(
@@ -251,21 +250,21 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                               const SizedBox(height: 14),
                               TextField(
                                 controller: _confirmPasswordController,
-                                style: const TextStyle(
-                                  fontFamily: 'NotoSans',
+                                style: ResponsiveUtils.getTextStyle(
+                                  context,
                                   fontSize: 16,
                                 ),
                                 decoration: InputDecoration(
                                   labelText: '비밀번호 확인',
-                                  labelStyle: const TextStyle(
-                                    fontFamily: 'NotoSans',
+                                  labelStyle: ResponsiveUtils.getTextStyle(
+                                    context,
                                     fontWeight: FontWeight.w500,
                                     fontSize: 15,
                                     color: Color(0xFF222222),
                                   ),
                                   hintText: '비밀번호 재입력',
                                   hintStyle:
-                                      const TextStyle(color: Color(0xFFB0B8C1)),
+                                      ResponsiveUtils.getTextStyle(context, fontSize: 14, color: Color(0xFFB0B8C1)),
                                   filled: true,
                                   fillColor: const Color(0xFFF8F9FA),
                                   border: OutlineInputBorder(

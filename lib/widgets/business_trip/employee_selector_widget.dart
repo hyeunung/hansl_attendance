@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
+import '../../utils/responsive_utils.dart';
 
 /// 직원 선택 위젯
 /// 출장자 선택 및 동행자 추가를 위한 재사용 가능한 컴포넌트
@@ -36,27 +37,27 @@ class EmployeeSelectorWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(),
+          _buildHeader(context),
           const SizedBox(height: 10),
           _buildEmployeeSelector(context),
-          if (selectedCompanions.isNotEmpty) _buildCompanionChips(),
+          if (selectedCompanions.isNotEmpty) _buildCompanionChips(context),
           const SizedBox(height: 8),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Row(
+        Row(
           children: [
             Text(
               '출장자(신청자)',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+              style: ResponsiveUtils.getTextStyle(context, fontWeight: FontWeight.bold, fontSize: 17),
             ),
-            Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
+            Text('  *', style: ResponsiveUtils.getTextStyle(context, color: Colors.red, fontSize: 17)),
           ],
         ),
         if (onSelectCompanions != null)
@@ -74,7 +75,8 @@ class EmployeeSelectorWidget extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text(
                     '추가 인원',
-                    style: TextStyle(
+                    style: ResponsiveUtils.getTextStyle(
+                      context,
                       color: AppColors.primary,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -130,7 +132,8 @@ class EmployeeSelectorWidget extends StatelessWidget {
                           selectedEmployee!.isNotEmpty
                               ? selectedEmployee!.substring(0, 1)
                               : '?',
-                          style: const TextStyle(
+                          style: ResponsiveUtils.getTextStyle(
+                            context,
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
@@ -141,7 +144,8 @@ class EmployeeSelectorWidget extends StatelessWidget {
                   Expanded(
                     child: Text(
                       selectedEmployee ?? '출장자를 선택하세요',
-                      style: TextStyle(
+                      style: ResponsiveUtils.getTextStyle(
+                        context,
                         fontSize: 16,
                         color: selectedEmployee != null
                             ? AppColors.primary
@@ -164,7 +168,7 @@ class EmployeeSelectorWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildCompanionChips() {
+  Widget _buildCompanionChips(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: 12),
       child: Column(
@@ -172,7 +176,8 @@ class EmployeeSelectorWidget extends StatelessWidget {
         children: [
           Text(
             '동행자 (${selectedCompanions.length}명)',
-            style: TextStyle(
+            style: ResponsiveUtils.getTextStyle(
+              context,
               fontSize: 13,
               color: Colors.grey[600],
               fontWeight: FontWeight.w500,
@@ -184,7 +189,7 @@ class EmployeeSelectorWidget extends StatelessWidget {
             runSpacing: 8,
             children: selectedCompanions.map((companion) {
               return Chip(
-                label: Text(companion, style: const TextStyle(fontSize: 14)),
+                label: Text(companion, style: ResponsiveUtils.getTextStyle(context, fontSize: 14)),
                 backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                 deleteIcon: const Icon(Icons.close, size: 18),
                 deleteIconColor: AppColors.primary,
@@ -289,7 +294,7 @@ class _EmployeeSelectionDialogState extends State<EmployeeSelectionDialog> {
         const SizedBox(width: 8),
         Text(
           widget.title,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          style: ResponsiveUtils.getTextStyle(context, fontWeight: FontWeight.bold, fontSize: 20),
         ),
         if (widget.isMultiSelect && _tempMultiSelection.isNotEmpty)
           Container(
@@ -301,7 +306,8 @@ class _EmployeeSelectionDialogState extends State<EmployeeSelectionDialog> {
             ),
             child: Text(
               '${_tempMultiSelection.length}',
-              style: const TextStyle(
+              style: ResponsiveUtils.getTextStyle(
+                context,
                 color: Colors.white,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -351,7 +357,7 @@ class _EmployeeSelectionDialogState extends State<EmployeeSelectionDialog> {
             const SizedBox(height: 8),
             Text(
               '검색 결과가 없습니다',
-              style: TextStyle(color: Colors.grey[600], fontSize: 16),
+              style: ResponsiveUtils.getTextStyle(context, color: Colors.grey[600], fontSize: 16),
             ),
           ],
         ),
@@ -410,7 +416,8 @@ class _EmployeeSelectionDialogState extends State<EmployeeSelectionDialog> {
                   : const Color(0xFFE0E0E0),
               child: Text(
                 name.isNotEmpty ? name.substring(0, 1) : '?',
-                style: const TextStyle(
+                style: ResponsiveUtils.getTextStyle(
+                  context,
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
@@ -421,7 +428,8 @@ class _EmployeeSelectionDialogState extends State<EmployeeSelectionDialog> {
             Expanded(
               child: Text(
                 name,
-                style: TextStyle(
+                style: ResponsiveUtils.getTextStyle(
+                  context,
                   fontWeight: FontWeight.bold,
                   color: isSelected ? AppColors.primary : Colors.black87,
                   fontSize: 16,

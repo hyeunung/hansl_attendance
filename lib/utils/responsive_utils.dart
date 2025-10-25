@@ -53,8 +53,8 @@ class ResponsiveUtils {
     double? letterSpacing,
     double? height,
   }) {
-    // FontProvider에서 글꼴 크기 배율 가져오기
-    final fontProvider = Provider.of<FontProvider>(context, listen: false);
+    // FontProvider에서 폰트 크기 배율 가져오기 (listen: true로 변경하여 상태 변경 감지)
+    final fontProvider = Provider.of<FontProvider>(context, listen: true);
     final fontScale = fontProvider.fontScale;
 
     return TextStyle(

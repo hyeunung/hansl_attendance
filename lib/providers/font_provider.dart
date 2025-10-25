@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FontProvider extends ChangeNotifier {
-  String _fontSize = '보통';
+  String _fontSize = '0% (기본)';
 
   FontProvider() {
     loadFontSize();
@@ -12,18 +12,18 @@ class FontProvider extends ChangeNotifier {
 
   double get fontScale {
     switch (_fontSize) {
-      case '작게':
-        return 0.85;
-      case '크게':
+      case '+15%':
         return 1.15;
+      case '+30%':
+        return 1.3;
       default:
-        return 1.0; // 보통
+        return 1.0; // 0% (기본)
     }
   }
 
   Future<void> loadFontSize() async {
     final prefs = await SharedPreferences.getInstance();
-    _fontSize = prefs.getString('font_size') ?? '보통';
+    _fontSize = prefs.getString('font_size') ?? '0% (기본)';
     notifyListeners();
   }
 

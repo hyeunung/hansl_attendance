@@ -536,8 +536,8 @@ _screens = [
             type: BottomNavigationBarType.fixed,
             selectedFontSize: 14,
             unselectedFontSize: 14,
-            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
-            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+            selectedLabelStyle: ResponsiveUtils.getTextStyle(context, fontSize: 12, fontWeight: FontWeight.w600),
+            unselectedLabelStyle: ResponsiveUtils.getTextStyle(context, fontSize: 12, fontWeight: FontWeight.w600),
             selectedIconTheme: IconThemeData(
               size: ResponsiveUtils.iconSize(context, 30),
             ),

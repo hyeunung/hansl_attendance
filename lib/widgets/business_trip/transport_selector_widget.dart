@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
+import '../../utils/responsive_utils.dart';
 
 /// 교통수단 선택 위젯
 /// 출장 시 이용할 교통수단을 선택하는 재사용 가능한 컴포넌트
@@ -71,29 +72,29 @@ class TransportSelectorWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(),
+          _buildHeader(context),
           const SizedBox(height: 10),
-          _buildDropdown(),
-          if (selectedTransport != null) _buildSelectedInfo(),
+          _buildDropdown(context),
+          if (selectedTransport != null) _buildSelectedInfo(context),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Row(
       children: [
-        const Text(
+        Text(
           '교통',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+          style: ResponsiveUtils.getTextStyle(context, fontWeight: FontWeight.bold, fontSize: 17),
         ),
         if (isRequired)
-          const Text('  *', style: TextStyle(color: Colors.red, fontSize: 17)),
+          Text('  *', style: ResponsiveUtils.getTextStyle(context, color: Colors.red, fontSize: 17)),
       ],
     );
   }
 
-  Widget _buildDropdown() {
+  Widget _buildDropdown(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFF4F5F7),
@@ -113,7 +114,7 @@ class TransportSelectorWidget extends StatelessWidget {
             children: [
               Icon(Icons.commute, color: Colors.grey[600], size: 20),
               const SizedBox(width: 8),
-              const Text('교통수단을 선택하세요', style: TextStyle(fontSize: 15)),
+              Text('교통수단을 선택하세요', style: ResponsiveUtils.getTextStyle(context, fontSize: 15)),
             ],
           ),
           isExpanded: true,
@@ -144,7 +145,8 @@ class TransportSelectorWidget extends StatelessWidget {
                   const SizedBox(width: 12),
                   Text(
                     transport,
-                    style: const TextStyle(
+                    style: ResponsiveUtils.getTextStyle(
+                      context,
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -160,9 +162,10 @@ class TransportSelectorWidget extends StatelessWidget {
                         color: Colors.green.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text(
+                      child: Text(
                         '회사차',
-                        style: TextStyle(
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
                           fontSize: 11,
                           color: Colors.green,
                           fontWeight: FontWeight.bold,
@@ -179,7 +182,7 @@ class TransportSelectorWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildSelectedInfo() {
+  Widget _buildSelectedInfo(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: 12),
       child: Container(
@@ -218,7 +221,8 @@ class TransportSelectorWidget extends StatelessWidget {
                 children: [
                   Text(
                     selectedTransport!,
-                    style: TextStyle(
+                    style: ResponsiveUtils.getTextStyle(
+                      context,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: _getTransportColor(selectedTransport!),
@@ -227,7 +231,7 @@ class TransportSelectorWidget extends StatelessWidget {
                   if (_getTransportDescription(selectedTransport!) != null)
                     Text(
                       _getTransportDescription(selectedTransport!)!,
-                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      style: ResponsiveUtils.getTextStyle(context, fontSize: 13, color: Colors.grey[600]),
                     ),
                 ],
               ),
@@ -292,9 +296,9 @@ class TransportSelectionDialog extends StatelessWidget {
               children: [
                 Icon(Icons.commute, color: AppColors.primary),
                 const SizedBox(width: 8),
-                const Text(
+                Text(
                   '교통수단 선택',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                  style: ResponsiveUtils.getTextStyle(context, fontWeight: FontWeight.bold, fontSize: 20),
                 ),
               ],
             ),
@@ -339,7 +343,8 @@ class TransportSelectionDialog extends StatelessWidget {
                             children: [
                               Text(
                                 transport,
-                                style: TextStyle(
+                                style: ResponsiveUtils.getTextStyle(
+                                  context,
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: isSelected ? color : Colors.black87,
@@ -348,7 +353,8 @@ class TransportSelectionDialog extends StatelessWidget {
                               if (_getTransportDescription(transport) != null)
                                 Text(
                                   _getTransportDescription(transport)!,
-                                  style: TextStyle(
+                                  style: ResponsiveUtils.getTextStyle(
+                                    context,
                                     fontSize: 13,
                                     color: Colors.grey[600],
                                   ),
@@ -369,7 +375,7 @@ class TransportSelectionDialog extends StatelessWidget {
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('취소'),
+                  child: Text('취소', style: ResponsiveUtils.getTextStyle(context, fontSize: 14)),
                 ),
               ],
             ),

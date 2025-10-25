@@ -30,7 +30,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-  String _fontSize = '보통';
+  String _fontSize = '0% (기본)';
   String _appVersion = '로딩 중...';
   final InquiryService _inquiryService = InquiryService();
   int _inquiryBadgeCount = 0;
@@ -43,7 +43,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     _loadAppVersion();
     _loadInquiryBadgeCount();
     _setupRealtimeSubscription();
-    // 글꼴 크기 초기화
+    // 폰트 크기 초기화
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final fontProvider = Provider.of<FontProvider>(context, listen: false);
       setState(() {
@@ -108,13 +108,13 @@ class _SettingsScreenState extends State<SettingsScreen>
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('글꼴 크기'),
+          title: const Text('폰트 크기'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildFontSizeOption('작게'),
-              _buildFontSizeOption('보통'),
-              _buildFontSizeOption('크게'),
+              _buildFontSizeOption('0% (기본)'),
+              _buildFontSizeOption('+15%'),
+              _buildFontSizeOption('+30%'),
             ],
           ),
           actions: [
@@ -164,7 +164,8 @@ class _SettingsScreenState extends State<SettingsScreen>
             const SizedBox(width: 8),
             Text(
               size,
-              style: TextStyle(
+              style: ResponsiveUtils.getTextStyle(
+                context,
                 fontSize: _getFontSizePreview(size),
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
@@ -177,12 +178,12 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   double _getFontSizePreview(String size) {
     switch (size) {
-      case '작게':
-        return 14.0;
-      case '크게':
-        return 20.0;
+      case '+15%':
+        return 19.0;
+      case '+30%':
+        return 22.0;
       default:
-        return 17.0; // 보통
+        return 17.0; // 0% (기본)
     }
   }
 
@@ -201,18 +202,23 @@ class _SettingsScreenState extends State<SettingsScreen>
       context: context,
       builder: (context) {
         return CupertinoAlertDialog(
-          title: const Text(
+          title: Text(
             '계정 삭제',
-            style: TextStyle(
+            style: ResponsiveUtils.getTextStyle(
+              context,
               fontWeight: FontWeight.bold,
               color: Color(0xFFD32F2F),
+              fontSize: 18,
             ),
           ),
-          content: const Padding(
-            padding: EdgeInsets.only(top: 12),
+          content: Padding(
+            padding: const EdgeInsets.only(top: 12),
             child: Text(
               '계정을 삭제하면 모든 데이터가 영구적으로 삭제됩니다.\n\n• 출퇴근 기록\n• 연차 신청 내역\n• 개인 정보\n\n이 작업은 되돌릴 수 없습니다.',
-              style: TextStyle(fontSize: 14),
+              style: ResponsiveUtils.getTextStyle(
+                context,
+                fontSize: 14,
+              ),
             ),
           ),
           actions: [
@@ -334,8 +340,20 @@ class _SettingsScreenState extends State<SettingsScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context); // AutomaticKeepAliveClientMixin 필수
-    final userProvider = Provider.of<UserProvider>(context);
-    final leaveProvider = Provider.of<LeaveProvider>(context);
+    
+    return Consumer<FontProvider>(
+      builder: (context, fontProvider, _) {
+        // FontProvider 상태가 변경되면 _fontSize 동기화
+        if (_fontSize != fontProvider.fontSize) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            setState(() {
+              _fontSize = fontProvider.fontSize;
+            });
+          });
+        }
+        
+        final userProvider = Provider.of<UserProvider>(context);
+        final leaveProvider = Provider.of<LeaveProvider>(context);
 
     // Debug code removed
 
@@ -602,13 +620,16 @@ class _SettingsScreenState extends State<SettingsScreen>
                                           2,
                                         ),
                                       ),
-                                      Text(
-                                        '총 연차',
-                                        style: ResponsiveUtils.getTextStyle(
-                                          context,
-                                          fontSize: 19,
-                                          fontWeight: FontWeight.w600,
-                                          color: const Color(0xFF8E8E93),
+                                      FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          '총 연차',
+                                          style: ResponsiveUtils.getTextStyle(
+                                            context,
+                                            fontSize: 19,
+                                            fontWeight: FontWeight.w600,
+                                            color: const Color(0xFF8E8E93),
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -656,13 +677,16 @@ class _SettingsScreenState extends State<SettingsScreen>
                                           2,
                                         ),
                                       ),
-                                      Text(
-                                        '소모 연차',
-                                        style: ResponsiveUtils.getTextStyle(
-                                          context,
-                                          fontSize: 19,
-                                          fontWeight: FontWeight.w600,
-                                          color: const Color(0xFF8E8E93),
+                                      FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          '소모 연차',
+                                          style: ResponsiveUtils.getTextStyle(
+                                            context,
+                                            fontSize: 19,
+                                            fontWeight: FontWeight.w600,
+                                            color: const Color(0xFF8E8E93),
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -710,13 +734,16 @@ class _SettingsScreenState extends State<SettingsScreen>
                                           2,
                                         ),
                                       ),
-                                      Text(
-                                        '잔여',
-                                        style: ResponsiveUtils.getTextStyle(
-                                          context,
-                                          fontSize: 19,
-                                          fontWeight: FontWeight.w600,
-                                          color: const Color(0xFF8E8E93),
+                                      FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          '잔여',
+                                          style: ResponsiveUtils.getTextStyle(
+                                            context,
+                                            fontSize: 19,
+                                            fontWeight: FontWeight.w600,
+                                            color: const Color(0xFF8E8E93),
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -731,7 +758,7 @@ class _SettingsScreenState extends State<SettingsScreen>
 
                     SizedBox(height: ResponsiveUtils.spacing(context, 20)),
 
-                    // 앱 설정 섹션 (글꼴 크기, 문의하기 통합)
+                    // 앱 설정 섹션 (폰트 크기, 문의하기 통합)
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -783,7 +810,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                             ),
                           ),
                           
-                          // 글꼴 크기
+                          // 폰트 크기
                           Material(
                             color: Colors.transparent,
                             child: InkWell(
@@ -827,7 +854,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            '글꼴 크기',
+                                            '폰트 크기',
                                             style: ResponsiveUtils.getTextStyle(
                                               context,
                                               fontSize: 16,
@@ -950,9 +977,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                                         child: Center(
                                           child: Text(
                                             _inquiryBadgeCount.toString(),
-                                            style: TextStyle(
+                                            style: ResponsiveUtils.getTextStyle(
+                                              context,
                                               color: Colors.white,
-                                              fontSize: ResponsiveUtils.fontSize(context, 12),
+                                              fontSize: 12,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
@@ -1142,6 +1170,8 @@ class _SettingsScreenState extends State<SettingsScreen>
           ],
         ),
       ),
+    );
+      },
     );
   }
 }

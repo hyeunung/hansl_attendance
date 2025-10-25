@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/responsive_utils.dart';
 
 /// 출장 날짜 칩 위젯
 /// 선택된 출장 날짜를 칩 형태로 표시
@@ -23,10 +24,10 @@ class TripDateChipsWidget extends StatelessWidget {
           color: Colors.grey.shade100,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Center(
+        child: Center(
           child: Text(
             '선택된 날짜가 없습니다',
-            style: TextStyle(color: Colors.grey, fontSize: 14),
+            style: ResponsiveUtils.getTextStyle(context, color: Colors.grey, fontSize: 14),
           ),
         ),
       );
@@ -50,7 +51,8 @@ class TripDateChipsWidget extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 '선택된 날짜 (${selectedDates.length}일)',
-                style: TextStyle(
+                style: ResponsiveUtils.getTextStyle(
+                  context,
                   fontSize: 12,
                   color: Colors.grey.shade600,
                   fontWeight: FontWeight.w500,
@@ -83,7 +85,8 @@ class TripDateChipsWidget extends StatelessWidget {
                         children: [
                           Text(
                             formattedDate,
-                            style: const TextStyle(
+                            style: ResponsiveUtils.getTextStyle(
+                              context,
                               color: AppColors.primary,
                               fontSize: 13,
                               fontWeight: FontWeight.w500,

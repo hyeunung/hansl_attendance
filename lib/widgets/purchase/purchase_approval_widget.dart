@@ -1725,9 +1725,10 @@ return;
                                               ),
                                             ),
                                             const SizedBox(height: 16),
-                                            const Text(
+                                            Text(
                                               '1차 승인 완료',
-                                              style: TextStyle(
+                                              style: ResponsiveUtils.getTextStyle(
+                                                context,
                                                 fontSize: 18,
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -1735,7 +1736,8 @@ return;
                                             const SizedBox(height: 8),
                                             Text(
                                               '발주번호: ${group.purchaseOrderNumber}',
-                                              style: TextStyle(
+                                              style: ResponsiveUtils.getTextStyle(
+                                                context,
                                                 fontSize: 14,
                                                 color: Colors.grey[600],
                                               ),
@@ -1755,9 +1757,13 @@ return;
                                                   borderRadius: BorderRadius.circular(8),
                                                 ),
                                               ),
-                                              child: const Text(
+                                              child: Text(
                                                 '확인',
-                                                style: TextStyle(color: Colors.white),
+                                                style: ResponsiveUtils.getTextStyle(
+                                                  context,
+                                                  color: Colors.white,
+                                                  fontSize: 16,
+                                                ),
                                               ),
                                             ),
                                           ],
@@ -2123,9 +2129,10 @@ return;
                                               ),
                                             ),
                                             const SizedBox(height: 16),
-                                            const Text(
+                                            Text(
                                               '최종 승인 완료',
-                                              style: TextStyle(
+                                              style: ResponsiveUtils.getTextStyle(
+                                                context,
                                                 fontSize: 18,
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -2133,7 +2140,8 @@ return;
                                             const SizedBox(height: 8),
                                             Text(
                                               '발주번호: ${group.purchaseOrderNumber}',
-                                              style: TextStyle(
+                                              style: ResponsiveUtils.getTextStyle(
+                                                context,
                                                 fontSize: 14,
                                                 color: Colors.grey[600],
                                               ),
@@ -2153,9 +2161,13 @@ return;
                                                   borderRadius: BorderRadius.circular(8),
                                                 ),
                                               ),
-                                              child: const Text(
+                                              child: Text(
                                                 '확인',
-                                                style: TextStyle(color: Colors.white),
+                                                style: ResponsiveUtils.getTextStyle(
+                                                  context,
+                                                  color: Colors.white,
+                                                  fontSize: 16,
+                                                ),
                                               ),
                                             ),
                                           ],

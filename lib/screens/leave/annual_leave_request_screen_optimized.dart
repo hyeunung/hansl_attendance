@@ -13,6 +13,7 @@ import '../../widgets/leave/leave_memo_input_widget.dart';
 import '../../widgets/leave/leave_date_chips_widget.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import '../../utils/validators/leave_validators.dart';
+import '../../utils/responsive_utils.dart';
 
 /// 성능 최적화된 연차 신청 화면
 /// - 불필요한 rebuild 방지
@@ -491,7 +492,8 @@ class _AnnualLeaveRequestScreenOptimizedState
               )
             : Text(
                 '신청하기',
-                style: TextStyle(
+                style: ResponsiveUtils.getTextStyle(
+                  context,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: _canSubmit ? Colors.white : const Color(0xFFB0B0B0),

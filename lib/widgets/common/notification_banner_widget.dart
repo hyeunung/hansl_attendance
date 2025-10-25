@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/responsive_utils.dart';
 
 /// 알림 배너 위젯
 /// 성공, 에러, 정보 메시지를 표시하는 재사용 가능한 컴포넌트
@@ -51,7 +52,8 @@ class NotificationBannerWidget extends StatelessWidget {
             child: Text(
               message!,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: ResponsiveUtils.getTextStyle(
+                context,
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
                 fontSize: 16,

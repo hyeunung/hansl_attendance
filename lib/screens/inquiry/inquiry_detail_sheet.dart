@@ -103,14 +103,15 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               '이 문의를 삭제하시겠습니까?',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              style: ResponsiveUtils.getTextStyle(context, fontSize: 16, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Text(
               '삭제된 문의는 복구할 수 없습니다.',
-              style: TextStyle(
+              style: ResponsiveUtils.getTextStyle(
+                context,
                 fontSize: 14,
                 color: Colors.grey.shade700,
                 height: 1.4,
@@ -121,11 +122,13 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
+            child: Text(
               '취소',
-              style: TextStyle(
+              style: ResponsiveUtils.getTextStyle(
+                context,
                 color: Colors.grey,
                 fontWeight: FontWeight.w600,
+                fontSize: 14,
               ),
             ),
           ),
@@ -141,9 +144,9 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: const Text(
+            child: Text(
               '삭제',
-              style: TextStyle(fontWeight: FontWeight.w600),
+              style: ResponsiveUtils.getTextStyle(context, fontWeight: FontWeight.w600, fontSize: 14),
             ),
           ),
         ],
@@ -287,9 +290,10 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         '문의 상세',
-                        style: TextStyle(
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF1C1C1E),
@@ -298,7 +302,8 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                       const SizedBox(height: 2),
                       Text(
                         dateStr,
-                        style: const TextStyle(
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
                           fontSize: 13,
                           color: Color(0xFF8E8E93),
                         ),
@@ -408,7 +413,8 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                                     const SizedBox(width: 8),
                                     Text(
                                       statusLabel,
-                                      style: TextStyle(
+                                      style: ResponsiveUtils.getTextStyle(
+                                        context,
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
                                         color: statusColor,
@@ -420,7 +426,8 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                               const Spacer(),
                               Text(
                                 '#${widget.inquiry['id']}',
-                                style: const TextStyle(
+                                style: ResponsiveUtils.getTextStyle(
+                                  context,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
                                   color: Color(0xFF8E8E93),
@@ -490,9 +497,10 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                               color: const Color(0xFF007AFF),
                             ),
                             const SizedBox(width: 8),
-                            const Text(
+                            Text(
                               '제목',
-                              style: TextStyle(
+                              style: ResponsiveUtils.getTextStyle(
+                                context,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: Color(0xFF8E8E93),
@@ -503,7 +511,8 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                         const SizedBox(height: 10),
                         Text(
                           widget.inquiry['subject'] ?? '제목 없음',
-                          style: const TextStyle(
+                          style: ResponsiveUtils.getTextStyle(
+                            context,
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF1C1C1E),
@@ -525,9 +534,10 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                               color: const Color(0xFF007AFF),
                             ),
                             const SizedBox(width: 8),
-                            const Text(
+                            Text(
                               '문의 내용',
-                              style: TextStyle(
+                              style: ResponsiveUtils.getTextStyle(
+                                context,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: Color(0xFF8E8E93),
@@ -549,7 +559,8 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                           ),
                           child: Text(
                             widget.inquiry['message'] ?? '내용 없음',
-                            style: const TextStyle(
+                            style: ResponsiveUtils.getTextStyle(
+                              context,
                               fontSize: 15,
                               color: Color(0xFF1C1C1E),
                               height: 1.5,
@@ -583,9 +594,10 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                                 color: const Color(0xFF007AFF),
                               ),
                               const SizedBox(width: 8),
-                              const Text(
+                              Text(
                                 '답변 작성',
-                                style: TextStyle(
+                                style: ResponsiveUtils.getTextStyle(
+                                  context,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: Color(0xFF007AFF),
@@ -606,16 +618,17 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
-                                      children: const [
-                                        Icon(
+                                      children: [
+                                        const Icon(
                                           Icons.keyboard_hide_rounded,
                                           size: 16,
                                           color: Color(0xFF007AFF),
                                         ),
-                                        SizedBox(width: 4),
+                                        const SizedBox(width: 4),
                                         Text(
                                           '키보드 닫기',
-                                          style: TextStyle(
+                                          style: ResponsiveUtils.getTextStyle(
+                                            context,
                                             fontSize: 12,
                                             fontWeight: FontWeight.w600,
                                             color: Color(0xFF007AFF),
@@ -632,13 +645,15 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                             controller: _resolutionController,
                             maxLines: 5,
                             textInputAction: TextInputAction.done,  // Done 버튼 추가
-                            style: const TextStyle(
+                            style: ResponsiveUtils.getTextStyle(
+                              context,
                               fontSize: 15,
                               color: Color(0xFF1C1C1E),
                             ),
                             decoration: InputDecoration(
                               hintText: '답변을 입력하세요',
-                              hintStyle: const TextStyle(
+                              hintStyle: ResponsiveUtils.getTextStyle(
+                                context,
                                 fontSize: 15,
                                 color: Color(0xFFAEAEB2),
                               ),
@@ -723,9 +738,10 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text(
+                                      Text(
                                         '관리자 답변',
-                                        style: TextStyle(
+                                        style: ResponsiveUtils.getTextStyle(
+                                          context,
                                           fontSize: 15,
                                           fontWeight: FontWeight.w700,
                                           color: Color(0xFF007AFF),
@@ -735,7 +751,8 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                                         const SizedBox(height: 2),
                                         Text(
                                           '담당자: ${widget.inquiry['handled_by']}',
-                                          style: const TextStyle(
+                                          style: ResponsiveUtils.getTextStyle(
+                                            context,
                                             fontSize: 12,
                                             color: Color(0xFF8E8E93),
                                           ),
@@ -759,7 +776,8 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                             padding: const EdgeInsets.all(20),
                             child: Text(
                               widget.inquiry['resolution_note'],
-                              style: const TextStyle(
+                              style: ResponsiveUtils.getTextStyle(
+                                context,
                                 fontSize: 15,
                                 color: Color(0xFF1C1C1E),
                                 height: 1.5,
@@ -846,7 +864,8 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                                 const SizedBox(width: 8),
                                 Text(
                                   '답변 완료',
-                                  style: TextStyle(
+                                  style: ResponsiveUtils.getTextStyle(
+                                    context,
                                     fontSize: 17,
                                     fontWeight: FontWeight.w700,
                                     color: _resolutionController.text.trim().isEmpty
@@ -887,7 +906,8 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
               const SizedBox(width: 10),
               Text(
                 label,
-                style: const TextStyle(
+                style: ResponsiveUtils.getTextStyle(
+                  context,
                   fontSize: 13,
                   color: Color(0xFF8E8E93),
                 ),
@@ -896,7 +916,8 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
               Flexible(
                 child: Text(
                   value,
-                  style: const TextStyle(
+                  style: ResponsiveUtils.getTextStyle(
+                    context,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF1C1C1E),

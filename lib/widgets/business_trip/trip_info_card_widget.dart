@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/responsive_utils.dart';
 
 /// 출장 정보 카드 위젯
 /// 이번 달/올해 출장 현황을 표시하는 위젯
@@ -35,17 +36,17 @@ class TripInfoCardWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(),
+          _buildHeader(context),
           const SizedBox(height: 20),
-          _buildMainInfo(),
+          _buildMainInfo(context),
           const SizedBox(height: 16),
-          _buildYearInfo(),
+          _buildYearInfo(context),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -60,7 +61,8 @@ class TripInfoCardWidget extends StatelessWidget {
               ),
               child: Text(
                 '${_getMonthName(currentMonth)} 출장',
-                style: const TextStyle(
+                style: ResponsiveUtils.getTextStyle(
+                  context,
                   color: Colors.white,
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -69,12 +71,12 @@ class TripInfoCardWidget extends StatelessWidget {
             ),
           ],
         ),
-        _buildTripIndicator(),
+        _buildTripIndicator(context),
       ],
     );
   }
 
-  Widget _buildTripIndicator() {
+  Widget _buildTripIndicator(BuildContext context) {
     final frequency = _getTripFrequency();
 
     return Container(
@@ -89,7 +91,8 @@ class TripInfoCardWidget extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             frequency,
-            style: const TextStyle(
+            style: ResponsiveUtils.getTextStyle(
+              context,
               color: Colors.white,
               fontSize: 12,
               fontWeight: FontWeight.bold,
@@ -137,21 +140,22 @@ class TripInfoCardWidget extends StatelessWidget {
     }
   }
 
-  Widget _buildMainInfo() {
+  Widget _buildMainInfo(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.end,
-      children: [_buildMonthProgress(), _buildMainCount()],
+      children: [_buildMonthProgress(context), _buildMainCount(context)],
     );
   }
 
-  Widget _buildMonthProgress() {
+  Widget _buildMonthProgress(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           '월간 진행률',
-          style: TextStyle(
+          style: ResponsiveUtils.getTextStyle(
+            context,
             color: Colors.white.withValues(alpha: 0.8),
             fontSize: 12,
           ),
@@ -178,7 +182,8 @@ class TripInfoCardWidget extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           '${(monthTrips / 10 * 100).toInt()}%',
-          style: TextStyle(
+          style: ResponsiveUtils.getTextStyle(
+            context,
             color: Colors.white.withValues(alpha: 0.7),
             fontSize: 11,
           ),
@@ -187,7 +192,7 @@ class TripInfoCardWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildMainCount() {
+  Widget _buildMainCount(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
@@ -197,16 +202,18 @@ class TripInfoCardWidget extends StatelessWidget {
           children: [
             Text(
               monthTrips.toString(),
-              style: const TextStyle(
+              style: ResponsiveUtils.getTextStyle(
+                context,
                 fontWeight: FontWeight.w900,
                 fontSize: 48,
                 color: Colors.white,
                 height: 1,
               ),
             ),
-            const Text(
+            Text(
               '회',
-              style: TextStyle(
+              style: ResponsiveUtils.getTextStyle(
+                context,
                 fontSize: 24,
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -216,7 +223,8 @@ class TripInfoCardWidget extends StatelessWidget {
         ),
         Text(
           '이번 달 출장',
-          style: TextStyle(
+          style: ResponsiveUtils.getTextStyle(
+            context,
             fontSize: 14,
             color: Colors.white.withValues(alpha: 0.9),
             fontWeight: FontWeight.w500,
@@ -226,7 +234,7 @@ class TripInfoCardWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildYearInfo() {
+  Widget _buildYearInfo(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -255,7 +263,8 @@ class TripInfoCardWidget extends StatelessWidget {
               children: [
                 Text(
                   '$currentYear년 누적',
-                  style: TextStyle(
+                  style: ResponsiveUtils.getTextStyle(
+                    context,
                     color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 13,
                   ),
@@ -265,26 +274,27 @@ class TripInfoCardWidget extends StatelessWidget {
                   children: [
                     Text(
                       '$yearTrips회',
-                      style: const TextStyle(
+                      style: ResponsiveUtils.getTextStyle(
+                        context,
                         color: Colors.white,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(width: 8),
-                    _buildYearTrend(),
+                    _buildYearTrend(context),
                   ],
                 ),
               ],
             ),
           ),
-          _buildYearStats(),
+          _buildYearStats(context),
         ],
       ),
     );
   }
 
-  Widget _buildYearTrend() {
+  Widget _buildYearTrend(BuildContext context) {
     final avgMonthly = yearTrips / currentMonth;
     final trend = avgMonthly > 3
         ? '상승'
@@ -314,7 +324,8 @@ class TripInfoCardWidget extends StatelessWidget {
           const SizedBox(width: 2),
           Text(
             trend,
-            style: const TextStyle(
+            style: ResponsiveUtils.getTextStyle(
+              context,
               color: Colors.white,
               fontSize: 11,
               fontWeight: FontWeight.bold,
@@ -325,7 +336,7 @@ class TripInfoCardWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildYearStats() {
+  Widget _buildYearStats(BuildContext context) {
     final avgMonthly = yearTrips / currentMonth;
 
     return Container(
@@ -338,14 +349,16 @@ class TripInfoCardWidget extends StatelessWidget {
         children: [
           Text(
             '월평균',
-            style: TextStyle(
+            style: ResponsiveUtils.getTextStyle(
+              context,
               color: Colors.white.withValues(alpha: 0.8),
               fontSize: 11,
             ),
           ),
           Text(
             avgMonthly.toStringAsFixed(1),
-            style: const TextStyle(
+            style: ResponsiveUtils.getTextStyle(
+              context,
               color: Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.bold,
