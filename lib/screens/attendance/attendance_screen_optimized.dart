@@ -39,6 +39,7 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
         UIOptimizationMixin {
   String? _bannerMessage;
   Color _bannerColor = const Color(0xFF357AE8);
+  bool _isNonWorkingDay = false;
 
   // UI update frequency optimization
   // Android needs longer intervals to prevent flickering
@@ -274,16 +275,24 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         // 출근 현황 통계 - 모든 직원에게 표시
-                        const AttendanceStatisticsWidget(),
+                        AttendanceStatisticsWidget(
+                          onWorkingDayStatusChanged: (isNonWorkingDay) {
+                            setState(() {
+                              _isNonWorkingDay = isNonWorkingDay;
+                            });
+                          },
+                        ),
 
                         const PersonalLateStatistics(),
 
-                        // 출근/퇴근 버튼
-                        AttendanceActionButtons(onShowBanner: _showBanner),
-                        SizedBox(height: ResponsiveUtils.spacing(context, 25)),
+                        // 출근/퇴근 버튼 - 휴일/공휴일에 숨김
+                        if (!_isNonWorkingDay) ...[
+                          AttendanceActionButtons(onShowBanner: _showBanner),
+                          SizedBox(height: ResponsiveUtils.spacing(context, 25)),
 
-                        // 오늘의 근무 요약 카드
-                        const AttendanceSummaryCard(),
+                          // 오늘의 근무 요약 카드 - 휴일/공휴일에 숨김
+                          const AttendanceSummaryCard(),
+                        ],
                         SizedBox(height: ResponsiveUtils.spacing(context, 25)),
 
                         // 최근 기록 카드
