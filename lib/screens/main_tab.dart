@@ -4,6 +4,7 @@ import 'attendance/attendance_screen_router.dart';
 import 'leave/leave_status_screen.dart';
 import 'approval/approval_screen.dart';
 // import 'purchase/purchase_management_screen.dart'; // 제거됨
+import 'receipts/receipts_screen.dart';
 import 'calendar/calendar_screen.dart';
 import 'settings/settings_screen.dart';
 import '../theme/app_colors.dart';
@@ -55,7 +56,7 @@ class MainTab extends StatefulWidget {
     this.approvalSubTab,
   }) : initialIndex = (initialIndex < 0
            ? 0
-           : (initialIndex > 4 ? 0 : initialIndex));
+           : (initialIndex > 5 ? 0 : initialIndex));
 
   @override
   State<MainTab> createState() => _MainTabState();
@@ -322,14 +323,26 @@ final List<dynamic> attendanceRoles =
     
     // lead buyer 권한 확인
     final isLeadBuyer = UserRoleHelper.isPureLeadBuyer(purchaseRoles);
+    
+    // app_admin 권한 확인 (영수증 탭용)
+    final isAppAdmin = UserRoleHelper.isAppAdmin(purchaseRoles);
 
     // 디버깅 정보 출력
     // Debug code removed
 
     setState(() {
-      if (isLeadBuyer && !showApprovalTab) {
-        // Debug print removed
-// lead buyer 권한만 있고 승인권한이 없는 경우
+      if (isAppAdmin) {
+        // app_admin: 모든 탭 표시 (영수증 탭 포함)
+        _screens = [
+          const AttendanceScreenRouter(), // 출석
+          const LeaveStatusScreen(), // 연차/출장신청
+          showApprovalTab ? ApprovalScreen(initialMainTab: widget.approvalSubTab) : const ApprovalScreen(), // 승인관리
+          const ReceiptsScreen(), // 영수증 관리
+          const CalendarScreen(), // 달력
+          const SettingsScreen(), // 설정
+        ];
+      } else if (isLeadBuyer && !showApprovalTab) {
+        // lead buyer 권한만 있고 승인권한이 없는 경우 (영수증 탭 제외)
         _screens = [
           const AttendanceScreenRouter(), // 출석
           const LeaveStatusScreen(), // 연차/출장신청
@@ -338,8 +351,8 @@ final List<dynamic> attendanceRoles =
           const SettingsScreen(), // 설정
         ];
       } else if (showApprovalTab) {
-        // Debug print removed
-_screens = [
+        // 승인권한이 있는 경우 (영수증 탭 제외)
+        _screens = [
           const AttendanceScreenRouter(), // 출석
           const LeaveStatusScreen(), // 연차/출장신청
           ApprovalScreen(initialMainTab: widget.approvalSubTab), // 승인관리 (입고현황 포함)
@@ -347,31 +360,23 @@ _screens = [
           const SettingsScreen(), // 설정
         ];
       } else {
-        // Debug print removed
-// 일반 사용자도 ApprovalScreen을 사용하지만 입고대기 탭만 표시
+        // 일반 사용자 (영수증 탭 제외)
         _screens = [
-          const AttendanceScreenRouter(), // 출속
+          const AttendanceScreenRouter(), // 출석
           const LeaveStatusScreen(), // 연차/출장신청
           const ApprovalScreen(), // 입고현황 (일반 직원은 입고대기 탭만 표시)
           const CalendarScreen(), // 달력
           const SettingsScreen(), // 설정
         ];
 
-        // 권한이 없으면 인덱스 조정
-        if (widget.initialIndex == 2) {
-          // Debug print removed
-// 승인 탭을 요청했지만 권한이 없으면 홈으로
-          _currentIndex = 0;
-        } else if (widget.initialIndex > 2) {
-          _currentIndex = widget.initialIndex - 1;
-        } else {
-          _currentIndex = widget.initialIndex;
-        }
+      }
+      
+      // 현재 인덱스 설정
+      _currentIndex = widget.initialIndex;
 
-        // 범위 체크
-        if (_currentIndex >= _screens!.length) {
-          _currentIndex = 0;
-        }
+      // 범위 체크
+      if (_currentIndex >= _screens!.length) {
+        _currentIndex = 0;
       }
       
       // 초기화 완료
@@ -412,6 +417,9 @@ _screens = [
     
     // lead buyer 권한 확인
     final isLeadBuyer = UserRoleHelper.isPureLeadBuyer(purchaseRoles);
+    
+    // app_admin 권한 확인 (영수증 탭용)
+    final isAppAdmin = UserRoleHelper.isAppAdmin(purchaseRoles);
 
     final List<BottomNavigationBarItem> items = [];
 
@@ -443,6 +451,7 @@ _screens = [
       ),
     );
 
+    // 3번째 탭: 승인관리 또는 구매관리
     if (isLeadBuyer) {
       // lead buyer는 구매/입고관리 탭
       items.add(
@@ -450,7 +459,7 @@ _screens = [
           icon: Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Icon(
-              Icons.shopping_cart,
+              Icons.check_circle,
               color: _currentIndex == 2 ? const Color(0xFF9C27B0) : Colors.grey,
             ),
           ),
@@ -463,8 +472,8 @@ _screens = [
           icon: Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Icon(
-              showApprovalTab ? Icons.check_circle : Icons.inventory_2,
-              color: _currentIndex == 2 ? (showApprovalTab ? const Color(0xFF34C759) : const Color(0xFF007AFF)) : Colors.grey,
+              Icons.check_circle,
+              color: _currentIndex == 2 ? const Color(0xFF34C759) : Colors.grey,
             ),
           ),
           label: '',
@@ -472,35 +481,87 @@ _screens = [
       );
     }
 
-    items.add(
-      BottomNavigationBarItem(
-        icon: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Icon(
-            Icons.calendar_today,
-            color: _currentIndex == 3
-                ? const Color(0xFFFF3B30)
-                : Colors.grey,
+    // app_admin만 영수증 탭 표시
+    if (isAppAdmin) {
+      // 4번째 탭: 영수증 관리 (app_admin 전용)
+      items.add(
+        BottomNavigationBarItem(
+          icon: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Icon(
+              Icons.receipt_long,
+              color: _currentIndex == 3 ? const Color(0xFFFF9500) : Colors.grey,
+            ),
           ),
+          label: '',
         ),
-        label: '',
-      ),
-    );
+      );
+      
+      // 5번째 탭: 달력
+      items.add(
+        BottomNavigationBarItem(
+          icon: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Icon(
+              Icons.calendar_today,
+              color: _currentIndex == 4
+                  ? const Color(0xFFFF3B30)
+                  : Colors.grey,
+            ),
+          ),
+          label: '',
+        ),
+      );
 
-    items.add(
-      BottomNavigationBarItem(
-        icon: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Icon(
-            Icons.settings,
-            color: _currentIndex == 4
-                ? const Color(0xFF8E8E93)
-                : Colors.grey,
+      // 6번째 탭: 설정
+      items.add(
+        BottomNavigationBarItem(
+          icon: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Icon(
+              Icons.settings,
+              color: _currentIndex == 5
+                  ? const Color(0xFF8E8E93)
+                  : Colors.grey,
+            ),
           ),
+          label: '',
         ),
-        label: '',
-      ),
-    );
+      );
+    } else {
+      // 일반 사용자: 영수증 탭 제외 (5개 탭)
+      // 4번째 탭: 달력
+      items.add(
+        BottomNavigationBarItem(
+          icon: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Icon(
+              Icons.calendar_today,
+              color: _currentIndex == 3
+                  ? const Color(0xFFFF3B30)
+                  : Colors.grey,
+            ),
+          ),
+          label: '',
+        ),
+      );
+
+      // 5번째 탭: 설정
+      items.add(
+        BottomNavigationBarItem(
+          icon: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Icon(
+              Icons.settings,
+              color: _currentIndex == 4
+                  ? const Color(0xFF8E8E93)
+                  : Colors.grey,
+            ),
+          ),
+          label: '',
+        ),
+      );
+    }
 
     return Scaffold(
       body: PageView(
