@@ -324,15 +324,17 @@ final List<dynamic> attendanceRoles =
     // lead buyer 권한 확인
     final isLeadBuyer = UserRoleHelper.isPureLeadBuyer(purchaseRoles);
     
-    // app_admin 권한 확인 (영수증 탭용)
-    final isAppAdmin = UserRoleHelper.isAppAdmin(purchaseRoles);
+    // 영수증 탭 접근 권한 확인 (app_admin, hr, lead_buyer)
+    final canAccessReceipts = UserRoleHelper.isAppAdmin(purchaseRoles) ||
+                              purchaseRoles.contains('hr') ||
+                              UserRoleHelper.isLeadBuyer(purchaseRoles);
 
     // 디버깅 정보 출력
     // Debug code removed
 
     setState(() {
-      if (isAppAdmin) {
-        // app_admin: 모든 탭 표시 (영수증 탭 포함)
+      if (canAccessReceipts) {
+        // 영수증 탭 접근 권한 있는 사용자: 모든 탭 표시 (영수증 탭 포함)
         _screens = [
           const AttendanceScreenRouter(), // 출석
           const LeaveStatusScreen(), // 연차/출장신청
@@ -418,8 +420,10 @@ final List<dynamic> attendanceRoles =
     // lead buyer 권한 확인
     final isLeadBuyer = UserRoleHelper.isPureLeadBuyer(purchaseRoles);
     
-    // app_admin 권한 확인 (영수증 탭용)
-    final isAppAdmin = UserRoleHelper.isAppAdmin(purchaseRoles);
+    // 영수증 탭 접근 권한 확인 (app_admin, hr, lead_buyer)
+    final canAccessReceipts = UserRoleHelper.isAppAdmin(purchaseRoles) ||
+                              purchaseRoles.contains('hr') ||
+                              UserRoleHelper.isLeadBuyer(purchaseRoles);
 
     final List<BottomNavigationBarItem> items = [];
 
@@ -481,9 +485,9 @@ final List<dynamic> attendanceRoles =
       );
     }
 
-    // app_admin만 영수증 탭 표시
-    if (isAppAdmin) {
-      // 4번째 탭: 영수증 관리 (app_admin 전용)
+    // 영수증 탭 접근 권한이 있는 경우만 표시
+    if (canAccessReceipts) {
+      // 4번째 탭: 영수증 관리 (app_admin, hr, lead_buyer)
       items.add(
         BottomNavigationBarItem(
           icon: Padding(

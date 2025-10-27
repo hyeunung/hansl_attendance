@@ -268,6 +268,70 @@ supabase/
 
 **🚀 Exception**: Skip analysis only when user explicitly says "바로 수정해줘", "즉시 적용해줘", "알아서 해줘"
 
+### Design Consistency Guidelines (Critical)
+**🎨 모든 새로운 UI 컴포넌트와 디자인 업데이트는 기존 앱 디자인 시스템을 따라야 함**
+
+**✅ 디자인 일관성 요구사항:**
+1. **테마 통합**: 기존 테마 시스템의 AppColors, AppShadows, ResponsiveUtils 사용
+2. **컴포넌트 조화**: 새 컴포넌트는 기존 앱 컴포넌트와 시각적으로 일치해야 함
+3. **타이포그래피 일관성**: 기존 폰트 크기, 굵기, 간격 패턴 따르기
+4. **색상 팔레트**: 기존 색상 체계 준수 (AppColors.primary 등)
+5. **그림자 & 높이**: AppShadows.cardShadow, buttonShadow 등으로 일관된 깊이감
+6. **둥근 모서리**: 기존 border radius 패턴 따르기 (카드/모달: 12px, 16px)
+7. **간격 시스템**: 기존 컴포넌트와 일치하는 일관된 padding/margin 값 사용
+8. **아이콘 스타일**: 일관된 크기와 색상의 Material Design 아이콘 사용
+
+**🎯 구현 패턴:**
+```dart
+// ✅ CORRECT - 앱 디자인 시스템 따르기
+Container(
+  decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(16), // 앱과 일관된 값
+    boxShadow: AppShadows.cardShadow,       // 앱 그림자 시스템 사용
+  ),
+  child: Text(
+    'Content',
+    style: ResponsiveUtils.getTextStyle(    // 앱 텍스트 시스템 사용
+      context,
+      fontSize: 16,
+      fontWeight: FontWeight.w600,
+      color: AppColors.primary,             // 앱 색상 시스템 사용
+    ),
+  ),
+)
+
+// ❌ WRONG - 앱과 맞지 않는 커스텀 디자인
+Container(
+  decoration: BoxDecoration(
+    color: Colors.blue[50],                 // 임의의 색상
+    borderRadius: BorderRadius.circular(8), // 다른 radius 값
+    boxShadow: [BoxShadow(...)],           // 커스텀 그림자
+  ),
+  child: Text(
+    'Content',
+    style: TextStyle(fontSize: 14),        // 직접 TextStyle 사용
+  ),
+)
+```
+
+**🔧 참조할 디자인 시스템 파일:**
+- `lib/theme/app_colors.dart` - 색상 팔레트
+- `lib/theme/app_shadows.dart` - 그림자 정의  
+- `lib/utils/responsive_utils.dart` - 타이포그래피 및 반응형 디자인
+- `lib/widgets/` 내 기존 위젯들 - 컴포넌트 패턴
+- 기존 화면들 - 레이아웃 및 간격 패턴
+
+**📋 디자인 일관성 체크리스트:**
+- [ ] AppColors 사용 (primary, secondary 등)
+- [ ] AppShadows 사용 (cardShadow, buttonShadow 등)
+- [ ] ResponsiveUtils.getTextStyle() 사용
+- [ ] 기존 컴포넌트와 일치하는 border radius
+- [ ] 기존 패턴과 일치하는 padding/margin
+- [ ] Material Design 아이콘 일관된 크기/색상
+- [ ] 전체 앱과 조화로운 색상 선택
+- [ ] 기존 버튼/카드 스타일과 일치
+
 ### Database Migrations
 - **Never modify existing migration files** - they may already be applied
 - **Always create new migrations** for schema changes
@@ -405,8 +469,49 @@ UserRoleHelper.isAnyManager(attendanceRole)  // 부서 매니저
 ### Environment Configuration
 - **Environment variables**: Uses `.env` file (not committed)
 - **Required vars**: `SUPABASE_URL`, `SUPABASE_ANON_KEY` 
-- **Korean timezone**: All time-related functionality uses Korea time (UTC+9)
 - **Multi-platform**: Same codebase runs on Android, iOS, Web, macOS, Windows
+
+### 🕒 한국시간 기준 운영 지침 (Critical)
+**🚨 모든 시간 관련 기능은 반드시 한국시간(UTC+9) 기준으로 동작해야 함**
+
+**✅ 올바른 시간 처리 패턴:**
+```dart
+// 1. 현재 시간 저장 시 - UTC로 저장
+'created_at': DateTime.now().toUtc().toIso8601String(),
+'updated_at': DateTime.now().toUtc().toIso8601String(),
+
+// 2. 시간 표시 시 - 로컬(한국)시간으로 변환
+final localTime = DateTime.parse(dbDateTime).toLocal();
+Text('${localTime.month}/${localTime.day}')
+
+// 3. 시간 포맷팅 함수
+String formatToKoreanTime(String? dateTimeString) {
+  if (dateTimeString == null) return '';
+  final koreanTime = DateTime.parse(dateTimeString).toLocal();
+  return '${koreanTime.year}.${koreanTime.month.toString().padLeft(2, '0')}.${koreanTime.day.toString().padLeft(2, '0')}';
+}
+```
+
+**❌ 잘못된 시간 처리:**
+```dart
+// 시간대 변환 없이 직접 사용
+final time = DateTime.parse(dbDateTime); // 시간대 고려 안함
+'created_at': DateTime.now().toIso8601String(), // UTC 명시 안함
+```
+
+**🔧 시간 관련 주요 규칙:**
+1. **DB 저장**: 항상 UTC 시간으로 저장 (`DateTime.now().toUtc().toIso8601String()`)
+2. **화면 표시**: 항상 로컬 시간으로 변환 (`DateTime.parse().toLocal()`)
+3. **업로드/생성 시간**: 한국시간 기준으로 사용자에게 표시
+4. **일자 계산**: 한국시간 기준으로 날짜 비교 및 계산
+5. **출근/퇴근**: 한국시간 기준으로 근무시간 계산
+6. **연차/휴가**: 한국시간 기준으로 날짜 처리
+
+**📋 시간 처리 체크리스트:**
+- [ ] DB에 저장할 때 `.toUtc().toIso8601String()` 사용
+- [ ] 화면에 표시할 때 `.toLocal()` 사용
+- [ ] 날짜 비교/계산 시 한국시간 기준 적용
+- [ ] 사용자에게 보이는 모든 시간이 한국시간인지 확인
 
 ## User Role Management (중요)
 - **UserRoleHelper 클래스 사용**: `lib/utils/user_role_helper.dart`에 모든 역할 체크 로직 중앙화
