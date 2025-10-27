@@ -459,7 +459,7 @@ final List<dynamic> attendanceRoles =
           icon: Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Icon(
-              Icons.shopping_cart,
+              Icons.check_circle,
               color: _currentIndex == 2 ? const Color(0xFF9C27B0) : Colors.grey,
             ),
           ),
@@ -472,8 +472,8 @@ final List<dynamic> attendanceRoles =
           icon: Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Icon(
-              showApprovalTab ? Icons.check_circle : Icons.inventory_2,
-              color: _currentIndex == 2 ? (showApprovalTab ? const Color(0xFF34C759) : const Color(0xFF007AFF)) : Colors.grey,
+              Icons.check_circle,
+              color: _currentIndex == 2 ? const Color(0xFF34C759) : Colors.grey,
             ),
           ),
           label: '',
