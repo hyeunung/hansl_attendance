@@ -31,6 +31,7 @@ class _PersonalLateStatisticsState extends State<PersonalLateStatistics> {
       final userEmail = userProvider.email;
       
       if (userEmail == null) {
+        if (!mounted) return;
         setState(() => _isLoading = false);
         return;
       }
@@ -55,12 +56,14 @@ class _PersonalLateStatisticsState extends State<PersonalLateStatistics> {
           .eq('status', '지각')
           .gte('date', thisYear.toIso8601String().split('T')[0]);
       
+      if (!mounted) return;
       setState(() {
         _monthlyLateCount = (monthlyData as List).length;
         _yearlyLateCount = (yearlyData as List).length;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
     }
   }

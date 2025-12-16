@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -23,6 +25,13 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
   final Map<String, bool> _expandedOrders = {};
   Map<String, Map<String, int>> _progressData = {}; // 진행률 데이터 저장
   bool _isLoading = false;
+  final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
+
+  // mounted 체크를 포함한 안전한 setState 래퍼
+  void _safeSetState(VoidCallback fn) {
+    if (!mounted) return;
+    setState(fn);
+  }
   
   // 검색 관련 변수
   final TextEditingController _searchController = TextEditingController();
@@ -43,6 +52,249 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
     _searchController.addListener(_onSearchChanged);
   }
 
+  // 품목 입고 입력 다이얼로그 (입고일/실입고수량/비고)
+  Future<Map<String, dynamic>?> _showReceiveInputDialog(
+    Map<String, dynamic> item, {
+    DateTime? initialDate,
+    int? initialQuantity,
+  }) async {
+    final requestedQty = (item['quantity'] ?? 0) as int;
+    DateTime selectedDate = initialDate ?? DateTime.now();
+    final qtyController = TextEditingController(
+      text: (initialQuantity ?? 0).toString(),
+    );
+    final noteController = TextEditingController(
+      text: item['delivery_notes']?.toString() ?? '',
+    );
+
+    return showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+              contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+              actionsPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '입고 처리',
+                    style: ResponsiveUtils.getTextStyle(
+                      context,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    item['item_name']?.toString() ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: ResponsiveUtils.getTextStyle(
+                      context,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF475467),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '요청 수량 ${requestedQty}개',
+                    style: ResponsiveUtils.getTextStyle(
+                      context,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF94A3B8),
+                    ),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 입고일 셀
+                  InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: selectedDate,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2100),
+                      );
+                      if (picked != null) {
+                        setState(() => selectedDate = picked);
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                      ),
+                      child: Row(
+                        children: [
+                      Text(
+                        '실제 입고일',
+                            style: ResponsiveUtils.getTextStyle(
+                              context,
+                              fontSize: 14,
+                              color: const Color(0xFF475467),
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            _dateFormat.format(selectedDate),
+                            style: ResponsiveUtils.getTextStyle(
+                              context,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF0F172A),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          const Icon(Icons.chevron_right, size: 18, color: Color(0xFF94A3B8)),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // 수량 필드 + 동일 버튼
+                  Row(
+                    children: [
+                      Text(
+                        '실입고 수량',
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
+                          fontSize: 14,
+                          color: const Color(0xFF475467),
+                        ),
+                      ),
+                      const Spacer(),
+                      OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          side: BorderSide(color: AppColors.primary),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          foregroundColor: AppColors.primary,
+                        ),
+                        onPressed: () {
+                          qtyController.text = requestedQty.toString();
+                        },
+                        child: const Text('요청수량과 동일'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: qtyController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: '실입고 수량',
+                      helperText: '요청 수량: $requestedQty',
+                      helperStyle: ResponsiveUtils.getTextStyle(
+                        context,
+                        fontSize: 11,
+                        color: const Color(0xFF9CA3AF),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                      filled: true,
+                      fillColor: const Color(0xFFF9FAFB),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.primary, width: 1.2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // 비고 필드
+                  TextField(
+                    controller: noteController,
+                    decoration: InputDecoration(
+                      hintText: '비고 (선택)',
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                      filled: true,
+                      fillColor: const Color(0xFFF9FAFB),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.primary, width: 1.2),
+                      ),
+                    ),
+                    maxLines: 3,
+                  ),
+                ],
+              ),
+              actionsAlignment: MainAxisAlignment.end,
+              actions: [
+                TextButton(
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    foregroundColor: const Color(0xFF6B7280),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  onPressed: () => Navigator.of(context).pop(null),
+                  child: const Text('취소'),
+                ),
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  onPressed: () {
+                    final parsedQty = int.tryParse(qtyController.text.trim());
+                    if (parsedQty == null || parsedQty <= 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('유효한 수량을 입력해주세요')),
+                      );
+                      return;
+                    }
+                    Navigator.of(context).pop({
+                      'quantity': parsedQty,
+                      'date': selectedDate,
+                      'note': noteController.text.trim(),
+                    });
+                  },
+                  child: const Text('확인'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _searchController.removeListener(_onSearchChanged);
@@ -61,13 +313,15 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
   // 필터 초기화
   Future<void> _initializeFilters() async {
     await _loadDepartments();
+    if (!mounted) return;
     await _setDefaultFilters();
+    if (!mounted) return;
     await _loadReceivingItems();
   }
 
   // 부서 목록과 부서별 직원 목록을 한번에 로드
   Future<void> _loadDepartments() async {
-    setState(() => _isLoadingDepartments = true);
+    _safeSetState(() => _isLoadingDepartments = true);
     
     try {
       // 모든 직원의 부서와 이름을 한번에 가져오기
@@ -104,7 +358,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
         departmentEmployeesMap[key]!.sort();
       }
       
-      setState(() {
+      _safeSetState(() {
         _departments = ['전체', ...departmentSet.toList()..sort()];
         _departmentEmployees = departmentEmployeesMap;
         // 전체 직원 목록 (중복 제거 후 정렬)
@@ -112,7 +366,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
         _isLoadingDepartments = false;
       });
     } catch (e) {
-      setState(() {
+      _safeSetState(() {
         _departments = ['전체'];
         _employees = ['전체'];
         _departmentEmployees = {};
@@ -133,24 +387,24 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       
       // app_admin의 경우 기본값을 "전체"로 설정
       if (UserRoleHelper.isAppAdmin(purchaseRoles)) {
-        setState(() {
+        _safeSetState(() {
           _selectedDepartment = '전체';
           _selectedEmployee = '전체';
         });
       } else if (userName.isNotEmpty && userDepartment.isNotEmpty) {
-        setState(() {
+        _safeSetState(() {
           _selectedDepartment = userDepartment;
           _selectedEmployee = userName;
         });
       } else {
         // 기본값 설정 실패시 전체로 설정
-        setState(() {
+        _safeSetState(() {
           _selectedDepartment = '전체';
           _selectedEmployee = '전체';
         });
       }
     } catch (e) {
-      setState(() {
+      _safeSetState(() {
         _selectedDepartment = '전체';
         _selectedEmployee = '전체';
       });
@@ -278,7 +532,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
   }
 
   Future<void> _loadReceivingItems() async {
-    setState(() {
+    _safeSetState(() {
       _isLoading = true;
     });
 
@@ -388,8 +642,10 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
             ...Map<String, dynamic>.from(item as Map),
             'vendor_name': purchase['vendor_name'],
             'requester_name': purchase['requester_name'],
+            'requester_id': purchase['requester_id'],
             'request_date': purchase['request_date'],
             'delivery_request_date': purchase['delivery_request_date'],
+            'revised_delivery_request_date': purchase['revised_delivery_request_date'],
             'purchase_id': purchase['id'],
           }).toList();
           
@@ -401,7 +657,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
           };
         }
 
-        setState(() {
+        _safeSetState(() {
           _itemsByOrder = groupedItems;
           _progressData = progressData;
           _isLoading = false;
@@ -409,7 +665,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
         });
     } catch (e) {
       // 에러 로깅 제거됨 (Production 코드)
-      setState(() {
+      _safeSetState(() {
         _isLoading = false;
       });
     }
@@ -420,6 +676,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final employee = userProvider.employee;
+      final currentUserId = employee?['id'];
       final purchaseRoles = employee?['purchase_role'] as List<dynamic>? ?? [];
       final userName = employee?['name'] as String? ?? '';
       
@@ -445,6 +702,12 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
         return;
       }
 
+      final DateTime? selectedDate = await _showReceiveDatePicker(
+        context: context,
+        initialDate: DateTime.now(),
+      );
+      if (selectedDate == null) return;
+
       // 미완료 품목만 필터링
       final unreceivedItems = items.where((item) => item['is_received'] != true).toList();
       if (unreceivedItems.isEmpty) {
@@ -462,7 +725,12 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
             .from('purchase_request_items')
             .update({
               'is_received': true,
+              'received_quantity': item['quantity'] ?? 0,
+              'actual_received_date': selectedDate.toIso8601String(),
+              'delivery_status': 'received',
               'received_at': DateTime.now().toIso8601String(),
+              'received_by': currentUserId,
+              'received_by_name': userName,
             })
             .eq('id', item['id']);
       }
@@ -481,7 +749,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
             .from('purchase_requests')
             .update({
               'is_received': true,
-              'received_at': DateTime.now().toIso8601String(),
+              'received_at': selectedDate.toIso8601String(),
               'progress_type': '입고 완료',
             })
             .eq('purchase_order_number', orderNumber);
@@ -513,6 +781,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final employee = userProvider.employee;
+      final currentUserId = employee?['id'];
       final purchaseRoles = employee?['purchase_role'] as List<dynamic>? ?? [];
       final userName = employee?['name'] as String? ?? '';
       
@@ -541,12 +810,41 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
         return;
       }
 
+      final items = _itemsByOrder[orderNumber];
+      final item = items?.firstWhere(
+        (i) => i['id'] == itemId,
+        orElse: () => <String, dynamic>{},
+      );
+      if (item == null || item.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('품목 정보를 찾을 수 없습니다')),
+        );
+        return;
+      }
+
+      final input = await _showReceiveInputDialog(item);
+      if (input == null) return;
+
+      final int receivedQty = input['quantity'] as int;
+      final DateTime actualDate = input['date'] as DateTime;
+      final String note = (input['note'] as String?)?.trim() ?? '';
+
+      final int requestedQty = (item['quantity'] ?? 0) as int;
+      final bool fullyReceived = receivedQty >= requestedQty;
+      final String deliveryStatus = fullyReceived ? 'received' : 'partial';
+
       // purchase_request_items 테이블의 특정 품목 업데이트
       await _supabase
           .from('purchase_request_items')
           .update({
-            'is_received': true,
+            'is_received': fullyReceived,
+            'received_quantity': receivedQty,
+            'actual_received_date': actualDate.toIso8601String(),
+            'delivery_status': deliveryStatus,
             'received_at': DateTime.now().toIso8601String(),
+            'received_by': currentUserId,
+            'received_by_name': userName,
+            if (note.isNotEmpty) 'delivery_notes': note,
           })
           .eq('id', itemId);
 
@@ -571,7 +869,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('입고 완료 처리되었습니다')),
+          SnackBar(content: Text(fullyReceived ? '입고 완료 처리되었습니다' : '부분 입고 처리되었습니다')),
         );
       }
 
@@ -581,8 +879,14 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
         final items = _itemsByOrder[orderNumber];
         final itemIndex = items?.indexWhere((i) => i['id'] == itemId);
         if (itemIndex != null && itemIndex >= 0 && items != null) {
-          items[itemIndex]['is_received'] = true;
+          items[itemIndex]['is_received'] = fullyReceived;
+          items[itemIndex]['received_quantity'] = receivedQty;
+          items[itemIndex]['actual_received_date'] = actualDate.toIso8601String();
+          items[itemIndex]['delivery_status'] = deliveryStatus;
           items[itemIndex]['received_at'] = DateTime.now().toUtc().toIso8601String();
+          items[itemIndex]['received_by'] = currentUserId;
+          items[itemIndex]['received_by_name'] = userName;
+          items[itemIndex]['delivery_notes'] = note;
         }
         
         // 2. 진행률 다시 계산
@@ -1174,6 +1478,48 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                 ],
                               ),
                             ),
+                            SizedBox(width: ResponsiveUtils.spacing(context, 12)),
+                            // 변경 입고예정일 정보
+                            Expanded(
+                              flex: 1,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.edit_calendar_outlined,
+                                    color: const Color(0xFF8E8E93),
+                                    size: ResponsiveUtils.iconSize(context, 16),
+                                  ),
+                                  SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+                                  Flexible(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '변경입고일',
+                                          style: ResponsiveUtils.getTextStyle(
+                                            context,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                            color: const Color(0xFF8E8E93),
+                                          ),
+                                        ),
+                                        Text(
+                                          firstItem['revised_delivery_request_date'] != null && firstItem['revised_delivery_request_date'].toString().isNotEmpty
+                                              ? dateFormat.format(DateTime.parse(firstItem['revised_delivery_request_date']))
+                                              : '미정',
+                                          style: ResponsiveUtils.getTextStyle(
+                                            context,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.primary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                         SizedBox(height: ResponsiveUtils.spacing(context, 6)),
@@ -1212,6 +1558,9 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                         final item = items[itemIndex];
                         final numberFormat = NumberFormat('#,###');
                         final isReceived = item['is_received'] == true;
+                        final deliveryStatus = item['delivery_status']?.toString() ?? 'pending';
+                        final receivedQty = item['received_quantity'] as int?;
+                        final actualReceivedDateStr = item['actual_received_date']?.toString();
 
                         return Container(
                           padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
@@ -1250,7 +1599,31 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                             ),
                                           ),
                                         ),
-                                        if (isReceived)
+                                      if (deliveryStatus == 'partial')
+                                        Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: ResponsiveUtils.spacing(context, 6),
+                                            vertical: ResponsiveUtils.spacing(context, 2),
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.orange.withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+                                            border: Border.all(
+                                              color: Colors.orange.withValues(alpha: 0.3),
+                                              width: 1,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            '부분입고',
+                                            style: ResponsiveUtils.getTextStyle(
+                                              context,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.orange.shade700,
+                                            ),
+                                          ),
+                                        )
+                                      else if (isReceived)
                                           Container(
                                             padding: EdgeInsets.symmetric(
                                               horizontal: ResponsiveUtils.spacing(context, 6),
@@ -1307,14 +1680,55 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                         ),
                                       ],
                                     ),
-                                    Text(
-                                      '금액: ${numberFormat.format(item['amount_value'])}원',
-                                      style: ResponsiveUtils.getTextStyle(
-                                        context,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.primary,
-                                      ),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '금액: ${numberFormat.format(item['amount_value'])}원',
+                                          style: ResponsiveUtils.getTextStyle(
+                                            context,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.primary,
+                                          ),
+                                        ),
+                                        if (receivedQty != null)
+                                          Padding(
+                                            padding: EdgeInsets.only(top: ResponsiveUtils.spacing(context, 4)),
+                                            child: Text(
+                                              '실입고 수량: $receivedQty',
+                                              style: ResponsiveUtils.getTextStyle(
+                                                context,
+                                                fontSize: 13,
+                                                color: const Color(0xFF4B5563),
+                                              ),
+                                            ),
+                                          ),
+                                        if (actualReceivedDateStr != null && actualReceivedDateStr.isNotEmpty)
+                                          Padding(
+                                            padding: EdgeInsets.only(top: ResponsiveUtils.spacing(context, 2)),
+                                            child: Text(
+                                              '실입고일: ${_dateFormat.format(DateTime.parse(actualReceivedDateStr))}',
+                                              style: ResponsiveUtils.getTextStyle(
+                                                context,
+                                                fontSize: 13,
+                                                color: const Color(0xFF4B5563),
+                                              ),
+                                            ),
+                                          ),
+                                        if ((item['delivery_notes']?.toString().trim().isNotEmpty ?? false))
+                                          Padding(
+                                            padding: EdgeInsets.only(top: ResponsiveUtils.spacing(context, 2)),
+                                            child: Text(
+                                              '비고: ${item['delivery_notes']}',
+                                              style: ResponsiveUtils.getTextStyle(
+                                                context,
+                                                fontSize: 13,
+                                                color: const Color(0xFF4B5563),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
                                     ),
                                   ],
                                 ),
@@ -1621,12 +2035,18 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
 
   // 수정요청 다이얼로그 표시
   Future<void> _showEditRequestDialog(BuildContext context, String orderNumber, Map<String, dynamic> firstItem) async {
+    final TextEditingController subjectController = TextEditingController(
+      text: '[수정요청] 발주번호 $orderNumber 수정 요청합니다.',
+    );
     final TextEditingController contentController = TextEditingController();
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final employee = userProvider.employee;
     final userName = employee?['name'] as String? ?? '';
     final userEmail = employee?['email'] as String? ?? '';
     final vendorName = firstItem['vendor_name'] as String? ?? '업체명 없음';
+    final String? requesterId = (firstItem['requester_id'] ?? firstItem['requesterId'])?.toString();
+    final int? purchaseId = (firstItem['purchase_id'] ?? firstItem['purchaseId']) as int?;
+    final itemsForOrder = _itemsByOrder[orderNumber] ?? [];
     
     final result = await showDialog<bool>(
       context: context,
@@ -1734,6 +2154,63 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                   ),
                 ),
                 SizedBox(height: ResponsiveUtils.spacing(context, 20)),
+                // 수정요청 제목 입력
+                Row(
+                  children: [
+                    Icon(
+                      Icons.title,
+                      color: AppColors.primary,
+                      size: ResponsiveUtils.iconSize(context, 20),
+                    ),
+                    SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                    Text(
+                      '수정요청 제목 *',
+                      style: ResponsiveUtils.getTextStyle(
+                        context,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1E293B),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+                TextField(
+                  controller: subjectController,
+                  decoration: InputDecoration(
+                    hintText: '[수정요청] 발주번호 $orderNumber 수정 요청합니다.',
+                    hintStyle: ResponsiveUtils.getTextStyle(
+                      context,
+                      fontSize: 14,
+                      color: const Color(0xFF94A3B8),
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                      borderSide: const BorderSide(
+                        color: Color(0xFFE2E8F0),
+                        width: 1,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                      borderSide: BorderSide(
+                        color: AppColors.primary,
+                        width: 2,
+                      ),
+                    ),
+                    contentPadding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
+                  ),
+                ),
+                SizedBox(height: ResponsiveUtils.spacing(context, 8)),
+                Text(
+                  '웹과 동일한 제목 형식을 사용합니다.',
+                  style: ResponsiveUtils.getTextStyle(
+                    context,
+                    fontSize: 12,
+                    color: const Color(0xFF94A3B8),
+                  ),
+                ),
+                SizedBox(height: ResponsiveUtils.spacing(context, 16)),
                 // 수정요청 내용 입력
                 Row(
                   children: [
@@ -1809,12 +2286,15 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
             ),
             ElevatedButton(
               onPressed: () async {
+                final subject = subjectController.text.trim();
                 final content = contentController.text.trim();
-                if (content.isEmpty) {
+                if (subject.isEmpty || content.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('수정요청 내용을 입력해주세요.'),
-                      backgroundColor: Color(0xFFEF4444),
+                    SnackBar(
+                      content: Text(
+                        subject.isEmpty ? '제목을 입력해주세요.' : '수정요청 내용을 입력해주세요.',
+                      ),
+                      backgroundColor: const Color(0xFFEF4444),
                     ),
                   );
                   return;
@@ -1847,13 +2327,17 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
     );
     
     // 사용자가 전송을 눌렀을 때만 수정요청 등록
-    if (result == true && contentController.text.trim().isNotEmpty) {
+    if (result == true && subjectController.text.trim().isNotEmpty && contentController.text.trim().isNotEmpty) {
       await _submitEditRequest(
         orderNumber: orderNumber,
+        subject: subjectController.text.trim(),
         vendorName: vendorName,
         content: contentController.text.trim(),
         userName: userName,
         userEmail: userEmail,
+        requesterId: requesterId,
+        purchaseId: purchaseId,
+        itemsForOrder: itemsForOrder,
       );
     }
   }
@@ -1861,12 +2345,43 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
   // 수정요청 등록 처리
   Future<void> _submitEditRequest({
     required String orderNumber,
+    required String subject,
     required String vendorName,
     required String content,
     required String userName,
     required String userEmail,
+    required List<Map<String, dynamic>> itemsForOrder,
+    String? requesterId,
+    int? purchaseId,
   }) async {
     try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('로그인이 필요합니다.'),
+              backgroundColor: Color(0xFFEF4444),
+            ),
+          );
+        }
+        return;
+      }
+      
+      // 합계 및 아이템 수 계산
+      final double totalAmount = itemsForOrder.fold<double>(0, (sum, item) {
+        final amount = item['amount_value'];
+        if (amount is num) return sum + amount.toDouble();
+        final quantity = (item['quantity'] as num?)?.toDouble() ?? 0;
+        final unitPrice = (item['unit_price_value'] as num?)?.toDouble() ?? 0;
+        return sum + (quantity * unitPrice);
+      });
+      final purchaseInfo = jsonEncode({
+        'vendor_name': vendorName,
+        'total_amount': totalAmount,
+        'item_count': itemsForOrder.length,
+      });
+      
       // 로딩 표시
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1879,18 +2394,22 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       
       final inquiryService = InquiryService();
       final result = await inquiryService.createInquiry(
-        inquiryType: '기타',  // DB에서 'modify'로 매핑됨
-        subject: '[발주 수정요청] $orderNumber - $vendorName',
+        inquiryType: 'modify',
+        subject: subject,
         message: content,
         userName: userName,
         userEmail: userEmail,
+        purchaseRequestId: purchaseId,
+        purchaseOrderNumber: orderNumber,
+        requesterId: requesterId,
+        purchaseInfo: purchaseInfo,
       );
       
       if (mounted) {
         if (result['success'] == true) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(result['message'] ?? '수정요청이 성공적으로 등록되었습니다.'),
+              content: Text(result['message'] ?? '수정 요청이 전송되었습니다.'),
               backgroundColor: const Color(0xFF10B981),
             ),
           );
@@ -1986,6 +2505,105 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       },
     );
   }
+
+  // 전체 입고완료용 날짜 선택 + 안내문 포함 커스텀 픽커
+  Future<DateTime?> _showReceiveDatePicker({
+    required BuildContext context,
+    required DateTime initialDate,
+  }) async {
+    DateTime tempDate = initialDate;
+
+    return showDialog<DateTime>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: Text(
+            '날짜 선택',
+            style: ResponsiveUtils.getTextStyle(
+              context,
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF0F172A),
+            ),
+          ),
+          content: SizedBox(
+            width: 360, // 명시적 너비 부여로 Intrinsic 측정 방지
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  height: 320, // 높이 고정으로 CalendarDatePicker intrinsic 측정 회피
+                  child: CalendarDatePicker(
+                    initialDate: tempDate,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2100),
+                    onDateChanged: (picked) {
+                      tempDate = picked;
+                    },
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.info_outline, size: 18, color: Color(0xFF0EA5E9)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '요청입고수량과 동일한 수량으로 입력됩니다.',
+                          style: ResponsiveUtils.getTextStyle(
+                            context,
+                            fontSize: 13,
+                            color: const Color(0xFF0F172A),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actionsAlignment: MainAxisAlignment.end,
+          actions: [
+            TextButton(
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                foregroundColor: const Color(0xFF6B7280),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+              onPressed: () => Navigator.of(dialogContext).pop(null),
+              child: const Text('취소'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+              onPressed: () => Navigator.of(dialogContext).pop(tempDate),
+              child: const Text('확인'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 // app_admin 수정 다이얼로그
@@ -2013,6 +2631,7 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
   late TextEditingController _vendorController;
   String _selectedCategory = '';
   DateTime? _expectedDeliveryDate;
+  DateTime? _revisedDeliveryDate;
   
   // 품목별 수정 필드들
   List<Map<String, TextEditingController>> _itemControllers = [];
@@ -2049,6 +2668,16 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
         _expectedDeliveryDate = DateTime.parse(expectedDateStr);
       } catch (e) {
         _expectedDeliveryDate = null;
+      }
+    }
+    
+    // 변경요청일 초기화
+    final revisedDateStr = firstItem['revised_delivery_request_date'] as String?;
+    if (revisedDateStr != null && revisedDateStr.isNotEmpty) {
+      try {
+        _revisedDeliveryDate = DateTime.parse(revisedDateStr);
+      } catch (e) {
+        _revisedDeliveryDate = null;
       }
     }
     
@@ -2175,6 +2804,9 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
                       
                       // 입고예정일 선택
                       _buildDateField(),
+                      SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+                      // 변경요청일 선택
+                      _buildRevisedDateField(),
                       SizedBox(height: ResponsiveUtils.spacing(context, 24)),
                       
                       // 품목 정보 수정
@@ -2470,6 +3102,68 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
     );
   }
 
+  Widget _buildRevisedDateField() {
+    return GestureDetector(
+      onTap: _selectRevisedDate,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: ResponsiveUtils.spacing(context, 16),
+          vertical: ResponsiveUtils.spacing(context, 16),
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.event,
+              color: AppColors.primary,
+              size: ResponsiveUtils.iconSize(context, 20),
+            ),
+            SizedBox(width: ResponsiveUtils.spacing(context, 12)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '변경요청일',
+                    style: ResponsiveUtils.getTextStyle(
+                      context,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF6B7280),
+                    ),
+                  ),
+                  SizedBox(height: ResponsiveUtils.spacing(context, 4)),
+                  Text(
+                    _revisedDeliveryDate != null
+                        ? DateFormat('yyyy년 MM월 dd일').format(_revisedDeliveryDate!)
+                        : '날짜를 선택해주세요',
+                    style: ResponsiveUtils.getTextStyle(
+                      context,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: _revisedDeliveryDate != null
+                          ? const Color(0xFF1F2937)
+                          : const Color(0xFF9CA3AF),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: const Color(0xFF9CA3AF),
+              size: ResponsiveUtils.iconSize(context, 16),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _selectDate() async {
     final pickedDate = await showDatePicker(
       context: context,
@@ -2494,6 +3188,35 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
     if (pickedDate != null && pickedDate != _expectedDeliveryDate) {
       setState(() {
         _expectedDeliveryDate = pickedDate;
+        _onFieldChanged();
+      });
+    }
+  }
+
+  Future<void> _selectRevisedDate() async {
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _revisedDeliveryDate ?? (_expectedDeliveryDate ?? DateTime.now()),
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedDate != null && pickedDate != _revisedDeliveryDate) {
+      setState(() {
+        _revisedDeliveryDate = pickedDate;
         _onFieldChanged();
       });
     }
@@ -2616,6 +3339,7 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
       final vendorName = _vendorController.text.trim();
       final category = _selectedCategory;
       final expectedDate = _expectedDeliveryDate?.toIso8601String().split('T')[0];
+      final revisedDate = _revisedDeliveryDate?.toIso8601String().split('T')[0];
 
       // 각 품목 정보 업데이트
       for (int i = 0; i < widget.items.length; i++) {
@@ -2649,6 +3373,7 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
           .from('purchase_requests')
           .update({
             'delivery_request_date': expectedDate,
+            'revised_delivery_request_date': revisedDate,
           })
           .eq('purchase_order_number', widget.orderNumber);
 

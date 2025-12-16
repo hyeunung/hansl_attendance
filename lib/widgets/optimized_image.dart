@@ -248,7 +248,7 @@ class ImagePreloader {
   /// Preload critical assets (splash, icons, etc.)
   static Future<void> preloadCriticalAssets(BuildContext context) async {
     final criticalAssets = [
-      'assets/images/splash_logo.jpeg',
+      'assets/images/splash_logo.webp',
       'assets/icons/icon_1024.png',
     ];
 

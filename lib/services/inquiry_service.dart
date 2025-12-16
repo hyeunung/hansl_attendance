@@ -39,6 +39,10 @@ class InquiryService {
     required String message,
     required String userName,
     required String userEmail,
+    int? purchaseRequestId,
+    String? purchaseOrderNumber,
+    String? purchaseInfo,
+    String? requesterId,
   }) async {
     try {
       // app_admin은 문의 생성 불가
@@ -76,6 +80,10 @@ class InquiryService {
         'subject': subject,
         'message': message,
         'status': 'open',
+        'purchase_request_id': purchaseRequestId,
+        'purchase_order_number': purchaseOrderNumber,
+        'purchase_info': purchaseInfo,
+        'requester_id': requesterId,
       };
 
       final response = await _supabase

@@ -13,7 +13,7 @@ class AssetManager {
 
   // Critical assets that should be preloaded
   static const List<String> _criticalAssets = [
-    'assets/images/splash_logo.jpeg',
+    'assets/images/splash_logo.webp',
     'assets/icons/icon_1024.png',
   ];
 

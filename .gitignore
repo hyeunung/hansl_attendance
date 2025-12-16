@@ -69,4 +69,7 @@ GoogleService-Info.plist
 *.tmp
 hansl-attendance-firebase-adminsdk.json
 hansl-attendance-firebase-adminsdk.json.old
+
+# Build files (APK and AAB)
 *.apk
+*.aab

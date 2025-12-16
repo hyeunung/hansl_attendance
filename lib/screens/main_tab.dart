@@ -77,11 +77,10 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
       keepPage: true,
     );
 
-    // 빠른 초기화를 위해 즉시 화면 구성
-    _quickInitialize();
-    
-    // 나머지 비동기 작업은 프레임 후에
+    // 빌드 완료 후에 초기화(Provider notifyDuringBuild 방지)
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _quickInitialize();
       _initializeServices();
     });
   }
@@ -146,7 +145,11 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
       }
 
       // 승인관리 데이터 미리 로드 (배지 즉시 표시를 위해)
-      _preloadApprovalData();
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) {
+          _preloadApprovalData();
+        }
+      });
     }
   }
 
