@@ -47,6 +47,11 @@ class AttendanceProvider extends ChangeNotifier
   // Cache service for performance optimization
   final CacheService _cache = CacheService.instance;
 
+  // Supabase Realtime
+  final SupabaseClient _supabase = Supabase.instance.client;
+  RealtimeChannel? _attendanceChannel;
+  bool _isRealtimeRefreshing = false;
+
   // Cache keys
   static const String _todayAttendanceCacheKey = 'today_attendance_';
   static const String _attendanceHistoryCacheKey = 'attendance_history_';
@@ -123,6 +128,8 @@ class AttendanceProvider extends ChangeNotifier
 
     // Start optimized timers
     _startOptimizedTimers();
+
+    _setupRealtimeSubscription();
   }
 
   Future<void> _initToday() async {
@@ -140,7 +147,9 @@ class AttendanceProvider extends ChangeNotifier
       clockInTime = null;
       clockOutTime = null;
       isLate = false;
-      canClockIn = false; // 로그인 전에는 출근 버튼 비활성화
+      // userId가 비어있어도 출근 버튼은 활성화 (UserProvider 동기화 대기)
+      // 실제 출근 시도 시 userId 검증하여 에러 처리
+      canClockIn = true;
       _updateLoadingState(false);
       notifyListeners();
       return;
@@ -259,6 +268,40 @@ class AttendanceProvider extends ChangeNotifier
     }
   }
 
+  void _setupRealtimeSubscription() {
+    _attendanceChannel = _supabase
+        .channel('attendance_records_$userId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'attendance_records',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'employee_id',
+            value: userId,
+          ),
+          callback: (_) => _handleRealtimeRefresh(),
+        )
+        .subscribe();
+  }
+
+  void _handleRealtimeRefresh() {
+    if (_isRealtimeRefreshing) return;
+    _isRealtimeRefreshing = true;
+
+    Future.microtask(() async {
+      try {
+        await _initToday();
+        await fetchRecentHistory();
+        await fetchLateStatistics();
+      } catch (_) {
+        // ignore errors in realtime refresh
+      } finally {
+        _isRealtimeRefreshing = false;
+      }
+    });
+  }
+
   // 두 지점 간의 거리 계산 (Haversine formula)
   double _calculateDistance(
     double lat1,
@@ -375,6 +418,12 @@ class AttendanceProvider extends ChangeNotifier
   Future<void> _performClockIn(async_ops.CancellationToken token) async {
     // Don't update loading state here to avoid flickering
     errorMessage = null;
+
+    // userId가 비어있으면 에러 발생
+    if (userId.isEmpty || userId == '') {
+      _updateErrorAndLoading('사용자 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.', false);
+      return;
+    }
 
     token.throwIfCancelled();
 
@@ -1259,6 +1308,10 @@ class AttendanceProvider extends ChangeNotifier
 
   @override
   void dispose() {
+    if (_attendanceChannel != null) {
+      _supabase.removeChannel(_attendanceChannel!);
+      _attendanceChannel = null;
+    }
     // Dispose all scoped timers and operations
     disposeScopedTimers();
     disposeScopedOperations();

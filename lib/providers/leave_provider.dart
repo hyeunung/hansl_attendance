@@ -48,6 +48,9 @@ class LeaveProvider extends ChangeNotifier
   // 배치 업데이트 지원
   bool _shouldNotify = true;
 
+  // 출장 일수 캐시 (동행자 포함)
+  int _biztripDays = 0;
+  
   // 대기 중 신청 개수 (본인 신청만)
   int get myPendingCount =>
       myLeaves.where((l) => l['status'] == 'pending').length;
@@ -62,20 +65,8 @@ class LeaveProvider extends ChangeNotifier
     return myPendingCount;
   }
 
-  // 출장 일수(approved만)
-  int get biztripDays {
-    int days = 0;
-    for (final l in myLeaves) {
-      if (l['status'] == 'approved' && l['type'] == 'biztrip') {
-        days +=
-            (DateTime.parse(
-              l['end_date'],
-            ).difference(DateTime.parse(l['start_date'])).inDays) +
-            1;
-      }
-    }
-    return days;
-  }
+  // 출장 일수(approved만, 동행자 포함)
+  int get biztripDays => _biztripDays;
 
   // 최근 신청(최신순 5개) - 연속된 날짜는 그룹화
   List<Map<String, dynamic>> get recentLeaves {
@@ -272,8 +263,13 @@ class LeaveProvider extends ChangeNotifier
           isLoading = false;
         });
 
+        // 출장일수 계산 (동행자 포함) - myLeaves 업데이트 후에 계산
+        await _calculateBiztripDays(email);
+
         // Debug print removed
       } else {
+        // 데이터가 변경되지 않았어도 출장일수는 다시 계산 (attendance_records 변경 가능)
+        await _calculateBiztripDays(email);
         _updateLoadingState(false, null);
       }
     } catch (e) {
@@ -507,6 +503,93 @@ class LeaveProvider extends ChangeNotifier
     }
   }
 
+  // 출장일수 계산 (동행자 포함)
+  Future<void> _calculateBiztripDays(String userEmail) async {
+    try {
+      int daysFromLeaves = 0;
+      
+      // 1. myLeaves에서 출장일수 계산 (현재 업데이트된 myLeaves 사용)
+      final leavesToCheck = myLeaves.isNotEmpty ? myLeaves : [];
+      for (final l in leavesToCheck) {
+        if (l['status'] == 'approved' && l['type'] == 'biztrip') {
+          daysFromLeaves +=
+              (DateTime.parse(
+                l['end_date'],
+              ).difference(DateTime.parse(l['start_date'])).inDays) +
+              1;
+        }
+      }
+      
+      // 2. attendance_records에서 출장일수 계산 (동행자 포함)
+      // employee_id로 조회하기 위해 employees 테이블에서 id 가져오기
+      final supabaseService = SupabaseService();
+      final employee = await supabaseService.getEmployeeByEmail(userEmail);
+      
+      if (employee != null && employee['id'] != null) {
+        final employeeId = employee['id'].toString();
+        
+        // attendance_records에서 출장(status = '출장')인 날짜 조회
+        final attendanceRecords = await Supabase.instance.client
+            .from('attendance_records')
+            .select('date')
+            .eq('employee_id', employeeId)
+            .eq('status', '출장');
+        
+        // 중복 제거를 위한 Set 사용
+        final Set<String> biztripDates = {};
+        
+        // attendance_records에서 출장 날짜 수집
+        if (attendanceRecords != null) {
+          for (final record in attendanceRecords) {
+            if (record['date'] != null) {
+              biztripDates.add(record['date'] as String);
+            }
+          }
+        }
+        
+        // 3. myLeaves의 출장 기간과 attendance_records의 출장 날짜를 합산
+        // 단, myLeaves에 이미 포함된 날짜는 중복 계산하지 않음
+        final Set<String> leaveDates = {};
+        for (final l in leavesToCheck) {
+          if (l['status'] == 'approved' && l['type'] == 'biztrip') {
+            final start = DateTime.parse(l['start_date']);
+            final end = DateTime.parse(l['end_date']);
+            for (var date = start; !date.isAfter(end); date = date.add(const Duration(days: 1))) {
+              leaveDates.add(date.toIso8601String().substring(0, 10));
+            }
+          }
+        }
+        
+        // attendance_records에만 있는 출장 날짜 추가 (동행자 출장)
+        final companionBiztripDays = biztripDates.where((date) => !leaveDates.contains(date)).length;
+        
+        _batchUpdate(() {
+          _biztripDays = daysFromLeaves + companionBiztripDays;
+        });
+      } else {
+        // employee 정보를 찾을 수 없으면 myLeaves만 사용
+        _batchUpdate(() {
+          _biztripDays = daysFromLeaves;
+        });
+      }
+    } catch (e) {
+      // 에러 발생 시 myLeaves만 사용
+      int days = 0;
+      for (final l in myLeaves) {
+        if (l['status'] == 'approved' && l['type'] == 'biztrip') {
+          days +=
+              (DateTime.parse(
+                l['end_date'],
+              ).difference(DateTime.parse(l['start_date'])).inDays) +
+              1;
+        }
+      }
+      _batchUpdate(() {
+        _biztripDays = days;
+      });
+    }
+  }
+
   // DB에서 계산된 연차 정보 로드 (캐시 적용)
   Future<void> _loadAnnualLeaveFromDB(
     String userEmail, {
@@ -635,8 +718,8 @@ class LeaveProvider extends ChangeNotifier
         }
       }
 
-      // DB에 연차/출장 신청 저장
-      await _service.insertLeave({
+      // 출장인 경우 reason에서 정보 파싱하여 별도 필드에 저장
+      Map<String, dynamic> leaveData = {
         'user_email': userEmail,
         'name': name,
         'type': type,
@@ -645,7 +728,67 @@ class LeaveProvider extends ChangeNotifier
         'reason': reason,
         'status': 'pending',
         'created_at': DateTime.now().toIso8601String(),
-      });
+      };
+      
+      // 출장인 경우 reason 파싱하여 별도 필드에 저장
+      // (구형 데이터/구형 앱)에서만 사용: reason에 메타정보가 있을 때만 파싱
+      final bool hasBiztripMetaInReason =
+          reason != null &&
+          (reason.contains('출장자:') ||
+              reason.contains('동행:') ||
+              reason.contains('장소:') ||
+              reason.contains('목적:') ||
+              reason.contains('교통수단:'));
+
+      if (type == 'biztrip' && hasBiztripMetaInReason) {
+        // 출장자 이름 파싱 (reason에서 "출장자: 이름" 또는 name 필드 사용)
+        String travelerName = name;
+        final travelerMatch = RegExp(r'출장자\s*:\s*([^\n]+)').firstMatch(reason);
+        if (travelerMatch != null) {
+          travelerName = travelerMatch.group(1)?.trim() ?? name;
+        }
+        
+        // 출장자 배열 생성 (본인 + 동행자)
+        List<String> travelers = [travelerName];
+        
+        // 동행자 파싱
+        final companionMatch = RegExp(r'동행\s*:\s*([^\n]+)').firstMatch(reason);
+        if (companionMatch != null) {
+          final companionStr = companionMatch.group(1)?.trim() ?? '';
+          if (companionStr.isNotEmpty) {
+            final companionsList = companionStr
+                .split(',')
+                .map((c) => c.trim())
+                .where((c) => c.isNotEmpty)
+                .toList();
+            travelers.addAll(companionsList);
+          }
+        }
+        
+        leaveData['출장자'] = travelers;
+        
+        // 장소 파싱
+        final placeMatch = RegExp(r'장소\s*:\s*([^\n]+)').firstMatch(reason);
+        if (placeMatch != null) {
+          leaveData['place'] = placeMatch.group(1)?.trim();
+        }
+        
+        // 레거시 포맷에서 '목적:' 라인이 사실상 업무 내용이었으므로,
+        // 목적 라인을 파싱해서 reason(업무내용)에 저장한다. (DB에는 purpose 컬럼이 없음)
+        final purposeMatch = RegExp(r'목적\s*:\s*([^\n]+)').firstMatch(reason);
+        final parsedWork = purposeMatch?.group(1)?.trim();
+        leaveData['reason'] =
+            (parsedWork != null && parsedWork.isNotEmpty) ? parsedWork : reason;
+        
+        // 교통수단 파싱
+        final transportMatch = RegExp(r'교통수단\s*:\s*([^\n]+)').firstMatch(reason);
+        if (transportMatch != null) {
+          leaveData['transport'] = transportMatch.group(1)?.trim();
+        }
+      }
+
+      // DB에 연차/출장 신청 저장
+      await _service.insertLeave(leaveData);
 
       // 캐시 무효화 - 신청 직후 새로운 데이터를 가져올 수 있도록
       await _cache.invalidate(_allLeavesCacheKey);
@@ -678,6 +821,86 @@ class LeaveProvider extends ChangeNotifier
       // UI 업데이트 알림
       notifyListeners();
       
+      _updateLoadingState(false, null);
+    } catch (e) {
+      _updateLoadingState(false, e.toString());
+    }
+  }
+
+  /// 출장 신청 (신규 구조)
+  /// - reason에 출장 메타정보를 합쳐 넣지 않고, 신규 컬럼으로만 저장합니다.
+  Future<void> requestBiztrip({
+    required String userEmail,
+    required DateTime startDate,
+    required DateTime endDate,
+    required List<String> travelers, // 출장자 + 동행자 전체 (이름)
+    required String place,
+    required String reason,
+    required String transport,
+  }) async {
+    _updateLoadingState(true, null);
+    try {
+      // 캐시된 직원 정보 사용 (DB 조회 최소화)
+      String name = '';
+
+      if (_employee != null) {
+        name = _employee?['name'] ?? '';
+      } else {
+        final supabaseService = SupabaseService();
+        final employee = await supabaseService.getEmployeeByEmail(userEmail);
+        if (employee != null) {
+          _employee = employee; // 메모리에 캐싱
+          name = employee['name'] ?? '';
+        }
+      }
+
+      // 출장자 배열 정리(공백 제거 + 중복 제거, 순서 유지)
+      final cleaned = travelers
+          .map((t) => t.trim())
+          .where((t) => t.isNotEmpty)
+          .toList();
+      final seen = <String>{};
+      final uniqueTravelers = <String>[];
+      for (final t in cleaned) {
+        if (seen.add(t)) uniqueTravelers.add(t);
+      }
+
+      final Map<String, dynamic> leaveData = {
+        'user_email': userEmail,
+        'name': name,
+        'type': 'biztrip',
+        'start_date': startDate.toIso8601String().substring(0, 10),
+        'end_date': endDate.toIso8601String().substring(0, 10),
+        // reason에는 출장 "업무 내용"이 들어가야 함
+        'reason': reason,
+        // 신규 컬럼들
+        '출장자': uniqueTravelers,
+        'place': place,
+        'transport': transport,
+        'status': 'pending',
+        'created_at': DateTime.now().toIso8601String(),
+      };
+
+      await _service.insertLeave(leaveData);
+
+      // 캐시 무효화 - 신청 직후 새로운 데이터를 가져올 수 있도록
+      await _cache.invalidate(_allLeavesCacheKey);
+      await _cache.invalidate('$_myLeavesCacheKey$userEmail');
+
+      // 사용연차 업데이트와 캐시 무효화 (출장은 영향 없음, 하지만 사용자 관련 캐시 일괄 갱신)
+      try {
+        await _invalidateUserRelatedCaches(userEmail);
+      } catch (_) {}
+
+      // 데이터 새로고침
+      try {
+        await fetchMyLeaves(email: userEmail, forceRefresh: true);
+      } catch (_) {}
+      try {
+        await fetchAllLeaves(forceRefresh: true);
+      } catch (_) {}
+
+      notifyListeners();
       _updateLoadingState(false, null);
     } catch (e) {
       _updateLoadingState(false, e.toString());

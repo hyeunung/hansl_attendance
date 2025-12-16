@@ -304,6 +304,11 @@ final List<dynamic> attendanceRoles =
         (employee?['attendance_role'] as List<dynamic>?) ?? [];
     final List<dynamic> purchaseRoles =
         (employee?['purchase_role'] as List<dynamic>?) ?? [];
+    
+    // 직원 유형 확인 (알바, 계약직, 정직원)
+    final position = employee?['position'] as String?;
+    final isPartTimeOrContract = position == '알바' || position == '계약직';
+    
     // Debug print removed
 // Debug print removed
 // 승인관리 탭을 볼 수 있는 역할 확인
@@ -325,15 +330,27 @@ final List<dynamic> attendanceRoles =
     final isLeadBuyer = UserRoleHelper.isPureLeadBuyer(purchaseRoles);
     
     // 영수증 탭 접근 권한 확인 (app_admin, hr, lead_buyer)
-    final canAccessReceipts = UserRoleHelper.isAppAdmin(purchaseRoles) ||
-                              purchaseRoles.contains('hr') ||
-                              UserRoleHelper.isLeadBuyer(purchaseRoles);
+    // 알바, 계약직은 영수증 탭 접근 불가
+    final canAccessReceipts = !isPartTimeOrContract && (
+      UserRoleHelper.isAppAdmin(purchaseRoles) ||
+      purchaseRoles.contains('hr') ||
+      UserRoleHelper.isLeadBuyer(purchaseRoles)
+    );
 
     // 디버깅 정보 출력
     // Debug code removed
 
     setState(() {
-      if (canAccessReceipts) {
+      if (isPartTimeOrContract) {
+        // 알바, 계약직: 근무기록, 연차/출장, 대시보드(승인관리), 달력, 설정만 표시
+        _screens = [
+          const AttendanceScreenRouter(), // 근무기록
+          const LeaveStatusScreen(), // 연차/출장
+          const ApprovalScreen(), // 대시보드(승인관리)
+          const CalendarScreen(), // 달력
+          const SettingsScreen(), // 설정
+        ];
+      } else if (canAccessReceipts) {
         // 영수증 탭 접근 권한 있는 사용자: 모든 탭 표시 (영수증 탭 포함)
         _screens = [
           const AttendanceScreenRouter(), // 출석
@@ -403,6 +420,10 @@ final List<dynamic> attendanceRoles =
         (employee?['attendance_role'] as List<dynamic>?) ?? [];
     final List<dynamic> purchaseRoles =
         (employee?['purchase_role'] as List<dynamic>?) ?? [];
+    
+    // 직원 유형 확인 (알바, 계약직, 정직원)
+    final position = employee?['position'] as String?;
+    final isPartTimeOrContract = position == '알바' || position == '계약직';
 
     final approvalRoles = [
       'admin',
@@ -421,9 +442,12 @@ final List<dynamic> attendanceRoles =
     final isLeadBuyer = UserRoleHelper.isPureLeadBuyer(purchaseRoles);
     
     // 영수증 탭 접근 권한 확인 (app_admin, hr, lead_buyer)
-    final canAccessReceipts = UserRoleHelper.isAppAdmin(purchaseRoles) ||
-                              purchaseRoles.contains('hr') ||
-                              UserRoleHelper.isLeadBuyer(purchaseRoles);
+    // 알바, 계약직은 영수증 탭 접근 불가
+    final canAccessReceipts = !isPartTimeOrContract && (
+      UserRoleHelper.isAppAdmin(purchaseRoles) ||
+      purchaseRoles.contains('hr') ||
+      UserRoleHelper.isLeadBuyer(purchaseRoles)
+    );
 
     final List<BottomNavigationBarItem> items = [];
 
@@ -455,22 +479,9 @@ final List<dynamic> attendanceRoles =
       ),
     );
 
-    // 3번째 탭: 승인관리 또는 구매관리
-    if (isLeadBuyer) {
-      // lead buyer는 구매/입고관리 탭
-      items.add(
-        BottomNavigationBarItem(
-          icon: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Icon(
-              Icons.check_circle,
-              color: _currentIndex == 2 ? const Color(0xFF9C27B0) : Colors.grey,
-            ),
-          ),
-          label: '',
-        ),
-      );
-    } else {
+    // 알바, 계약직인 경우: 근무기록, 연차/출장, 대시보드(승인관리), 달력, 설정만 표시
+    if (isPartTimeOrContract) {
+      // 3번째 탭: 대시보드(승인관리)
       items.add(
         BottomNavigationBarItem(
           icon: Padding(
@@ -483,57 +494,7 @@ final List<dynamic> attendanceRoles =
           label: '',
         ),
       );
-    }
-
-    // 영수증 탭 접근 권한이 있는 경우만 표시
-    if (canAccessReceipts) {
-      // 4번째 탭: 영수증 관리 (app_admin, hr, lead_buyer)
-      items.add(
-        BottomNavigationBarItem(
-          icon: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Icon(
-              Icons.receipt_long,
-              color: _currentIndex == 3 ? const Color(0xFFFF9500) : Colors.grey,
-            ),
-          ),
-          label: '',
-        ),
-      );
       
-      // 5번째 탭: 달력
-      items.add(
-        BottomNavigationBarItem(
-          icon: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Icon(
-              Icons.calendar_today,
-              color: _currentIndex == 4
-                  ? const Color(0xFFFF3B30)
-                  : Colors.grey,
-            ),
-          ),
-          label: '',
-        ),
-      );
-
-      // 6번째 탭: 설정
-      items.add(
-        BottomNavigationBarItem(
-          icon: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Icon(
-              Icons.settings,
-              color: _currentIndex == 5
-                  ? const Color(0xFF8E8E93)
-                  : Colors.grey,
-            ),
-          ),
-          label: '',
-        ),
-      );
-    } else {
-      // 일반 사용자: 영수증 탭 제외 (5개 탭)
       // 4번째 탭: 달력
       items.add(
         BottomNavigationBarItem(
@@ -565,7 +526,122 @@ final List<dynamic> attendanceRoles =
           label: '',
         ),
       );
+    } else {
+      // 정직원인 경우: 기존 로직 유지
+      // 3번째 탭: 승인관리 또는 구매관리
+      if (isLeadBuyer) {
+        // lead buyer는 구매/입고관리 탭
+        items.add(
+          BottomNavigationBarItem(
+            icon: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Icon(
+                Icons.check_circle,
+                color: _currentIndex == 2 ? const Color(0xFF9C27B0) : Colors.grey,
+              ),
+            ),
+            label: '',
+          ),
+        );
+      } else {
+        items.add(
+          BottomNavigationBarItem(
+            icon: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Icon(
+                Icons.check_circle,
+                color: _currentIndex == 2 ? const Color(0xFF34C759) : Colors.grey,
+              ),
+            ),
+            label: '',
+          ),
+        );
+      }
+
+      // 영수증 탭 접근 권한이 있는 경우만 표시
+      if (canAccessReceipts) {
+        // 4번째 탭: 영수증 관리 (app_admin, hr, lead_buyer)
+        items.add(
+          BottomNavigationBarItem(
+            icon: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Icon(
+                Icons.receipt_long,
+                color:
+                    _currentIndex == 3 ? const Color(0xFFFF9500) : Colors.grey,
+              ),
+            ),
+            label: '',
+          ),
+        );
+
+        // 5번째 탭: 달력
+        items.add(
+          BottomNavigationBarItem(
+            icon: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Icon(
+                Icons.calendar_today,
+                color: _currentIndex == 4
+                    ? const Color(0xFFFF3B30)
+                    : Colors.grey,
+              ),
+            ),
+            label: '',
+          ),
+        );
+
+        // 6번째 탭: 설정
+        items.add(
+          BottomNavigationBarItem(
+            icon: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Icon(
+                Icons.settings,
+                color: _currentIndex == 5
+                    ? const Color(0xFF8E8E93)
+                    : Colors.grey,
+              ),
+            ),
+            label: '',
+          ),
+        );
+      } else {
+        // 정직원 일반 사용자: 영수증 탭 제외 (5개 탭)
+        // 4번째 탭: 달력
+        items.add(
+          BottomNavigationBarItem(
+            icon: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Icon(
+                Icons.calendar_today,
+                color: _currentIndex == 3
+                    ? const Color(0xFFFF3B30)
+                    : Colors.grey,
+              ),
+            ),
+            label: '',
+          ),
+        );
+
+        // 5번째 탭: 설정
+        items.add(
+          BottomNavigationBarItem(
+            icon: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Icon(
+                Icons.settings,
+                color: _currentIndex == 4
+                    ? const Color(0xFF8E8E93)
+                    : Colors.grey,
+              ),
+            ),
+            label: '',
+          ),
+        );
+      }
     }
+    // 알바, 계약직인 경우는 위에서 이미 처리됨
 
     return Scaffold(
       body: PageView(

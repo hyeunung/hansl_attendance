@@ -1,9 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import '../../providers/user_provider.dart';
 import '../../services/receipt_upload_service.dart';
 import '../../utils/responsive_utils.dart';
@@ -37,7 +39,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
       
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final userEmail = userProvider.email;
-      final purchaseRole = userProvider.employee?['purchase_role'];
+      // final purchaseRole = userProvider.employee?['purchase_role'];
       
       if (userEmail == null) return;
 
@@ -63,35 +65,320 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
     }
   }
 
-  /// 새 영수증 업로드
-  Future<void> _uploadNewReceipt() async {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final userEmail = userProvider.email;
+  /// 통합된 영수증 업로드 모달 (옵션 선택 → 이미지 미리보기 → 메모 입력)
+  Future<void> _showUploadOptionsModal() async {
+    bool showPreview = false;
+    File? selectedImage;
+    final memoController = TextEditingController();
+    bool isUploading = false;
     
-    if (userEmail == null) return;
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          contentPadding: EdgeInsets.zero,
+          content: Container(
+            width: ResponsiveUtils.getScreenWidth(context) * 0.9,
+            constraints: BoxConstraints(
+              maxHeight: ResponsiveUtils.getScreenHeight(context) * 0.8,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 헤더 (그라데이션)
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: const BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        showPreview ? Icons.preview : Icons.upload,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        showPreview ? '영수증 미리보기' : '영수증 업로드',
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // 내용 영역 (업로드 옵션 or 미리보기)
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: showPreview ? _buildImagePreview(
+                        selectedImage!,
+                        memoController,
+                        isUploading,
+                        () async {
+                          setState(() => isUploading = true);
+                          await _uploadReceiptFromPreview(selectedImage!, memoController.text);
+                          if (mounted) Navigator.pop(context);
+                        },
+                      ) : _buildUploadOptions(
+                        (ImageSource source) async {
+                          try {
+                            final picker = ImagePicker();
+                            final XFile? image = await picker.pickImage(
+                              source: source,
+                              imageQuality: 85,
+                              maxWidth: 1920,
+                              maxHeight: 1920,
+                            );
+                            
+                            if (image != null) {
+                              setState(() {
+                                selectedImage = File(image.path);
+                                showPreview = true;
+                              });
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('이미지 선택 실패: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+                
+                // 하단 버튼
+                if (!isUploading) ...[
+                  const Divider(height: 1),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        if (showPreview) ...[
+                          Expanded(
+                            child: TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  showPreview = false;
+                                  selectedImage = null;
+                                  memoController.clear();
+                                });
+                              },
+                              child: Text(
+                                '다시 선택',
+                                style: ResponsiveUtils.getTextStyle(
+                                  context,
+                                  fontSize: 16,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 2,
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                setState(() => isUploading = true);
+                                await _uploadReceiptFromPreview(selectedImage!, memoController.text);
+                                if (mounted) Navigator.pop(context);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                elevation: 2,
+                              ),
+                              child: Text(
+                                '업로드',
+                                style: ResponsiveUtils.getTextStyle(
+                                  context,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ] else ...[
+                          Expanded(
+                            child: TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: Text(
+                                '취소',
+                                style: ResponsiveUtils.getTextStyle(
+                                  context,
+                                  fontSize: 16,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
+  /// 업로드 옵션 위젯 (카메라/갤러리)
+  Widget _buildUploadOptions(Function(ImageSource) onOptionSelected) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          '업로드할 영수증을 선택해주세요',
+          style: ResponsiveUtils.getTextStyle(
+            context,
+            fontSize: 16,
+            color: Colors.grey[700],
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 32),
+        
+        // 카메라 옵션
+        _buildUploadOption(
+          icon: Icons.camera_alt,
+          title: '카메라로 촬영',
+          subtitle: '새로운 영수증을 촬영합니다',
+          color: AppColors.primary,
+          onTap: () => onOptionSelected(ImageSource.camera),
+        ),
+        const SizedBox(height: 16),
+        
+        // 갤러리 옵션
+        _buildUploadOption(
+          icon: Icons.photo_library,
+          title: '갤러리에서 선택',
+          subtitle: '저장된 이미지에서 선택합니다',
+          color: AppColors.primary,
+          onTap: () => onOptionSelected(ImageSource.gallery),
+        ),
+      ],
+    );
+  }
+
+  /// 이미지 미리보기 위젯
+  Widget _buildImagePreview(
+    File imageFile,
+    TextEditingController memoController,
+    bool isUploading,
+    VoidCallback onUpload,
+  ) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 이미지 미리보기
+        Container(
+          width: double.infinity,
+          height: 200,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey[300]!),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.file(
+              imageFile,
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        
+        // 메모 입력
+        Text(
+          '메모 (선택사항)',
+          style: ResponsiveUtils.getTextStyle(
+            context,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[700],
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: memoController,
+          maxLines: 3,
+          maxLength: 200,
+          decoration: InputDecoration(
+            hintText: '영수증에 대한 메모를 입력하세요',
+            hintStyle: ResponsiveUtils.getTextStyle(
+              context,
+              fontSize: 14,
+              color: Colors.grey[500],
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppColors.primary),
+            ),
+            contentPadding: const EdgeInsets.all(12),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 업로드된 이미지를 실제로 업로드하는 함수
+  Future<void> _uploadReceiptFromPreview(File imageFile, String memo) async {
     try {
-      // 1. 먼저 카메라/갤러리 선택하여 업로드
-      final url = await ReceiptUploadService.showIndependentReceiptUploadDialog(
-        context: context,
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final userEmail = userProvider.email;
+
+      if (userEmail == null) {
+        throw Exception('사용자 정보를 찾을 수 없습니다.');
+      }
+
+      await ReceiptUploadService.uploadReceiptFromFile(
+        imageFile: imageFile,
         userEmail: userEmail,
-        memo: null, // 일단 메모 없이 업로드
+        memo: memo.isEmpty ? null : memo,
       );
 
-      if (url != null) {
-        // 2. 업로드 성공 시 즉시 목록 새로고침
-        await _loadReceipts();
-        
-        // 3. 성공 메시지
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✅ 영수증 업로드 완료'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
-            ),
-          );
-        }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ 영수증이 업로드되었습니다.'),
+            backgroundColor: Color(0xFF34C759),
+          ),
+        );
+        _loadReceipts(); // 목록 새로고침
       }
     } catch (e) {
       if (mounted) {
@@ -102,37 +389,110 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
           ),
         );
       }
+      rethrow;
     }
   }
 
-  /// 메모 입력 다이얼로그
-  Future<String?> _showMemoDialog() async {
-    final controller = TextEditingController();
-    return showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('영수증 메모'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            hintText: '영수증에 대한 메모를 입력하세요 (선택사항)',
-            border: OutlineInputBorder(),
+  /// Step 2: 이미지 선택
+  Future<void> _selectImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: source,
+        imageQuality: 85,
+        maxWidth: 1920,
+        maxHeight: 1920,
+      );
+
+      // 이 함수는 더 이상 사용되지 않음 (통합 모달로 대체됨)
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('이미지 선택 실패: $e'),
+            backgroundColor: Colors.red,
           ),
-          maxLines: 3,
+        );
+      }
+    }
+  }
+
+
+
+
+  /// 업로드 옵션 위젯
+  Widget _buildUploadOption({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey[200]!),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: ResponsiveUtils.getTextStyle(
+                        context,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1F2937),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: ResponsiveUtils.getTextStyle(
+                        context,
+                        fontSize: 13,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.grey[400],
+                size: 16,
+              ),
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: const Text('확인'),
-          ),
-        ],
       ),
     );
   }
+
+  /// 메모 입력 다이얼로그
 
   /// 영수증 삭제
   Future<void> _deleteReceipt(Map<String, dynamic> receipt) async {
@@ -198,7 +558,12 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('영수증 관리'),
+        title: Text('영수증 관리', style: ResponsiveUtils.getTextStyle(
+          context,
+          fontSize: 22,
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
+        )),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
@@ -266,9 +631,9 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _uploadNewReceipt,
+        onPressed: _showUploadOptionsModal,
         backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add_a_photo, color: Colors.white),
+        child: const Icon(Icons.upload, color: Colors.white),
       ),
     );
   }

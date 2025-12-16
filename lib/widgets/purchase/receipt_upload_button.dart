@@ -57,8 +57,6 @@ class _ReceiptUploadButtonState extends State<ReceiptUploadButton> {
                 onTap: () async {
                   Navigator.pop(context);
                   final url = await ReceiptUploadService.captureAndUploadReceipt(
-                    purchaseRequestId: widget.purchaseRequestId,
-                    itemId: widget.itemId,
                     userEmail: userEmail,
                   );
                   if (mounted) {
@@ -72,8 +70,6 @@ class _ReceiptUploadButtonState extends State<ReceiptUploadButton> {
                 onTap: () async {
                   Navigator.pop(context);
                   final url = await ReceiptUploadService.selectAndUploadReceipt(
-                    purchaseRequestId: widget.purchaseRequestId,
-                    itemId: widget.itemId,
                     userEmail: userEmail,
                   );
                   if (mounted) {

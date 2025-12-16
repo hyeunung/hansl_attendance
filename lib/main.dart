@@ -49,12 +49,17 @@ void main() async {
     // Failed to load .env file, using defaults
   }
 
-  // 필수 서비스만 빠르게 초기화
+  // 필수 서비스만 빠르게 초기화 (네트워크 오류 시에도 앱 시작)
   try {
-    // Firebase 초기화
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    // Firebase 초기화 (타임아웃 적용)
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform)
+        .timeout(const Duration(seconds: 10));
     // Firebase initialized
-    
+  } catch (e) {
+    // Firebase initialization failed, but app can still start
+  }
+  
+  try {
     // Supabase 초기화 체크
     bool needsSupabaseInit = true;
     try {
@@ -65,7 +70,7 @@ void main() async {
       needsSupabaseInit = true;
     }
     
-    // Supabase 초기화
+    // Supabase 초기화 (타임아웃 적용)
     if (needsSupabaseInit) {
       await Supabase.initialize(
         url: dotenv.env['SUPABASE_URL'] ?? 'https://qvhbigvdfyvhoegkhvef.supabase.co',
@@ -75,11 +80,11 @@ void main() async {
           authFlowType: AuthFlowType.pkce,
           autoRefreshToken: true,
         ),
-      );
+      ).timeout(const Duration(seconds: 10));
       // Supabase initialized
     }
   } catch (e) {
-    // Initialization failed
+    // Supabase initialization failed, but app can still start and show login screen
   }
 
   // 앱 실행
@@ -314,9 +319,15 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
         ChangeNotifierProxyProvider<UserProvider, AttendanceProvider>(
           create: (_) => AttendanceProvider(userId: '', userName: ''),
           update: (context, userProvider, attendanceProvider) {
-            // 기존 provider가 있고, userId가 변경되지 않았다면 그대로 사용
+            // userId가 비어있으면 기존 provider 재사용하지 않음 (새로 생성 필요)
+            final currentUserId = userProvider.id ?? '';
+            final currentUserName = userProvider.name ?? '';
+            
+            // 기존 provider가 있고, userId가 유효하고 변경되지 않았다면 그대로 사용
             if (attendanceProvider != null &&
-                attendanceProvider.userId == (userProvider.id ?? '')) {
+                attendanceProvider.userId.isNotEmpty &&
+                attendanceProvider.userId == currentUserId &&
+                currentUserId.isNotEmpty) {
               // email만 업데이트
               if (userProvider.email != null && 
                   attendanceProvider.userEmail != userProvider.email) {
@@ -325,11 +336,11 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
               return attendanceProvider;
             }
             
-            // userId가 변경되었거나 provider가 없는 경우에만 새로 생성
-            if (userProvider.id != null && userProvider.name != null) {
+            // userId와 userName이 모두 유효한 경우에만 새로 생성
+            if (currentUserId.isNotEmpty && currentUserName.isNotEmpty) {
               final provider = AttendanceProvider(
-                userId: userProvider.id!,
-                userName: userProvider.name!,
+                userId: currentUserId,
+                userName: currentUserName,
               );
               // email도 설정
               if (userProvider.email != null) {
@@ -338,6 +349,7 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
               return provider;
             }
             
+            // userId가 비어있으면 빈 provider 반환 (하지만 canClockIn은 true로 설정됨)
             return attendanceProvider ??
                 AttendanceProvider(userId: '', userName: '');
           },

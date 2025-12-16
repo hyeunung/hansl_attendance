@@ -144,10 +144,23 @@ class PurchaseProvider extends ChangeNotifier {
       List<Map<String, dynamic>> pendingRequests = [];
 
       if (kDebugMode) {
+        print('🔍 [fetchPendingPurchases] 사용자: ${employee?['name']}');
+        print('🔍 [fetchPendingPurchases] purchase_role: $purchaseRole');
+        print('🔍 [fetchPendingPurchases] app_admin 포함 여부: ${purchaseRole.contains('app_admin')}');
+      }
+
+      // app_admin 권한을 명확히 체크
+      final bool isAppAdmin = purchaseRole.any((role) => 
+        role?.toString().toLowerCase() == 'app_admin' || 
+        role == 'app_admin'
+      );
+      
+      if (kDebugMode) {
+        print('🔍 [fetchPendingPurchases] isAppAdmin: $isAppAdmin');
       }
 
       // Step 1: purchase_requests 테이블에서 대기 중인 헤더 정보만 가져오기
-      if (purchaseRole.contains('app_admin')) {
+      if (isAppAdmin) {
         final response = await _supabase
             .from('purchase_requests')
             .select()
@@ -168,7 +181,12 @@ class PurchaseProvider extends ChangeNotifier {
         }
         pendingRequests = uniqueRequests.values.toList();
         
-        
+        if (kDebugMode) {
+          print('✅ [app_admin] 전체 대기 발주 조회 완료: ${pendingRequests.length}건');
+          for (final req in pendingRequests) {
+            print('  - ${req['purchase_order_number']}: ${req['requester_name']} / ${req['payment_category']}');
+          }
+        }
       }
       // middle_manager: 1차 승인 대기
       else if (purchaseRole.contains('middle_manager')) {        final response = await _supabase
@@ -239,7 +257,11 @@ class PurchaseProvider extends ChangeNotifier {
         pendingRequests = uniqueRequests.values.toList();
         
         
-      } else {      }
+      } else {
+        if (kDebugMode) {
+          print('⚠️ 발주 승인 권한 없음: $purchaseRole');
+        }
+      }
 
       if (kDebugMode) {
       }
@@ -318,16 +340,17 @@ class PurchaseProvider extends ChangeNotifier {
             paymentCategory: request['payment_category'] ?? '',
             middleManagerStatus: request['middle_manager_status'],
             finalManagerStatus: request['final_manager_status'],
+            progressType: request['progress_type'],
           ),
         );
       }
 
       _pendingOrders = groups;
       // 역할별 대기 개수 계산 (await 추가)
-      await _calculatePendingCounts(purchaseRole);
+      await _calculatePendingCounts(purchaseRole, isAppAdmin: isAppAdmin);
       
       // 탭별 카운트 계산
-      await _calculateTabCounts(employee);
+      await _calculateTabCounts(employee, isAppAdmin: isAppAdmin);
     } catch (e) {
       _error = e.toString();    } finally {
       _isLoading = false;
@@ -469,7 +492,7 @@ class PurchaseProvider extends ChangeNotifier {
   }
 
   // 역할별 대기 개수 계산
-  Future<void> _calculatePendingCounts(List<dynamic> purchaseRole) async {
+  Future<void> _calculatePendingCounts(List<dynamic> purchaseRole, {bool isAppAdmin = false}) async {
     try {
       // 병렬로 모든 쿼리 실행
       final results = await Future.wait([
@@ -518,7 +541,7 @@ class PurchaseProvider extends ChangeNotifier {
       _consumablePendingCount = consumableSet.length;
 
       // app_admin은 모든 대기 개수
-      if (purchaseRole.contains('app_admin')) {
+      if (isAppAdmin) {
         _totalPendingCount =
             _middleManagerPendingCount +
             _rawMaterialPendingCount +
@@ -545,11 +568,10 @@ class PurchaseProvider extends ChangeNotifier {
   }
   
   // 탭별 카운트 계산 (구매대기, 입고대기)
-  Future<void> _calculateTabCounts(Map<String, dynamic>? employee) async {
+  Future<void> _calculateTabCounts(Map<String, dynamic>? employee, {bool isAppAdmin = false}) async {
     try {
       final purchaseRole = employee?['purchase_role'] as List<dynamic>? ?? [];
       final userName = employee?['name'] ?? '';
-      final isAppAdmin = purchaseRole.contains('app_admin');
       final isLeadBuyer = purchaseRole.contains('lead buyer');
       final isMiddleManager = purchaseRole.contains('middle_manager');
       final isFinalApprover = purchaseRole.contains('raw_material_manager') || 
@@ -628,6 +650,12 @@ class PurchaseProvider extends ChangeNotifier {
 
     try {
       final purchaseRole = employee?['purchase_role'] as List<dynamic>? ?? [];
+      
+      // app_admin 권한을 명확히 체크
+      final bool isAppAdmin = purchaseRole.any((role) => 
+        role?.toString().toLowerCase() == 'app_admin' || 
+        role == 'app_admin'
+      );
 
       // 날짜 범위 설정 (한국 시간 기준)
       final now = DateTime.now();
@@ -647,8 +675,11 @@ class PurchaseProvider extends ChangeNotifier {
       List<Map<String, dynamic>> completedRequests = [];
 
       // 성능 최적화: 조인 쿼리로 한 번에 품목 정보까지 가져오기
-      if (purchaseRole.contains('app_admin')) {
+      if (isAppAdmin) {
         // app_admin은 모든 승인/반려 항목 조회 (품목 정보 포함)
+        if (kDebugMode) {
+          print('✅ [app_admin] 처리완료 발주 조회 시작');
+        }
         final response = await _supabase
             .from('purchase_requests')
             .select('*, purchase_request_items(*)')
@@ -659,6 +690,10 @@ class PurchaseProvider extends ChangeNotifier {
             .lte('request_date', filterEndDate.toIso8601String())
             .order('request_date', ascending: false);
         completedRequests = List<Map<String, dynamic>>.from(response);
+        
+        if (kDebugMode) {
+          print('✅ [app_admin] 처리완료 발주 조회: ${completedRequests.length}건');
+        }
       } else if (purchaseRole.contains('middle_manager')) {
         // 1차 승인자가 처리한 항목 (품목 정보 포함)
         final response = await _supabase
@@ -764,6 +799,7 @@ class PurchaseProvider extends ChangeNotifier {
             paymentCategory: headerRequest['payment_category'] ?? '',
             middleManagerStatus: headerRequest['middle_manager_status'],
             finalManagerStatus: headerRequest['final_manager_status'],
+            progressType: headerRequest['progress_type'],
           ),
         );
       }

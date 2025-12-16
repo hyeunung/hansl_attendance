@@ -241,6 +241,21 @@ class InquiryService {
       return _supabase
           .channel('inquiry_updates_${user.id}')
           .onPostgresChanges(
+            event: PostgresChangeEvent.insert,
+            schema: 'public',
+            table: 'support_inquires',
+            callback: (payload) async {
+              final newRecord = payload.newRecord;
+
+              final isAdmin = await isAppAdmin();
+              if (!isAdmin && newRecord['user_id'] != user.id) {
+                return;
+              }
+
+              onUpdate(newRecord);
+            },
+          )
+          .onPostgresChanges(
             event: PostgresChangeEvent.update,
             schema: 'public',
             table: 'support_inquires',  // 올바른 테이블명

@@ -575,8 +575,22 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
         );
       }
 
-      // 데이터 새로고침
-      await _loadReceivingItems();
+      // 로컬 상태 업데이트 (전체 새로고침 대신)
+      setState(() {
+        // 1. 해당 품목의 is_received 상태 변경
+        final items = _itemsByOrder[orderNumber];
+        final itemIndex = items?.indexWhere((i) => i['id'] == itemId);
+        if (itemIndex != null && itemIndex >= 0 && items != null) {
+          items[itemIndex]['is_received'] = true;
+          items[itemIndex]['received_at'] = DateTime.now().toUtc().toIso8601String();
+        }
+        
+        // 2. 진행률 다시 계산
+        _updateProgressForOrder(orderNumber);
+        
+        // 3. 필터링된 데이터도 업데이트
+        _filterItems();
+      });
     } catch (e) {
       // 에러 로깅 제겄됨 (Production 코드)
       if (mounted) {
@@ -585,6 +599,22 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
         );
       }
     }
+  }
+
+  // 특정 발주번호의 진행률 업데이트 (로컬 상태 업데이트용)
+  void _updateProgressForOrder(String orderNumber) {
+    final items = _itemsByOrder[orderNumber];
+    if (items == null) return;
+
+    final totalItems = items.length;
+    final completedItems = items.where((item) => item['is_received'] == true).length;
+    final remainingItems = totalItems - completedItems;
+
+    _progressData[orderNumber] = {
+      'total': totalItems,
+      'completed': completedItems,
+      'remaining': remainingItems,
+    };
   }
 
   // 부서-직원 필터 UI 구성
@@ -1981,7 +2011,7 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
   
   // 공통 정보 수정 필드들
   late TextEditingController _vendorController;
-  late TextEditingController _categoryController;
+  String _selectedCategory = '';
   DateTime? _expectedDeliveryDate;
   
   // 품목별 수정 필드들
@@ -1999,7 +2029,6 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
   @override
   void dispose() {
     _vendorController.dispose();
-    _categoryController.dispose();
     for (final controllers in _itemControllers) {
       controllers.values.forEach((controller) => controller.dispose());
     }
@@ -2011,7 +2040,7 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
     
     // 공통 정보 초기화
     _vendorController = TextEditingController(text: firstItem['vendor_name'] ?? '');
-    _categoryController = TextEditingController(text: firstItem['payment_category'] ?? '');
+    _selectedCategory = firstItem['payment_category'] ?? '';
     
     // 입고예정일 초기화
     final expectedDateStr = firstItem['delivery_request_date'] as String?;
@@ -2036,7 +2065,6 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
     
     // 변경 감지 리스너 추가
     _vendorController.addListener(_onFieldChanged);
-    _categoryController.addListener(_onFieldChanged);
     for (final controllers in _itemControllers) {
       controllers.values.forEach((controller) => controller.addListener(_onFieldChanged));
     }
@@ -2142,12 +2170,7 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
                       ),
                       SizedBox(height: ResponsiveUtils.spacing(context, 16)),
                       
-                      _buildTextField(
-                        controller: _categoryController,
-                        label: '카테고리',
-                        icon: Icons.category,
-                        validator: (value) => value?.trim().isEmpty == true ? '카테고리를 입력해주세요' : null,
-                      ),
+                      _buildCategoryDropdown(),
                       SizedBox(height: ResponsiveUtils.spacing(context, 16)),
                       
                       // 입고예정일 선택
@@ -2332,6 +2355,56 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
         filled: true,
         fillColor: Colors.white,
       ),
+    );
+  }
+
+  Widget _buildCategoryDropdown() {
+    const categories = ['발주', '구매 요청', '현장 결제'];
+    
+    return DropdownButtonFormField<String>(
+      initialValue: _selectedCategory.isNotEmpty && categories.contains(_selectedCategory) 
+          ? _selectedCategory 
+          : null,
+      decoration: InputDecoration(
+        labelText: '카테고리',
+        prefixIcon: Icon(Icons.category, color: AppColors.primary),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+          borderSide: BorderSide(color: AppColors.primary, width: 2),
+        ),
+        filled: true,
+        fillColor: Colors.white,
+      ),
+      items: categories.map((String category) {
+        return DropdownMenuItem<String>(
+          value: category,
+          child: Text(
+            category,
+            style: ResponsiveUtils.getTextStyle(
+              context,
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+        );
+      }).toList(),
+      onChanged: (String? newValue) {
+        if (newValue != null) {
+          setState(() {
+            _selectedCategory = newValue;
+            _onFieldChanged();
+          });
+        }
+      },
+      validator: (value) => value == null || value.isEmpty ? '카테고리를 선택해주세요' : null,
     );
   }
 
@@ -2541,7 +2614,7 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
     try {
       // 공통 정보 업데이트
       final vendorName = _vendorController.text.trim();
-      final category = _categoryController.text.trim();
+      final category = _selectedCategory;
       final expectedDate = _expectedDeliveryDate?.toIso8601String().split('T')[0];
 
       // 각 품목 정보 업데이트
