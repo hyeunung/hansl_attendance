@@ -89,11 +89,6 @@ void main() async {
 
   // 앱 실행
   runApp(const HanslApp());
-  
-  // 앱이 실행된 후에 나머지 서비스 초기화
-  Future.delayed(const Duration(milliseconds: 100), () async {
-    await _initializeOtherServices();
-  });
 }
 
 
@@ -124,6 +119,7 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
   late final StreamSubscription<AuthState> _authStateSubscription;
   bool _isInitialized = false; // 초기화 완료 여부
   bool _showSplash = true; // 스플래시 화면 표시 여부
+  bool _postLoginServicesInitialized = false; // 로그인 이후 서비스 초기화 여부
 
   @override
   void initState() {
@@ -172,6 +168,7 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
                       _initialScreen = MainTab(initialEmployee: employee);
                     });
                   }
+                  _initializePostLoginServices();
                 }
               }
             } catch (e) {
@@ -206,6 +203,7 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
     // 다음 화면 미리 준비
     if (authResult != null) {
       _initialScreen = MainTab(key: const ValueKey('main'), initialEmployee: authResult);
+      _initializePostLoginServices();
     } else {
       _initialScreen = const LoginScreen(key: ValueKey('login'));
     }
@@ -218,6 +216,40 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
         _showSplash = false;
       });
     }
+  }
+
+  Future<void> _initializePostLoginServices() async {
+    if (_postLoginServicesInitialized) return;
+    _postLoginServicesInitialized = true;
+
+    // 첫 프레임 이후 백그라운드에서 지연 초기화
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Future.delayed(const Duration(seconds: 1));
+      try {
+        await NotificationService.initialize();
+      } catch (_) {}
+
+      try {
+        await SecureStorageService.migrateFromSharedPreferences();
+      } catch (_) {}
+
+      try {
+        PurchaseNotificationListener.startListening();
+      } catch (_) {}
+
+      try {
+        await PerformanceInitialization.initialize();
+      } catch (_) {}
+
+      try {
+        await FeatureFlagService().initialize();
+      } catch (_) {}
+
+      try {
+        await BadgeCountService.updateBadgeCount();
+        BadgeCountService.setupRealtimeSubscription();
+      } catch (_) {}
+    });
   }
 
   Future<Map<String, dynamic>?> _performAuthCheck() async {

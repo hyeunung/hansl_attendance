@@ -27,6 +27,7 @@ class PurchaseRequest {
   final DateTime? paymentCompletedAt;
   final bool isReceived;
   final DateTime? receivedAt;
+  final DateTime? revisedDeliveryRequestDate; // 변경된 입고(납품) 요청일
   final DateTime? finalManagerApprovedAt;
   final bool? isPoDownload;
   final String? link;
@@ -60,6 +61,7 @@ class PurchaseRequest {
     this.paymentCompletedAt,
     required this.isReceived,
     this.receivedAt,
+    this.revisedDeliveryRequestDate,
     this.finalManagerApprovedAt,
     this.isPoDownload,
     this.link,
@@ -111,6 +113,9 @@ class PurchaseRequest {
       receivedAt: json['received_at'] != null
           ? DateTime.parse(json['received_at'])
           : null,
+      revisedDeliveryRequestDate: json['revised_delivery_request_date'] != null
+          ? DateTime.parse(json['revised_delivery_request_date'])
+          : null,
       finalManagerApprovedAt: json['final_manager_approved_at'] != null
           ? DateTime.parse(json['final_manager_approved_at'])
           : null,
@@ -149,6 +154,7 @@ class PurchaseRequest {
       'payment_completed_at': paymentCompletedAt?.toIso8601String(),
       'is_received': isReceived,
       'received_at': receivedAt?.toIso8601String(),
+      'revised_delivery_request_date': revisedDeliveryRequestDate?.toIso8601String(),
       'final_manager_approved_at': finalManagerApprovedAt?.toIso8601String(),
       'is_po_download': isPoDownload,
       'link': link,

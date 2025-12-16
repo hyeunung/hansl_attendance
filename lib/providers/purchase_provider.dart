@@ -74,6 +74,7 @@ class PurchaseProvider extends ChangeNotifier {
             ...item,
             'request_date': request['request_date'],
             'delivery_request_date': request['delivery_request_date'],
+            'revised_delivery_request_date': request['revised_delivery_request_date'],
             'middle_manager_status': request['middle_manager_status'],
             'final_manager_status': request['final_manager_status'],
             'payment_category': request['payment_category'],

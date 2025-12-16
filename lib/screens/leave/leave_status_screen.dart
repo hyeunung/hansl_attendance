@@ -34,11 +34,14 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
 
     // build 완료 후에 비동기적으로 데이터 로드
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+
       final provider = Provider.of<LeaveProvider>(context, listen: false);
       final userProvider = Provider.of<UserProvider>(context, listen: false);
 
       // 이미 데이터가 있으면 다시 로드하지 않음 (연차가 0일 수도 있으므로 > 0 체크 제거)
       if (provider.myLeaves.isNotEmpty && provider.annualLeaveLoaded) {
+        if (!mounted) return;
         setState(() {
           _isFirstLoad = false;
         });
@@ -53,6 +56,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
       // 관리자의 경우 전체 leave 데이터도 가져옴 (승인 대기 카운트를 위해)
       provider.fetchAllLeaves(forceRefresh: false);
 
+      if (!mounted) return;
       setState(() {
         _isFirstLoad = false;
       });
@@ -734,13 +738,13 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
               const SizedBox(width: 8),
               Container(
                 padding: EdgeInsets.symmetric(
-                  horizontal: ResponsiveUtils.spacing(context, 12),
-                  vertical: ResponsiveUtils.spacing(context, 5),
+                  horizontal: ResponsiveUtils.spacing(context, 10),
+                  vertical: ResponsiveUtils.spacing(context, 4),
                 ),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.13),
                   borderRadius: BorderRadius.circular(
-                    ResponsiveUtils.spacing(context, rValue),
+                    ResponsiveUtils.spacing(context, 6),
                   ),
                 ),
                 child: Text(
@@ -749,7 +753,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                     context,
                     color: statusColor,
                     fontWeight: FontWeight.w700,
-                    fontSize: 15,
+                    fontSize: 13,
                     letterSpacing: 0.1,
                   ),
                 ),
@@ -847,13 +851,13 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
     return Container(
       margin: EdgeInsets.only(left: ResponsiveUtils.spacing(context, 8)),
       padding: EdgeInsets.symmetric(
-        horizontal: ResponsiveUtils.spacing(context, 12),
-        vertical: ResponsiveUtils.spacing(context, 5),
+        horizontal: ResponsiveUtils.spacing(context, 10),
+        vertical: ResponsiveUtils.spacing(context, 4),
       ),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(
-          ResponsiveUtils.spacing(context, rValue),
+          ResponsiveUtils.spacing(context, 6),
         ),
       ),
       child: Text(
@@ -862,7 +866,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
           context,
           color: textColor.withValues(alpha: 0.8),
           fontWeight: FontWeight.w700,
-          fontSize: 15,
+          fontSize: 13,
           letterSpacing: 0.1,
         ),
       ),

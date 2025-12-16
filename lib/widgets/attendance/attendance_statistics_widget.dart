@@ -219,6 +219,7 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
       final actualLeaveCount = todayLeaves.length + halfDayCount;
       final actualTotalCount = normal + late + absent + actualLeaveCount;
       
+      if (!mounted) return;
       setState(() {
         _isNonWorkingDay = false;
         _holidayName = null;
@@ -235,6 +236,7 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
       // 부모 위젯에 근무일 상태 전달
       widget.onWorkingDayStatusChanged?.call(false);
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
     }
   }

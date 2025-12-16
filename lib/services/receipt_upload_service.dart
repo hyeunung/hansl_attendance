@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
@@ -86,10 +87,10 @@ class ReceiptUploadService {
       final now = DateTime.now();
       final fileExtension = path.extension(photo.path);
       
-      // 파일명 자동 생성: rec + YYMMDDHHmm (예: rec2510270316)
-      final fileName = 'rec${now.year.toString().substring(2)}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}';
+      // 파일명 자동 생성: rec + YYMMDDHHmmss + ms + 4자리 랜덤 (충돌 방지)
+      final fileName = _generateUniqueFileName(now);
       
-      // 파일 경로: receipts/{년도-월}/{fileName}.jpg (예: receipts/2025-10/rec2510270316.jpg)
+      // 파일 경로: receipts/{년도-월}/{fileName}.jpg (예: receipts/2025-10/rec2510270316234512_abcd.jpg)
       final monthFolder = '${now.year}-${now.month.toString().padLeft(2, '0')}';
       final filePath = 'receipts/$monthFolder/$fileName$fileExtension';
 
@@ -205,9 +206,9 @@ class ReceiptUploadService {
       // 3. 파일 업로드
       final now = DateTime.now();
       final fileExtension = path.extension(photo.path);
-      final fileName = 'rec${now.year.toString().substring(2)}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}';
+      final fileName = _generateUniqueFileName(now);
       
-      // 파일 경로: receipts/{년도-월}/{fileName}.jpg (예: receipts/2025-10/rec2510270316.jpg)
+      // 파일 경로: receipts/{년도-월}/{fileName}.jpg (예: receipts/2025-10/rec2510270316234512_abcd.jpg)
       final monthFolder = '${now.year}-${now.month.toString().padLeft(2, '0')}';
       final filePath = 'receipts/$monthFolder/$fileName$fileExtension';
 
@@ -266,7 +267,7 @@ class ReceiptUploadService {
       // 2. 파일 업로드
       final now = DateTime.now();
       final fileExtension = path.extension(imageFile.path);
-      final fileName = 'rec${now.year.toString().substring(2)}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}';
+      final fileName = _generateUniqueFileName(now);
       
       // 파일 경로: receipts/{년도-월}/{fileName}.jpg (예: receipts/2025-10/rec2510270316.jpg)
       final monthFolder = '${now.year}-${now.month.toString().padLeft(2, '0')}';
@@ -302,6 +303,24 @@ class ReceiptUploadService {
     } catch (e) {
       rethrow;
     }
+  }
+
+  /// 파일명 충돌 방지를 위한 고유 파일명 생성 (YYMMDDHHmmss + ms + 4자리 랜덤)
+  static String _generateUniqueFileName(DateTime now) {
+    final rand = Random();
+    final randomSuffix = List.generate(4, (_) => rand.nextInt(36))
+        .map((n) => n.toRadixString(36))
+        .join();
+
+    final yy = now.year.toString().substring(2);
+    final mm = now.month.toString().padLeft(2, '0');
+    final dd = now.day.toString().padLeft(2, '0');
+    final hh = now.hour.toString().padLeft(2, '0');
+    final min = now.minute.toString().padLeft(2, '0');
+    final ss = now.second.toString().padLeft(2, '0');
+    final ms = now.millisecond.toString().padLeft(3, '0');
+
+    return 'rec$yy$mm$dd$hh$min$ss$ms\_$randomSuffix';
   }
 
   /// 영수증 선택 다이얼로그 (독립적 업로드용)

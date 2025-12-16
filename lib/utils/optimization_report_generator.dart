@@ -81,7 +81,7 @@ class OptimizationReportGenerator {
     report.writeln();
 
     report.writeln('### Current Image Assets:');
-    report.writeln('- **splash_logo.jpeg**: 63KB (used in splash screen)');
+    report.writeln('- **splash_logo.webp**: compressed for splash screen');
     report.writeln(
       '- **App icons**: 13 PNG files (20px - 1024px) = ~75KB total',
     );
@@ -206,7 +206,7 @@ class OptimizationReportGenerator {
     report.writeln('```dart');
     report.writeln('// Use OptimizedImage instead of Image.asset');
     report.writeln('OptimizedImage.asset(');
-    report.writeln('  "assets/images/splash_logo.jpeg",');
+    report.writeln('  "assets/images/splash_logo.webp",');
     report.writeln('  width: 200,');
     report.writeln('  height: 100,');
     report.writeln('  fit: BoxFit.contain,');
