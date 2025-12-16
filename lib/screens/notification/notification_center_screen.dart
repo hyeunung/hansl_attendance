@@ -18,6 +18,14 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
   List<Map<String, dynamic>> _notifications = [];
   bool _isLoading = true;
 
+  // DB/FCM에서 "\\n" 형태로 들어오는 경우가 있어 실제 줄바꿈으로 복원
+  String _normalizeNewlines(String text) {
+    return text
+        .replaceAll(r'\r\n', '\n')
+        .replaceAll(r'\n', '\n')
+        .replaceAll(r'\r', '\n');
+  }
+
   @override
   void initState() {
     super.initState();
@@ -250,6 +258,10 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                 itemBuilder: (context, index) {
                   final notification = _notifications[index];
                   final isRead = notification['is_read'] ?? false;
+                  final title =
+                      _normalizeNewlines((notification['title'] ?? '').toString());
+                  final body =
+                      _normalizeNewlines((notification['body'] ?? '').toString());
 
                   return Dismissible(
                     key: Key(notification['id'].toString()),
@@ -308,7 +320,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                           children: [
                                             Expanded(
                                               child: Text(
-                                                notification['title'] ?? '',
+                                                title,
                                                 style: ResponsiveUtils.getTextStyle(
                                                   context,
                                                   fontSize: 15,
@@ -335,7 +347,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          notification['body'] ?? '',
+                                          body,
                                           style: ResponsiveUtils.getTextStyle(
                                             context,
                                             fontSize: 14,
@@ -343,7 +355,8 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                                 ? Colors.grey[600]
                                                 : Colors.grey[700],
                                           ),
-                                          maxLines: 2,
+                                          softWrap: true,
+                                          maxLines: 3,
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         const SizedBox(height: 4),

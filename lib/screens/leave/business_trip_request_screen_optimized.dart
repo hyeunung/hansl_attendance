@@ -163,21 +163,22 @@ class _BusinessTripRequestScreenOptimizedState
         final startDate = group.first;
         final endDate = group.last;
 
-        // LeaveProvider의 requestLeave를 사용하여 통합 신청
+        // 신규 구조: reason에 정보를 합치지 않고 컬럼으로만 저장
+        final travelers = <String>[
+          _selectedEmployee!,
+          ..._selectedCompanions,
+        ];
+
         requestFutures.add(
-          leaveProvider.requestLeave(
+          leaveProvider.requestBiztrip(
             userEmail: userProvider.email!,
-            type: 'biztrip',
             startDate: startDate,
             endDate: endDate,
-            reason: [
-              '출장자: $_selectedEmployee',
-              if (_selectedCompanions.isNotEmpty)
-                '동행: ${_selectedCompanions.join(', ')}',
-              '장소: ${LeaveValidators.sanitizeInput(_placeController.text)}',
-              '목적: ${LeaveValidators.sanitizeInput(_purposeController.text)}',
-              '교통수단: $_selectedTransport',
-            ].join('\n'),
+            travelers: travelers,
+            place: LeaveValidators.sanitizeInput(_placeController.text),
+            // 업무내용(reason)은 줄바꿈을 유지해야 함
+            reason: LeaveValidators.sanitizeMultilineInput(_purposeController.text),
+            transport: _selectedTransport!,
           ),
         );
       }

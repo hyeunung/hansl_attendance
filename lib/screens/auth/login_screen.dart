@@ -541,6 +541,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
   final _passwordConfirmController = TextEditingController();
+  String? _selectedPosition; // 알바, 계약직, 정직원
   bool _isLoading = false;
   String? _error;
 
@@ -556,6 +557,13 @@ class _SignupScreenState extends State<SignupScreen> {
       });
       return;
     }
+    if (_selectedPosition == null || _selectedPosition!.isEmpty) {
+      setState(() {
+        _error = '직원 유형을 선택하세요.';
+        _isLoading = false;
+      });
+      return;
+    }
     if (_passwordController.text != _passwordConfirmController.text) {
       setState(() {
         _error = '비밀번호가 일치하지 않습니다.';
@@ -567,25 +575,14 @@ class _SignupScreenState extends State<SignupScreen> {
       // 입력된 이메일을 소문자로 변환하고 공백 제거
       final email = _emailController.text.trim().toLowerCase();
 
-      // 먼저 employees 테이블에 해당 이메일이 있는지 확인
-      final existingEmployee = await Supabase.instance.client
-          .from('employees')
-          .select()
-          .ilike('email', email) // 대소문자 무시
-          .maybeSingle();
-
-      if (existingEmployee == null) {
-        setState(() {
-          _error = '등록된 직원이 아닙니다. 관리자에게 문의하세요.';
-          _isLoading = false;
-        });
-        return;
-      }
-
+      // 회원가입 시도 (employees 테이블 체크 제거 - 트리거가 자동 생성)
       final response = await Supabase.instance.client.auth.signUp(
         email: email,
         password: _passwordController.text,
-        data: {'display_name': _nameController.text.trim()},
+        data: {
+          'display_name': _nameController.text.trim(),
+          'position': _selectedPosition, // 직원 유형 저장
+        },
       );
       if (response.user != null) {
         if (!mounted) return;
@@ -809,6 +806,46 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                         obscureText: true,
                       ),
+                      const SizedBox(height: 14),
+                      // 직원 유형 선택
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFF8F9FA),
+                          borderRadius: fieldRadius,
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedPosition,
+                            hint: Text(
+                              '직원 유형 선택',
+                              style: ResponsiveUtils.getTextStyle(
+                                context,
+                                color: Color(0xFFB0B8C1),
+                                fontSize: 16,
+                              ),
+                            ),
+                            isExpanded: true,
+                            items: ['알바', '계약직', '정직원'].map((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(
+                                  value,
+                                  style: ResponsiveUtils.getTextStyle(
+                                    context,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                _selectedPosition = newValue;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
                       if (_error != null) ...[
                         const SizedBox(height: 8),
                         Text(
@@ -863,5 +900,14 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _nameController.dispose();
+    _passwordConfirmController.dispose();
+    super.dispose();
   }
 }

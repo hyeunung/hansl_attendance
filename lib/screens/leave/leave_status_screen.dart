@@ -647,7 +647,26 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
       }
     }
 
-    String? companions = l['companions'];
+    // 출장인 경우: DB의 "출장자"(본인+동행자) 배열을 기준으로 동행자 표시
+    final String mainName = l['name'] ?? l['user_email'] ?? '-';
+    List<String> companionNames = [];
+    if (l['type'] == 'biztrip' && l['출장자'] != null) {
+      final travelers = (l['출장자'] as List<dynamic>?)
+              ?.map((e) => e.toString().trim())
+              .where((e) => e.isNotEmpty)
+              .toList() ??
+          [];
+
+      // 중복 제거(순서 유지)
+      final seen = <String>{};
+      final uniqueTravelers = <String>[];
+      for (final t in travelers) {
+        if (seen.add(t)) uniqueTravelers.add(t);
+      }
+
+      // 본인을 제외한 나머지를 동행자로 간주
+      companionNames = uniqueTravelers.where((t) => t != mainName).toList();
+    }
     // String? reason = l['reason']; // 미사용
     String statusLabel = status == 'approved'
         ? '승인됨'
@@ -661,6 +680,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
         : const Color(0xFFE57373);
     // final String name = l['type'] == 'biztrip' ? (l['name'] ?? '-') : ''; // 미사용
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 10),
@@ -713,21 +733,24 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                 ),
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 7,
+                padding: EdgeInsets.symmetric(
+                  horizontal: ResponsiveUtils.spacing(context, 12),
+                  vertical: ResponsiveUtils.spacing(context, 5),
                 ),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.13),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveUtils.spacing(context, rValue),
+                  ),
                 ),
                 child: Text(
                   statusLabel,
                   style: ResponsiveUtils.getTextStyle(
                     context,
                     color: statusColor,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w700,
                     fontSize: 15,
+                    letterSpacing: 0.1,
                   ),
                 ),
               ),
@@ -735,16 +758,26 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
           ),
         ),
         const SizedBox(height: 4),
-        Row(
+        Wrap(
+          spacing: 6,
+          runSpacing: 4,
           children: [
             Text(
               period,
-              style: ResponsiveUtils.getTextStyle(context, fontSize: 15, color: const Color(0xFF666666)),
+              style: ResponsiveUtils.getTextStyle(
+                context,
+                fontSize: 15,
+                color: const Color(0xFF666666),
+              ),
             ),
-            if (companions != null && companions.isNotEmpty)
+            if (companionNames.isNotEmpty)
               Text(
-                ' ($companions 동행)',
-                style: ResponsiveUtils.getTextStyle(context, fontSize: 15, color: const Color(0xFF666666)),
+                '(동행: ${companionNames.join(', ')})',
+                style: ResponsiveUtils.getTextStyle(
+                  context,
+                  fontSize: 15,
+                  color: const Color(0xFF666666),
+                ),
               ),
           ],
         ),
@@ -820,7 +853,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(
-          ResponsiveUtils.spacing(context, 20),
+          ResponsiveUtils.spacing(context, rValue),
         ),
       ),
       child: Text(

@@ -336,12 +336,6 @@ class NotificationService {
       // 알림 수신 이벤트 로깅
       _logNotificationEvent('received_foreground', message);
 
-      // iOS 배지 카운트 업데이트
-      if (Platform.isIOS) {
-        // 현재 배지 카운트를 가져와서 1 증가
-        await _updateBadgeCount();
-      }
-
       // Android 알림 채널 설정
       const androidDetails = AndroidNotificationDetails(
         'hansl_channel', // 채널 ID
@@ -931,58 +925,6 @@ class NotificationService {
   static Future<String?> getSavedToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('fcm_token');
-  }
-
-  /// iOS 배지 카운트 업데이트
-  static Future<void> _updateBadgeCount() async {
-    try {
-      // 읽지 않은 알림 개수를 가져와서 배지에 표시
-      final prefs = await SharedPreferences.getInstance();
-      int unreadCount = prefs.getInt('unread_notification_count') ?? 0;
-      unreadCount++; // 새 알림이 왔으므로 1 증가
-
-      // SharedPreferences에 저장
-      await prefs.setInt('unread_notification_count', unreadCount);
-
-      // iOS 배지 업데이트
-      if (Platform.isIOS) {
-        await FlutterLocalNotificationsPlugin()
-            .resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin
-            >()
-            ?.requestPermissions(badge: true);
-      }
-
-      if (kDebugMode) {
-        // Debug code removed
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        // Debug code removed
-      }
-    }
-  }
-
-  /// 배지 카운트 초기화
-  static Future<void> clearBadgeCount() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('unread_notification_count', 0);
-
-      if (Platform.isIOS) {
-        // iOS에서는 직접 배지를 0으로 설정할 수 없으므로
-        // 빈 알림을 보내서 배지를 제거
-        await _localNotifications.cancelAll();
-      }
-
-      if (kDebugMode) {
-        // Debug code removed
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        // Debug code removed
-      }
-    }
   }
 
   /// 로그인 후 FCM 토큰 재저장 (로그인 후 호출)

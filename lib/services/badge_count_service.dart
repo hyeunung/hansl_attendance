@@ -6,6 +6,10 @@ import '../utils/user_role_helper.dart';
 class BadgeCountService {
   
   static final _supabase = Supabase.instance.client;
+  static RealtimeChannel? _leaveChannel;
+  static RealtimeChannel? _purchaseChannel;
+  static RealtimeChannel? _purchaseItemsChannel;
+  static RealtimeChannel? _inquiryChannel;
   
   /// 배지 카운트 업데이트
   static Future<void> updateBadgeCount() async {
@@ -32,36 +36,49 @@ class BadgeCountService {
       
       // 역할 파싱
       final attendanceRoles = (employee['attendance_role'] as List<dynamic>?) ?? [];
-      final purchaseRoles = _parsePurchaseRoles(employee['purchase_role']);
+      final purchaseRoles = UserRoleHelper.parseRoles(employee['purchase_role']);
       
-      // UserRoleHelper 사용 (app_admin이면 자동으로 다른 권한도 true)
-      final isSuperAdmin = UserRoleHelper.isSuperAdmin(attendanceRoles);
-      final isAppAdmin = UserRoleHelper.isAppAdmin(purchaseRoles);
+      // ========== 권한 판별 ==========
+      // 연차/출장 승인 권한(부서장 + admin/superadmin)
+      final canApproveLeave = UserRoleHelper.isAnyManager(attendanceRoles) ||
+          UserRoleHelper.isAdminOrSuper(attendanceRoles);
+
+      // 발주 승인 권한(요구사항: middle_manager/raw_material_manager/consumable_manager만)
       final isMiddleManager = UserRoleHelper.isMiddleManager(purchaseRoles);
-      final isRawMaterialManager = UserRoleHelper.isRawMaterialManager(purchaseRoles);
-      final isConsumableManager = UserRoleHelper.isConsumableManager(purchaseRoles);
-      final isLeadBuyer = UserRoleHelper.isLeadBuyer(purchaseRoles); // app_admin 포함됨
+      // 최종 승인 권한(카테고리)은 final_approver 포함 여부까지 함께 봐야 함
+      final canManageRawMaterial = UserRoleHelper.canManageRawMaterial(purchaseRoles);
+      final canManageConsumable = UserRoleHelper.canManageConsumable(purchaseRoles);
+
+      // 구매대기 배지(요구사항: lead_buyer만)
+      final isPureLeadBuyer = UserRoleHelper.isPureLeadBuyer(purchaseRoles);
+
+      // 문의 배지(요구사항: app_admin만)
+      final isAppAdmin = UserRoleHelper.isAppAdmin(purchaseRoles);
       
 
-      if (isSuperAdmin || isAppAdmin) {
+      // 1) 연차/출장 승인대기
+      if (canApproveLeave) {
         final leaveCount = await _getPendingLeaveCount();
         totalCount += leaveCount;
       }
 
-      // 2. 발주 관련 카운트
-      if (isMiddleManager || isRawMaterialManager || isConsumableManager || isLeadBuyer || isAppAdmin) {
+      // 2) 발주 승인대기(역할별로)
+      if (isMiddleManager || canManageRawMaterial || canManageConsumable) {
         final purchaseCount = await _getPendingPurchaseCount(
-          isMiddleManager || isAppAdmin,
-          isRawMaterialManager,
-          isConsumableManager,
-          isLeadBuyer,
-          isAppAdmin,
-          purchaseRoles,
-          employee
+          isMiddleManager: isMiddleManager,
+          canManageRawMaterial: canManageRawMaterial,
+          canManageConsumable: canManageConsumable,
         );
         totalCount += purchaseCount;
       }
 
+      // 3) 구매대기(lead_buyer)
+      if (isPureLeadBuyer) {
+        final purchaseWaitingCount = await _getPurchaseWaitingCountForLeadBuyer();
+        totalCount += purchaseWaitingCount;
+      }
+
+      // 4) 문의 미처리(app_admin)
       if (isAppAdmin) {
         final inquiryCount = await _getUnprocessedInquiryCount();
         totalCount += inquiryCount;
@@ -103,124 +120,50 @@ class BadgeCountService {
   }
 
   /// 발주 미승인 건수 조회
-  static Future<int> _getPendingPurchaseCount(
-    bool isMiddleManager,
-    bool isRawMaterialManager,
-    bool isConsumableManager,
-    bool isLeadBuyer,
-    bool isAppAdmin,
-    List<dynamic> purchaseRoles,
-    Map<String, dynamic> employee,
-  ) async {
+  static Future<int> _getPendingPurchaseCount({
+    required bool isMiddleManager,
+    required bool canManageRawMaterial,
+    required bool canManageConsumable,
+  }) async {
     try {
-      int count = 0;
-      
-      // middle_manager: 1차 승인 대기
+      // 승인 화면(PurchaseProvider.fetchPendingPurchases)과 동일한 조건 + 발주번호 단위 중복제거
+      List<Map<String, dynamic>> rows = [];
+
+      // 요구사항: middle_manager는 app_admin 여부와 관계없이 1차 승인 대기만 카운트
       if (isMiddleManager) {
         final response = await _supabase
             .from('purchase_requests')
-            .select()
-            .eq('middle_manager_status', 'pending')
-            .count();
-        count += response.count;
-      }
-      
-      // raw_material_manager: 원자재 최종 승인 대기
-      if (isRawMaterialManager) {
+            .select('purchase_order_number')
+            .eq('middle_manager_status', 'pending');
+        rows = List<Map<String, dynamic>>.from(response);
+      } else if (canManageRawMaterial) {
         final response = await _supabase
             .from('purchase_requests')
-            .select()
-            .eq('payment_category', '원자재')
+            .select('purchase_order_number')
             .eq('middle_manager_status', 'approved')
-            .eq('raw_material_manager_status', 'pending')
-            .count();
-        count += response.count;
-      }
-      
-      // consumable_manager: 소모품 최종 승인 대기
-      if (isConsumableManager) {
+            .eq('final_manager_status', 'pending')
+            .eq('payment_category', '발주');
+        rows = List<Map<String, dynamic>>.from(response);
+      } else if (canManageConsumable) {
         final response = await _supabase
             .from('purchase_requests')
-            .select()
-            .eq('payment_category', '소모품')
+            .select('purchase_order_number')
             .eq('middle_manager_status', 'approved')
-            .eq('consumable_manager_status', 'pending')
-            .count();
-        count += response.count;
+            .eq('final_manager_status', 'pending')
+            .eq('payment_category', '구매 요청');
+        rows = List<Map<String, dynamic>>.from(response);
+      } else {
+        return 0;
       }
-      
-      // 구매현황 조회 권한이 있는 경우: 구매대기/입고대기 카운트
-      if (UserRoleHelper.canViewPurchaseStatus(purchaseRoles)) {
-        // 1. 구매대기: progress_type 조건 추가 (웹앱과 동일)
-        // 선진행은 무조건, 일반은 승인완료된 것만
-        var purchaseWaitingQuery = _supabase
-            .from('purchase_requests')
-            .select()
-            .eq('payment_category', '구매 요청')
-            .eq('is_payment_completed', false);
 
-        // 권한에 따른 필터링: lead buyer, app_admin이 아닌 경우 본인 것만 조회
-        if (!isAppAdmin && !isLeadBuyer) {
-          final userName = employee['name'] as String? ?? '';
-          purchaseWaitingQuery = purchaseWaitingQuery.eq('requester_name', userName);
-        }
-
-        final purchaseWaitingQueryResult = await purchaseWaitingQuery;
-        
-        // progress_type 조건으로 필터링
-        final purchaseWaitingFiltered = (purchaseWaitingQueryResult as List).where((item) {
-          final progressType = item['progress_type'] ?? '';
-          final finalStatus = item['final_manager_status'] ?? '';
-          
-          // 선진행은 무조건 포함
-          if (progressType.toString().contains('선진행')) return true;
-          // 일반은 최종승인 완료된 것만
-          if (progressType.toString().contains('일반') && finalStatus == 'approved') return true;
-          
-          return false;
-        }).toList();
-        
-        final purchaseWaitingCount = purchaseWaitingFiltered.length;
-        count += purchaseWaitingCount;
-        
-        // 2. 입고대기: 미입고 AND (선진행 OR 최종승인)
-        var receivingWaitingQuery = _supabase
-            .from('purchase_requests')
-            .select()
-            .eq('is_received', false);  // 미입고만 체크
-
-        // 권한에 따른 필터링: 전체 보기 권한이 없는 경우 본인 것만 조회
-        final isMiddleManager = UserRoleHelper.isMiddleManager(purchaseRoles);
-        final isFinalApprover = UserRoleHelper.isFinalApprover(purchaseRoles);
-        final isPurchaseManager = purchaseRoles.contains('purchase_manager');
-        final isCeo = purchaseRoles.contains('ceo');
-        final hasFullAccess = isAppAdmin || isLeadBuyer || isMiddleManager || isFinalApprover || isCeo;
-        
-        if (!hasFullAccess) {
-          final userName = employee['name'] as String? ?? '';
-          receivingWaitingQuery = receivingWaitingQuery.eq('requester_name', userName);
-        }
-
-        final receivingWaitingResult = await receivingWaitingQuery;
-        
-        // progress_type 조건으로 필터링: 선진행 OR 최종승인
-        final receivingWaitingFiltered = (receivingWaitingResult as List).where((item) {
-          final progressType = item['progress_type'] ?? '';
-          final finalStatus = item['final_manager_status'] ?? '';
-          
-          // 선진행은 무조건 포함
-          if (progressType.toString().contains('선진행')) return true;
-          // 최종승인 완료된 것 포함
-          if (finalStatus == 'approved') return true;
-          
-          return false;
-        }).toList();
-        
-        final receivingWaitingCount = receivingWaitingFiltered.length;
-        count += receivingWaitingCount;
+      // 중복 제거: 발주번호 단위로 1건만 카운트 (승인 화면과 동일)
+      final uniqueOrderNumbers = <String>{};
+      for (final r in rows) {
+        final n = r['purchase_order_number'];
+        if (n != null) uniqueOrderNumbers.add(n.toString());
       }
-      
-      return count;
+
+      return uniqueOrderNumbers.length;
       
     } catch (e) {
       // Debug code removed
@@ -228,7 +171,51 @@ class BadgeCountService {
     }
   }
 
-  /// 문의 미처리 건수 조회 (app_admin용)
+  /// 구매대기 건수 (lead_buyer 전용)
+  /// - purchase_waiting_widget.dart와 동일한 조건:
+  ///   - purchase_requests.payment_category == '구매 요청'
+  ///   - purchase_requests.is_payment_completed == false
+  ///   - progress_type: '선진행'은 무조건, '일반'은 final_manager_status == 'approved'만
+  ///   - 실제 미구매 품목(purchase_request_items.is_payment_completed != true)이 1개 이상 있는 것만
+  /// - 카운트 단위: 구매대기 화면에 뜨는 "발주번호(헤더)" 개수
+  static Future<int> _getPurchaseWaitingCountForLeadBuyer() async {
+    try {
+      final response = await _supabase
+          .from('purchase_requests')
+          .select('purchase_order_number, progress_type, final_manager_status, purchase_request_items(is_payment_completed)')
+          .eq('payment_category', '구매 요청')
+          .eq('is_payment_completed', false);
+
+      final allPurchases = List<Map<String, dynamic>>.from(response);
+
+      final validOrderNumbers = <String>{};
+      for (final purchase in allPurchases) {
+        final progressType = (purchase['progress_type'] ?? '').toString();
+        final finalStatus = (purchase['final_manager_status'] ?? '').toString();
+
+        // progress_type 필터
+        final isPreProgress = progressType.contains('선진행');
+        final isNormalApproved = progressType.contains('일반') && finalStatus == 'approved';
+        if (!isPreProgress && !isNormalApproved) continue;
+
+        final items = (purchase['purchase_request_items'] as List<dynamic>?) ?? const [];
+        final hasPendingItem = items.any((it) {
+          final m = Map<String, dynamic>.from(it as Map);
+          return m['is_payment_completed'] != true;
+        });
+        if (!hasPendingItem) continue;
+
+        final orderNumber = purchase['purchase_order_number'];
+        if (orderNumber != null) validOrderNumbers.add(orderNumber.toString());
+      }
+
+      return validOrderNumbers.length;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  /// 문의 미처리 건수 조회 (관리자용)
   static Future<int> _getUnprocessedInquiryCount() async {
     try {
       final response = await _supabase
@@ -236,43 +223,31 @@ class BadgeCountService {
           .select()
           .or('status.eq.open,status.eq.in_progress')
           .count();
-      
+
       return response.count;
-      
     } catch (e) {
-      // Debug code removed
       return 0;
     }
   }
 
-  /// purchase_role 파싱 헬퍼
-  static List<String> _parsePurchaseRoles(dynamic purchaseRole) {
-    if (purchaseRole == null) return [];
-    
-    if (purchaseRole is List) {
-      return purchaseRole.map((e) => e.toString()).toList();
-    } else if (purchaseRole is String) {
-      return purchaseRole.split(',').map((e) => e.trim()).toList();
-    }
-    
-    return [];
-  }
-
   /// 실시간 구독 설정 (배지 자동 업데이트)
   static void setupRealtimeSubscription() {
-    // 연차/출장 변경 감지
-    _supabase
-        .channel('leave_requests_badge')
+    // 중복 구독 방지
+    removeSubscriptions();
+
+    // 연차/출장(leave 테이블) 변경 감지
+    _leaveChannel = _supabase
+        .channel('leave_badge')
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
-          table: 'leave_requests',
+          table: 'leave',
           callback: (_) => updateBadgeCount(),
         )
         .subscribe();
 
     // 발주 변경 감지
-    _supabase
+    _purchaseChannel = _supabase
         .channel('purchase_requests_badge')
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
@@ -282,8 +257,19 @@ class BadgeCountService {
         )
         .subscribe();
 
+    // 구매대기에서 품목 완료 처리 시 배지 즉시 반영을 위해 품목 테이블도 감지
+    _purchaseItemsChannel = _supabase
+        .channel('purchase_request_items_badge')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'purchase_request_items',
+          callback: (_) => updateBadgeCount(),
+        )
+        .subscribe();
+
     // 문의 변경 감지
-    _supabase
+    _inquiryChannel = _supabase
         .channel('support_inquires_badge')
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
@@ -296,8 +282,21 @@ class BadgeCountService {
 
   /// 구독 해제
   static void removeSubscriptions() {
-    _supabase.removeChannel(_supabase.channel('leave_requests_badge'));
-    _supabase.removeChannel(_supabase.channel('purchase_requests_badge'));
-    _supabase.removeChannel(_supabase.channel('support_inquires_badge'));
+    if (_leaveChannel != null) {
+      _supabase.removeChannel(_leaveChannel!);
+      _leaveChannel = null;
+    }
+    if (_purchaseChannel != null) {
+      _supabase.removeChannel(_purchaseChannel!);
+      _purchaseChannel = null;
+    }
+    if (_purchaseItemsChannel != null) {
+      _supabase.removeChannel(_purchaseItemsChannel!);
+      _purchaseItemsChannel = null;
+    }
+    if (_inquiryChannel != null) {
+      _supabase.removeChannel(_inquiryChannel!);
+      _inquiryChannel = null;
+    }
   }
 }

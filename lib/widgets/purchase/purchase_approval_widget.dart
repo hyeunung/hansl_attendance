@@ -1226,14 +1226,29 @@ return;
       statusLabel = '대기중';
     }
 
+    // 선진행 여부에 따른 카드 배경색 설정
+    final bool isPreProgress = group.progressType == '선진행';
+    final Color cardBackgroundColor = isPreProgress 
+        ? const Color(0xFFFFEBEE)  // 연붉은색
+        : Colors.white;
+    
+    // 선진행 디버깅 로그 (간소화)
+    if (isPreProgress) {
+      print('🔴 선진행 항목: ${group.purchaseOrderNumber} - progressType: "${group.progressType}"');
+    }
+
     return Container(
       margin: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 16)),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBackgroundColor,  // 선진행이면 연붉은색
         borderRadius: BorderRadius.circular(
           ResponsiveUtils.spacing(context, 14),
         ),
         boxShadow: AppShadows.cardShadow,
+        // 선진행일 때 테두리 추가
+        border: isPreProgress 
+            ? Border.all(color: const Color(0xFFFFCDD2), width: 1.5)
+            : null,
       ),
       child: InkWell(
         onTap: () => _showOrderDetails(context, group),
@@ -1241,52 +1256,52 @@ return;
           ResponsiveUtils.spacing(context, 14),
         ),
         child: Padding(
-          padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 18)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 상단: 발주번호, 카테고리, 상태
-              Row(
-                children: [
-                  Icon(
-                    Icons.receipt,
-                    color: AppColors.primary,
-                    size: ResponsiveUtils.iconSize(context, 22),
-                  ),
-                  SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                  Expanded(
-                    child: Text(
-                      group.purchaseOrderNumber,
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+            padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 18)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 상단: 발주번호, 카테고리, 상태
+                Row(
+                  children: [
+                    Icon(
+                      Icons.receipt,
+                      color: AppColors.primary,
+                      size: ResponsiveUtils.iconSize(context, 22),
+                    ),
+                    SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                    Expanded(
+                      child: Text(
+                        group.purchaseOrderNumber,
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
-                  ),
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: ResponsiveUtils.spacing(context, 10),
-                      vertical: ResponsiveUtils.spacing(context, 4),
-                    ),
-                    decoration: BoxDecoration(
-                      color: categoryBgColor,
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveUtils.spacing(context, 8),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: ResponsiveUtils.spacing(context, 10),
+                        vertical: ResponsiveUtils.spacing(context, 4),
+                      ),
+                      decoration: BoxDecoration(
+                        color: categoryBgColor,
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveUtils.spacing(context, 8),
+                        ),
+                      ),
+                      child: Text(
+                        group.paymentCategory ?? '',
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
+                          fontSize: 14,
+                          color: categoryTextColor,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                    child: Text(
-                      group.paymentCategory ?? '',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 14,
-                        color: categoryTextColor,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                  Container(
+                    SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                    Container(
                     padding: EdgeInsets.symmetric(
                       horizontal: ResponsiveUtils.spacing(context, 10),
                       vertical: ResponsiveUtils.spacing(context, 4),
@@ -2351,14 +2366,24 @@ return;
       statusLabel = '처리완료';
     }
 
+    // 선진행 여부에 따른 카드 배경색 설정
+    final bool isPreProgress = group.progressType == '선진행';
+    final Color cardBackgroundColor = isPreProgress 
+        ? const Color(0xFFFFEBEE)  // 연붉은색
+        : Colors.white;
+
     return Container(
       margin: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 16)),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBackgroundColor,
         borderRadius: BorderRadius.circular(
           ResponsiveUtils.spacing(context, 14),
         ),
         boxShadow: AppShadows.cardShadow,
+        // 선진행일 때 테두리 추가
+        border: isPreProgress 
+            ? Border.all(color: const Color(0xFFFFCDD2), width: 1.5)
+            : null,
       ),
       child: InkWell(
         onTap: () => _showOrderDetails(context, group),

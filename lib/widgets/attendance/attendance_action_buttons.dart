@@ -38,7 +38,9 @@ class AttendanceActionButtons extends StatelessWidget {
                     borderRadius: BorderRadius.circular(
                       ResponsiveUtils.spacing(context, 14),
                     ),
-                    onTap: provider.status == AttendanceStatus.beforeWork
+                    onTap: provider.status == AttendanceStatus.beforeWork &&
+                            provider.canClockIn &&
+                            !provider.isLoading
                         ? () async {
                             // Debug code removed
                             await provider.tryClockIn();

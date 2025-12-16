@@ -706,6 +706,17 @@ class _CalendarScreenState extends State<CalendarScreen>
       displayReason = e['reason'];
     }
 
+    // 출장인 경우 출장자 배열 사용 (전원 이름 표시)
+    String displayName = e['name'] ?? e['user_email'] ?? '-';
+    if (e['type'] == 'biztrip' && e['출장자'] != null) {
+      final travelersRaw = e['출장자'] as List<dynamic>?;
+      if (travelersRaw != null && travelersRaw.isNotEmpty) {
+        // 출장자 전원 이름을 콤마로 구분하여 표시
+        final allTravelers = travelersRaw.map((t) => t.toString()).toList();
+        displayName = allTravelers.join(', ');
+      }
+    }
+
     return Container(
       padding: EdgeInsets.symmetric(
         vertical: ResponsiveUtils.spacing(context, 12),
@@ -719,13 +730,15 @@ class _CalendarScreenState extends State<CalendarScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                e['name'] ?? e['user_email'] ?? '-',
-                style: ResponsiveUtils.getTextStyle(
-                  context,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
-                  color: const Color(0xFF1C1C1E),
+              Expanded(
+                child: Text(
+                  displayName,
+                  style: ResponsiveUtils.getTextStyle(
+                    context,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                    color: const Color(0xFF1C1C1E),
+                  ),
                 ),
               ),
               Container(
@@ -762,7 +775,44 @@ class _CalendarScreenState extends State<CalendarScreen>
               ),
             ),
           ],
-          if (displayReason != null) ...[
+          // 출장인 경우: 장소, 업무, 차량 정보를 각 행에 표시
+          if (e['type'] == 'biztrip') ...[
+            if (e['place'] != null && e['place'].toString().isNotEmpty) ...[
+              SizedBox(height: ResponsiveUtils.spacing(context, 2)),
+              Text(
+                '장소 : ${e['place']}',
+                style: ResponsiveUtils.getTextStyle(
+                  context,
+                  color: const Color(0xFF8E8E93),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+            if (displayReason != null && displayReason.isNotEmpty) ...[
+              SizedBox(height: ResponsiveUtils.spacing(context, 2)),
+              Text(
+                '업무 : $displayReason',
+                style: ResponsiveUtils.getTextStyle(
+                  context,
+                  color: const Color(0xFF8E8E93),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+            if (e['transport'] != null && e['transport'].toString().isNotEmpty) ...[
+              SizedBox(height: ResponsiveUtils.spacing(context, 2)),
+              Text(
+                '차량 : ${e['transport']}',
+                style: ResponsiveUtils.getTextStyle(
+                  context,
+                  color: const Color(0xFF8E8E93),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ],
+          // 연차/반차인 경우: reason만 표시
+          if (displayReason != null && e['type'] != 'biztrip') ...[
             SizedBox(height: ResponsiveUtils.spacing(context, 2)),
             Text(
               displayReason,

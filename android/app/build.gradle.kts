@@ -39,6 +39,11 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        
+        // 16KB 페이지 크기 지원 (Android 15+)
+        ndk {
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64")
+        }
     }
 
     signingConfigs {
@@ -59,6 +64,12 @@ android {
             
             // Release 서명키 사용
             signingConfig = signingConfigs.getByName("release")
+        }
+    }
+    
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
         }
     }
 }

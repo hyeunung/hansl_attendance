@@ -7,6 +7,7 @@ class NotificationProvider with ChangeNotifier {
   List<Map<String, dynamic>> _notifications = [];
   bool _isLoading = false;
   String? error;
+  RealtimeChannel? _channel;
   
   // Debug logging function removed
 
@@ -128,7 +129,13 @@ class NotificationProvider with ChangeNotifier {
       final user = _supabase.auth.currentUser;
       if (user == null) return;
 
-      _supabase
+      // 중복 구독 방지
+      if (_channel != null) {
+        _supabase.removeChannel(_channel!);
+        _channel = null;
+      }
+
+      _channel = _supabase
           .channel('notifications_channel')
           .onPostgresChanges(
             event: PostgresChangeEvent.insert,
@@ -146,6 +153,27 @@ class NotificationProvider with ChangeNotifier {
               notifyListeners();
             },
           )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'notifications',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'user_email',
+            value: user.email,
+          ),
+          callback: (payload) {
+            final updated = payload.newRecord;
+            final idx = _notifications.indexWhere(
+              (n) => n['id'] == updated['id'],
+            );
+            if (idx != -1) {
+              _notifications[idx] = updated;
+            }
+            _updateUnreadCount();
+            notifyListeners();
+          },
+        )
           .subscribe();
     } catch (e) {
       // 테이블이 없는 경우 무시
@@ -158,7 +186,10 @@ class NotificationProvider with ChangeNotifier {
   // 정리
   @override
   void dispose() {
-    _supabase.removeChannel(_supabase.channel('notifications_channel'));
+    if (_channel != null) {
+      _supabase.removeChannel(_channel!);
+      _channel = null;
+    }
     super.dispose();
   }
 

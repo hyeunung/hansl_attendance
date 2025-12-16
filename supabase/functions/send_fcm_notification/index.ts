@@ -206,6 +206,9 @@ async function sendFCMMessage(accessToken, fcmToken, title, body, data = {}, ema
       throw new Error('Project ID not provided');
     }
     
+    // 줄바꿈 이스케이프를 실제 개행으로 변환
+    const normalizedBody = (body || '').replace(/\\n/g, '\n');
+    
     // FCM data 필드는 모든 값이 문자열이어야 함
     const stringData = {};
     for (const [key, value] of Object.entries(data)) {
@@ -219,7 +222,7 @@ async function sendFCMMessage(accessToken, fcmToken, title, body, data = {}, ema
         token: fcmToken,
         notification: {
           title: title,
-          body: body
+          body: normalizedBody
         },
         data: stringData,
         android: {
@@ -232,8 +235,7 @@ async function sendFCMMessage(accessToken, fcmToken, title, body, data = {}, ema
           payload: {
             aps: {
               sound: 'default',
-              'content-available': 1,
-              badge: 1
+              'content-available': 1
             }
           }
         }

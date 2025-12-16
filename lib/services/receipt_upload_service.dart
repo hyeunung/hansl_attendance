@@ -212,6 +212,7 @@ class ReceiptUploadService {
       final filePath = 'receipts/$monthFolder/$fileName$fileExtension';
 
       final bytes = await photo.readAsBytes();
+      
       await _supabase.storage.from('receipt-images').uploadBinary(
         filePath,
         bytes,
@@ -226,6 +227,67 @@ class ReceiptUploadService {
           .getPublicUrl(filePath);
 
       // 4. purchase_receipts 테이블에 저장 (독립적 시스템)
+      await _supabase.from('purchase_receipts').insert({
+        'receipt_image_url': publicUrl,
+        'file_name': '$fileName$fileExtension',
+        'file_size': bytes.length,
+        'uploaded_by': userEmail,
+        'uploaded_by_name': userName,
+        'memo': memo,
+        'uploaded_at': DateTime.now().toUtc().toIso8601String(),
+      });
+
+      return publicUrl;
+    } catch (e, stackTrace) {
+      rethrow;
+    }
+  }
+
+  /// 직접 파일로 영수증 업로드 (미리보기에서 사용)
+  static Future<String?> uploadReceiptFromFile({
+    required File imageFile,
+    required String userEmail,
+    String? memo,
+  }) async {
+    try {
+      // 1. 사용자 이름 가져오기
+      String userName = '';
+      try {
+        final employee = await _supabase
+            .from('employees')
+            .select('name')
+            .eq('email', userEmail)
+            .single();
+        userName = employee['name'] ?? '';
+      } catch (e) {
+        // 사용자 이름 조회 실패시 빈 문자열 유지
+      }
+
+      // 2. 파일 업로드
+      final now = DateTime.now();
+      final fileExtension = path.extension(imageFile.path);
+      final fileName = 'rec${now.year.toString().substring(2)}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}';
+      
+      // 파일 경로: receipts/{년도-월}/{fileName}.jpg (예: receipts/2025-10/rec2510270316.jpg)
+      final monthFolder = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+      final filePath = 'receipts/$monthFolder/$fileName$fileExtension';
+
+      final bytes = await imageFile.readAsBytes();
+      
+      await _supabase.storage.from('receipt-images').uploadBinary(
+        filePath,
+        bytes,
+        fileOptions: FileOptions(
+          contentType: _getContentType(fileExtension),
+          upsert: false,
+        ),
+      );
+
+      final publicUrl = _supabase.storage
+          .from('receipt-images')
+          .getPublicUrl(filePath);
+
+      // 3. purchase_receipts 테이블에 저장 (독립적 시스템)
       await _supabase.from('purchase_receipts').insert({
         'receipt_image_url': publicUrl,
         'file_name': '$fileName$fileExtension',
@@ -257,18 +319,21 @@ class ReceiptUploadService {
               leading: const Icon(Icons.camera_alt, color: Color(0xFF007AFF)),
               title: const Text('카메라로 촬영'),
               onTap: () async {
+                Navigator.pop(context); // 먼저 다이얼로그 닫기
+                
                 try {
                   final url = await uploadReceiptIndependent(
                     userEmail: userEmail,
                     source: ImageSource.camera,
                     memo: memo,
                   );
-                  if (context.mounted) {
-                    Navigator.pop(context, url);
+                  
+                  // 업로드 완료 모달은 호출한 곳에서 처리
+                  if (context.mounted && url != null) {
+                    // 성공 시 ReceiptsScreen으로 url 전달하기 위해 콜백 필요
                   }
                 } catch (e) {
                   if (context.mounted) {
-                    Navigator.pop(context); // 에러 시에만 다이얼로그 닫기
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('업로드 실패: $e'),

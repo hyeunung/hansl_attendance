@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/leave_provider.dart';
@@ -13,6 +14,7 @@ import '../../widgets/purchase/purchase_waiting_widget.dart';
 import '../../widgets/purchase/receiving_waiting_widget.dart';
 import '../../services/badge_cache_service.dart';
 import '../../utils/user_role_helper.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ApprovalScreen extends StatefulWidget {
   final int? initialMainTab; // 0: 연차/출장, 1: 발주승인, 2: 구매대기, 3: 입고대기
@@ -30,6 +32,13 @@ class _ApprovalScreenState extends State<ApprovalScreen>
   late TabController _subTabController; // 서브 탭 (대기중, 처리완료)
   bool _hasPurchaseApprovalAuth = false; // 발주 승인 권한 여부
   bool _hasLeaveApprovalAuth = false; // 연차 승인 권한 여부
+  
+  // Realtime 구독
+  RealtimeChannel? _leaveChannel;
+  RealtimeChannel? _purchaseChannel;
+  RealtimeChannel? _purchaseItemsChannel;
+  bool _isRealtimeRefreshing = false;
+  Timer? _realtimeDebounce;
   
   // 배지 카운트 즉시 표시를 위한 로컬 캐시
   Map<String, int> _cachedBadgeCounts = {
@@ -65,6 +74,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     _loadCachedBadgeCounts();
     
     _loadData();
+    _setupRealtimeSubscriptions();
   }
   
   // 로컬 캐시에서 배지 카운트 즉시 로드
@@ -152,8 +162,100 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     });
   }
 
+  // 실시간 구독 설정 (연차/발주)
+  void _setupRealtimeSubscriptions() {
+    final client = Supabase.instance.client;
+
+    _leaveChannel = client
+        .channel('approval_leave_realtime')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'leave',
+          callback: (_) => _handleRealtimeRefresh(),
+        )
+        .subscribe();
+
+    _purchaseChannel = client
+        .channel('approval_purchase_realtime')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'purchase_requests',
+          callback: (_) => _handleRealtimeRefresh(),
+        )
+        .subscribe();
+
+    _purchaseItemsChannel = client
+        .channel('approval_purchase_items_realtime')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'purchase_request_items',
+          callback: (_) => _handleRealtimeRefresh(),
+        )
+        .subscribe();
+  }
+
+  // 실시간 이벤트 수신 시 데이터 리프레시 (단순 재조회로 일관성 유지)
+  void _handleRealtimeRefresh() {
+    _realtimeDebounce?.cancel();
+    _realtimeDebounce = Timer(const Duration(milliseconds: 250), () {
+      if (_isRealtimeRefreshing) return;
+      _isRealtimeRefreshing = true;
+
+      // 짧은 시간에 여러 이벤트가 와도 한 번만 재조회
+      Future.microtask(() async {
+        try {
+          if (!mounted) return;
+
+          final leaveProvider = Provider.of<LeaveProvider>(
+            context,
+            listen: false,
+          );
+          final purchaseProvider = Provider.of<PurchaseProvider>(
+            context,
+            listen: false,
+          );
+          final userProvider = Provider.of<UserProvider>(
+            context,
+            listen: false,
+          );
+
+          await leaveProvider.fetchAllLeaves(forceRefresh: true);
+          await purchaseProvider.fetchPendingPurchases(
+            employee: userProvider.employee,
+          );
+          await purchaseProvider.fetchCompletedPurchases(
+            employee: userProvider.employee,
+          );
+
+          // 배지 캐시도 최신 상태로 동기화
+          _saveBadgeCounts();
+        } catch (_) {
+          // 무시: 실시간 콜백에서 예외로 인한 크래시 방지
+        } finally {
+          _isRealtimeRefreshing = false;
+        }
+      });
+    });
+  }
+
   @override
   void dispose() {
+    if (_leaveChannel != null) {
+      Supabase.instance.client.removeChannel(_leaveChannel!);
+      _leaveChannel = null;
+    }
+    if (_purchaseChannel != null) {
+      Supabase.instance.client.removeChannel(_purchaseChannel!);
+      _purchaseChannel = null;
+    }
+    if (_purchaseItemsChannel != null) {
+      Supabase.instance.client.removeChannel(_purchaseItemsChannel!);
+      _purchaseItemsChannel = null;
+    }
+    _realtimeDebounce?.cancel();
     _mainTabController.dispose();
     _subTabController.dispose();
     super.dispose();
@@ -1411,7 +1513,12 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     ).format(DateTime.parse(l['created_at']));
     final reason = l['reason'] ?? '-';
     final status = l['status'];
-    final dest = l['destination'] ?? '';
+    // 출장 필드 (신규 컬럼 우선, 과거 데이터 호환용 fallback 포함)
+    final place = (l['place'] ?? l['destination'] ?? '').toString();
+    final transport = (l['transport'] ?? '').toString();
+    final travelersList =
+        (l['출장자'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
+    final travelersText = travelersList.where((e) => e.trim().isNotEmpty).join(', ');
     return Container(
       margin: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 16)),
       padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 18)),
@@ -1472,7 +1579,11 @@ class _ApprovalScreenState extends State<ApprovalScreen>
           SizedBox(height: ResponsiveUtils.spacing(context, 14)),
           // 상세 정보
           _infoRow(Icons.date_range, '기간', period),
-          if (isBiztrip && dest.isNotEmpty) _infoRow(Icons.place, '목적지', dest),
+          if (isBiztrip && travelersText.isNotEmpty)
+            _infoRow(Icons.group, '출장자', travelersText),
+          if (isBiztrip && place.isNotEmpty) _infoRow(Icons.place, '목적지', place),
+          if (isBiztrip && transport.isNotEmpty)
+            _infoRow(Icons.directions_car, '교통수단', transport),
           _infoRow(Icons.calendar_today, '신청일', createdAt),
           // 최종 승인자 정보 표시 (처리완료 탭에서만 + superadmin만)
           if (!showButtons && status != 'pending') ...[

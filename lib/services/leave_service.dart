@@ -219,12 +219,16 @@ class LeaveService {
     required String transport,
     String? companions,
   }) async {
-    final String summarizedReason = [
-      '장소: $place',
-      '목적: $purpose',
-      '교통수단: $transport',
-      if ((companions ?? '').trim().isNotEmpty) '동행: ${companions ?? ''}',
-    ].join('\n');
+    // 출장자 배열 생성 (본인 + 동행자)
+    final List<String> bizTripAttendees = [name];
+    if ((companions ?? '').trim().isNotEmpty) {
+      final companionsList = companions!
+          .split(',')
+          .map((c) => c.trim())
+          .where((c) => c.isNotEmpty)
+          .toList();
+      bizTripAttendees.addAll(companionsList);
+    }
 
     final Map<String, dynamic> data = {
       'user_email': email,
@@ -232,7 +236,11 @@ class LeaveService {
       'type': 'biztrip',
       'start_date': leaveDate,
       'end_date': leaveDate,
-      'reason': summarizedReason,
+      // reason에는 출장 "업무 내용"이 들어가야 함 (현재 입력값 = purpose)
+      'reason': purpose,
+      '출장자': bizTripAttendees,      // 출장자 + 동행자 전체 배열
+      'place': place,                 // 장소
+      'transport': transport,         // 교통수단
       'status': 'pending',
       'created_at': DateTime.now().toIso8601String(),
     };

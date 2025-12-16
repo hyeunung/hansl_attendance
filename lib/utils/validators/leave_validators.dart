@@ -146,6 +146,31 @@ class LeaveValidators {
     return sanitized;
   }
 
+  /// 멀티라인 입력값 정제 (sanitize) - 줄바꿈 유지
+  /// - HTML 태그 제거
+  /// - CRLF/CR을 LF로 정규화
+  /// - 각 줄의 앞뒤 공백 제거
+  /// - 각 줄 내부의 연속 공백/탭만 하나로 정리 (줄바꿈은 유지)
+  static String sanitizeMultilineInput(String input) {
+    // HTML 태그 제거
+    String sanitized = input.replaceAll(_htmlTagPattern, '');
+
+    // 줄바꿈 정규화
+    sanitized = sanitized.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+
+    // 줄 단위로 정리(줄바꿈 유지)
+    final lines = sanitized.split('\n').map((line) {
+      final trimmed = line.trim();
+      // 줄 내부 공백/탭만 정리 (줄바꿈은 split으로 이미 분리됨)
+      return trimmed.replaceAll(RegExp(r'[ \t]+'), ' ');
+    }).toList();
+
+    // 전체 앞뒤 공백/빈 줄 정리 (중간 빈 줄은 유지)
+    sanitized = lines.join('\n').trim();
+
+    return sanitized;
+  }
+
   /// 연차 잔여일수 검증
   static String? validateRemainingDays(double remaining, double requested) {
     if (requested > remaining) {
