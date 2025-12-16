@@ -494,7 +494,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
-				CURRENT_PROJECT_VERSION = 259;
+				CURRENT_PROJECT_VERSION = 260;
 				DEVELOPMENT_TEAM = RF86ZW7LG9;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -502,7 +502,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 3.3.3;
+				MARKETING_VERSION = 3.3.4;
 				"OTHER_LDFLAGS[sdk=iphoneos*]" = (
 					"$(inherited)",
 					"-Wl,-ld_classic",
@@ -526,10 +526,10 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 259;
+				CURRENT_PROJECT_VERSION = 260;
 				DEVELOPMENT_TEAM = RF86ZW7LG9;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 3.3.3;
+				MARKETING_VERSION = 3.3.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hansl.attendance.v2.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
@@ -545,10 +545,10 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 259;
+				CURRENT_PROJECT_VERSION = 260;
 				DEVELOPMENT_TEAM = RF86ZW7LG9;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 3.3.3;
+				MARKETING_VERSION = 3.3.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hansl.attendance.v2.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -562,10 +562,10 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 259;
+				CURRENT_PROJECT_VERSION = 260;
 				DEVELOPMENT_TEAM = RF86ZW7LG9;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 3.3.3;
+				MARKETING_VERSION = 3.3.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hansl.attendance.v2.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -691,7 +691,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
-				CURRENT_PROJECT_VERSION = 259;
+				CURRENT_PROJECT_VERSION = 260;
 				DEVELOPMENT_TEAM = RF86ZW7LG9;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -699,7 +699,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 3.3.3;
+				MARKETING_VERSION = 3.3.4;
 				"OTHER_LDFLAGS[sdk=iphoneos*]" = (
 					"$(inherited)",
 					"-Wl,-ld_classic",
@@ -725,7 +725,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
-				CURRENT_PROJECT_VERSION = 259;
+				CURRENT_PROJECT_VERSION = 260;
 				DEVELOPMENT_TEAM = RF86ZW7LG9;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -733,7 +733,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 3.3.3;
+				MARKETING_VERSION = 3.3.4;
 				"OTHER_LDFLAGS[sdk=iphoneos*]" = (
 					"$(inherited)",
 					"-Wl,-ld_classic",
