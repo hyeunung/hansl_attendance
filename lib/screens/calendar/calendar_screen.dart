@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../../providers/leave_provider.dart';
 import '../../theme/app_colors.dart';
@@ -88,6 +89,7 @@ class _CalendarScreenState extends State<CalendarScreen>
       builder: (context, provider, _) {
         // 달력에서는 승인된 것만 전용으로 가져온 데이터 사용
         final allLeaves = provider.approvedLeavesForCalendar; // 승인된 것만
+        final hasData = allLeaves.isNotEmpty;
 
         // 디버그 로그 추가
         // Debug code removed
@@ -96,6 +98,13 @@ class _CalendarScreenState extends State<CalendarScreen>
         final totalCells = days.length + firstWeekday;
         final rows = (totalCells / 7).ceil();
         // final today = DateTime.now(); // 미사용 변수 주석 처리
+        final isLoading = provider.calendarLoading;
+        final showLoading = isLoading && !hasData;
+        if (kDebugMode) {
+          debugPrint(
+              '[CalendarScreen] build hasData=$hasData calendarLoading=$isLoading showLoading=$showLoading');
+        }
+
         return Scaffold(
           appBar: AppBar(
             title: Text('달력', style: AppTextStyles.appBarTitle(context)),
@@ -110,7 +119,7 @@ class _CalendarScreenState extends State<CalendarScreen>
             iconTheme: const IconThemeData(color: Colors.white),
           ),
           backgroundColor: const Color(0xFFF8F9FA),
-          body: provider.isLoading
+          body: showLoading
               ? const Center(child: CircularProgressIndicator())
               : RefreshIndicator(
                   onRefresh: () async {

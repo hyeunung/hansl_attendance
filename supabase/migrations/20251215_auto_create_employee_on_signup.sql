@@ -117,3 +117,5 @@ COMMENT ON FUNCTION public.handle_new_user() IS 'auth.users에 새 사용자가 
 COMMENT ON TRIGGER on_auth_user_created ON auth.users IS '회원가입 시 employees 테이블 자동 생성 트리거';
 COMMENT ON COLUMN employees.auth_user_id IS 'auth.users.id와 매핑되는 UUID. 회원가입 시 자동 설정됨';
 
+
+

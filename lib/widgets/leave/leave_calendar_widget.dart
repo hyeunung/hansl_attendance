@@ -417,9 +417,58 @@ class LeaveCalendarWidget extends StatelessWidget {
     }
   }
 
+  /// 해당 날짜에 신청된 연차 유형들을 반환
+  Set<String> _getLeaveTypesForDate(DateTime day) {
+    final types = <String>{};
+    for (final leave in myLeaves) {
+      if (leave['status'] == 'rejected') continue;
+      final start = DateTime.parse(leave['start_date']);
+      final end = DateTime.parse(leave['end_date']);
+      final dates = List.generate(
+        end.difference(start).inDays + 1,
+        (i) => DateTime(start.year, start.month, start.day + i),
+      );
+      if (dates.any((d) => isSameDay(d, day))) {
+        types.add(leave['type'] ?? '');
+      }
+    }
+    return types;
+  }
+
+  /// 해당 날짜가 현재 선택된 유형으로 신청 가능한지 확인
+  bool _canSelectDateForType(DateTime day) {
+    final existingTypes = _getLeaveTypesForDate(day);
+    
+    // 아무것도 신청되지 않았으면 선택 가능
+    if (existingTypes.isEmpty) return true;
+    
+    // 연차(annual) 또는 공가(official)가 있으면 해당 날짜 사용 불가
+    if (existingTypes.contains('annual') || existingTypes.contains('official')) {
+      return false;
+    }
+    
+    // 현재 선택하려는 타입에 따라 판단
+    switch (selectedType) {
+      case LeaveType.annual:
+      case LeaveType.official:
+        // 연차/공가를 신청하려면 해당 날짜에 아무것도 없어야 함
+        return existingTypes.isEmpty;
+      case LeaveType.halfAm:
+        // 오전반차를 신청하려면 오전반차가 없어야 함 (오후반차는 있어도 됨)
+        return !existingTypes.contains('half_am') && !existingTypes.contains('halfAm');
+      case LeaveType.halfPm:
+        // 오후반차를 신청하려면 오후반차가 없어야 함 (오전반차는 있어도 됨)
+        return !existingTypes.contains('half_pm') && !existingTypes.contains('halfPm');
+      default:
+        return existingTypes.isEmpty;
+    }
+  }
+
   Set<DateTime> _getDisabledDates() {
+    // 이 함수는 이제 연차/공가가 신청된 날짜만 반환 (반차는 제외)
     return myLeaves
-        .where((l) => l['status'] != 'rejected') // 반려된 연차는 제외
+        .where((l) => l['status'] != 'rejected')
+        .where((l) => l['type'] == 'annual' || l['type'] == 'official')
         .map((l) {
           final start = DateTime.parse(l['start_date']);
           final end = DateTime.parse(l['end_date']);
@@ -457,8 +506,11 @@ class LeaveCalendarWidget extends StatelessWidget {
       return false;
     }
 
-    // 이미 신청된 날짜는 비활성화
+    // 연차/공가가 신청된 날짜는 무조건 비활성화
     if (disabledDates.any((d) => isSameDay(d, day))) return false;
+
+    // 반차 중복 체크: 현재 선택된 유형으로 해당 날짜 선택 가능한지 확인
+    if (!_canSelectDateForType(day)) return false;
 
     // 다른 휴가 유형으로 이미 선택된 날짜는 비활성화
     for (final type in LeaveType.values) {

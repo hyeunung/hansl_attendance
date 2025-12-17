@@ -9,6 +9,7 @@ import '../services/async_operation_manager.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart';
 
 class LeaveProvider extends ChangeNotifier
     with TimerManagementMixin, AsyncOperationMixin {
@@ -23,6 +24,7 @@ class LeaveProvider extends ChangeNotifier
   List<Map<String, dynamic>> _allLeavesRaw = []; // 그룹화 전 원본 데이터
   List<Map<String, dynamic>> holidays = []; // 공휴일 데이터
   bool isLoading = false; // 초기에는 false로 설정
+  bool calendarLoading = false; // 달력 전용 로딩 플래그
   String? error;
 
   // Cache keys for different data types
@@ -331,7 +333,8 @@ class LeaveProvider extends ChangeNotifier
   Future<void> fetchApprovedLeavesForCalendar({
     bool forceRefresh = false,
   }) async {
-    _updateLoadingState(true, null);
+    _updateCalendarLoadingState(true, null);
+    _log('fetchApprovedLeavesForCalendar start forceRefresh=$forceRefresh');
 
     try {
       if (forceRefresh) {
@@ -360,16 +363,19 @@ class LeaveProvider extends ChangeNotifier
         _batchUpdate(() {
           approvedLeavesForCalendar =
               approvedLeaves; // allLeaves 대신 approvedLeavesForCalendar 사용
-          isLoading = false;
+          calendarLoading = false;
+          error = null;
         });
+        _log('fetchApprovedLeavesForCalendar done (cached=${!forceRefresh}) items=${approvedLeaves.length}');
 
         // Debug print removed
       } else {
-        _updateLoadingState(false, null);
+        _updateCalendarLoadingState(false, null);
       }
     } catch (e) {
-      _updateLoadingState(false, e.toString());
+      _updateCalendarLoadingState(false, e.toString());
       // Debug print removed
+      _log('fetchApprovedLeavesForCalendar error=$e');
     }
   }
 
@@ -1267,15 +1273,6 @@ class LeaveProvider extends ChangeNotifier
     _debouncedNotify();
   }
 
-  void _updateLoadingState(bool loading, String? errorMsg) {
-    if (isLoading != loading || error != errorMsg) {
-      _batchUpdate(() {
-        isLoading = loading;
-        error = errorMsg;
-      });
-    }
-  }
-
   // 디바운싱된 알림 (using TimerManager)
   void _debouncedNotify() {
     scopedDebounce(
@@ -1287,6 +1284,32 @@ class LeaveProvider extends ChangeNotifier
         }
       },
     );
+  }
+
+  void _updateCalendarLoadingState(bool loading, String? errorMsg) {
+    if (calendarLoading != loading || error != errorMsg) {
+      _batchUpdate(() {
+        calendarLoading = loading;
+        error = errorMsg;
+      });
+      _log('calendarLoading=$calendarLoading error=${error ?? "none"}');
+    }
+  }
+
+  void _updateLoadingState(bool loading, String? errorMsg) {
+    if (isLoading != loading || error != errorMsg) {
+      _batchUpdate(() {
+        isLoading = loading;
+        error = errorMsg;
+      });
+      _log('isLoading=$isLoading error=${error ?? "none"}');
+    }
+  }
+
+  void _log(String message) {
+    if (kDebugMode) {
+      debugPrint('[LeaveProvider] $message');
+    }
   }
 
   @override

@@ -104,10 +104,16 @@ class _AnnualLeaveRequestScreenOptimizedState
     }
   }
 
+  // myLeaves 캐시 (반차 체크용)
+  List<Map<String, dynamic>> _cachedMyLeaves = [];
+
   /// 비활성화된 날짜 캐시 업데이트 (반려된 연차는 제외)
   void _updateDisabledDatesCache(List<Map<String, dynamic>> myLeaves) {
+    _cachedMyLeaves = myLeaves;
+    // 연차/공가만 완전 비활성화 (반차는 같은 날에 다른 반차 신청 가능)
     _cachedDisabledDates = myLeaves
-        .where((l) => l['status'] != 'rejected') // 반려된 연차는 제외
+        .where((l) => l['status'] != 'rejected')
+        .where((l) => l['type'] == 'annual' || l['type'] == 'official')
         .map((l) {
           final start = DateTime.parse(l['start_date']);
           final end = DateTime.parse(l['end_date']);
@@ -120,15 +126,87 @@ class _AnnualLeaveRequestScreenOptimizedState
         .toSet();
   }
 
+  /// 해당 날짜에 신청된 연차 유형들을 반환
+  Set<String> _getLeaveTypesForDate(DateTime day) {
+    final types = <String>{};
+    for (final leave in _cachedMyLeaves) {
+      if (leave['status'] == 'rejected') continue;
+      final start = DateTime.parse(leave['start_date']);
+      final end = DateTime.parse(leave['end_date']);
+      final dates = List.generate(
+        end.difference(start).inDays + 1,
+        (i) => DateTime(start.year, start.month, start.day + i),
+      );
+      if (dates.any((d) => isSameDay(d, day))) {
+        types.add(leave['type'] ?? '');
+      }
+    }
+    return types;
+  }
+
+  /// 해당 날짜가 현재 선택된 유형으로 신청 가능한지 확인
+  bool _canSelectDateForType(DateTime day) {
+    final existingTypes = _getLeaveTypesForDate(day);
+    
+    // 아무것도 신청되지 않았으면 선택 가능
+    if (existingTypes.isEmpty) return true;
+    
+    // 연차(annual) 또는 공가(official)가 있으면 해당 날짜 사용 불가
+    if (existingTypes.contains('annual') || existingTypes.contains('official')) {
+      return false;
+    }
+    
+    // 현재 선택하려는 타입에 따라 판단
+    switch (_selectedType) {
+      case LeaveType.annual:
+      case LeaveType.official:
+        // 연차/공가를 신청하려면 해당 날짜에 아무것도 없어야 함
+        return existingTypes.isEmpty;
+      case LeaveType.halfAm:
+        // 오전반차를 신청하려면 오전반차가 없어야 함 (오후반차는 있어도 됨)
+        return !existingTypes.contains('half_am') && !existingTypes.contains('halfAm');
+      case LeaveType.halfPm:
+        // 오후반차를 신청하려면 오후반차가 없어야 함 (오전반차는 있어도 됨)
+        return !existingTypes.contains('half_pm') && !existingTypes.contains('halfPm');
+      default:
+        return existingTypes.isEmpty;
+    }
+  }
+
   /// 날짜 선택 처리 (최적화됨)
   void _onDayTapped(DateTime day) {
-    // 캐시된 비활성화 날짜 사용
+    // 연차/공가가 신청된 날짜는 완전 비활성화
     if (_cachedDisabledDates?.any((d) => isSameDay(d, day)) ?? false) {
       showBanner(
-        '이미 신청된 날짜입니다.',
+        '이미 연차/공가가 신청된 날짜입니다.',
         type: BannerType.error,
         duration: const Duration(seconds: 2),
       );
+      return;
+    }
+
+    // 반차 중복 체크
+    if (!_canSelectDateForType(day)) {
+      final existingTypes = _getLeaveTypesForDate(day);
+      if (existingTypes.contains('half_am') || existingTypes.contains('halfAm')) {
+        showBanner(
+          '이미 오전반차가 신청된 날짜입니다.',
+          type: BannerType.error,
+          duration: const Duration(seconds: 2),
+        );
+      } else if (existingTypes.contains('half_pm') || existingTypes.contains('halfPm')) {
+        showBanner(
+          '이미 오후반차가 신청된 날짜입니다.',
+          type: BannerType.error,
+          duration: const Duration(seconds: 2),
+        );
+      } else {
+        showBanner(
+          '이미 신청된 날짜입니다.',
+          type: BannerType.error,
+          duration: const Duration(seconds: 2),
+        );
+      }
       return;
     }
 

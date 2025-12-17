@@ -103,3 +103,5 @@ COMMENT ON FUNCTION public.calculate_annual_leave_on_join_date_change() IS '입�
 COMMENT ON TRIGGER trigger_calculate_leave_on_join_date_update ON employees IS '입사일 변경 시 연차 자동 계산 트리거 (UPDATE)';
 COMMENT ON TRIGGER trigger_calculate_leave_on_join_date_insert ON employees IS '입사일 설정 시 연차 자동 계산 트리거 (INSERT)';
 
+
+

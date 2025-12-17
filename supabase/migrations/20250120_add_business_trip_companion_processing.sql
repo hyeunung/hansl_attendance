@@ -94,3 +94,5 @@ ON CONFLICT (key) DO NOTHING;
 -- 완료 메시지
 SELECT '✅ 출장 승인 시 동행자 처리 및 MAKE 이메일 연동 설정 완료!' as result;
 
+
+

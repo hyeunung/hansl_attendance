@@ -190,6 +190,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                         ),
                         onPressed: () {
                           qtyController.text = requestedQty.toString();
+                          setState(() {});
                         },
                         child: const Text('요청수량과 동일'),
                       ),
@@ -199,6 +200,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                   TextField(
                     controller: qtyController,
                     keyboardType: TextInputType.number,
+                    onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
                       hintText: '실입고 수량',
                       helperText: '요청 수량: $requestedQty',
@@ -263,29 +265,30 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                   onPressed: () => Navigator.of(context).pop(null),
                   child: const Text('취소'),
                 ),
-                FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                  onPressed: () {
+                Builder(
+                  builder: (context) {
                     final parsedQty = int.tryParse(qtyController.text.trim());
-                    if (parsedQty == null || parsedQty <= 0) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('유효한 수량을 입력해주세요')),
-                      );
-                      return;
-                    }
-                    Navigator.of(context).pop({
-                      'quantity': parsedQty,
-                      'date': selectedDate,
-                      'note': noteController.text.trim(),
-                    });
+                    final isValid = parsedQty != null && parsedQty > 0;
+                    return FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: isValid ? AppColors.primary : const Color(0xFFD1D5DB),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      onPressed: isValid
+                          ? () {
+                              Navigator.of(context).pop({
+                                'quantity': parsedQty,
+                                'date': selectedDate,
+                                'note': noteController.text.trim(),
+                              });
+                            }
+                          : null,
+                      child: const Text('확인'),
+                    );
                   },
-                  child: const Text('확인'),
                 ),
               ],
             );

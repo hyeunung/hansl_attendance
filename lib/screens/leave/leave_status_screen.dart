@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../../providers/leave_provider.dart';
 import 'leave_screen_router.dart';
@@ -68,6 +69,14 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
     super.build(context); // AutomaticKeepAliveClientMixin 필수
     // final userEmail = Provider.of<UserProvider>(context, listen: false).email;
     // Debug print removed
+    final provider = Provider.of<LeaveProvider>(context, listen: false);
+    final hasData = provider.myLeaves.isNotEmpty ||
+        provider.todayLeaves.isNotEmpty ||
+        provider.allLeaves.isNotEmpty;
+    if (kDebugMode) {
+      debugPrint(
+          '[LeaveStatusScreen] build hasData=$hasData isLoading=${provider.isLoading} error=${provider.error}');
+    }
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7FA),
       appBar: AppBar(
@@ -102,6 +111,12 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
           // 에러 처리
           if (provider.error != null) {
             return Center(child: Text('에러: ${provider.error}'));
+          }
+
+          final showLoading = provider.isLoading && !hasData;
+
+          if (showLoading) {
+            return const Center(child: CircularProgressIndicator());
           }
 
           return RefreshIndicator(
