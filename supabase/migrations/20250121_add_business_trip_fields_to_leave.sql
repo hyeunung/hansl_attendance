@@ -178,3 +178,5 @@ CREATE INDEX IF NOT EXISTS idx_leave_place ON leave(place) WHERE place IS NOT NU
 -- 완료 메시지
 SELECT '✅ 출장 관련 필드 추가 완료!' as result;
 
+
+
