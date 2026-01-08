@@ -121,3 +121,10 @@ Supabase Dashboard에서:
 
 
 
+
+
+
+
+
+
+

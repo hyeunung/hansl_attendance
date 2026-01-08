@@ -119,3 +119,10 @@ COMMENT ON COLUMN employees.auth_user_id IS 'auth.users.id와 매핑되는 UUID.
 
 
 
+
+
+
+
+
+
+

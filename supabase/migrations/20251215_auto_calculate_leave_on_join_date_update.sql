@@ -105,3 +105,10 @@ COMMENT ON TRIGGER trigger_calculate_leave_on_join_date_insert ON employees IS '
 
 
 
+
+
+
+
+
+
+
