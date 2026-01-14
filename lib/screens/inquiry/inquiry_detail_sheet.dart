@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'dart:io';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/inquiry_service.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/responsive_utils.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 
 /// 문의 상세 보기 시트
 class InquiryDetailSheet extends StatefulWidget {
@@ -26,58 +29,373 @@ class InquiryDetailSheet extends StatefulWidget {
 
 class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
   final InquiryService _inquiryService = InquiryService();
-  final _resolutionController = TextEditingController();
-  bool _isUpdating = false;
+  final _chatController = TextEditingController();
+  final _detailScrollController = ScrollController();
+  final ImagePicker _imagePicker = ImagePicker();
+
+  RealtimeChannel? _messagesSubscription;
+  RealtimeChannel? _notificationsSubscription;
+
+  late Map<String, dynamic> _inquiry;
+  List<SupportInquiryMessage> _chatMessages = [];
+  bool _isLoadingMessages = true;
+  bool _isSending = false;
+  bool _isResolving = false;
+  List<XFile> _pendingImages = [];
+  int _scrollToBottomTries = 0;
 
   @override
   void initState() {
     super.initState();
-    _resolutionController.text = widget.inquiry['resolution_note'] ?? '';
+    _inquiry = Map<String, dynamic>.from(widget.inquiry);
+    _initializeChat();
+  }
+
+  Future<void> _initializeChat() async {
+    final inquiryId = (_inquiry['id'] as num?)?.toInt();
+    if (inquiryId == null) return;
+
+    // 사용자: 해당 문의 알림 읽음 처리(웹과 동일)
+    if (!widget.isAdmin) {
+      await _inquiryService.markInquiryNotificationsAsRead(inquiryId);
+    }
+
+    await _loadMessages(forceToBottom: true);
+    // 드롭다운/시트 첫 오픈에서 스크롤 컨트롤러 attach 타이밍이 늦는 케이스 보강
+    WidgetsBinding.instance.addPostFrameCallback((_) => _ensureBottom());
+
+    // realtime 구독
+    _messagesSubscription?.unsubscribe();
+    _messagesSubscription = _inquiryService.subscribeToInquiryMessages(
+      inquiryId: inquiryId,
+      onChange: (_) async {
+        await _loadMessages();
+      },
+    );
+
+    // 보강: notifications 기반으로도 메시지 갱신 (support_inquiry_messages realtime 누락/비활성 대비)
+    _notificationsSubscription?.unsubscribe();
+    final currentEmail = Supabase.instance.client.auth.currentUser?.email;
+    if (currentEmail != null && currentEmail.isNotEmpty) {
+      _notificationsSubscription = Supabase.instance.client
+          .channel('inquiry_notifications_$inquiryId')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.insert,
+            schema: 'public',
+            table: 'notifications',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'user_email',
+              value: currentEmail,
+            ),
+            callback: (payload) async {
+              final record = payload.newRecord;
+              final type = (record['type'] ?? '').toString();
+              if (type != 'inquiry_message' &&
+                  type != 'inquiry_resolved' &&
+                  type != 'inquiry_response') {
+                return;
+              }
+
+              final data = record['data'];
+              String? inquiryIdStr;
+              if (data is Map) {
+                inquiryIdStr = (data['inquiryId'] ?? '').toString();
+              }
+              if (inquiryIdStr == inquiryId.toString()) {
+                await _loadMessages();
+                // 상태도 바뀌었을 수 있으니 최신 헤더도 갱신
+                final detail = await _inquiryService.getInquiryDetail(inquiryId);
+                if (detail != null && mounted) {
+                  setState(() => _inquiry = Map<String, dynamic>.from(detail));
+                  widget.onStatusUpdate(detail);
+                }
+              }
+            },
+          )
+          .subscribe();
+    }
+  }
+
+  Future<void> _loadMessages({bool forceToBottom = false}) async {
+    final inquiryId = (_inquiry['id'] as num?)?.toInt();
+    if (inquiryId == null) return;
+
+    // 스크롤 점프 방지:
+    // - 사용자가 바닥 근처에 있으면 새 메시지 수신 시 자동으로 아래로 유지
+    // - 그렇지 않으면 현재 위치를 그대로 유지
+    final bool stickToBottom = forceToBottom ||
+        (_detailScrollController.hasClients &&
+        (_detailScrollController.position.maxScrollExtent -
+                _detailScrollController.offset) <
+            120);
+    final double? previousOffset =
+        _detailScrollController.hasClients ? _detailScrollController.offset : null;
+
+    setState(() => _isLoadingMessages = true);
+    final result = await _inquiryService.getInquiryMessages(inquiryId);
+
+    if (!mounted) return;
+    if (result['success'] == true) {
+      final data = result['data'] as List<SupportInquiryMessage>? ?? [];
+      setState(() {
+        _chatMessages = data;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (stickToBottom) {
+          _ensureBottom();
+        } else if (previousOffset != null && _detailScrollController.hasClients) {
+          final max = _detailScrollController.position.maxScrollExtent;
+          _detailScrollController.jumpTo(previousOffset.clamp(0, max));
+        }
+      });
+    }
+
+    if (mounted) {
+      setState(() => _isLoadingMessages = false);
+    }
+  }
+
+  void _ensureBottom() {
+    // 몇 프레임 뒤에 maxScrollExtent가 생기는 케이스가 있어 재시도
+    if (_scrollToBottomTries > 8) return;
+    if (!_detailScrollController.hasClients) {
+      _scrollToBottomTries++;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _ensureBottom());
+      return;
+    }
+    _scrollToBottomTries = 0;
+    _scrollToBottom(animated: false);
+  }
+
+  void _scrollToBottom({bool animated = false}) {
+    if (!_detailScrollController.hasClients) return;
+    final target = _detailScrollController.position.maxScrollExtent;
+    if (animated) {
+      _detailScrollController.animateTo(
+        target,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
+      return;
+    }
+    // 사용자 UX: 메시지 입력/전송/수신 시 화면이 위→아래로 “스크롤 애니메이션” 되는 느낌을 없애기 위해
+    // 필요할 때는 즉시 점프한다.
+    _detailScrollController.jumpTo(target);
   }
 
   @override
   void dispose() {
-    _resolutionController.dispose();
+    _messagesSubscription?.unsubscribe();
+    _notificationsSubscription?.unsubscribe();
+    _chatController.dispose();
+    _detailScrollController.dispose();
     super.dispose();
   }
 
-  /// 상태 업데이트 (완료 처리)
-  Future<void> _updateStatus() async {
-    setState(() {
-      _isUpdating = true;
-    });
+  bool get _isClosedOrResolved {
+    final status = (_inquiry['status'] ?? 'open').toString();
+    return status == 'resolved' || status == 'closed';
+  }
 
-    final result = await _inquiryService.updateInquiryStatus(
-      inquiryId: widget.inquiry['id'],
-      status: 'resolved',  // 항상 resolved로 설정
-      resolutionNote: _resolutionController.text.trim(),
-    );
+  Future<void> _openAttachmentPicker() async {
+    if (_pendingImages.length >= 5) {
+      _showSnack('첨부파일은 최대 5개까지 가능합니다.', isError: true);
+      return;
+    }
 
-    setState(() {
-      _isUpdating = false;
-    });
-
-    if (result['success']) {
-      widget.onStatusUpdate(result['data']);
-      if (mounted) Navigator.pop(context);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('문의가 완료 처리되었습니다'),
-            backgroundColor: Colors.green,
+    if (!mounted) return;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: const Text('사진 선택'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _pickFromGallery();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera_outlined),
+                title: const Text('카메라 촬영'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _pickFromCamera();
+                },
+              ),
+            ],
           ),
         );
+      },
+    );
+  }
+
+  Future<void> _pickFromGallery() async {
+    try {
+      final files = await _imagePicker.pickMultiImage(imageQuality: 85);
+      if (files.isEmpty) return;
+
+      final remaining = 5 - _pendingImages.length;
+      final toAdd = files.take(remaining).toList();
+      if (toAdd.isEmpty) {
+        _showSnack('첨부파일은 최대 5개까지 가능합니다.', isError: true);
+        return;
       }
+
+    setState(() {
+        _pendingImages = [..._pendingImages, ...toAdd];
+      });
+    } catch (e) {
+      _showSnack('사진 선택 중 오류가 발생했습니다.', isError: true);
+    }
+  }
+
+  Future<void> _pickFromCamera() async {
+    try {
+      final file = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+      );
+      if (file == null) return;
+
+      if (_pendingImages.length >= 5) {
+        _showSnack('첨부파일은 최대 5개까지 가능합니다.', isError: true);
+        return;
+      }
+
+    setState(() {
+        _pendingImages = [..._pendingImages, file];
+      });
+    } catch (e) {
+      _showSnack('카메라 촬영 중 오류가 발생했습니다.', isError: true);
+    }
+  }
+
+  String _guessImageContentType(String name) {
+    final lower = name.toLowerCase();
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.webp')) return 'image/webp';
+    return 'image/jpeg';
+  }
+
+  Future<void> _sendMessage() async {
+    final inquiryId = (_inquiry['id'] as num?)?.toInt();
+    if (inquiryId == null) return;
+
+    if (_isClosedOrResolved) {
+      _showSnack('완료된 문의에는 메시지를 보낼 수 없습니다.', isError: true);
+      return;
+    }
+
+    final text = _chatController.text.trim();
+    if (text.isEmpty && _pendingImages.isEmpty) {
+      _showSnack('메시지를 입력하거나 이미지를 첨부해주세요.', isError: true);
+      return;
+    }
+
+    setState(() => _isSending = true);
+
+    try {
+      // 1) 첨부 업로드
+      final uploadedAttachments = <SupportAttachment>[];
+      for (final img in _pendingImages) {
+        final bytes = await img.readAsBytes();
+        final result = await _inquiryService.uploadAttachment(
+          originalFileName: img.name,
+          contentType: _guessImageContentType(img.name),
+          bytes: bytes,
+        );
+
+        if (result['success'] != true) {
+          throw Exception((result['error'] ?? '첨부 업로드 실패').toString());
+        }
+
+        uploadedAttachments.add(result['data'] as SupportAttachment);
+      }
+
+      // 2) 메시지 insert
+      final senderRole = widget.isAdmin ? 'admin' : 'user';
+      final res = await _inquiryService.sendInquiryMessage(
+        inquiryId: inquiryId,
+        senderRole: senderRole,
+        message: text,
+        attachments: uploadedAttachments,
+      );
+
+      if (res['success'] != true) {
+        throw Exception((res['error'] ?? '메시지 전송 실패').toString());
+      }
+
+      // 관리자 첫 답변이면 open -> in_progress(트리거가 처리하지만 UI도 즉시 반영)
+      if (widget.isAdmin && (_inquiry['status'] ?? 'open') == 'open') {
+        setState(() {
+          _inquiry['status'] = 'in_progress';
+        });
+      }
+
+      setState(() {
+        _chatController.clear();
+        _pendingImages = [];
+      });
+
+      await _loadMessages(forceToBottom: true);
+    } catch (e) {
+      _showSnack(e.toString(), isError: true);
+    } finally {
+      if (mounted) setState(() => _isSending = false);
+    }
+  }
+
+  Future<void> _resolveFromChat() async {
+    if (!widget.isAdmin) return;
+    final inquiryId = (_inquiry['id'] as num?)?.toInt();
+    if (inquiryId == null) return;
+    if (_isClosedOrResolved) return;
+
+    setState(() => _isResolving = true);
+    final result = await _inquiryService.resolveInquiry(inquiryId);
+    if (!mounted) return;
+
+    setState(() => _isResolving = false);
+
+    if (result['success'] == true) {
+      // 최신 문의 상태 가져와서 상위 목록에 반영
+      final detail = await _inquiryService.getInquiryDetail(inquiryId);
+      if (detail != null) {
+        setState(() => _inquiry = Map<String, dynamic>.from(detail));
+        widget.onStatusUpdate(detail);
     } else {
-      if (mounted) {
+        setState(() => _inquiry['status'] = 'resolved');
+      }
+      _showSnack('문의가 완료 처리되었습니다.');
+      await _loadMessages(forceToBottom: true);
+    } else {
+      _showSnack(
+        (result['error'] ?? '완료 처리 실패').toString(),
+        isError: true,
+      );
+    }
+  }
+
+  void _showSnack(String msg, {bool isError = false}) {
+    if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result['message']),
-            backgroundColor: Colors.red,
+        content: Text(msg),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        behavior: SnackBarBehavior.floating,
           ),
         );
-      }
-    }
   }
 
   /// 삭제 확인 다이얼로그
@@ -165,7 +483,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
       ),
     );
 
-    final result = await _inquiryService.deleteInquiry(widget.inquiry['id']);
+    final result = await _inquiryService.deleteInquiry(_inquiry['id']);
 
     // 로딩 닫기
     if (mounted) Navigator.of(context).pop();
@@ -219,9 +537,9 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final createdAt = DateTime.parse(widget.inquiry['created_at']);
+    final createdAt = DateTime.parse(_inquiry['created_at']);
     final dateStr = DateFormat('yyyy년 MM월 dd일 HH:mm').format(createdAt);
-    final status = widget.inquiry['status'] ?? 'open';
+    final status = _inquiry['status'] ?? 'open';
     final statusLabel = InquiryService.getStatusLabel(status);
     final statusColor = Color(InquiryService.getStatusColor(status));
 
@@ -278,7 +596,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
-                    _getIconForType(widget.inquiry['inquiry_type'] ?? '기타'),
+                    _getIconForType(_inquiry['inquiry_type'] ?? '기타'),
                     color: const Color(0xFF007AFF),
                     size: 22,
                   ),
@@ -314,7 +632,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                 
                 // 삭제 버튼 (권한 있을 때만)
                 FutureBuilder<Map<String, dynamic>>(
-                  future: _inquiryService.canDeleteInquiry(widget.inquiry['id']),
+                  future: _inquiryService.canDeleteInquiry(_inquiry['id']),
                   builder: (context, snapshot) {
                     final canDelete = snapshot.data?['canDelete'] == true;
                     
@@ -358,6 +676,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
           // 스크롤 가능한 콘텐츠 영역
           Expanded(
             child: SingleChildScrollView(
+              controller: _detailScrollController,
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
@@ -425,7 +744,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                               ),
                               const Spacer(),
                               Text(
-                                '#${widget.inquiry['id']}',
+                                '#${_inquiry['id']}',
                                 style: ResponsiveUtils.getTextStyle(
                                   context,
                                   fontSize: 13,
@@ -445,21 +764,21 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                               _buildInfoItem(
                                 icon: Icons.person_outline_rounded,
                                 label: '작성자',
-                                value: widget.inquiry['user_name'] ?? '알 수 없음',
+                                value: _inquiry['user_name'] ?? '알 수 없음',
                               ),
                               _buildInfoItem(
                                 icon: Icons.category_outlined,
                                 label: '문의 유형',
                                 value: InquiryService.getInquiryTypeLabel(
-                                  widget.inquiry['inquiry_type'],
+                                  _inquiry['inquiry_type'],
                                 ),
                               ),
-                              if (widget.inquiry['user_email'] != null &&
-                                  widget.inquiry['user_email'].toString().isNotEmpty)
+                              if (_inquiry['user_email'] != null &&
+                                  _inquiry['user_email'].toString().isNotEmpty)
                                 _buildInfoItem(
                                   icon: Icons.email_outlined,
                                   label: '이메일',
-                                  value: widget.inquiry['user_email'],
+                                  value: _inquiry['user_email'],
                                   isLast: true,
                                 ),
                             ],
@@ -510,7 +829,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          widget.inquiry['subject'] ?? '제목 없음',
+                          _inquiry['subject'] ?? '제목 없음',
                           style: ResponsiveUtils.getTextStyle(
                             context,
                             fontSize: 16,
@@ -558,7 +877,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                             ),
                           ),
                           child: Text(
-                            widget.inquiry['message'] ?? '내용 없음',
+                            _inquiry['message'] ?? '내용 없음',
                             style: ResponsiveUtils.getTextStyle(
                               context,
                               fontSize: 15,
@@ -571,223 +890,9 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                     ),
                   ),
 
-                  // 관리자 답변 섹션
-                  if (widget.isAdmin) ...[
+                  // 채팅(대화) 섹션
                     const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: const Color(0xFF007AFF).withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.reply_rounded,
-                                size: 18,
-                                color: const Color(0xFF007AFF),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                '답변 작성',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF007AFF),
-                                ),
-                              ),
-                              const Spacer(),
-                              // 키보드 닫기 버튼
-                              if (isKeyboardVisible)
-                                GestureDetector(
-                                  onTap: () {
-                                    FocusScope.of(context).unfocus();
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF007AFF).withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(
-                                          Icons.keyboard_hide_rounded,
-                                          size: 16,
-                                          color: Color(0xFF007AFF),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          '키보드 닫기',
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: Color(0xFF007AFF),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _resolutionController,
-                            maxLines: 5,
-                            textInputAction: TextInputAction.done,  // Done 버튼 추가
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 15,
-                              color: Color(0xFF1C1C1E),
-                            ),
-                            decoration: InputDecoration(
-                              hintText: '답변을 입력하세요',
-                              hintStyle: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 15,
-                                color: Color(0xFFAEAEB2),
-                              ),
-                              filled: true,
-                              fillColor: const Color(0xFFF8F9FA),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFFE5E5EA),
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFFE5E5EA),
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: const Color(0xFF007AFF).withValues(alpha: 0.3),
-                                  width: 1.5,
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.all(16),
-                            ),
-                            onChanged: (value) {
-                              setState(() {});  // 버튼 상태 업데이트
-                            },
-                            onEditingComplete: () {
-                              FocusScope.of(context).unfocus();  // 키보드 내리기
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ] else if (widget.inquiry['resolution_note'] != null &&
-                      widget.inquiry['resolution_note'].toString().isNotEmpty) ...[
-                    // 일반 사용자에게 답변 표시
-                    const SizedBox(height: 16),
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            const Color(0xFF007AFF).withValues(alpha: 0.05),
-                            const Color(0xFF0051D5).withValues(alpha: 0.02),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: const Color(0xFF007AFF).withValues(alpha: 0.15),
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          // 답변 헤더
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.8),
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(16),
-                                topRight: Radius.circular(16),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    gradient: AppColors.primaryGradient,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Icon(
-                                    Icons.support_agent_rounded,
-                                    size: 16,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '관리자 답변',
-                                        style: ResponsiveUtils.getTextStyle(
-                                          context,
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFF007AFF),
-                                        ),
-                                      ),
-                                      if (widget.inquiry['handled_by'] != null) ...[
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          '담당자: ${widget.inquiry['handled_by']}',
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 12,
-                                            color: Color(0xFF8E8E93),
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                                if (widget.inquiry['resolved_at'] != null)
-                                  const Icon(
-                                    Icons.check_circle_rounded,
-                                    size: 20,
-                                    color: Color(0xFF34C759),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          // 답변 내용
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(20),
-                            child: Text(
-                              widget.inquiry['resolution_note'],
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 15,
-                                color: Color(0xFF1C1C1E),
-                                height: 1.5,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  _buildChatPanel(statusLabel: statusLabel, statusColor: statusColor),
 
                   const SizedBox(height: 20),
                 ],
@@ -795,90 +900,418 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
             ),
           ),
 
-          // 하단 버튼 (관리자만)
-          if (widget.isAdmin)
-            Container(
-              padding: EdgeInsets.only(
-                left: 20,
-                right: 20,
-                top: 20,
-                bottom: isKeyboardVisible ? 20 : 20,  // 키보드가 있을 때도 같은 패딩 유지
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: const Border(
-                  top: BorderSide(
-                    color: Color(0xFFE5E5EA),
-                    width: 0.5,
+          _buildChatInputBar(isKeyboardVisible: isKeyboardVisible),
+        ],
+      ),
+      ),
+    );
+  }
+
+  Widget _buildChatPanel({
+    required String statusLabel,
+    required Color statusColor,
+  }) {
+    return Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+                        border: Border.all(
+          color: statusColor.withValues(alpha: 0.18),
+                        ),
+                      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                const Icon(
+                  Icons.chat_bubble_outline_rounded,
+                                size: 18,
+                  color: Color(0xFF007AFF),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                  '대화',
+                                style: ResponsiveUtils.getTextStyle(
+                                  context,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF1C1C1E),
+                                ),
+                              ),
+                              const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
                   ),
+                  child: Text(
+                    statusLabel,
+                                          style: ResponsiveUtils.getTextStyle(
+                                            context,
+                                            fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: statusColor,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+            // 완료/종료 상태 안내는 입력창 placeholder로 충분하므로
+            // 여기(대화 상단)에 중복 안내 박스를 띄우지 않는다.
+            if (_isLoadingMessages) ...[
+              const SizedBox(height: 8),
+              const Center(child: CupertinoActivityIndicator()),
+            ] else if (_chatMessages.isEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                '아직 대화가 없습니다.\n아래에서 메시지를 보내보세요.',
+                style: ResponsiveUtils.getTextStyle(
+                  context,
+                  fontSize: 13,
+                  color: const Color(0xFF8E8E93),
+                  height: 1.35,
                 ),
+              ),
+            ] else ...[
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _chatMessages.length,
+                itemBuilder: (context, index) {
+                  final m = _chatMessages[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _buildChatMessageBubble(m),
+                  );
+                },
+              ),
+            ],
+                        ],
+                      ),
+                    ),
+    );
+  }
+
+  Widget _buildChatMessageBubble(SupportInquiryMessage m) {
+    if (m.senderRole == 'system') {
+      return Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+            color: const Color(0xFFF2F2F7),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            m.message,
+            style: ResponsiveUtils.getTextStyle(
+              context,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF8E8E93),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final isUserMsg = m.senderRole == 'user';
+    final isMine = widget.isAdmin ? !isUserMsg : isUserMsg;
+
+    final bubbleColor = isMine ? const Color(0xFF007AFF) : Colors.white;
+    final textColor = isMine ? Colors.white : const Color(0xFF1C1C1E);
+    final align = isMine ? Alignment.centerRight : Alignment.centerLeft;
+
+    final timeStr = DateFormat('HH:mm').format(m.createdAt);
+
+    return Align(
+      alignment: align,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 320),
+                      child: Column(
+          crossAxisAlignment: isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                        children: [
+                          Container(
+              padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                color: bubbleColor,
+                borderRadius: BorderRadius.circular(14),
+                border: isMine
+                    ? null
+                    : Border.all(color: const Color(0xFFE5E5EA), width: 0.8),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, -2),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              child: Container(
-                width: double.infinity,
-                height: 52,
-                decoration: BoxDecoration(
-                  gradient: _resolutionController.text.trim().isEmpty
-                      ? null
-                      : AppColors.primaryGradient,
-                  color: _resolutionController.text.trim().isEmpty
-                      ? const Color(0xFFE5E5EA)
-                      : null,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: _resolutionController.text.trim().isEmpty
-                      ? []
-                      : [
-                          BoxShadow(
-                            color: const Color(0xFF007AFF).withValues(alpha: 0.25),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: (_isUpdating || _resolutionController.text.trim().isEmpty)
-                        ? null
-                        : _updateStatus,
-                    borderRadius: BorderRadius.circular(14),
-                    child: Center(
-                      child: _isUpdating
-                          ? const CupertinoActivityIndicator(color: Colors.white)
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.check_circle_outline_rounded,
-                                  color: _resolutionController.text.trim().isEmpty
-                                      ? const Color(0xFF8E8E93)
-                                      : Colors.white,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '답변 완료',
-                                  style: ResponsiveUtils.getTextStyle(
-                                    context,
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w700,
-                                    color: _resolutionController.text.trim().isEmpty
-                                        ? const Color(0xFF8E8E93)
-                                        : Colors.white,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                  if (m.attachments.isNotEmpty) ...[
+                    _buildMessageAttachments(m.attachments, isMine: isMine),
+                    if (m.message.trim().isNotEmpty) const SizedBox(height: 10),
+                  ],
+                  if (m.message.trim().isNotEmpty)
+                                      Text(
+                      m.message,
+                                        style: ResponsiveUtils.getTextStyle(
+                                          context,
+                        fontSize: 14,
+                        color: textColor,
+                        height: 1.35,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 4),
+                                        Text(
+              timeStr,
+                                          style: ResponsiveUtils.getTextStyle(
+                                            context,
+                fontSize: 11,
+                color: const Color(0xFFAEAEB2),
+                                          ),
+                                        ),
+                                    ],
                                   ),
                                 ),
-                              ],
+    );
+  }
+
+  Widget _buildMessageAttachments(List<SupportAttachment> attachments, {required bool isMine}) {
+    final bg = isMine ? Colors.white.withValues(alpha: 0.15) : const Color(0xFFF8F9FA);
+
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: attachments.take(5).map((a) {
+          return GestureDetector(
+            onTap: () => _showFullImage(a.url),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.network(
+                a.url,
+                width: 74,
+                height: 74,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  width: 74,
+                  height: 74,
+                  color: const Color(0xFFE5E5EA),
+                  child: const Icon(Icons.broken_image_outlined),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  void _showFullImage(String url) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.85),
+      builder: (_) {
+        return Dialog(
+          insetPadding: const EdgeInsets.all(16),
+          backgroundColor: Colors.transparent,
+          child: Stack(
+            children: [
+              InteractiveViewer(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Image.network(url, fit: BoxFit.contain),
+                ),
+              ),
+              Positioned(
+                top: 10,
+                right: 10,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.35),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.close_rounded, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildChatInputBar({required bool isKeyboardVisible}) {
+    final disabled = _isClosedOrResolved;
+    final canSend = !_isSending && !disabled;
+
+    return Container(
+              padding: EdgeInsets.only(
+        left: 14,
+        right: 14,
+        top: 10,
+        bottom: isKeyboardVisible ? 10 : 14,
+      ),
+      decoration: const BoxDecoration(
+                color: Colors.white,
+        border: Border(
+          top: BorderSide(color: Color(0xFFE5E5EA), width: 0.5),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_pendingImages.isNotEmpty) ...[
+              SizedBox(
+                height: 78,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _pendingImages.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  itemBuilder: (context, index) {
+                    final img = _pendingImages[index];
+                    return Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(
+                            File(img.path),
+                            width: 78,
+                            height: 78,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        Positioned(
+                          top: 4,
+                          right: 4,
+              child: Container(
+                decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(999),
                             ),
+                            child: InkWell(
+                              onTap: disabled
+                      ? null
+                                  : () => setState(() {
+                                        _pendingImages.removeAt(index);
+                                      }),
+                              child: const Padding(
+                                padding: EdgeInsets.all(4),
+                                child: Icon(Icons.close_rounded, size: 16, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+            Row(
+                              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF2F2F7),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.image_outlined),
+                    color: disabled ? const Color(0xFFAEAEB2) : const Color(0xFF007AFF),
+                    onPressed: disabled ? null : _openAttachmentPicker,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8F9FA),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFE5E5EA)),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: TextField(
+                      controller: _chatController,
+                      minLines: 1,
+                      maxLines: 4,
+                      enabled: !disabled,
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        hintText: disabled ? '완료된 문의입니다' : '메시지 입력',
+                        hintStyle: ResponsiveUtils.getTextStyle(
+                          context,
+                          fontSize: 14,
+                          color: const Color(0xFFAEAEB2),
+                        ),
+                      ),
+                                  style: ResponsiveUtils.getTextStyle(
+                                    context,
+                        fontSize: 14,
+                        color: const Color(0xFF1C1C1E),
+                      ),
                     ),
                   ),
                 ),
-              ),
+                const SizedBox(width: 10),
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: canSend ? AppColors.primaryGradient : null,
+                    color: canSend ? null : const Color(0xFFE5E5EA),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: _isSending
+                        ? const CupertinoActivityIndicator(color: Colors.white)
+                        : const Icon(Icons.send_rounded),
+                    color: canSend ? Colors.white : const Color(0xFF8E8E93),
+                    onPressed: canSend ? _sendMessage : null,
+                  ),
+                ),
+                if (widget.isAdmin) ...[
+                  const SizedBox(width: 10),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: _isClosedOrResolved ? const Color(0xFFE5E5EA) : const Color(0xFF34C759),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: _isResolving
+                          ? const CupertinoActivityIndicator(color: Colors.white)
+                          : const Icon(Icons.check_circle_outline_rounded),
+                      color: _isClosedOrResolved ? const Color(0xFF8E8E93) : Colors.white,
+                      onPressed: (_isClosedOrResolved || _isResolving) ? null : _resolveFromChat,
+                    ),
+                  ),
+                ],
+              ],
             ),
         ],
       ),

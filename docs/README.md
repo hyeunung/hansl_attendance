@@ -35,7 +35,7 @@
 ## 🛡️ **활성 Edge Functions**
 - `update_used_annual_leave` - 사용연차 + 잔여연차 계산 전담
 - `anniversary_check` - 입사 기념일 연차 15개 지급 (관리자만)
-- `annual_year_update` - 새해 전체 직원 연차 초기화 (관리자만)
+- (Edge Function 없음) 새해 전체 직원 연차 초기화는 DB 함수 `public.run_annual_year_update(_kst)` + pg_cron으로 처리
 
 ## 🚫 **비활성화된 Functions**
 - `calculate_annual_leave` - DEPRECATED (410 Gone)

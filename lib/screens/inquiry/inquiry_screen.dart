@@ -868,11 +868,10 @@ class _InquiryScreenState extends State<InquiryScreen>
     final statusColor = Color(InquiryService.getStatusColor(status));
     final isOpen = status == 'open';  // 대기중 상태 체크
     
-    // 읽지 않은 답변이 있는지 확인
-    final hasUnreadResponse = !_isAdmin && 
-        inquiry['resolution_note'] != null && 
-        inquiry['resolution_note'].toString().isNotEmpty &&
-        (inquiry['is_read'] == false || inquiry['is_read'] == null);
+    // 채팅형 문의로 전환되면서 답변/읽음은 notifications 기반으로 관리됨
+    // 리스트 카드에서 NEW 표시를 쓰고 싶다면, 백엔드에서 has_unread_inquiry_message 같은 필드를 내려주도록 확장 가능
+    final hasUnreadResponse =
+        !_isAdmin && (inquiry['has_unread_inquiry_message'] == true);
 
     return Container(
       margin: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 12)),
@@ -1153,9 +1152,9 @@ class _InquiryScreenState extends State<InquiryScreen>
 
   /// 문의 상세 보기
   void _showInquiryDetail(Map<String, dynamic> inquiry) async {
-    // 일반 사용자가 답변이 있는 문의를 볼 때 읽음 처리
-    if (!_isAdmin && inquiry['resolution_note'] != null) {
-      await _inquiryService.markInquiryAsRead(inquiry['id']);
+    // 일반 사용자는 해당 문의 알림을 읽음 처리 (notifications 기반)
+    if (!_isAdmin) {
+      await _inquiryService.markInquiryNotificationsAsRead(inquiry['id']);
     }
 
     showModalBottomSheet(

@@ -674,23 +674,37 @@ class LeaveProvider extends ChangeNotifier
       return _currentGrantedAnnual;
     }
 
-    // 내년 연차 계산 (백엔드 annual_year_update 로직과 동일)
+    // 미래 연도 지급연차 추정 (백엔드 24개월 정책 로직과 동일)
     if (_employee != null && _employee!['join_date'] != null) {
       final joinDate = DateTime.parse(_employee!['join_date']);
-      final joinYear = joinDate.year;
-      final serviceYears = year - joinYear;
+      if (joinDate.year > year) {
+        return 0.0;
+      }
 
-      // 백엔드 calculateAnnualLeave 함수와 동일한 로직
-      if (serviceYears == 0) {
-        // 신입: 15개 기본값
-        return 15;
-      } else if (serviceYears == 1 || serviceYears == 2) {
+      // 같은 해 입사: 입사월~연말 비례(15일 기준)
+      if (joinDate.year == year) {
+        final remainingMonths = 13 - joinDate.month;
+        final leave = ((15 * remainingMonths) / 12).floor().clamp(0, 15);
+        return leave.toDouble();
+      }
+
+      final serviceYears = year - joinDate.year;
+
+      // 1~2년차: 15일 고정
+      if (serviceYears == 1 || serviceYears == 2) {
         // 1~2년차: 15개 고정
         return 15;
       } else {
-        // 3년차 이상: 법정연차 (2년마다 1개씩 추가, 최대 25개)
-        final additionalLeave = ((serviceYears - 1) / 2).floor();
-        final totalLeave = (15 + additionalLeave).clamp(0, 25);
+        // 3년차 이상: 24개월 정책(추가분을 실제 완료개월 기준으로 제한)
+        final fiscalStart = DateTime(year, 1, 1);
+        var completedMonths =
+            (fiscalStart.year - joinDate.year) * 12 + (fiscalStart.month - joinDate.month);
+
+        final additionalByFiscal = ((serviceYears - 1) / 2).floor();
+        final additionalByMonths = (completedMonths / 24).floor().clamp(0, 1000000);
+        final additional = additionalByFiscal < additionalByMonths ? additionalByFiscal : additionalByMonths;
+
+        final totalLeave = (15 + additional).clamp(0, 25);
         return totalLeave.toDouble();
       }
     }
