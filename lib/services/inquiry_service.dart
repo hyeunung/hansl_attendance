@@ -1,6 +1,85 @@
+import 'dart:math';
+import 'dart:typed_data';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/user_role_helper.dart';
+
+class SupportAttachment {
+  final String url;
+  final String name;
+  final int size;
+  final String path;
+
+  const SupportAttachment({
+    required this.url,
+    required this.name,
+    required this.size,
+    required this.path,
+  });
+
+  factory SupportAttachment.fromJson(Map<String, dynamic> json) {
+    return SupportAttachment(
+      url: (json['url'] ?? '').toString(),
+      name: (json['name'] ?? '').toString(),
+      size: (json['size'] is int)
+          ? (json['size'] as int)
+          : int.tryParse((json['size'] ?? '0').toString()) ?? 0,
+      path: (json['path'] ?? '').toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'url': url,
+        'name': name,
+        'size': size,
+        'path': path,
+      };
+}
+
+class SupportInquiryMessage {
+  final int id;
+  final int inquiryId;
+  final String senderRole; // user | admin | system
+  final String senderEmail;
+  final String message;
+  final List<SupportAttachment> attachments;
+  final DateTime createdAt;
+
+  const SupportInquiryMessage({
+    required this.id,
+    required this.inquiryId,
+    required this.senderRole,
+    required this.senderEmail,
+    required this.message,
+    required this.attachments,
+    required this.createdAt,
+  });
+
+  static List<SupportAttachment> _parseAttachments(dynamic raw) {
+    if (raw == null) return const [];
+    if (raw is List) {
+      return raw
+          .whereType<Map>()
+          .map((m) => Map<String, dynamic>.from(m))
+          .map(SupportAttachment.fromJson)
+          .toList();
+    }
+    return const [];
+  }
+
+  factory SupportInquiryMessage.fromJson(Map<String, dynamic> json) {
+    return SupportInquiryMessage(
+      id: (json['id'] as num).toInt(),
+      inquiryId: (json['inquiry_id'] as num).toInt(),
+      senderRole: (json['sender_role'] ?? '').toString(),
+      senderEmail: (json['sender_email'] ?? '').toString(),
+      message: (json['message'] ?? '').toString(),
+      attachments: _parseAttachments(json['attachments']),
+      createdAt: DateTime.parse((json['created_at'] ?? '').toString()),
+    );
+  }
+}
 
 /// 문의하기 서비스
 /// - 일반 직원: 문의 작성 및 본인 문의 조회
@@ -8,6 +87,13 @@ import '../utils/user_role_helper.dart';
 class InquiryService {
   
   final _supabase = Supabase.instance.client;
+  static const String _attachmentsBucket = 'support-attachments';
+
+  String _randomString(int length) {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    final rnd = Random.secure();
+    return List.generate(length, (_) => chars[rnd.nextInt(chars.length)]).join();
+  }
 
   /// 사용자 권한 확인 (app_admin 여부)
   Future<bool> isAppAdmin() async {
@@ -43,6 +129,7 @@ class InquiryService {
     String? purchaseOrderNumber,
     String? purchaseInfo,
     String? requesterId,
+    List<SupportAttachment>? attachments,
   }) async {
     try {
       // app_admin은 문의 생성 불가
@@ -92,7 +179,35 @@ class InquiryService {
           .select()
           .single();
 
-      // Debug code removed
+      // 첫 메시지(사용자) 기록: 대화 로그 시작
+      final inquiryId = (response['id'] as num?)?.toInt();
+      if (inquiryId == null) {
+        return {
+          'success': false,
+          'error': '문의 ID를 확인할 수 없습니다.',
+          'message': '문의 등록에 실패했습니다.\n잠시 후 다시 시도해주세요.',
+        };
+      }
+
+      final senderEmail = _supabase.auth.currentUser?.email ?? userEmail;
+      try {
+        await _supabase.from('support_inquiry_messages').insert({
+          'inquiry_id': inquiryId,
+          'sender_role': 'user',
+          'sender_email': senderEmail,
+          'message': message,
+          'attachments': (attachments ?? const [])
+              .map((a) => a.toJson())
+              .toList(growable: false),
+        });
+      } catch (e) {
+        // 메시지 기록 실패 시(문의는 생성됨) 에러로 처리
+        return {
+          'success': false,
+          'error': e.toString(),
+          'message': '문의는 등록됐지만 대화 저장에 실패했습니다.\n잠시 후 다시 시도해주세요.',
+        };
+      }
 
       return {
         'success': true,
@@ -106,6 +221,177 @@ class InquiryService {
         'error': e.toString(),
         'message': '문의 등록에 실패했습니다.\n잠시 후 다시 시도해주세요.',
       };
+    }
+  }
+
+  /// 첨부 이미지 업로드 (support-attachments 버킷)
+  Future<Map<String, dynamic>> uploadAttachment({
+    required String originalFileName,
+    required String contentType,
+    required Uint8List bytes,
+  }) async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null || user.id.isEmpty) {
+        return {
+          'success': false,
+          'error': '로그인이 필요합니다.',
+        };
+      }
+
+      final ext = originalFileName.contains('.')
+          ? originalFileName.split('.').last.toLowerCase()
+          : 'jpg';
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final randomStr = _randomString(6);
+      final fileName = 'support_${timestamp}_$randomStr.$ext';
+      final filePath = 'inquiries/${user.id}/$fileName';
+
+      await _supabase.storage.from(_attachmentsBucket).uploadBinary(
+        filePath,
+        bytes,
+        fileOptions: FileOptions(
+          contentType: contentType,
+          upsert: false,
+        ),
+      );
+
+      final publicUrl =
+          _supabase.storage.from(_attachmentsBucket).getPublicUrl(filePath);
+
+      return {
+        'success': true,
+        'data': SupportAttachment(
+          url: publicUrl,
+          name: originalFileName,
+          size: bytes.length,
+          path: filePath,
+        ),
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteAttachment(String path) async {
+    try {
+      await _supabase.storage.from(_attachmentsBucket).remove([path]);
+      return {'success': true};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  /// 문의 메시지 목록 조회
+  Future<Map<String, dynamic>> getInquiryMessages(int inquiryId) async {
+    try {
+      final response = await _supabase
+          .from('support_inquiry_messages')
+          .select('*')
+          .eq('inquiry_id', inquiryId)
+          .order('created_at', ascending: true);
+
+      final list = List<Map<String, dynamic>>.from(response as List);
+      final messages = list.map(SupportInquiryMessage.fromJson).toList();
+
+      return {
+        'success': true,
+        'data': messages,
+      };
+    } catch (e) {
+      return {'success': false, 'error': e.toString(), 'data': <SupportInquiryMessage>[]};
+    }
+  }
+
+  /// 문의 메시지 전송 (user/admin)
+  Future<Map<String, dynamic>> sendInquiryMessage({
+    required int inquiryId,
+    required String senderRole, // user | admin
+    required String message,
+    List<SupportAttachment>? attachments,
+  }) async {
+    try {
+      final user = _supabase.auth.currentUser;
+      final senderEmail = user?.email ?? '';
+      if (senderEmail.isEmpty) {
+        return {'success': false, 'error': '사용자 이메일을 확인할 수 없습니다.'};
+      }
+
+      await _supabase.from('support_inquiry_messages').insert({
+        'inquiry_id': inquiryId,
+        'sender_role': senderRole,
+        'sender_email': senderEmail,
+        'message': message,
+        'attachments': (attachments ?? const [])
+            .map((a) => a.toJson())
+            .toList(growable: false),
+      });
+      return {'success': true};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  /// 메시지 realtime 구독
+  RealtimeChannel? subscribeToInquiryMessages({
+    required int inquiryId,
+    required Function(PostgresChangePayload payload) onChange,
+  }) {
+    try {
+      return _supabase
+          .channel('support_inquiry_messages_$inquiryId')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'support_inquiry_messages',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'inquiry_id',
+              value: inquiryId,
+            ),
+            callback: onChange,
+          )
+          .subscribe();
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// 완료 처리 (관리자만) - RPC: resolve_inquiry
+  Future<Map<String, dynamic>> resolveInquiry(int inquiryId) async {
+    try {
+      final res = await _supabase.rpc('resolve_inquiry', params: {
+        'p_inquiry_id': inquiryId,
+      });
+      // rpc 성공 시 res는 void일 수 있음
+      return {'success': true, 'data': res};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  /// (웹과 동일) 해당 문의의 알림(inquiry_message/inquiry_resolved)을 읽음 처리
+  Future<void> markInquiryNotificationsAsRead(int inquiryId) async {
+    try {
+      final user = _supabase.auth.currentUser;
+      final email = user?.email;
+      if (email == null || email.isEmpty) return;
+
+      await _supabase
+          .from('notifications')
+          .update({
+            'is_read': true,
+            'read_at': DateTime.now().toIso8601String(),
+          })
+          .eq('user_email', email)
+          .eq('is_read', false)
+          .inFilter('type', ['inquiry_message', 'inquiry_resolved'])
+          .eq('data->>inquiryId', inquiryId.toString());
+    } catch (e) {
+      // 읽음 처리 실패는 UX를 막지 않음
     }
   }
 
@@ -290,6 +576,61 @@ class InquiryService {
     }
   }
 
+  /// 실시간 알림 구독 (문의 메시지/완료 알림 기반 뱃지 갱신용)
+  /// - notifications.user_email == 현재 사용자
+  /// - type in (inquiry_message, inquiry_resolved, inquiry_response)
+  RealtimeChannel? subscribeToInquiryNotificationUpdates({
+    required Function() onUpdate,
+  }) {
+    try {
+      final user = _supabase.auth.currentUser;
+      final email = user?.email;
+      if (email == null || email.isEmpty) return null;
+
+      return _supabase
+          .channel('inquiry_notifications_$email')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.insert,
+            schema: 'public',
+            table: 'notifications',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'user_email',
+              value: email,
+            ),
+            callback: (payload) {
+              final type = (payload.newRecord['type'] ?? '').toString();
+              if (type == 'inquiry_message' ||
+                  type == 'inquiry_resolved' ||
+                  type == 'inquiry_response') {
+                onUpdate();
+              }
+            },
+          )
+          .onPostgresChanges(
+            event: PostgresChangeEvent.update,
+            schema: 'public',
+            table: 'notifications',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'user_email',
+              value: email,
+            ),
+            callback: (payload) {
+              final type = (payload.newRecord['type'] ?? '').toString();
+              if (type == 'inquiry_message' ||
+                  type == 'inquiry_resolved' ||
+                  type == 'inquiry_response') {
+                onUpdate();
+              }
+            },
+          )
+          .subscribe();
+    } catch (e) {
+      return null;
+    }
+  }
+
   /// 구독 해제
   void unsubscribe(RealtimeChannel? channel) {
     if (channel != null) {
@@ -399,23 +740,17 @@ class InquiryService {
       // 관리자면 0 반환
       if (await isAppAdmin()) return 0;
 
-      // 본인의 resolved 또는 closed 상태 문의 중
-      // resolution_note가 있고 아직 확인하지 않은 것
+      // 웹/신규 문의 시스템 기준:
+      // notifications에 type = inquiry_message / inquiry_resolved 가 저장되며,
+      // 문의 상세 열람 시 해당 inquiryId 알림을 읽음 처리한다.
       final response = await _supabase
-          .from('support_inquires')
-          .select('*')
-          .eq('user_id', user.id)
-          .or('status.eq.resolved,status.eq.closed')
-          .not('resolution_note', 'is', null);
+          .from('notifications')
+          .select('id,type')
+          .eq('user_email', user.email!)
+          .eq('is_read', false)
+          .inFilter('type', ['inquiry_message', 'inquiry_resolved', 'inquiry_response']);
 
-      // 로컬 스토리지에서 읽은 문의 ID 목록 가져오기
-      final readInquiries = await _getReadInquiries();
-
-      final unreadCount = (response as List)
-          .where((inquiry) => !readInquiries.contains(inquiry['id']))
-          .length;
-
-      return unreadCount;
+      return (response as List).length;
     } catch (e) {
       // Debug code removed
       return 0;

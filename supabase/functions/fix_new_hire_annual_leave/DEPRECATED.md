@@ -34,7 +34,7 @@ SET remaining_annual_leave = (
 |-----------|-------------|------|
 | 신입 연차 수정 | 마이그레이션 완료 | 007, 008번 마이그레이션 |
 | 향후 신입 관리 | `anniversary_check` | 입사 12개월 후 자동 처리 |
-| 연차 정기 업데이트 | `annual_year_update` | 새해 전체 직원 일괄 처리 |
+| 연차 정기 업데이트 | (DB 함수) `public.run_annual_year_update(_kst)` | 새해 전체 직원 일괄 처리 |
 
 ## 🗑️ **삭제 계획**
 - **현재**: DEPRECATED 표시, 함수 유지

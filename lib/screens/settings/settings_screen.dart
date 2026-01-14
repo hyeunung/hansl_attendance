@@ -41,8 +41,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   void initState() {
     super.initState();
     _loadAppVersion();
-    _loadInquiryBadgeCount();
-    _setupRealtimeSubscription();
+    _initInquiryBadge();
     // 폰트 크기 초기화
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final fontProvider = Provider.of<FontProvider>(context, listen: false);
@@ -50,6 +49,11 @@ class _SettingsScreenState extends State<SettingsScreen>
         _fontSize = fontProvider.fontSize;
       });
     });
+  }
+
+  Future<void> _initInquiryBadge() async {
+    await _loadInquiryBadgeCount();
+    _setupRealtimeSubscription();
   }
 
   /// 문의 뱃지 카운트 로드
@@ -74,11 +78,22 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   /// 실시간 업데이트 구독
   void _setupRealtimeSubscription() {
-    _realtimeSubscription = _inquiryService.subscribeToInquiryUpdates(
-      onUpdate: (updatedInquiry) {
-        // 업데이트 시 뱃지 카운트 재로드
-        _loadInquiryBadgeCount();
-      },
+    if (_realtimeSubscription != null) {
+      _inquiryService.unsubscribe(_realtimeSubscription);
+      _realtimeSubscription = null;
+    }
+
+    // 관리자: 미처리 문의(support_inquires) 변화 감지
+    if (_isAdmin) {
+      _realtimeSubscription = _inquiryService.subscribeToInquiryUpdates(
+        onUpdate: (_) => _loadInquiryBadgeCount(),
+      );
+      return;
+    }
+
+    // 일반 사용자: notifications(inquiry_message/inquiry_resolved) 변화 감지
+    _realtimeSubscription = _inquiryService.subscribeToInquiryNotificationUpdates(
+      onUpdate: () => _loadInquiryBadgeCount(),
     );
   }
 
