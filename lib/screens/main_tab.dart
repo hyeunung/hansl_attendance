@@ -5,6 +5,7 @@ import 'leave/leave_status_screen.dart';
 import 'approval/approval_screen.dart';
 // import 'purchase/purchase_management_screen.dart'; // 제거됨
 import 'receipts/receipts_screen.dart';
+import 'transaction_statements/transaction_statement_screen.dart';
 import 'calendar/calendar_screen.dart';
 import 'settings/settings_screen.dart';
 import '../theme/app_colors.dart';
@@ -56,7 +57,7 @@ class MainTab extends StatefulWidget {
     this.approvalSubTab,
   }) : initialIndex = (initialIndex < 0
            ? 0
-           : (initialIndex > 5 ? 0 : initialIndex));
+           : (initialIndex > 6 ? 0 : initialIndex));
 
   @override
   State<MainTab> createState() => _MainTabState();
@@ -350,6 +351,7 @@ final List<dynamic> attendanceRoles =
           const AttendanceScreenRouter(), // 근무기록
           const LeaveStatusScreen(), // 연차/출장
           const ApprovalScreen(), // 대시보드(승인관리)
+          const TransactionStatementScreen(), // 거래명세서
           const CalendarScreen(), // 달력
           const SettingsScreen(), // 설정
         ];
@@ -359,6 +361,7 @@ final List<dynamic> attendanceRoles =
           const AttendanceScreenRouter(), // 출석
           const LeaveStatusScreen(), // 연차/출장신청
           showApprovalTab ? ApprovalScreen(initialMainTab: widget.approvalSubTab) : const ApprovalScreen(), // 승인관리
+          const TransactionStatementScreen(), // 거래명세서
           const ReceiptsScreen(), // 영수증 관리
           const CalendarScreen(), // 달력
           const SettingsScreen(), // 설정
@@ -369,6 +372,7 @@ final List<dynamic> attendanceRoles =
           const AttendanceScreenRouter(), // 출석
           const LeaveStatusScreen(), // 연차/출장신청
           const ApprovalScreen(), // 승인관리 (lead buyer는 구매대기와 입고대기 탭만 표시)
+          const TransactionStatementScreen(), // 거래명세서
           const CalendarScreen(), // 달력
           const SettingsScreen(), // 설정
         ];
@@ -378,6 +382,7 @@ final List<dynamic> attendanceRoles =
           const AttendanceScreenRouter(), // 출석
           const LeaveStatusScreen(), // 연차/출장신청
           ApprovalScreen(initialMainTab: widget.approvalSubTab), // 승인관리 (입고현황 포함)
+          const TransactionStatementScreen(), // 거래명세서
           const CalendarScreen(), // 달력
           const SettingsScreen(), // 설정
         ];
@@ -387,6 +392,7 @@ final List<dynamic> attendanceRoles =
           const AttendanceScreenRouter(), // 출석
           const LeaveStatusScreen(), // 연차/출장신청
           const ApprovalScreen(), // 입고현황 (일반 직원은 입고대기 탭만 표시)
+          const TransactionStatementScreen(), // 거래명세서
           const CalendarScreen(), // 달력
           const SettingsScreen(), // 설정
         ];
@@ -498,14 +504,28 @@ final List<dynamic> attendanceRoles =
         ),
       );
       
-      // 4번째 탭: 달력
+      // 4번째 탭: 거래명세서
+      items.add(
+        BottomNavigationBarItem(
+          icon: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Icon(
+              Icons.description,
+              color: _currentIndex == 3 ? AppColors.primary : Colors.grey,
+            ),
+          ),
+          label: '',
+        ),
+      );
+
+      // 5번째 탭: 달력
       items.add(
         BottomNavigationBarItem(
           icon: Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Icon(
               Icons.calendar_today,
-              color: _currentIndex == 3
+              color: _currentIndex == 4
                   ? const Color(0xFFFF3B30)
                   : Colors.grey,
             ),
@@ -514,14 +534,14 @@ final List<dynamic> attendanceRoles =
         ),
       );
 
-      // 5번째 탭: 설정
+      // 6번째 탭: 설정
       items.add(
         BottomNavigationBarItem(
           icon: Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Icon(
               Icons.settings,
-              color: _currentIndex == 4
+              color: _currentIndex == 5
                   ? const Color(0xFF8E8E93)
                   : Colors.grey,
             ),
@@ -561,9 +581,23 @@ final List<dynamic> attendanceRoles =
         );
       }
 
+      // 4번째 탭: 거래명세서
+      items.add(
+        BottomNavigationBarItem(
+          icon: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Icon(
+              Icons.description,
+              color: _currentIndex == 3 ? AppColors.primary : Colors.grey,
+            ),
+          ),
+          label: '',
+        ),
+      );
+
       // 영수증 탭 접근 권한이 있는 경우만 표시
       if (canAccessReceipts) {
-        // 4번째 탭: 영수증 관리 (app_admin, hr, lead_buyer)
+        // 5번째 탭: 영수증 관리 (app_admin, hr, lead_buyer)
         items.add(
           BottomNavigationBarItem(
             icon: Padding(
@@ -571,13 +605,46 @@ final List<dynamic> attendanceRoles =
               child: Icon(
                 Icons.receipt_long,
                 color:
-                    _currentIndex == 3 ? const Color(0xFFFF9500) : Colors.grey,
+                    _currentIndex == 4 ? const Color(0xFFFF9500) : Colors.grey,
               ),
             ),
             label: '',
           ),
         );
 
+        // 6번째 탭: 달력
+        items.add(
+          BottomNavigationBarItem(
+            icon: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Icon(
+                Icons.calendar_today,
+                color: _currentIndex == 5
+                    ? const Color(0xFFFF3B30)
+                    : Colors.grey,
+              ),
+            ),
+            label: '',
+          ),
+        );
+
+        // 7번째 탭: 설정
+        items.add(
+          BottomNavigationBarItem(
+            icon: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Icon(
+                Icons.settings,
+                color: _currentIndex == 6
+                    ? const Color(0xFF8E8E93)
+                    : Colors.grey,
+              ),
+            ),
+            label: '',
+          ),
+        );
+      } else {
+        // 정직원 일반 사용자: 영수증 탭 제외 (6개 탭)
         // 5번째 탭: 달력
         items.add(
           BottomNavigationBarItem(
@@ -602,39 +669,6 @@ final List<dynamic> attendanceRoles =
               child: Icon(
                 Icons.settings,
                 color: _currentIndex == 5
-                    ? const Color(0xFF8E8E93)
-                    : Colors.grey,
-              ),
-            ),
-            label: '',
-          ),
-        );
-      } else {
-        // 정직원 일반 사용자: 영수증 탭 제외 (5개 탭)
-        // 4번째 탭: 달력
-        items.add(
-          BottomNavigationBarItem(
-            icon: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Icon(
-                Icons.calendar_today,
-                color: _currentIndex == 3
-                    ? const Color(0xFFFF3B30)
-                    : Colors.grey,
-              ),
-            ),
-            label: '',
-          ),
-        );
-
-        // 5번째 탭: 설정
-        items.add(
-          BottomNavigationBarItem(
-            icon: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Icon(
-                Icons.settings,
-                color: _currentIndex == 4
                     ? const Color(0xFF8E8E93)
                     : Colors.grey,
               ),
