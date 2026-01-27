@@ -808,43 +808,58 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                       const SizedBox(height: 14),
                       // 직원 유형 선택
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: Color(0xFFF8F9FA),
-                          borderRadius: fieldRadius,
+                      DropdownButtonFormField<String>(
+                        value: _selectedPosition,
+                        isExpanded: true,
+                        icon: const Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: Color(0xFFB0B8C1),
                         ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _selectedPosition,
-                            hint: Text(
-                              '직원 유형 선택',
+                        dropdownColor: Colors.white,
+                        borderRadius: fieldRadius,
+                        decoration: InputDecoration(
+                          labelText: '직원 유형',
+                          labelStyle: ResponsiveUtils.getTextStyle(
+                            context,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 15,
+                            color: Color(0xFF222222),
+                          ),
+                          hintText: '직원 유형 선택',
+                          hintStyle: ResponsiveUtils.getTextStyle(
+                            context,
+                            color: Color(0xFFB0B8C1),
+                            fontSize: 14,
+                          ),
+                          filled: true,
+                          fillColor: Color(0xFFF8F9FA),
+                          border: OutlineInputBorder(
+                            borderRadius: fieldRadius,
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        style: ResponsiveUtils.getTextStyle(
+                          context,
+                          fontSize: 16,
+                          color: Color(0xFF222222),
+                        ),
+                        items: ['알바', '계약직', '정직원'].map((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(
+                              value,
                               style: ResponsiveUtils.getTextStyle(
                                 context,
-                                color: Color(0xFFB0B8C1),
                                 fontSize: 16,
                               ),
                             ),
-                            isExpanded: true,
-                            items: ['알바', '계약직', '정직원'].map((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(
-                                  value,
-                                  style: ResponsiveUtils.getTextStyle(
-                                    context,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: (String? newValue) {
-                              setState(() {
-                                _selectedPosition = newValue;
-                              });
-                            },
-                          ),
-                        ),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _selectedPosition = newValue;
+                          });
+                        },
                       ),
                       if (_error != null) ...[
                         const SizedBox(height: 8),
