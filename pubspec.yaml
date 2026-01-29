@@ -3,7 +3,7 @@ description: "HANSL - 회사, 팀, 조직 누구나 사용할 수 있는 출퇴�
 
 publish_to: 'none' 
 
-version: 3.4.3+265
+version: 3.4.4+266
 
 environment:
   sdk: ^3.8.0
