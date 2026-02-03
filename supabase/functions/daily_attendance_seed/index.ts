@@ -66,10 +66,11 @@ async function createDailyAttendanceRecords() {
     
     const isHoliday = holidays && holidays.length > 0
 
-    // 4. 모든 직원 조회 (is_active 컬럼 없으므로 모든 직원)
+    // 4. 재직자만 조회 (is_active = true)
     const { data: employees, error: employeesError } = await supabase
       .from('employees')
       .select('id, email, name, department')
+      .eq('is_active', true)
     
     if (employeesError) {
       throw new Error(`Failed to fetch employees: ${employeesError.message}`)

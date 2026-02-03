@@ -44,6 +44,18 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
   List<XFile> _pendingImages = [];
   int _scrollToBottomTries = 0;
 
+  List<SupportAttachment> get _inquiryAttachments {
+    final raw = _inquiry['attachments'];
+    if (raw is List) {
+      return raw
+          .whereType<Map>()
+          .map((m) => Map<String, dynamic>.from(m))
+          .map(SupportAttachment.fromJson)
+          .toList();
+    }
+    return const [];
+  }
+
   @override
   void initState() {
     super.initState();
@@ -387,6 +399,33 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
     }
   }
 
+  Future<void> _markInProgress() async {
+    if (!widget.isAdmin) return;
+    final inquiryId = (_inquiry['id'] as num?)?.toInt();
+    if (inquiryId == null) return;
+    if (_isClosedOrResolved) return;
+
+    final result = await _inquiryService.updateInquiryStatus(
+      inquiryId: inquiryId,
+      status: 'in_progress',
+    );
+    if (!mounted) return;
+
+    if (result['success'] == true) {
+      final detail = await _inquiryService.getInquiryDetail(inquiryId);
+      if (detail != null) {
+        setState(() => _inquiry = Map<String, dynamic>.from(detail));
+        widget.onStatusUpdate(detail);
+      }
+      _showSnack('처리중으로 변경되었습니다.');
+    } else {
+      _showSnack(
+        (result['error'] ?? '상태 변경 실패').toString(),
+        isError: true,
+      );
+    }
+  }
+
   void _showSnack(String msg, {bool isError = false}) {
     if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -396,6 +435,314 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
         behavior: SnackBarBehavior.floating,
           ),
         );
+  }
+
+  Future<void> _openPurchaseDetail() async {
+    final purchaseId = (_inquiry['purchase_request_id'] as num?)?.toInt();
+    int? resolvedId = purchaseId;
+    if (resolvedId == null) {
+      final orderNumber = (_inquiry['purchase_order_number'] ?? '').toString();
+      if (orderNumber.isNotEmpty) {
+        resolvedId = await _inquiryService.getPurchaseRequestIdByOrderNumber(orderNumber);
+      }
+    }
+
+    if (resolvedId == null) {
+      _showSnack('발주 내역을 찾을 수 없습니다.', isError: true);
+      return;
+    }
+
+    final detail = await _inquiryService.getPurchaseRequestDetail(resolvedId);
+    if (detail == null) {
+      _showSnack('발주 내역을 불러오지 못했습니다.', isError: true);
+      return;
+    }
+
+    if (!mounted) return;
+    await _showPurchaseDetailDialog(detail);
+  }
+
+  Future<void> _showPurchaseDetailDialog(Map<String, dynamic> purchase) async {
+    final items = List<Map<String, dynamic>>.from(
+      (purchase['purchase_request_items'] as List<dynamic>? ?? [])
+          .map((e) => Map<String, dynamic>.from(e)),
+    );
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              const Icon(Icons.receipt_long_outlined),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '발주 상세',
+                  style: ResponsiveUtils.getTextStyle(
+                    context,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              if (widget.isAdmin)
+                TextButton(
+                  onPressed: () async {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('발주요청 삭제'),
+                        content: const Text('발주요청 전체를 삭제하시겠습니까?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('취소'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('삭제'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmed != true) return;
+                    final result = await _inquiryService.deletePurchaseRequestWithInquiryPreserved(
+                      (purchase['id'] as num).toInt(),
+                    );
+                    if (result['success'] == true) {
+                      if (mounted) {
+                        Navigator.pop(context);
+                        _showSnack('발주요청이 삭제되었습니다.');
+                      }
+                      final inquiryId = (_inquiry['id'] as num?)?.toInt();
+                      if (inquiryId != null) {
+                        final detail = await _inquiryService.getInquiryDetail(inquiryId);
+                        if (detail != null && mounted) {
+                          setState(() => _inquiry = Map<String, dynamic>.from(detail));
+                          widget.onStatusUpdate(detail);
+                        }
+                      }
+                    } else {
+                      _showSnack(result['error']?.toString() ?? '삭제 실패', isError: true);
+                    }
+                  },
+                  child: const Text('전체 삭제'),
+                ),
+            ],
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '발주번호: ${purchase['purchase_order_number'] ?? '-'}',
+                    style: ResponsiveUtils.getTextStyle(
+                      context,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '업체명: ${purchase['vendor_name'] ?? '-'}',
+                    style: ResponsiveUtils.getTextStyle(context, fontSize: 13),
+                  ),
+                  Text(
+                    '요청자: ${purchase['requester_name'] ?? '-'}',
+                    style: ResponsiveUtils.getTextStyle(context, fontSize: 13),
+                  ),
+                  Text(
+                    '요청일: ${purchase['request_date'] ?? purchase['created_at'] ?? '-'}',
+                    style: ResponsiveUtils.getTextStyle(context, fontSize: 13),
+                  ),
+                  const SizedBox(height: 12),
+                  ...items.map((item) {
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8F9FA),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE5E5EA)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${item['line_number'] ?? '-'}번 ${item['item_name'] ?? ''}',
+                            style: ResponsiveUtils.getTextStyle(
+                              context,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            '규격: ${item['specification'] ?? '-'}',
+                            style: ResponsiveUtils.getTextStyle(context, fontSize: 12),
+                          ),
+                          Text(
+                            '수량: ${item['quantity'] ?? '-'}',
+                            style: ResponsiveUtils.getTextStyle(context, fontSize: 12),
+                          ),
+                          Text(
+                            '단가: ${(item['unit_price_value'] ?? '-').toString()}',
+                            style: ResponsiveUtils.getTextStyle(context, fontSize: 12),
+                          ),
+                          Text(
+                            '금액: ${(item['amount_value'] ?? '-').toString()}',
+                            style: ResponsiveUtils.getTextStyle(context, fontSize: 12),
+                          ),
+                          if (item['remark'] != null && item['remark'].toString().isNotEmpty)
+                            Text(
+                              '비고: ${item['remark']}',
+                              style: ResponsiveUtils.getTextStyle(context, fontSize: 12),
+                            ),
+                          if (item['link'] != null && item['link'].toString().isNotEmpty)
+                            Text(
+                              '링크: ${item['link']}',
+                              style: ResponsiveUtils.getTextStyle(context, fontSize: 12),
+                            ),
+                          if (widget.isAdmin)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                TextButton(
+                                  onPressed: () async {
+                                    await _showEditPurchaseItemDialog(item);
+                                  },
+                                  child: const Text('수정'),
+                                ),
+                                TextButton(
+                                  onPressed: () async {
+                                    final confirmed = await showDialog<bool>(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text('품목 삭제'),
+                                        content: const Text('이 품목을 삭제하시겠습니까?'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(context, false),
+                                            child: const Text('취소'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(context, true),
+                                            child: const Text('삭제'),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                    if (confirmed != true) return;
+                                    final result = await _inquiryService.deletePurchaseRequestItem(
+                                      (item['id'] as num).toInt(),
+                                    );
+                                    if (result['success'] == true) {
+                                      _showSnack('품목이 삭제되었습니다.');
+                                    } else {
+                                      _showSnack(result['error']?.toString() ?? '삭제 실패',
+                                          isError: true);
+                                    }
+                                  },
+                                  child: const Text('삭제'),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('닫기'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showEditPurchaseItemDialog(Map<String, dynamic> item) async {
+    final nameController = TextEditingController(text: (item['item_name'] ?? '').toString());
+    final specController =
+        TextEditingController(text: (item['specification'] ?? '').toString());
+    final qtyController = TextEditingController(text: (item['quantity'] ?? '').toString());
+    final unitController =
+        TextEditingController(text: (item['unit_price_value'] ?? '').toString());
+    final remarkController = TextEditingController(text: (item['remark'] ?? '').toString());
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('품목 수정'),
+        content: SingleChildScrollView(
+          child: Column(
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: '품명'),
+              ),
+              TextField(
+                controller: specController,
+                decoration: const InputDecoration(labelText: '규격'),
+              ),
+              TextField(
+                controller: qtyController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: '수량'),
+              ),
+              TextField(
+                controller: unitController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: '단가'),
+              ),
+              TextField(
+                controller: remarkController,
+                decoration: const InputDecoration(labelText: '비고'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final quantity = int.tryParse(qtyController.text.trim());
+              final unitPrice = int.tryParse(unitController.text.trim());
+              final amount =
+                  (quantity != null && unitPrice != null) ? quantity * unitPrice : null;
+
+              final result = await _inquiryService.updatePurchaseRequestItem(
+                itemId: (item['id'] as num).toInt(),
+                itemName: nameController.text.trim(),
+                specification: specController.text.trim(),
+                quantity: quantity,
+                unitPriceValue: unitPrice,
+                amountValue: amount,
+                remark: remarkController.text.trim(),
+              );
+              if (result['success'] == true) {
+                if (mounted) Navigator.pop(context);
+                _showSnack('품목이 수정되었습니다.');
+              } else {
+                _showSnack(result['error']?.toString() ?? '수정 실패', isError: true);
+              }
+            },
+            child: const Text('저장'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// 삭제 확인 다이얼로그
@@ -522,12 +869,28 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
   // 문의 유형별 아이콘 매핑
   IconData _getIconForType(String type) {
     switch (type) {
-      case '연차':
-        return Icons.beach_access_rounded;
-      case '근태':
-        return Icons.access_time_rounded;
+      case 'delivery_date_change':
+        return Icons.event_available_rounded;
+      case 'quantity_change':
+        return Icons.format_list_numbered_rounded;
+      case 'price_change':
+        return Icons.payments_rounded;
+      case 'bug':
       case '오류':
         return Icons.error_outline_rounded;
+      case 'modify':
+      case '수정 요청':
+        return Icons.edit_rounded;
+      case 'delete':
+      case '삭제 요청':
+        return Icons.delete_outline_rounded;
+      case 'annual_leave':
+      case '연차':
+        return Icons.beach_access_rounded;
+      case 'attendance':
+      case '근태':
+        return Icons.access_time_rounded;
+      case 'other':
       case '기타':
         return Icons.more_horiz_rounded;
       default:
@@ -743,6 +1106,11 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                                 ),
                               ),
                               const Spacer(),
+                              if (widget.isAdmin && status == 'open')
+                                TextButton(
+                                  onPressed: _markInProgress,
+                                  child: const Text('처리중'),
+                                ),
                               Text(
                                 '#${_inquiry['id']}',
                                 style: ResponsiveUtils.getTextStyle(
@@ -779,6 +1147,15 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                                   icon: Icons.email_outlined,
                                   label: '이메일',
                                   value: _inquiry['user_email'],
+                                  isLast: _inquiry['purchase_order_number'] == null ||
+                                      _inquiry['purchase_order_number'].toString().isEmpty,
+                                ),
+                              if (_inquiry['purchase_order_number'] != null &&
+                                  _inquiry['purchase_order_number'].toString().isNotEmpty)
+                                _buildInfoItem(
+                                  icon: Icons.receipt_long_outlined,
+                                  label: '발주번호',
+                                  value: _inquiry['purchase_order_number'].toString(),
                                   isLast: true,
                                 ),
                             ],
@@ -789,6 +1166,17 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                   ),
 
                   const SizedBox(height: 16),
+
+                  if ((_inquiry['purchase_request_id'] != null) ||
+                      ((_inquiry['purchase_order_number'] ?? '').toString().isNotEmpty))
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _openPurchaseDetail,
+                        icon: const Icon(Icons.open_in_new),
+                        label: const Text('발주 상세 보기'),
+                      ),
+                    ),
 
                   // 제목 및 내용 카드
                   Container(
@@ -886,6 +1274,58 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                             ),
                           ),
                         ),
+                        if (_inquiryAttachments.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.image_outlined,
+                                size: 18,
+                                color: const Color(0xFF007AFF),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '첨부 이미지',
+                                style: ResponsiveUtils.getTextStyle(
+                                  context,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF8E8E93),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: _inquiryAttachments.map((attachment) {
+                              return GestureDetector(
+                                onTap: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => Dialog(
+                                      insetPadding: const EdgeInsets.all(16),
+                                      child: Image.network(
+                                        attachment.url,
+                                        fit: BoxFit.contain,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Image.network(
+                                    attachment.url,
+                                    width: 80,
+                                    height: 80,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
                       ],
                     ),
                   ),
