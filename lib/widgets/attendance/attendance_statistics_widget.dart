@@ -92,6 +92,16 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
           .select('*')
           .eq('date', todayStr);
 
+      // 재직자 이메일 조회 (is_active = true)
+      final activeEmployees = await _supabase
+          .from('employees')
+          .select('email')
+          .eq('is_active', true);
+      final activeEmails = activeEmployees
+          .map((e) => e['email']?.toString().toLowerCase())
+          .where((email) => email != null)
+          .toSet();
+
       // 오늘 휴가/출장자 조회 (RPC 함수 실패시 기존 방식으로 폴백)
       List<dynamic> allLeaves;
       try {
@@ -136,6 +146,11 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
         final status = record['status']?.toString();
         final clockIn = record['clock_in'];
         final name = record['employee_name']?.toString() ?? '알 수 없음';
+
+        // 재직자만 통계 대상
+        if (email == null || !activeEmails.contains(email)) {
+          continue;
+        }
         
         // 휴가/출장자는 제외
         if (email != null && leaveEmails.contains(email)) {

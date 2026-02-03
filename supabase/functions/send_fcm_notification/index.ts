@@ -668,6 +668,45 @@ Deno.serve(async (req)=>{
         if (!title) title = '❌ 구매 요청 반려';
         if (!body) body = `${requester_name}님의 ${payment_category}(${purchase_order_number})이 반려되었습니다.`;
       }
+    } else if (type === 'transaction_statement_extracted') {
+      console.log('🟠 [거래명세서 알림] 확인필요(extracted) 처리');
+
+      // 확인필요 알림은 lead buyer + app_admin에게 전송
+      const result = await getPurchaseRoleTokens(supabase, [
+        'lead buyer',
+        'app_admin'
+      ]);
+      targetTokens = result.tokens;
+      targetEmails = result.emails;
+
+      const dataMap = data && typeof data === 'object' ? data : {};
+      const uploaderName = dataMap['uploaded_by_name'] ||
+        dataMap['uploader_name'] ||
+        requester_name ||
+        '알 수 없음';
+      const vendorName = dataMap['vendor_name'] || dataMap['vendorName'] || '';
+      const grandTotal = dataMap['grand_total'] || dataMap['grandTotal'] || '';
+
+      if (!title) title = '🟠 거래명세서 확인 필요';
+      if (!body) {
+        const parts = [];
+        parts.push(`${uploaderName}님이 거래명세서를 등록했습니다.`);
+        if (vendorName) parts.push(`거래처: ${vendorName}`);
+        if (grandTotal) parts.push(`금액: ${grandTotal}`);
+        body = parts.join('\n');
+      }
+
+      data = {
+        ...dataMap,
+        type: 'transaction_statement_extracted',
+        statement_id: dataMap['statement_id'] || dataMap['statementId'] || '',
+        image_url: dataMap['image_url'] || dataMap['imageUrl'] || '',
+        uploaded_by_name: uploaderName,
+        uploaded_at: dataMap['uploaded_at'] || dataMap['uploadedAt'] || '',
+        vendor_name: vendorName,
+        grand_total: grandTotal,
+        status: 'extracted'
+      };
     } else if (type === 'admin') {
       // 연차/출장 관리자 알림 - attendance_role 기반
       console.log('📋 [연차/출장 알림] attendance_role 기반 관리자 조회');

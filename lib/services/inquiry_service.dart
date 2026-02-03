@@ -130,6 +130,8 @@ class InquiryService {
     String? purchaseInfo,
     String? requesterId,
     List<SupportAttachment>? attachments,
+    Map<String, dynamic>? inquiryPayload,
+    bool includeInitialMessage = false,
   }) async {
     try {
       // app_admin은 문의 생성 불가
@@ -145,17 +147,22 @@ class InquiryService {
 
       final user = _supabase.auth.currentUser;
 
-      // Flutter 앱 문의 유형을 DB 유형으로 매핑
       // 앱에서 전달되는 문의 유형을 DB 유형으로 매핑
       String dbInquiryType = inquiryType;
       switch (inquiryType) {
-        case '연차':
-        case '근태':
-        case '기타':
-          dbInquiryType = 'other';
-          break;
         case '오류':
           dbInquiryType = 'bug';
+          break;
+        case '수정 요청':
+          dbInquiryType = 'modify';
+          break;
+        case '삭제 요청':
+          dbInquiryType = 'delete';
+          break;
+        case '기타':
+        case '연차':
+        case '근태':
+          dbInquiryType = 'other';
           break;
       }
 
@@ -171,6 +178,10 @@ class InquiryService {
         'purchase_order_number': purchaseOrderNumber,
         'purchase_info': purchaseInfo,
         'requester_id': requesterId,
+        'attachments': (attachments ?? const [])
+            .map((a) => a.toJson())
+            .toList(growable: false),
+        'inquiry_payload': inquiryPayload,
       };
 
       final response = await _supabase
@@ -179,34 +190,36 @@ class InquiryService {
           .select()
           .single();
 
-      // 첫 메시지(사용자) 기록: 대화 로그 시작
-      final inquiryId = (response['id'] as num?)?.toInt();
-      if (inquiryId == null) {
-        return {
-          'success': false,
-          'error': '문의 ID를 확인할 수 없습니다.',
-          'message': '문의 등록에 실패했습니다.\n잠시 후 다시 시도해주세요.',
-        };
-      }
+      if (includeInitialMessage) {
+        // 첫 메시지(사용자) 기록: 대화 로그 시작
+        final inquiryId = (response['id'] as num?)?.toInt();
+        if (inquiryId == null) {
+          return {
+            'success': false,
+            'error': '문의 ID를 확인할 수 없습니다.',
+            'message': '문의 등록에 실패했습니다.\n잠시 후 다시 시도해주세요.',
+          };
+        }
 
-      final senderEmail = _supabase.auth.currentUser?.email ?? userEmail;
-      try {
-        await _supabase.from('support_inquiry_messages').insert({
-          'inquiry_id': inquiryId,
-          'sender_role': 'user',
-          'sender_email': senderEmail,
-          'message': message,
-          'attachments': (attachments ?? const [])
-              .map((a) => a.toJson())
-              .toList(growable: false),
-        });
-      } catch (e) {
-        // 메시지 기록 실패 시(문의는 생성됨) 에러로 처리
-        return {
-          'success': false,
-          'error': e.toString(),
-          'message': '문의는 등록됐지만 대화 저장에 실패했습니다.\n잠시 후 다시 시도해주세요.',
-        };
+        final senderEmail = _supabase.auth.currentUser?.email ?? userEmail;
+        try {
+          await _supabase.from('support_inquiry_messages').insert({
+            'inquiry_id': inquiryId,
+            'sender_role': 'user',
+            'sender_email': senderEmail,
+            'message': message,
+            'attachments': (attachments ?? const [])
+                .map((a) => a.toJson())
+                .toList(growable: false),
+          });
+        } catch (e) {
+          // 메시지 기록 실패 시(문의는 생성됨) 에러로 처리
+          return {
+            'success': false,
+            'error': e.toString(),
+            'message': '문의는 등록됐지만 대화 저장에 실패했습니다.\n잠시 후 다시 시도해주세요.',
+          };
+        }
       }
 
       return {
@@ -642,10 +655,13 @@ class InquiryService {
   /// Flutter 앱용 문의 유형 목록
   static List<Map<String, String>> getInquiryTypes() {
     return [
-      {'value': '연차', 'label': '연차'},
-      {'value': '근태', 'label': '근태'},
-      {'value': '오류', 'label': '오류'},
-      {'value': '기타', 'label': '기타'},
+      {'value': 'delivery_date_change', 'label': '입고일 변경 요청'},
+      {'value': 'quantity_change', 'label': '수량 변경 요청'},
+      {'value': 'price_change', 'label': '단가/합계 금액 변경 요청'},
+      {'value': 'bug', 'label': '오류 신고'},
+      {'value': 'modify', 'label': '수정 요청'},
+      {'value': 'delete', 'label': '삭제 요청'},
+      {'value': 'other', 'label': '기타 문의'},
     ];
   }
 
@@ -687,15 +703,223 @@ class InquiryService {
 
     switch (type) {
       case 'bug':
-        return '오류';
+        return '오류 신고';
+      case 'delivery_date_change':
+        return '입고일 변경 요청';
+      case 'quantity_change':
+        return '수량 변경 요청';
+      case 'price_change':
+        return '단가/합계 금액 변경 요청';
       case 'modify':
         return '수정 요청';
       case 'delete':
         return '삭제 요청';
+      case 'annual_leave':
+      case 'attendance':
+        return '기타 문의';
       case 'other':
         return '기타';
+      case '오류':
+        return '오류 신고';
       default:
         return type;
+    }
+  }
+
+  /// 발주요청 목록 조회 (문의 작성용)
+  Future<Map<String, dynamic>> getMyPurchaseRequests({
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null || user.email == null) {
+        return {'success': false, 'data': [], 'error': '로그인이 필요합니다.'};
+      }
+
+      final employee = await _supabase
+          .from('employees')
+          .select('name')
+          .eq('email', user.email!)
+          .single();
+
+      final requesterName = (employee['name'] ?? '').toString();
+      if (requesterName.isEmpty) {
+        return {
+          'success': false,
+          'data': [],
+          'error': '사용자 정보를 찾을 수 없습니다.',
+        };
+      }
+
+      var query = _supabase
+          .from('purchase_requests')
+          .select(
+            'id,purchase_order_number,vendor_name,request_date,created_at,requester_name,'
+            'middle_manager_status,final_manager_status,delivery_request_date,'
+            'revised_delivery_request_date,purchase_request_items('
+            'id,line_number,item_name,specification,quantity,unit_price_value,amount_value'
+            ')',
+          )
+          .eq('requester_name', requesterName);
+
+      if (startDate != null) {
+        query = query.gte(
+          'created_at',
+          DateTime(startDate.year, startDate.month, startDate.day)
+              .toUtc()
+              .toIso8601String(),
+        );
+      }
+      if (endDate != null) {
+        final end = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59);
+        query = query.lte('created_at', end.toUtc().toIso8601String());
+      }
+
+      final data = await query
+          .order('created_at', ascending: false)
+          .limit(100);
+      return {'success': true, 'data': List<Map<String, dynamic>>.from(data)};
+    } catch (e) {
+      return {
+        'success': false,
+        'data': [],
+        'error': e.toString(),
+      };
+    }
+  }
+
+  /// 발주요청 상세 조회
+  Future<Map<String, dynamic>?> getPurchaseRequestDetail(int requestId) async {
+    try {
+      final response = await _supabase
+          .from('purchase_requests')
+          .select(
+            'id,purchase_order_number,vendor_name,requester_name,request_date,'
+            'created_at,delivery_request_date,revised_delivery_request_date,'
+            'purchase_request_items('
+            'id,line_number,item_name,specification,quantity,unit_price_value,amount_value,remark,link'
+            ')',
+          )
+          .eq('id', requestId)
+          .single();
+
+      return Map<String, dynamic>.from(response);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// 발주요청 ID 조회 (발주번호 → ID)
+  Future<int?> getPurchaseRequestIdByOrderNumber(String orderNumber) async {
+    try {
+      final response = await _supabase
+          .from('purchase_requests')
+          .select('id')
+          .eq('purchase_order_number', orderNumber)
+          .limit(1)
+          .maybeSingle();
+      if (response == null) return null;
+      return (response['id'] as num?)?.toInt();
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// 발주요청 품목 수정
+  Future<Map<String, dynamic>> updatePurchaseRequestItem({
+    required int itemId,
+    String? itemName,
+    String? specification,
+    int? quantity,
+    int? unitPriceValue,
+    int? amountValue,
+    String? remark,
+  }) async {
+    try {
+      final updateData = <String, dynamic>{};
+      if (itemName != null) updateData['item_name'] = itemName;
+      if (specification != null) updateData['specification'] = specification;
+      if (quantity != null) updateData['quantity'] = quantity;
+      if (unitPriceValue != null) {
+        updateData['unit_price_value'] = unitPriceValue;
+        updateData['unit_price_currency'] = 'KRW';
+      }
+      if (amountValue != null) {
+        updateData['amount_value'] = amountValue;
+        updateData['amount_currency'] = 'KRW';
+      }
+      if (remark != null) updateData['remark'] = remark;
+
+      await _supabase
+          .from('purchase_request_items')
+          .update(updateData)
+          .eq('id', itemId);
+
+      return {'success': true};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  /// 발주요청 품목 삭제
+  Future<Map<String, dynamic>> deletePurchaseRequestItem(int itemId) async {
+    try {
+      await _supabase
+          .from('purchase_request_items')
+          .delete()
+          .eq('id', itemId);
+      return {'success': true};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  /// 발주요청 전체 삭제 (문의 기록 보존 포함)
+  Future<Map<String, dynamic>> deletePurchaseRequestWithInquiryPreserved(
+    int requestId,
+  ) async {
+    try {
+      await _supabase
+          .from('support_inquires')
+          .update({'purchase_request_id': null})
+          .eq('purchase_request_id', requestId);
+
+      await _supabase
+          .from('purchase_request_items')
+          .delete()
+          .eq('purchase_request_id', requestId);
+
+      await _supabase
+          .from('purchase_requests')
+          .delete()
+          .eq('id', requestId);
+
+      return {'success': true};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  /// 입고일 수정요청 완료 플래그 업데이트
+  Future<Map<String, dynamic>> markDeliveryRevisionRequested({
+    required int requestId,
+    required String requesterName,
+  }) async {
+    try {
+      await _supabase
+          .from('purchase_requests')
+          .update({
+            'delivery_revision_requested': true,
+            'delivery_revision_requested_at':
+                DateTime.now().toUtc().toIso8601String(),
+            'delivery_revision_requested_by': requesterName,
+          })
+          .eq('id', requestId);
+
+      return {'success': true};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
     }
   }
 
@@ -815,6 +1039,26 @@ class InquiryService {
         };
       }
 
+      // 일반 사용자는 처리된 문의 삭제 불가 (RLS 정책과 동일)
+      if (!isAdmin) {
+        final status = (inquiry['status'] ?? 'open').toString();
+        final resolutionNote = (inquiry['resolution_note'] ?? '').toString();
+        if (status != 'open') {
+          return {
+            'success': false,
+            'error': '처리된 문의는 삭제할 수 없습니다.',
+            'message': '처리가 진행된 문의는 삭제할 수 없습니다.',
+          };
+        }
+        if (resolutionNote.isNotEmpty) {
+          return {
+            'success': false,
+            'error': '답변이 완료된 문의는 삭제할 수 없습니다.',
+            'message': '답변이 완료된 문의는 삭제할 수 없습니다.',
+          };
+        }
+      }
+
       await _supabase
           .from('support_inquires')
           .delete()
@@ -878,6 +1122,21 @@ class InquiryService {
         return {
           'canDelete': false,
           'reason': '본인이 작성한 문의만 삭제할 수 있습니다.',
+        };
+      }
+
+      final status = (inquiry['status'] ?? 'open').toString();
+      final resolutionNote = (inquiry['resolution_note'] ?? '').toString();
+      if (status != 'open') {
+        return {
+          'canDelete': false,
+          'reason': '처리가 진행된 문의는 삭제할 수 없습니다.',
+        };
+      }
+      if (resolutionNote.isNotEmpty) {
+        return {
+          'canDelete': false,
+          'reason': '답변이 완료된 문의는 삭제할 수 없습니다.',
         };
       }
 

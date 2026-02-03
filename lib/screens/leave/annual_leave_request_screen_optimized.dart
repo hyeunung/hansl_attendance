@@ -261,10 +261,18 @@ class _AnnualLeaveRequestScreenOptimizedState
     return sum;
   }
 
+  /// 날짜가 하나라도 선택되었는지 확인
+  bool get _hasSelectedDates {
+    for (final dates in _selectedDatesMap.values) {
+      if (dates.isNotEmpty) return true;
+    }
+    return false;
+  }
+
   /// 제출 가능 여부
   bool get _canSubmit {
     return !_isSubmitting &&
-        _usedDaysSum > 0 &&
+        _hasSelectedDates &&
         _memoController.text.trim().isNotEmpty;
   }
 
