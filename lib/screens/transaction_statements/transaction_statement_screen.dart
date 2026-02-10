@@ -12,6 +12,37 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../utils/responsive_utils.dart';
 
+// ── 업로드 종류 정의 ─────────────────────────────────────
+class _UploadType {
+  final String key;
+  final String label;
+  final Color color;
+
+  const _UploadType({
+    required this.key,
+    required this.label,
+    required this.color,
+  });
+}
+
+const _uploadTypes = [
+  _UploadType(
+    key: 'default',
+    label: '거래명세서',
+    color: Color(0xFF1777CB),
+  ),
+  _UploadType(
+    key: 'receipt',
+    label: '입고수량',
+    color: Color(0xFFEA580C),
+  ),
+  _UploadType(
+    key: 'monthly',
+    label: '월말결제',
+    color: Color(0xFF059669),
+  ),
+];
+
 class TransactionStatementScreen extends StatefulWidget {
   const TransactionStatementScreen({super.key});
 
@@ -37,6 +68,8 @@ class _TransactionStatementScreenState
     super.initState();
     _loadStatements();
     _setupRealtimeSubscription();
+    // 웹앱과 동일: 화면 진입 시 대기열 처리 트리거
+    TransactionStatementService.kickQueue();
   }
 
   Future<void> _loadStatements({bool showLoading = true}) async {
@@ -74,9 +107,30 @@ class _TransactionStatementScreenState
           event: PostgresChangeEvent.all,
           schema: 'public',
           table: 'transaction_statements',
-          callback: (_) => _handleRealtimeRefresh(),
+          callback: (payload) => _handleRealtimeChange(payload),
         )
         .subscribe();
+  }
+
+  static const _terminalStatuses = {
+    'extracted',
+    'failed',
+    'confirmed',
+    'rejected',
+  };
+
+  void _handleRealtimeChange(PostgresChangePayload payload) {
+    // 웹앱과 동일: processing -> terminal 상태 변경 시 다음 큐 처리 트리거
+    final oldStatus = payload.oldRecord['status'] as String?;
+    final newStatus = payload.newRecord['status'] as String?;
+    if (oldStatus == 'processing' &&
+        newStatus != null &&
+        _terminalStatuses.contains(newStatus)) {
+      TransactionStatementService.kickQueue();
+    }
+
+    // 모든 변경에 대해 목록 갱신 (디바운스)
+    _handleRealtimeRefresh();
   }
 
   void _handleRealtimeRefresh() {
@@ -105,18 +159,16 @@ class _TransactionStatementScreenState
     super.dispose();
   }
 
+  // ── 업로드 플로우 ─────────────────────────────────────
+
   Future<void> _startUploadFlow(ImageSource source) async {
     if (_isUploading) return;
     try {
-      debugPrint('[TransactionStatement] start upload flow: $source');
       final image = await TransactionStatementService.pickImage(source);
-      if (image == null) {
-        debugPrint('[TransactionStatement] image pick canceled');
-        return;
-      }
+      if (image == null) return;
+      if (!mounted) return;
       await _showPreviewDialog(image);
     } catch (e) {
-      debugPrint('[TransactionStatement] image pick error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -130,64 +182,507 @@ class _TransactionStatementScreenState
 
   Future<void> _showPreviewDialog(XFile image) async {
     bool isUploading = false;
+    String selectedType = 'default';
+    String? selectedPoScope;
+    DateTime? selectedDate;
+
     await showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          final isMonthly = selectedType == 'monthly';
+          final canUpload = isMonthly ||
+              (selectedPoScope != null && selectedDate != null);
+
+          return Dialog(
+            insetPadding:
+                const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '거래명세서 확인',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF111827),
-                      ),
+                    // ── 헤더 ──
+                    Row(
+                      children: [
+                        Text(
+                          '거래명세서 업로드',
+                          style: ResponsiveUtils.getTextStyle(
+                            dialogContext,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF111827),
+                          ),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          onPressed: () => Navigator.pop(dialogContext),
+                          icon: const Icon(
+                            Icons.close,
+                            color: Color(0xFF9CA3AF),
+                          ),
+                          tooltip: '닫기',
+                        ),
+                      ],
                     ),
-                    const Spacer(),
-                    IconButton(
-                      onPressed: isUploading ? null : () => Navigator.pop(context),
-                      icon: const Icon(Icons.close, color: Color(0xFF9CA3AF)),
-                      tooltip: '닫기',
+                    const SizedBox(height: 8),
+
+                    // ── 이미지 미리보기 ──
+                    _buildImagePreview(File(image.path), isUploading),
+                    const SizedBox(height: 16),
+
+                    // ── 업로드 종류 ──
+                    _buildFieldLabel(dialogContext, '업로드 종류'),
+                    const SizedBox(height: 6),
+                    _buildUploadTypeDropdown(
+                      context: dialogContext,
+                      value: selectedType,
+                      enabled: !isUploading,
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setDialogState(() {
+                          selectedType = value;
+                          if (value == 'monthly') {
+                            selectedPoScope = null;
+                            selectedDate = null;
+                          }
+                        });
+                      },
+                    ),
+
+                    // ── 조건부 필드: 거래명세서/입고수량만 표시 ──
+                    if (!isMonthly) ...[
+                      const SizedBox(height: 14),
+
+                      // 발주/수주 구분
+                      _buildFieldLabel(dialogContext, '발주/수주 구분'),
+                      const SizedBox(height: 6),
+                      _buildPoScopeDropdown(
+                        context: dialogContext,
+                        value: selectedPoScope,
+                        enabled: !isUploading,
+                        onChanged: (value) {
+                          setDialogState(() => selectedPoScope = value);
+                        },
+                      ),
+                      const SizedBox(height: 14),
+
+                      // 실입고일
+                      _buildFieldLabel(dialogContext, '실입고일'),
+                      const SizedBox(height: 6),
+                      _buildDatePickerField(
+                        context: dialogContext,
+                        value: selectedDate,
+                        enabled: !isUploading,
+                        onTap: () async {
+                          final picked = await _showStyledDatePicker(
+                            context: dialogContext,
+                            initialDate: selectedDate ?? DateTime.now(),
+                          );
+                          if (picked != null) {
+                            setDialogState(() => selectedDate = picked);
+                          }
+                        },
+                      ),
+                    ],
+
+                    const SizedBox(height: 20),
+
+                    // ── 버튼 ──
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(dialogContext),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(
+                                color: Color(0xFFE5E7EB),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: Text(
+                              '다시 선택',
+                              style: ResponsiveUtils.getTextStyle(
+                                dialogContext,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF6B7280),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: (isUploading || !canUpload)
+                                ? null
+                                : () {
+                                    // 모달 즉시 닫고 백그라운드 업로드
+                                    Navigator.pop(dialogContext);
+                                    _executeUploadInBackground(
+                                      image: image,
+                                      uploadType: selectedType,
+                                      poScope: selectedPoScope,
+                                      actualReceiptDate: selectedDate,
+                                    );
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: canUpload
+                                  ? AppColors.primary
+                                  : const Color(0xFFD1D5DB),
+                              disabledBackgroundColor:
+                                  const Color(0xFFD1D5DB),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: Text(
+                              '업로드',
+                              style: ResponsiveUtils.getTextStyle(
+                                dialogContext,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: canUpload
+                                    ? Colors.white
+                                    : const Color(0xFF9CA3AF),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                _buildImagePreview(
-                  File(image.path),
-                  isUploading,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ── 모달 내부 위젯 헬퍼 ────────────────────────────────
+
+  Widget _buildFieldLabel(BuildContext ctx, String label) {
+    return Row(
+      children: [
+        Text(
+          label,
+          style: ResponsiveUtils.getTextStyle(
+            ctx,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[700],
+          ),
+        ),
+        const SizedBox(width: 2),
+        Text(
+          '*',
+          style: ResponsiveUtils.getTextStyle(
+            ctx,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Colors.red,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUploadTypeDropdown({
+    required BuildContext context,
+    required String value,
+    required bool enabled,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F9FA),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE0E0E0)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          isExpanded: true,
+          icon: Icon(
+            Icons.arrow_drop_down,
+            color: enabled ? AppColors.primary : Colors.grey,
+          ),
+          items: _uploadTypes.map((type) {
+            return DropdownMenuItem<String>(
+              value: type.key,
+              child: Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: type.color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    type.label,
+                    style: ResponsiveUtils.getTextStyle(
+                      context,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF111827),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+          onChanged: enabled ? onChanged : null,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPoScopeDropdown({
+    required BuildContext context,
+    required String? value,
+    required bool enabled,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F9FA),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE0E0E0)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          isExpanded: true,
+          hint: Text(
+            '선택하세요',
+            style: ResponsiveUtils.getTextStyle(
+              context,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[400],
+            ),
+          ),
+          icon: Icon(
+            Icons.arrow_drop_down,
+            color: enabled ? AppColors.primary : Colors.grey,
+          ),
+          items: [
+            DropdownMenuItem(
+              value: 'single',
+              child: Text(
+                '단일 발주',
+                style: ResponsiveUtils.getTextStyle(
+                  context,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF111827),
                 ),
-                const SizedBox(height: 16),
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'multi',
+              child: Text(
+                '다중 발주',
+                style: ResponsiveUtils.getTextStyle(
+                  context,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF111827),
+                ),
+              ),
+            ),
+          ],
+          onChanged: enabled ? onChanged : null,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDatePickerField({
+    required BuildContext context,
+    required DateTime? value,
+    required bool enabled,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: enabled ? onTap : null,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8F9FA),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFE0E0E0)),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.calendar_today,
+              size: 18,
+              color: value != null ? AppColors.primary : Colors.grey[400],
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                value != null
+                    ? _dateFormat.format(value)
+                    : '날짜를 선택하세요',
+                style: ResponsiveUtils.getTextStyle(
+                  context,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: value != null
+                      ? const Color(0xFF111827)
+                      : Colors.grey[400],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 앱 디자인에 맞는 커스텀 날짜 선택 다이얼로그
+  Future<DateTime?> _showStyledDatePicker({
+    required BuildContext context,
+    required DateTime initialDate,
+  }) async {
+    DateTime tempDate = initialDate;
+    return showDialog<DateTime>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (dialogCtx, setPickerState) {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              contentPadding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+              actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              title: Text(
+                '실입고일 선택',
+                style: ResponsiveUtils.getTextStyle(
+                  dialogCtx,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF111827),
+                ),
+              ),
+              content: SizedBox(
+                width: 320,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 선택된 날짜 표시
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      margin: const EdgeInsets.only(
+                        left: 4, right: 4, bottom: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.calendar_today,
+                            size: 16,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _dateFormat.format(tempDate),
+                            style: ResponsiveUtils.getTextStyle(
+                              dialogCtx,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // 달력
+                    Theme(
+                      data: Theme.of(dialogCtx).copyWith(
+                        colorScheme: ColorScheme.light(
+                          primary: AppColors.primary,
+                          onPrimary: Colors.white,
+                          surface: Colors.white,
+                          onSurface: const Color(0xFF111827),
+                        ),
+                        textButtonTheme: TextButtonThemeData(
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                      child: SizedBox(
+                        height: 320,
+                        child: CalendarDatePicker(
+                          initialDate: tempDate,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2100),
+                          onDateChanged: (picked) {
+                            setPickerState(() => tempDate = picked);
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
                 Row(
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: isUploading
-                            ? null
-                            : () {
-                                Navigator.pop(context);
-                              },
+                        onPressed: () => Navigator.pop(dialogCtx),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFFE5E7EB)),
+                          side: const BorderSide(
+                            color: Color(0xFFE5E7EB),
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
-                        child: const Text(
-                          '다시 선택',
-                          style: TextStyle(
+                        child: Text(
+                          '취소',
+                          style: ResponsiveUtils.getTextStyle(
+                            dialogCtx,
+                            fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF6B7280),
+                            color: const Color(0xFF6B7280),
                           ),
                         ),
                       ),
@@ -195,19 +690,7 @@ class _TransactionStatementScreenState
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: isUploading
-                            ? null
-                            : () async {
-                                setState(() => isUploading = true);
-                                try {
-                                  await _uploadStatementFromPreview(image);
-                                  if (mounted) Navigator.pop(context);
-                                } finally {
-                                  if (mounted) {
-                                    setState(() => isUploading = false);
-                                  }
-                                }
-                              },
+                        onPressed: () => Navigator.pop(dialogCtx, tempDate),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           shape: RoundedRectangleBorder(
@@ -215,42 +698,209 @@ class _TransactionStatementScreenState
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
-                        child: isUploading
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Text(
-                                '업로드',
-                                style: TextStyle(fontWeight: FontWeight.w600),
-                              ),
+                        child: Text(
+                          '선택',
+                          style: ResponsiveUtils.getTextStyle(
+                            dialogCtx,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
               ],
-            ),
-          ),
-        ),
-      ),
+            );
+          },
+        );
+      },
     );
   }
 
-  Widget _buildImagePreview(
-    File imageFile,
-    bool isUploading,
-  ) {
+  // ── 업로드 실행 (백그라운드) ─────────────────────────────
+
+  void _executeUploadInBackground({
+    required XFile image,
+    required String uploadType,
+    String? poScope,
+    DateTime? actualReceiptDate,
+  }) {
+    if (_isUploading) return;
+
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final messenger = ScaffoldMessenger.of(context);
+    final uploaderName = (userProvider.employee?['name'] as String?) ??
+        userProvider.name ??
+        '알 수 없음';
+    final typeLabel =
+        _uploadTypes.firstWhere((t) => t.key == uploadType).label;
+
+    // 즉시 "업로드 중" optimistic 카드 표시
+    final tempId = 'uploading_${DateTime.now().millisecondsSinceEpoch}';
+    setState(() {
+      _isUploading = true;
+      _statements = [
+        TransactionStatementSummary(
+          id: tempId,
+          imageUrl: '',
+          fileName: null,
+          status: 'uploading',
+          statementMode: uploadType,
+          uploadedAt: DateTime.now(),
+          uploaderName: uploaderName,
+          statementDate: null,
+          vendorName: null,
+          grandTotal: null,
+          confirmedByName: null,
+        ),
+        ..._statements,
+      ];
+    });
+
+    // 백그라운드에서 실제 업로드 수행
+    _performUpload(
+      image: image,
+      uploadType: uploadType,
+      poScope: poScope,
+      actualReceiptDate: actualReceiptDate,
+      uploaderName: uploaderName,
+      typeLabel: typeLabel,
+      tempId: tempId,
+      messenger: messenger,
+    );
+  }
+
+  Future<void> _performUpload({
+    required XFile image,
+    required String uploadType,
+    String? poScope,
+    DateTime? actualReceiptDate,
+    required String uploaderName,
+    required String typeLabel,
+    required String tempId,
+    required ScaffoldMessengerState messenger,
+  }) async {
+    try {
+      final fileSize = await image.length();
+      if (fileSize > 10 * 1024 * 1024) {
+        _removeOptimisticCard(tempId);
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('파일 크기는 10MB 이하여야 합니다.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      TransactionStatementUploadResult result;
+      String optimisticStatus;
+
+      switch (uploadType) {
+        case 'receipt':
+          result = await TransactionStatementService.uploadReceiptQuantity(
+            imageFile: image,
+            uploaderName: uploaderName,
+            poScope: poScope!,
+            actualReceiptDate: actualReceiptDate!,
+          );
+          optimisticStatus = 'queued';
+          break;
+        case 'monthly':
+          result = await TransactionStatementService.uploadMonthlyStatement(
+            imageFile: image,
+            uploaderName: uploaderName,
+          );
+          optimisticStatus = 'processing';
+          break;
+        default:
+          result = await TransactionStatementService.uploadStatement(
+            imageFile: image,
+            uploaderName: uploaderName,
+            poScope: poScope!,
+            actualReceiptDate: actualReceiptDate!,
+          );
+          optimisticStatus = 'queued';
+          break;
+      }
+
+      if (mounted) {
+        // 임시 카드를 실제 결과로 교체
+        setState(() {
+          _statements = [
+            TransactionStatementSummary(
+              id: result.statementId,
+              imageUrl: result.imageUrl,
+              fileName: null,
+              status: optimisticStatus,
+              statementMode: uploadType,
+              uploadedAt: DateTime.now(),
+              uploaderName: uploaderName,
+              statementDate: null,
+              vendorName: null,
+              grandTotal: null,
+              confirmedByName: null,
+            ),
+            ..._statements.where((item) => item.id != tempId),
+          ];
+        });
+
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('$typeLabel 업로드 완료'),
+            backgroundColor: const Color(0xFF34C759),
+          ),
+        );
+
+        await _loadStatements(showLoading: false);
+
+        // 웹앱 handleUploadSuccess 패턴: default/receipt는 OCR 자동 트리거
+        // monthly는 서비스에서 이미 parse-monthly-statement를 호출하므로 제외
+        if (uploadType != 'monthly') {
+          TransactionStatementService.extractStatementData(
+            result.statementId,
+            result.imageUrl,
+          ).catchError((_) {
+            // OCR 트리거 실패는 무시 (Realtime + kickQueue로 재처리)
+          });
+        }
+      }
+    } catch (_) {
+      _removeOptimisticCard(tempId);
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('업로드 중 오류가 발생했습니다.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isUploading = false);
+      }
+    }
+  }
+
+  void _removeOptimisticCard(String tempId) {
+    if (mounted) {
+      setState(() {
+        _statements =
+            _statements.where((item) => item.id != tempId).toList();
+      });
+    }
+  }
+
+  // ── 이미지 미리보기 ───────────────────────────────────
+
+  Widget _buildImagePreview(File imageFile, bool isUploading) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           width: double.infinity,
-          height: 200,
+          height: 180,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             color: const Color(0xFFF9FAFB),
@@ -274,15 +924,15 @@ class _TransactionStatementScreenState
         ),
         if (isUploading) ...[
           const SizedBox(height: 10),
-          Row(
+          const Row(
             children: [
-              const SizedBox(
+              SizedBox(
                 width: 14,
                 height: 14,
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
-              const SizedBox(width: 8),
-              const Text(
+              SizedBox(width: 8),
+              Text(
                 '업로드 중...',
                 style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
               ),
@@ -293,10 +943,9 @@ class _TransactionStatementScreenState
     );
   }
 
+  // ── FAB 메뉴 ──────────────────────────────────────────
+
   Future<void> _showUploadOptionsMenu() async {
-    debugPrint(
-      '[TransactionStatement] upload menu pressed (isUploading=$_isUploading)',
-    );
     if (_isUploading) return;
     final renderBox =
         _uploadFabKey.currentContext?.findRenderObject() as RenderBox?;
@@ -304,12 +953,8 @@ class _TransactionStatementScreenState
         .overlay
         ?.context
         .findRenderObject() as RenderBox?;
-    if (renderBox == null || overlay == null) {
-      debugPrint(
-        '[TransactionStatement] upload menu abort: renderBox=$renderBox overlay=$overlay',
-      );
-      return;
-    }
+    if (renderBox == null || overlay == null) return;
+
     const double menuItemHeight = 36;
     const double menuVerticalPadding = 6;
     const double menuGap = 6;
@@ -342,9 +987,6 @@ class _TransactionStatementScreenState
           overlay.size.width - menuWidth - screenPadding - safePadding.right,
         )
         .toDouble();
-    debugPrint(
-      '[TransactionStatement] menu geometry: top=$menuTop bottom=$menuBottom left=$menuLeft width=$menuWidth height=$menuHeight',
-    );
 
     final selected = await showGeneralDialog<ImageSource>(
       context: context,
@@ -363,12 +1005,8 @@ class _TransactionStatementScreenState
             Positioned.fill(
               child: GestureDetector(
                 behavior: HitTestBehavior.translucent,
-                onTap: () {
-                  debugPrint(
-                    '[TransactionStatement] upload menu dismissed (outside tap)',
-                  );
-                  Navigator.of(context, rootNavigator: true).pop();
-                },
+                onTap: () =>
+                    Navigator.of(context, rootNavigator: true).pop(),
                 child: const SizedBox.expand(),
               ),
             ),
@@ -396,7 +1034,7 @@ class _TransactionStatementScreenState
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          _buildUploadMenuItem(
+                          _buildFabMenuItem(
                             icon: Icons.camera_alt_outlined,
                             label: '촬영',
                             height: menuItemHeight,
@@ -404,8 +1042,11 @@ class _TransactionStatementScreenState
                                 Navigator.of(context, rootNavigator: true)
                                     .pop(ImageSource.camera),
                           ),
-                          const Divider(height: 1, color: Color(0xFFE5E7EB)),
-                          _buildUploadMenuItem(
+                          const Divider(
+                            height: 1,
+                            color: Color(0xFFE5E7EB),
+                          ),
+                          _buildFabMenuItem(
                             icon: Icons.photo_outlined,
                             label: '보관함',
                             height: menuItemHeight,
@@ -423,15 +1064,15 @@ class _TransactionStatementScreenState
           ],
         );
       },
-      transitionBuilder: (context, animation, secondaryAnimation, child) => child,
+      transitionBuilder:
+          (context, animation, secondaryAnimation, child) => child,
     );
-    debugPrint('[TransactionStatement] upload menu result: $selected');
     if (selected != null) {
       await _startUploadFlow(selected);
     }
   }
 
-  Widget _buildUploadMenuItem({
+  Widget _buildFabMenuItem({
     required IconData icon,
     required String label,
     required double height,
@@ -445,11 +1086,7 @@ class _TransactionStatementScreenState
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Row(
             children: [
-              Icon(
-                icon,
-                size: 18,
-                color: const Color(0xFF6B7280),
-              ),
+              Icon(icon, size: 18, color: const Color(0xFF6B7280)),
               const SizedBox(width: 8),
               Text(
                 label,
@@ -466,79 +1103,7 @@ class _TransactionStatementScreenState
     );
   }
 
-  Future<void> _uploadStatementFromPreview(XFile image) async {
-    if (_isUploading) return;
-    setState(() => _isUploading = true);
-
-    try {
-      final fileSize = await image.length();
-      if (fileSize > 10 * 1024 * 1024) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('파일 크기는 10MB 이하여야 합니다.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
-
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final uploaderName = (userProvider.employee?['name'] as String?) ??
-          userProvider.name ??
-          '알 수 없음';
-
-      final result = await TransactionStatementService.uploadStatement(
-        imageFile: image,
-        uploaderName: uploaderName,
-      );
-
-      if (mounted) {
-        final now = DateTime.now();
-        setState(() {
-          _statements = [
-            TransactionStatementSummary(
-              id: result.statementId,
-              imageUrl: result.imageUrl,
-              fileName: null,
-              status: 'processing',
-              uploadedAt: now,
-              uploaderName: uploaderName,
-              statementDate: null,
-              vendorName: null,
-              grandTotal: null,
-              confirmedByName: null,
-            ),
-            ..._statements.where(
-              (item) => item.id != result.statementId,
-            ),
-          ];
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ 거래명세서가 업로드되었습니다.'),
-            backgroundColor: Color(0xFF34C759),
-          ),
-        );
-
-        await _loadStatements(showLoading: false);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('업로드 중 오류가 발생했습니다.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isUploading = false);
-      }
-    }
-  }
+  // ── 메인 빌드 ─────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -561,7 +1126,8 @@ class _TransactionStatementScreenState
         children: [
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             decoration: BoxDecoration(
               color: Colors.grey[50],
               border: Border(
@@ -635,8 +1201,11 @@ class _TransactionStatementScreenState
     );
   }
 
+  // ── 리스트 카드 ───────────────────────────────────────
+
   Widget _buildStatementCard(TransactionStatementSummary statement) {
     final statusStyle = _statusStyle(statement.status);
+    final modeStyle = _modeStyle(statement.statementMode);
     final uploadedAt = _formatDate(statement.uploadedAt);
     final statementDate = _formatDate(statement.statementDate);
     final vendorName = statement.vendorName ?? '-';
@@ -656,16 +1225,42 @@ class _TransactionStatementScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 상태 뱃지 + 종류 뱃지
             Row(
               children: [
+                // 종류 뱃지
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: modeStyle.backgroundColor,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    modeStyle.label,
+                    style: ResponsiveUtils.getTextStyle(
+                      context,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: modeStyle.foregroundColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                // 상태 뱃지
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: statusStyle.backgroundColor,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         statusStyle.icon,
@@ -743,14 +1338,30 @@ class _TransactionStatementScreenState
     );
   }
 
+  // ── 상태/종류 스타일 ──────────────────────────────────
+
   _StatusStyle _statusStyle(String status) {
     switch (status) {
+      case 'uploading':
+        return _StatusStyle(
+          label: '업로드 중',
+          icon: Icons.cloud_upload_outlined,
+          backgroundColor: const Color(0xFFFFF7ED),
+          foregroundColor: const Color(0xFFEA580C),
+        );
       case 'pending':
         return _StatusStyle(
           label: '대기중',
           icon: Icons.schedule,
           backgroundColor: const Color(0xFFF2F4F7),
           foregroundColor: const Color(0xFF667085),
+        );
+      case 'queued':
+        return _StatusStyle(
+          label: '대기열',
+          icon: Icons.schedule,
+          backgroundColor: const Color(0xFFEEF0F4),
+          foregroundColor: const Color(0xFF475569),
         );
       case 'processing':
         return _StatusStyle(
@@ -780,6 +1391,13 @@ class _TransactionStatementScreenState
           backgroundColor: const Color(0xFFFFEBEE),
           foregroundColor: const Color(0xFFD32F2F),
         );
+      case 'failed':
+        return _StatusStyle(
+          label: '실패',
+          icon: Icons.error_outline,
+          backgroundColor: const Color(0xFFFFEBEE),
+          foregroundColor: const Color(0xFFD32F2F),
+        );
       default:
         return _StatusStyle(
           label: status,
@@ -789,7 +1407,32 @@ class _TransactionStatementScreenState
         );
     }
   }
+
+  _ModeStyle _modeStyle(String mode) {
+    switch (mode) {
+      case 'receipt':
+        return _ModeStyle(
+          label: '입고수량',
+          backgroundColor: const Color(0xFFFFF7ED),
+          foregroundColor: const Color(0xFFEA580C),
+        );
+      case 'monthly':
+        return _ModeStyle(
+          label: '월말결제',
+          backgroundColor: const Color(0xFFECFDF5),
+          foregroundColor: const Color(0xFF059669),
+        );
+      default:
+        return _ModeStyle(
+          label: '일반',
+          backgroundColor: const Color(0xFFEFF6FF),
+          foregroundColor: const Color(0xFF1777CB),
+        );
+    }
+  }
 }
+
+// ── 스타일 클래스 ────────────────────────────────────────
 
 class _StatusStyle {
   final String label;
@@ -800,6 +1443,18 @@ class _StatusStyle {
   _StatusStyle({
     required this.label,
     required this.icon,
+    required this.backgroundColor,
+    required this.foregroundColor,
+  });
+}
+
+class _ModeStyle {
+  final String label;
+  final Color backgroundColor;
+  final Color foregroundColor;
+
+  _ModeStyle({
+    required this.label,
     required this.backgroundColor,
     required this.foregroundColor,
   });

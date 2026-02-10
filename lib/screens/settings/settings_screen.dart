@@ -113,7 +113,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       });
     } catch (e) {
       setState(() {
-        _appVersion = '앱 버전 3.4.4';
+        _appVersion = '앱 버전 3.4.5';
       });
     }
   }
