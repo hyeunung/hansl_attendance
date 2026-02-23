@@ -249,6 +249,7 @@ class ReceiptUploadService {
     required File imageFile,
     required String userEmail,
     String? memo,
+    String? groupId,
   }) async {
     try {
       // 1. 사용자 이름 가져오기
@@ -297,6 +298,7 @@ class ReceiptUploadService {
         'uploaded_by_name': userName,
         'memo': memo,
         'uploaded_at': DateTime.now().toUtc().toIso8601String(),
+        'group_id': groupId,
       });
 
       return publicUrl;

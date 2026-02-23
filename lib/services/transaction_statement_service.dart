@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -64,13 +65,15 @@ class TransactionStatementUploadResult {
 class TransactionStatementService {
   static final SupabaseClient _supabase = Supabase.instance.client;
   static final ImagePicker _imagePicker = ImagePicker();
+  static int _lastKickQueueAtMs = 0;
+  static bool _kickQueueInFlight = false;
 
   static Future<XFile?> pickImage(ImageSource source) {
     return _imagePicker.pickImage(
       source: source,
-      imageQuality: 85,
-      maxWidth: 1920,
-      maxHeight: 1920,
+      imageQuality: 70,
+      maxWidth: 1280,
+      maxHeight: 1280,
     );
   }
 
@@ -87,7 +90,8 @@ class TransactionStatementService {
       throw Exception('로그인 정보가 없습니다.');
     }
 
-    final imageUrl = await _uploadImageToStorage(imageFile);
+    final imageBytes = await imageFile.readAsBytes();
+    final imageUrl = await _uploadImageToStorageWithBytes(imageFile, imageBytes);
     final dateStr = DateFormat('yyyy-MM-dd').format(actualReceiptDate);
 
     final insertResponse = await _supabase
@@ -213,19 +217,46 @@ class TransactionStatementService {
     String statementId,
     String imageUrl,
   ) async {
-    await _supabase.functions.invoke(
-      'ocr-transaction-statement',
-      body: {
-        'statementId': statementId,
-        'imageUrl': imageUrl,
-        'mode': 'process_specific',
-      },
-    );
+    try {
+      await _supabase.functions.invoke(
+        'ocr-transaction-statement',
+        body: {
+          'statementId': statementId,
+          'imageUrl': imageUrl,
+          'mode': 'process_specific',
+        },
+      );
+    } catch (e) {
+      final errorMessage = e.toString();
+      final nowIso = DateTime.now().toUtc().toIso8601String();
+
+      try {
+        await _supabase
+            .from('transaction_statements')
+            .update({
+              'status': 'failed',
+              'extraction_error': errorMessage,
+              'last_error_at': nowIso,
+              'processing_finished_at': nowIso,
+              'locked_by': null,
+            })
+            .eq('id', statementId)
+            .inFilter('status', ['pending', 'queued', 'processing']);
+      } catch (_) {}
+      rethrow;
+    }
   }
 
   /// 대기열 처리 트리거 (웹앱 kickQueue와 동일)
   /// ocr-transaction-statement Edge Function을 process_next 모드로 호출
   static Future<void> kickQueue() async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    const minIntervalMs = 8000;
+    if (_kickQueueInFlight || now - _lastKickQueueAtMs < minIntervalMs) {
+      return;
+    }
+    _kickQueueInFlight = true;
+    _lastKickQueueAtMs = now;
     try {
       await _supabase.functions.invoke(
         'ocr-transaction-statement',
@@ -233,6 +264,8 @@ class TransactionStatementService {
       );
     } catch (_) {
       // 큐 처리 실패는 무시 (다음 호출에서 재시도)
+    } finally {
+      _kickQueueInFlight = false;
     }
   }
 
@@ -254,6 +287,14 @@ class TransactionStatementService {
 
   /// 이미지를 Storage에 업로드하고 public URL을 반환
   static Future<String> _uploadImageToStorage(XFile imageFile) async {
+    final bytes = await imageFile.readAsBytes();
+    return _uploadImageToStorageWithBytes(imageFile, bytes);
+  }
+
+  static Future<String> _uploadImageToStorageWithBytes(
+    XFile imageFile,
+    List<int> bytes,
+  ) async {
     final filePath = imageFile.path;
     final dotIndex = filePath.lastIndexOf('.');
     final fileExtension =
@@ -261,10 +302,9 @@ class TransactionStatementService {
     final fileName = _generateFileName(fileExtension);
     final storagePath = 'Transaction Statement/$fileName';
 
-    final bytes = await imageFile.readAsBytes();
     await _supabase.storage.from('receipt-images').uploadBinary(
       storagePath,
-      bytes,
+      Uint8List.fromList(bytes),
       fileOptions: FileOptions(
         contentType: _getContentType(fileExtension),
         upsert: false,
