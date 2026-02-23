@@ -63,20 +63,33 @@ class _CalendarScreenState extends State<CalendarScreen>
     }).toList();
   }
 
+  String _normalizeLeaveType(dynamic rawType) {
+    return rawType == null
+        ? ''
+        : rawType
+            .toString()
+            .trim()
+            .toLowerCase()
+            .replaceAll('_', '');
+  }
+
   bool _hasAnnual(List<Map<String, dynamic>> events) {
-    return events.any(
-      (e) => [
+    return events.any((e) {
+      final type = _normalizeLeaveType(e['type']);
+      return const [
         'annual',
-        'halfAm',
-        'half_am',
-        'halfPm',
-        'half_pm',
-      ].contains(e['type']),
-    );
+        'halfam',
+        'halfpm',
+        'official',
+      ].contains(type);
+    });
   }
 
   bool _hasBiztrip(List<Map<String, dynamic>> events) {
-    return events.any((e) => e['type'] == 'biztrip');
+    return events.any((e) {
+      final type = _normalizeLeaveType(e['type']);
+      return type == 'biztrip' || type == 'businesstrip';
+    });
   }
 
   @override
@@ -658,6 +671,10 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   Widget _eventTile(Map<String, dynamic> e) {
+    final rawType = e['type']?.toString() ?? '';
+    final normalizedType = _normalizeLeaveType(rawType);
+    final isBiztrip =
+        normalizedType == 'biztrip' || normalizedType == 'businesstrip';
     Color chipColor;
     String chipLabel;
     Color chipTextColor = Colors.black87;
@@ -680,19 +697,21 @@ class _CalendarScreenState extends State<CalendarScreen>
         chipTextColor = const Color(0xFF34C759);
     }
     // 타입별 라벨
-    switch (e['type']) {
+    switch (normalizedType) {
       case 'annual':
         chipLabel = '연차';
         break;
-      case 'halfAm':
-      case 'half_am':
+      case 'halfam':
         chipLabel = '오전반차';
         break;
-      case 'halfPm':
-      case 'half_pm':
+      case 'halfpm':
         chipLabel = '오후반차';
         break;
+      case 'official':
+        chipLabel = '공가';
+        break;
       case 'biztrip':
+      case 'businesstrip':
         chipLabel = '출장';
         // 출장은 파란색으로 변경
         if (e['status'] == 'approved') {
@@ -701,7 +720,7 @@ class _CalendarScreenState extends State<CalendarScreen>
         }
         break;
       default:
-        chipLabel = e['type'];
+        chipLabel = rawType.isNotEmpty ? rawType : '기타';
     }
     // 상태 라벨 추가
     if (e['status'] == 'pending') chipLabel += ' (대기)';
@@ -717,7 +736,7 @@ class _CalendarScreenState extends State<CalendarScreen>
 
     // 출장인 경우 출장자 배열 사용 (전원 이름 표시)
     String displayName = e['name'] ?? e['user_email'] ?? '-';
-    if (e['type'] == 'biztrip' && e['출장자'] != null) {
+    if (isBiztrip && e['출장자'] != null) {
       final travelersRaw = e['출장자'] as List<dynamic>?;
       if (travelersRaw != null && travelersRaw.isNotEmpty) {
         // 출장자 전원 이름을 콤마로 구분하여 표시
@@ -785,7 +804,7 @@ class _CalendarScreenState extends State<CalendarScreen>
             ),
           ],
           // 출장인 경우: 장소, 업무, 차량 정보를 각 행에 표시
-          if (e['type'] == 'biztrip') ...[
+          if (isBiztrip) ...[
             if (e['place'] != null && e['place'].toString().isNotEmpty) ...[
               SizedBox(height: ResponsiveUtils.spacing(context, 2)),
               Text(
@@ -821,7 +840,7 @@ class _CalendarScreenState extends State<CalendarScreen>
             ],
           ],
           // 연차/반차인 경우: reason만 표시
-          if (displayReason != null && e['type'] != 'biztrip') ...[
+          if (displayReason != null && !isBiztrip) ...[
             SizedBox(height: ResponsiveUtils.spacing(context, 2)),
             Text(
               displayReason,
