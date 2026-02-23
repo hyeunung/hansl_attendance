@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -71,8 +72,22 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
 
   Future<void> _startUploadFlow(ImageSource source) async {
     try {
-      debugPrint('[Receipts] start upload flow: $source');
       final picker = ImagePicker();
+      if (source == ImageSource.gallery) {
+        final images = await picker.pickMultiImage(
+          imageQuality: 85,
+          maxWidth: 1920,
+          maxHeight: 1920,
+        );
+        if (images.isEmpty) {
+          return;
+        }
+        await _showPreviewDialog(
+          images.map((image) => File(image.path)).toList(),
+        );
+        return;
+      }
+
       final XFile? image = await picker.pickImage(
         source: source,
         imageQuality: 85,
@@ -80,12 +95,10 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
         maxHeight: 1920,
       );
       if (image == null) {
-        debugPrint('[Receipts] image pick canceled');
         return;
       }
-      await _showPreviewDialog(File(image.path));
+      await _showPreviewDialog([File(image.path)]);
     } catch (e) {
-      debugPrint('[Receipts] image pick error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -98,7 +111,6 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
   }
 
   Future<void> _showUploadOptionsMenu() async {
-    debugPrint('[Receipts] upload menu pressed');
     final renderBox =
         _uploadFabKey.currentContext?.findRenderObject() as RenderBox?;
     final overlay = Navigator.of(context, rootNavigator: true)
@@ -106,9 +118,6 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
         ?.context
         .findRenderObject() as RenderBox?;
     if (renderBox == null || overlay == null) {
-      debugPrint(
-        '[Receipts] upload menu abort: renderBox=$renderBox overlay=$overlay',
-      );
       return;
     }
     const double menuItemHeight = 36;
@@ -143,9 +152,6 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
           overlay.size.width - menuWidth - screenPadding - safePadding.right,
         )
         .toDouble();
-    debugPrint(
-      '[Receipts] menu geometry: top=$menuTop bottom=$menuBottom left=$menuLeft width=$menuWidth height=$menuHeight',
-    );
 
     final selected = await showGeneralDialog<ImageSource>(
       context: context,
@@ -165,7 +171,6 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
               child: GestureDetector(
                 behavior: HitTestBehavior.translucent,
                 onTap: () {
-                  debugPrint('[Receipts] upload menu dismissed (outside tap)');
                   Navigator.of(context, rootNavigator: true).pop();
                 },
                 child: const SizedBox.expand(),
@@ -224,7 +229,6 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
       },
       transitionBuilder: (context, animation, secondaryAnimation, child) => child,
     );
-    debugPrint('[Receipts] upload menu result: $selected');
     if (selected != null) {
       await _startUploadFlow(selected);
     }
@@ -265,9 +269,10 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
     );
   }
 
-  Future<void> _showPreviewDialog(File imageFile) async {
+  Future<void> _showPreviewDialog(List<File> imageFiles) async {
     final memoController = TextEditingController();
     bool isUploading = false;
+    final selectedFiles = List<File>.from(imageFiles);
 
     await showDialog(
       context: context,
@@ -302,9 +307,16 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                 ),
                 const SizedBox(height: 8),
                 _buildImagePreview(
-                  imageFile,
+                  selectedFiles,
                   memoController,
                   isUploading,
+                  onRemove: (index) {
+                    setState(() {
+                      if (index >= 0 && index < selectedFiles.length) {
+                        selectedFiles.removeAt(index);
+                      }
+                    });
+                  },
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -338,10 +350,19 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                         onPressed: isUploading
                             ? null
                             : () async {
+                                if (selectedFiles.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('이미지를 선택해주세요.'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                  return;
+                                }
                                 setState(() => isUploading = true);
                                 try {
-                                  await _uploadReceiptFromPreview(
-                                    imageFile,
+                                  await _uploadReceiptsFromPreview(
+                                    selectedFiles,
                                     memoController.text,
                                   );
                                   if (mounted) Navigator.pop(context);
@@ -385,10 +406,12 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
 
   /// 이미지 미리보기 위젯
   Widget _buildImagePreview(
-    File imageFile,
+    List<File> imageFiles,
     TextEditingController memoController,
-    bool isUploading,
-  ) {
+    bool isUploading, {
+    required void Function(int index) onRemove,
+  }) {
+    final isMulti = imageFiles.length > 1;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -402,22 +425,96 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
             color: const Color(0xFFF9FAFB),
             border: Border.all(color: const Color(0xFFE5E7EB)),
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: Image.file(
-                    imageFile,
-                    width: constraints.maxWidth,
-                    fit: BoxFit.fitWidth,
+          child: imageFiles.isEmpty
+              ? Center(
+                  child: Text(
+                    '선택된 이미지가 없습니다',
+                    style: ResponsiveUtils.getTextStyle(
+                      context,
+                      fontSize: 13,
+                      color: Colors.grey[500],
+                    ),
                   ),
-                );
-              },
+                )
+              : isMulti
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: GridView.builder(
+                        padding: const EdgeInsets.all(8),
+                        physics: const BouncingScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                        ),
+                        itemCount: imageFiles.length,
+                        itemBuilder: (context, index) {
+                          return Stack(
+                            children: [
+                              Positioned.fill(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.file(
+                                    imageFiles[index],
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                top: 4,
+                                right: 4,
+                                child: InkWell(
+                                  onTap:
+                                      isUploading ? null : () => onRemove(index),
+                                  child: Container(
+                                    width: 20,
+                                    height: 20,
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(alpha: 0.6),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.close,
+                                      size: 12,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    )
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          return SingleChildScrollView(
+                            physics: const BouncingScrollPhysics(),
+                            child: Image.file(
+                              imageFiles.first,
+                              width: constraints.maxWidth,
+                              fit: BoxFit.fitWidth,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+        ),
+        if (isMulti) ...[
+          const SizedBox(height: 8),
+          Text(
+            '총 ${imageFiles.length}장 선택됨',
+            style: ResponsiveUtils.getTextStyle(
+              context,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF6B7280),
             ),
           ),
-        ),
+        ],
         const SizedBox(height: 12),
         
         // 메모 입력
@@ -476,7 +573,10 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
   }
 
   /// 업로드된 이미지를 실제로 업로드하는 함수
-  Future<void> _uploadReceiptFromPreview(File imageFile, String memo) async {
+  Future<void> _uploadReceiptsFromPreview(
+    List<File> imageFiles,
+    String memo,
+  ) async {
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final userEmail = userProvider.email;
@@ -485,11 +585,15 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
         throw Exception('사용자 정보를 찾을 수 없습니다.');
       }
 
-      await ReceiptUploadService.uploadReceiptFromFile(
-        imageFile: imageFile,
-        userEmail: userEmail,
-        memo: memo.isEmpty ? null : memo,
-      );
+      final groupId = imageFiles.length > 1 ? _generateUuidV4() : null;
+      for (final imageFile in imageFiles) {
+        await ReceiptUploadService.uploadReceiptFromFile(
+          imageFile: imageFile,
+          userEmail: userEmail,
+          memo: memo.isEmpty ? null : memo,
+          groupId: groupId,
+        );
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -511,6 +615,19 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
       }
       rethrow;
     }
+  }
+
+  String _generateUuidV4() {
+    final random = Random.secure();
+    final bytes = List<int>.generate(16, (_) => random.nextInt(256));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+    return '${hex.substring(0, 8)}-'
+        '${hex.substring(8, 12)}-'
+        '${hex.substring(12, 16)}-'
+        '${hex.substring(16, 20)}-'
+        '${hex.substring(20, 32)}';
   }
 
   /// Step 2: 이미지 선택
