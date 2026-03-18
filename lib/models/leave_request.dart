@@ -1,5 +1,6 @@
-// 연차/반차/출장 등 휴가 유형을 정의하는 enum
-enum LeaveType { annual, halfAm, halfPm, official, biztrip, adjust }
+// 연차/반차 등 휴가 유형을 정의하는 enum
+// 출장(biztrip)은 business_trips 테이블로 이관되어 제거됨
+enum LeaveType { annual, halfAm, halfPm, official, adjust }
 
 extension LeaveTypeExtension on LeaveType {
   // 화면에 보여줄 한글 라벨
@@ -13,8 +14,6 @@ extension LeaveTypeExtension on LeaveType {
         return '오후반차';
       case LeaveType.official:
         return '공가';
-      case LeaveType.biztrip:
-        return '출장';
       case LeaveType.adjust:
         return '수동조정';
     }
@@ -28,7 +27,6 @@ extension LeaveTypeExtension on LeaveType {
       case LeaveType.halfPm:
         return 0.5;
       case LeaveType.official:
-      case LeaveType.biztrip:
         return 0.0;
       case LeaveType.adjust:
         return 0.0; // 실제 조정값은 reason 등에서 별도 처리
@@ -45,8 +43,6 @@ extension LeaveTypeExtension on LeaveType {
         return LeaveType.halfPm;
       case 'official':
         return LeaveType.official;
-      case 'biztrip':
-        return LeaveType.biztrip;
       case 'adjust':
         return LeaveType.adjust;
       default:
@@ -65,8 +61,6 @@ extension LeaveTypeExtension on LeaveType {
         return 'half_pm';
       case LeaveType.official:
         return 'official';
-      case LeaveType.biztrip:
-        return 'biztrip';
       case LeaveType.adjust:
         return 'adjust';
     }

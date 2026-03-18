@@ -41,7 +41,6 @@ class _AnnualLeaveRequestScreenOptimizedState
     LeaveType.halfAm: {},
     LeaveType.halfPm: {},
     LeaveType.official: {},
-    LeaveType.biztrip: {},
     LeaveType.adjust: {},
   };
 

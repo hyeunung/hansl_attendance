@@ -13,7 +13,7 @@ class FeatureFlagService {
   /// 기본 플래그 설정
   static const Map<String, bool> _defaultFlags = {
     'refactored_leave_screen': true, // 리팩토링된 화면 활성화
-    'refactored_business_trip_screen': true, // 출장 신청 화면도 활성화
+    // refactored_business_trip_screen 제거됨 - 출장 신청은 웹에서만
     'refactored_attendance_screen': true, // 출석 화면 리팩토링 활성화
     'use_edge_functions': true, // Edge Functions 사용
     'new_validators': true,
@@ -156,10 +156,6 @@ class FeatureFlags {
   /// 리팩토링된 연차 신청 화면 사용 여부
   static bool get useRefactoredLeaveScreen =>
       _service.isEnabled('refactored_leave_screen');
-
-  /// 리팩토링된 출장 신청 화면 사용 여부
-  static bool get useRefactoredBusinessTripScreen =>
-      _service.isEnabled('refactored_business_trip_screen');
 
   /// 새로운 검증 로직 사용 여부
   static bool get useNewValidators => _service.isEnabled('new_validators');

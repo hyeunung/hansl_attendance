@@ -108,10 +108,11 @@ class LeaveService {
     try {
       // Debug code removed
 
-      // 1. leave 데이터 조회
+      // 1. leave 데이터 조회 (biztrip_migrated 제외)
       final leaveResponse = await _client
           .from('leave')
           .select('*')
+          .not('type', 'eq', 'biztrip_migrated')
           .order('created_at', ascending: false);
 
       final List<Map<String, dynamic>> leaveList = (leaveResponse as List)
@@ -121,7 +122,7 @@ class LeaveService {
       // 2. employees 데이터 조회
       final employeesResponse = await _client
           .from('employees')
-          .select('email, name, department, attendance_role');
+          .select('id, email, name, department, attendance_role');
 
       final List<Map<String, dynamic>> employeesList =
           (employeesResponse as List).cast<Map<String, dynamic>>();
@@ -151,6 +152,58 @@ class LeaveService {
         }
       }
 
+      // 5. business_trips 데이터 조회 및 합산
+      try {
+        final btResponse = await _client
+            .from('business_trips')
+            .select('*')
+            .order('created_at', ascending: false);
+        final btList = (btResponse as List).cast<Map<String, dynamic>>();
+
+        for (final bt in btList) {
+          // requester_id로 직원 찾기
+          final requester = employeesList.firstWhere(
+            (e) => e['id'] == bt['requester_id'],
+            orElse: () => <String, dynamic>{},
+          );
+          final requesterEmail = (requester['email'] ?? '') as String;
+          final requesterName = (requester['name'] ?? '알 수 없음') as String;
+
+          final companionNames = <String>[];
+          if (bt['companions'] != null && bt['companions'] is List) {
+            for (final c in bt['companions']) {
+              if (c is Map && c['name'] != null) companionNames.add(c['name'].toString());
+            }
+          }
+
+          leaveList.add({
+            'id': 'bt_${bt['id']}',
+            'business_trip_id': bt['id'],
+            'user_email': requesterEmail,
+            'name': requesterName,
+            'type': 'biztrip',
+            'start_date': bt['trip_start_date'],
+            'end_date': bt['trip_end_date'],
+            'reason': bt['trip_purpose'],
+            'place': bt['trip_destination'],
+            '출장자': [requesterName, ...companionNames],
+            'status': bt['approval_status'] == 'completed' ? 'approved' : bt['approval_status'],
+            'created_at': bt['created_at'],
+            'updated_at': bt['updated_at'],
+            'trip_code': bt['trip_code'],
+            'is_business_trip': true,
+            'employees': employeesMap[requesterEmail] ?? {
+              'name': requesterName,
+              'email': requesterEmail,
+              'department': bt['request_department'],
+              'attendance_role': null,
+            },
+          });
+        }
+      } catch (e) {
+        // business_trips 조회 실패해도 leave 데이터는 반환
+      }
+
       // Debug code removed
       return leaveList;
     } catch (e) {
@@ -159,13 +212,76 @@ class LeaveService {
     }
   }
 
-  // 내 leave 내역 조회
+  // 내 leave 내역 조회 (leave + business_trips 합산)
   Future<List<Map<String, dynamic>>> fetchMyLeavesRaw(String userEmail) async {
-    final response = await _client
+    // 1. leave 테이블 (biztrip_migrated 제외)
+    final leaveResponse = await _client
         .from(table)
         .select('*')
-        .eq('user_email', userEmail);
-    return (response as List).cast<Map<String, dynamic>>();
+        .eq('user_email', userEmail)
+        .not('type', 'eq', 'biztrip_migrated');
+    final leaveList = (leaveResponse as List).cast<Map<String, dynamic>>();
+
+    // 2. business_trips 테이블 (본인이 신청자인 건)
+    // 먼저 employee id 조회
+    final empResponse = await _client
+        .from('employees')
+        .select('id, name')
+        .eq('email', userEmail)
+        .maybeSingle();
+
+    if (empResponse != null) {
+      final employeeId = empResponse['id'];
+      final employeeName = empResponse['name'] ?? '';
+
+      final btResponse = await _client
+          .from('business_trips')
+          .select('*')
+          .eq('requester_id', employeeId)
+          .order('created_at', ascending: false);
+
+      final btList = (btResponse as List).cast<Map<String, dynamic>>();
+
+      // business_trips를 leave 형식으로 변환
+      for (final bt in btList) {
+        final companionNames = <String>[];
+        if (bt['companions'] != null && bt['companions'] is List) {
+          for (final c in bt['companions']) {
+            if (c is Map && c['name'] != null) {
+              companionNames.add(c['name'].toString());
+            }
+          }
+        }
+        final allTravelers = [employeeName, ...companionNames];
+
+        leaveList.add({
+          'id': 'bt_${bt['id']}',
+          'business_trip_id': bt['id'],
+          'user_email': userEmail,
+          'name': employeeName,
+          'type': 'biztrip',
+          'start_date': bt['trip_start_date'],
+          'end_date': bt['trip_end_date'],
+          'reason': bt['trip_purpose'],
+          'place': bt['trip_destination'],
+          'transport': null,
+          '출장자': allTravelers,
+          'status': bt['approval_status'] == 'completed' ? 'approved' : bt['approval_status'],
+          'approved_at': bt['approved_at'],
+          'created_at': bt['created_at'],
+          'updated_at': bt['updated_at'],
+          'trip_code': bt['trip_code'],
+          'rejection_reason': bt['rejection_reason'],
+          'is_business_trip': true,
+        });
+      }
+    }
+
+    // 최신순 정렬
+    leaveList.sort((a, b) =>
+        DateTime.parse(b['created_at']).compareTo(DateTime.parse(a['created_at'])));
+
+    return leaveList;
   }
 
   Future<void> insertLeave(Map<String, dynamic> data) async {
@@ -175,6 +291,31 @@ class LeaveService {
     final dbOptim = DatabaseOptimizationService.instance;
     await dbOptim.invalidateCache(patterns: ['leave']);
     // Debug code removed
+  }
+
+  /// business_trips 테이블 승인/반려
+  Future<void> updateBusinessTripStatus(dynamic id, String status, {String? rejectionReason}) async {
+    try {
+      final response = await _client.functions.invoke(
+        'update_leave_status',
+        body: {
+          'id': id,
+          'status': status,
+          'is_business_trip': true,
+          'rejection_reason': rejectionReason,
+        },
+      );
+
+      final responseData = response.data as Map<String, dynamic>;
+      if (responseData['success'] != true) {
+        throw Exception(responseData['error'] ?? 'Unknown error');
+      }
+
+      final dbOptim = DatabaseOptimizationService.instance;
+      await dbOptim.invalidateCache(patterns: ['leave']);
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<void> updateLeaveStatus(int id, String status) async {
@@ -206,71 +347,54 @@ class LeaveService {
     }
   }
 
-  /// 출장 신청 저장
-  /// 화면(`BusinessTripRequestScreenOptimized`)에서 사용합니다.
-  /// - DB 스키마상 별도 컬럼이 없어 상세 정보는 `reason`에 요약하여 저장합니다.
-  /// - 성공 시 삽입된 레코드를 반환합니다(널이 아니면 성공으로 간주하도록 호출부가 구성되어 있음).
-  Future<Map<String, dynamic>?> submitLeaveRequest({
-    required String email,
-    required String name,
-    required String leaveDate, // yyyy-MM-dd 형식
-    required String place,
-    required String purpose,
-    required String transport,
-    String? companions,
-  }) async {
-    // 출장자 배열 생성 (본인 + 동행자)
-    final List<String> bizTripAttendees = [name];
-    if ((companions ?? '').trim().isNotEmpty) {
-      final companionsList = companions!
-          .split(',')
-          .map((c) => c.trim())
-          .where((c) => c.isNotEmpty)
-          .toList();
-      bizTripAttendees.addAll(companionsList);
-    }
-
-    final Map<String, dynamic> data = {
-      'user_email': email,
-      'name': name,
-      'type': 'biztrip',
-      'start_date': leaveDate,
-      'end_date': leaveDate,
-      // reason에는 출장 "업무 내용"이 들어가야 함 (현재 입력값 = purpose)
-      'reason': purpose,
-      '출장자': bizTripAttendees,      // 출장자 + 동행자 전체 배열
-      'place': place,                 // 장소
-      'transport': transport,         // 교통수단
-      'status': 'pending',
-      'created_at': DateTime.now().toIso8601String(),
-    };
-
-    final inserted = await _client
-        .from(table)
-        .insert(data)
-        .select()
-        .maybeSingle();
-
-    // 캐시 무효화 - 출장 신청 후에도 캐시를 클리어해야 관리자 탭에 즉시 반영됨
-    final dbOptim = DatabaseOptimizationService.instance;
-    await dbOptim.invalidateCache(patterns: ['leave']);
-    // Debug code removed
-
-    if (inserted is Map<String, dynamic>) {
-      return Map<String, dynamic>.from(inserted);
-    }
-    return null;
-  }
-
   Future<List<Map<String, dynamic>>> fetchTodayLeavesRaw(DateTime today) async {
     final todayStr = today.toIso8601String().substring(0, 10);
-    final response = await _client
+
+    // 1. leave 테이블 (biztrip_migrated 제외)
+    final leaveResponse = await _client
         .from(table)
         .select('*')
         .eq('status', 'approved')
+        .not('type', 'eq', 'biztrip_migrated')
         .lte('start_date', todayStr)
         .gte('end_date', todayStr);
-    return (response as List).cast<Map<String, dynamic>>();
+    final result = (leaveResponse as List).cast<Map<String, dynamic>>();
+
+    // 2. business_trips 테이블 (오늘 포함된 승인 건)
+    final btResponse = await _client
+        .from('business_trips')
+        .select('*, employees:requester_id(name, email)')
+        .inFilter('approval_status', ['approved', 'completed'])
+        .lte('trip_start_date', todayStr)
+        .gte('trip_end_date', todayStr);
+    final btList = (btResponse as List).cast<Map<String, dynamic>>();
+
+    for (final bt in btList) {
+      final requester = bt['employees'] as Map<String, dynamic>?;
+      final requesterName = requester?['name'] ?? '알 수 없음';
+      final requesterEmail = requester?['email'] ?? '';
+      final companionNames = <String>[];
+      if (bt['companions'] != null && bt['companions'] is List) {
+        for (final c in bt['companions']) {
+          if (c is Map && c['name'] != null) companionNames.add(c['name'].toString());
+        }
+      }
+      result.add({
+        'id': 'bt_${bt['id']}',
+        'user_email': requesterEmail,
+        'name': requesterName,
+        'type': 'biztrip',
+        'start_date': bt['trip_start_date'],
+        'end_date': bt['trip_end_date'],
+        'reason': bt['trip_purpose'],
+        'place': bt['trip_destination'],
+        '출장자': [requesterName, ...companionNames],
+        'status': 'approved',
+        'is_business_trip': true,
+      });
+    }
+
+    return result;
   }
 
   Future<Map<String, dynamic>> deleteLeaveViaEdgeFunction({

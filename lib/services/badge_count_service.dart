@@ -7,6 +7,7 @@ class BadgeCountService {
   
   static final _supabase = Supabase.instance.client;
   static RealtimeChannel? _leaveChannel;
+  static RealtimeChannel? _businessTripChannel;
   static RealtimeChannel? _purchaseChannel;
   static RealtimeChannel? _purchaseItemsChannel;
   static RealtimeChannel? _inquiryChannel;
@@ -105,14 +106,23 @@ class BadgeCountService {
   /// 연차/출장 미승인 건수 조회 (SuperAdmin, app_admin용)
   static Future<int> _getPendingLeaveCount() async {
     try {
-      final response = await _supabase
+      // leave 테이블 pending 건수
+      final leaveResponse = await _supabase
           .from('leave')
+          .select()
+          .eq('status', 'pending')
+          .not('type', 'eq', 'biztrip_migrated')
+          .count();
+
+      // business_trips 테이블 pending 건수
+      final btResponse = await _supabase
+          .from('business_trips')
           .select()
           .eq('approval_status', 'pending')
           .count();
-      
-      return response.count;
-      
+
+      return leaveResponse.count + btResponse.count;
+
     } catch (e) {
       // Debug code removed
       return 0;
@@ -246,6 +256,17 @@ class BadgeCountService {
         )
         .subscribe();
 
+    // business_trips 변경 감지
+    _businessTripChannel = _supabase
+        .channel('business_trips_badge')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'business_trips',
+          callback: (_) => updateBadgeCount(),
+        )
+        .subscribe();
+
     // 발주 변경 감지
     _purchaseChannel = _supabase
         .channel('purchase_requests_badge')
@@ -285,6 +306,10 @@ class BadgeCountService {
     if (_leaveChannel != null) {
       _supabase.removeChannel(_leaveChannel!);
       _leaveChannel = null;
+    }
+    if (_businessTripChannel != null) {
+      _supabase.removeChannel(_businessTripChannel!);
+      _businessTripChannel = null;
     }
     if (_purchaseChannel != null) {
       _supabase.removeChannel(_purchaseChannel!);
