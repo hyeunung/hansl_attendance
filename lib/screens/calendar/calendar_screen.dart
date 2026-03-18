@@ -792,6 +792,29 @@ class _CalendarScreenState extends State<CalendarScreen>
               ),
             ],
           ),
+          if (e['start_date'] != null && e['end_date'] != null) ...[
+            () {
+              final startDate = DateTime.parse(e['start_date']);
+              final endDate = DateTime.parse(e['end_date']);
+              final days = endDate.difference(startDate).inDays + 1;
+              if (days > 1) {
+                return Padding(
+                  padding: EdgeInsets.only(
+                    top: ResponsiveUtils.spacing(context, 4),
+                  ),
+                  child: Text(
+                    '기간 : ${startDate.month}/${startDate.day} ~ ${endDate.month}/${endDate.day} (${days}일간)',
+                    style: ResponsiveUtils.getTextStyle(
+                      context,
+                      color: const Color(0xFF8E8E93),
+                      fontSize: 12,
+                    ),
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            }(),
+          ],
           if (e['desc'] != null) ...[
             SizedBox(height: ResponsiveUtils.spacing(context, 4)),
             Text(

@@ -692,7 +692,10 @@ Deno.serve(async (req)=>{
         const parts = [];
         parts.push(`${uploaderName}님이 거래명세서를 등록했습니다.`);
         if (vendorName) parts.push(`거래처: ${vendorName}`);
-        if (grandTotal) parts.push(`금액: ${grandTotal}`);
+        if (grandTotal) {
+          const formatted = Number(grandTotal).toLocaleString('ko-KR');
+          parts.push(`금액: ₩${formatted}`);
+        }
         body = parts.join('\n');
       }
 
