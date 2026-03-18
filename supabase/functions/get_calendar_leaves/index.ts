@@ -42,7 +42,7 @@ serve(async (req) => {
       )
     }
 
-    // Get all approved and pending leaves for calendar display
+    // Get all approved and pending leaves for calendar display (biztrip_migrated 제외)
     const { data: leaves, error } = await supabase
       .from('leave')
       .select(`
@@ -50,14 +50,15 @@ serve(async (req) => {
         employees!inner(name, department, email)
       `)
       .in('status', ['approved', 'pending'])
+      .not('type', 'eq', 'biztrip_migrated')
       .order('created_at', { ascending: false })
 
     if (error) {
       console.error('Error fetching calendar leaves:', error)
       return new Response(
         JSON.stringify({ error: 'Failed to fetch calendar data' }),
-        { 
-          status: 500, 
+        {
+          status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
@@ -78,8 +79,42 @@ serve(async (req) => {
       created_at: leave.created_at
     }))
 
+    // Get business_trips for calendar
+    const { data: businessTrips, error: btError } = await supabase
+      .from('business_trips')
+      .select('*, employees:requester_id(name, department, email)')
+      .in('approval_status', ['approved', 'pending', 'completed'])
+      .order('created_at', { ascending: false })
+
+    if (btError) {
+      console.error('Error fetching business trips for calendar:', btError)
+    }
+
+    const btCalendarLeaves = (businessTrips || []).map(bt => {
+      const companionNames = (bt.companions || []).map((c: any) => c.name).filter(Boolean)
+      const requesterName = bt.employees?.name || '알 수 없음'
+      return {
+        id: `bt_${bt.id}`,
+        user_email: bt.employees?.email || '',
+        name: requesterName,
+        department: bt.employees?.department || bt.request_department,
+        type: 'biztrip',
+        status: bt.approval_status === 'completed' ? 'approved' : bt.approval_status,
+        start_date: bt.trip_start_date,
+        end_date: bt.trip_end_date,
+        reason: bt.trip_purpose,
+        place: bt.trip_destination,
+        '출장자': [requesterName, ...companionNames],
+        trip_code: bt.trip_code,
+        is_business_trip: true,
+        created_at: bt.created_at
+      }
+    })
+
+    const allCalendarLeaves = [...calendarLeaves, ...btCalendarLeaves]
+
     return new Response(
-      JSON.stringify(calendarLeaves),
+      JSON.stringify(allCalendarLeaves),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }

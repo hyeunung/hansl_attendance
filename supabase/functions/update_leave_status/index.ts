@@ -14,8 +14,8 @@ Deno.serve(async (req) => {
     }
 
     // 요청 데이터 파싱
-    const { id, status } = await req.json()
-    
+    const { id, status, is_business_trip, rejection_reason } = await req.json()
+
     if (!id || !status) {
       throw new Error('필수 파라미터가 누락되었습니다.')
     }
@@ -69,6 +69,45 @@ Deno.serve(async (req) => {
     }
 
 
+    // business_trip인 경우 business_trips 테이블에서 처리
+    if (is_business_trip) {
+      // business_trip_id에서 숫자만 추출 (bt_123 → 123)
+      const btId = typeof id === 'string' ? parseInt(id.replace('bt_', '')) : id
+
+      const updateData: any = { approval_status: status }
+      if (status === 'approved') {
+        const { data: approverData } = await supabase
+          .from('employees').select('id').eq('email', userEmail).single()
+        if (approverData) updateData.approved_by = approverData.id
+        updateData.approved_at = new Date().toISOString()
+      } else if (status === 'rejected') {
+        updateData.rejection_reason = rejection_reason || null
+      }
+
+      const { data: updateResult, error: updateError } = await supabase
+        .from('business_trips')
+        .update(updateData)
+        .eq('id', btId)
+        .select()
+
+      if (updateError) {
+        console.error('Business trip 업데이트 실패:', updateError)
+        throw updateError
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: `Business trip 상태가 ${status}로 변경되었습니다.`,
+          data: updateResult
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200
+        }
+      )
+    }
+
     // 대상 leave 정보 조회 (JOIN 없이 간단하게)
     const { data: leaveData, error: leaveError } = await supabase
       .from('leave')
@@ -80,15 +119,15 @@ Deno.serve(async (req) => {
       console.error('Leave 정보 조회 실패:', leaveError)
       throw new Error('신청 정보를 찾을 수 없습니다.')
     }
-    
-    
+
+
     // 신청자의 부서 정보 별도 조회
     const { data: requesterEmployee, error: requesterEmpError } = await supabase
       .from('employees')
       .select('department')
       .eq('email', leaveData.user_email)
       .single()
-    
+
     if (requesterEmpError) {
       console.error('신청자 부서 정보 조회 실패:', requesterEmpError)
     } else {
@@ -101,11 +140,11 @@ Deno.serve(async (req) => {
       .select('attendance_role')
       .eq('email', leaveData.user_email)
       .single()
-    
+
     if (requesterError || !requesterData) {
       throw new Error('신청자 정보를 찾을 수 없습니다.')
     }
-    
+
     const requesterRoles = requesterData.attendance_role || []
     const isRequesterSuperAdmin = requesterRoles.includes('superadmin')
 

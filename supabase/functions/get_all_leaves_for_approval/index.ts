@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     // 직원 정보 조회
     const { data: employees, error: empError } = await supabase
       .from('employees')
-      .select('email, name, department, attendance_role, purchase_role')
+      .select('id, email, name, department, attendance_role, purchase_role')
 
     if (empError) {
       throw empError
@@ -40,8 +40,8 @@ Deno.serve(async (req) => {
       employeeMap.set(emp.email, emp)
     })
 
-    // leave 데이터에 직원 정보 추가
-    const enrichedLeaves = leaves?.map((leave) => {
+    // leave 데이터에 직원 정보 추가 (biztrip_migrated 제외)
+    const enrichedLeaves = leaves?.filter((leave) => leave.type !== 'biztrip_migrated').map((leave) => {
       const employeeData = employeeMap.get(leave.user_email) || {
         name: leave.name || '알 수 없음',
         email: leave.user_email,
@@ -53,19 +53,74 @@ Deno.serve(async (req) => {
       return {
         ...leave,
         employees: employeeData,
-        // 직원 이름이 없으면 employees에서 가져오기
         name: leave.name || employeeData.name,
-        // department도 employees에서 가져오기
         department: employeeData.department
       }
     }) || []
 
+    // business_trips 데이터 조회
+    const { data: businessTrips, error: btError } = await supabase
+      .from('business_trips')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (btError) {
+      console.error('business_trips 조회 오류:', btError)
+    }
+
+    // business_trips를 leave 형식으로 변환하여 합산
+    const enrichedBusinessTrips = (businessTrips || []).map((bt) => {
+      // requester_id로 직원 정보 찾기
+      const requester = employees?.find((emp) => emp.id === bt.requester_id)
+      const requesterEmail = requester?.email || ''
+      const employeeData = employeeMap.get(requesterEmail) || {
+        name: requester?.name || '알 수 없음',
+        email: requesterEmail,
+        department: bt.request_department,
+        attendance_role: null,
+        purchase_role: null
+      }
+
+      // companions jsonb → 출장자 배열 변환
+      const companionNames = (bt.companions || []).map((c: any) => c.name).filter(Boolean)
+      const allTravelers = requester?.name ? [requester.name, ...companionNames] : companionNames
+
+      return {
+        id: `bt_${bt.id}`,
+        business_trip_id: bt.id,
+        user_email: requesterEmail,
+        name: requester?.name || '알 수 없음',
+        type: 'biztrip',
+        start_date: bt.trip_start_date,
+        end_date: bt.trip_end_date,
+        reason: bt.trip_purpose,
+        place: bt.trip_destination,
+        transport: null,
+        '출장자': allTravelers,
+        status: bt.approval_status === 'completed' ? 'approved' : bt.approval_status,
+        approved_by: null,
+        rejected_by: null,
+        approved_at: bt.approved_at,
+        rejected_at: null,
+        created_at: bt.created_at,
+        updated_at: bt.updated_at,
+        department: bt.request_department,
+        trip_code: bt.trip_code,
+        rejection_reason: bt.rejection_reason,
+        is_business_trip: true,
+        employees: employeeData
+      }
+    })
+
+    const allData = [...enrichedLeaves, ...enrichedBusinessTrips]
+    // 최신순 정렬
+    allData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
     return new Response(
       JSON.stringify({
         success: true,
-        data: enrichedLeaves,
-        count: enrichedLeaves.length
+        data: allData,
+        count: allData.length
       }),
       {
         headers: {

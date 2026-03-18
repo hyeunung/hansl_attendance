@@ -195,6 +195,17 @@ class _ApprovalScreenState extends State<ApprovalScreen>
           callback: (_) => _handleRealtimeRefresh(),
         )
         .subscribe();
+
+    // business_trips 변경 감지
+    client
+        .channel('approval_business_trips_realtime')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'business_trips',
+          callback: (_) => _handleRealtimeRefresh(),
+        )
+        .subscribe();
   }
 
   // 실시간 이벤트 수신 시 데이터 리프레시 (단순 재조회로 일관성 유지)
@@ -1763,22 +1774,30 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                           const Color(0xFFFF3B30),
                         );
                         if (confirmed == true) {
-                          // 그룹화된 항목이면 모든 ID에 대해 처리 (첫 번째만 알림)
-                          final groupedIds = l['grouped_ids'] as List<dynamic>?;
-                          if (groupedIds != null && groupedIds.isNotEmpty) {
-                            for (int i = 0; i < groupedIds.length; i++) {
-                              final isFirstItem = i == 0;
-                              await provider.updateLeaveStatus(
-                                groupedIds[i],
-                                'rejected',
-                                skipNotification: !isFirstItem, // 첫 번째만 알림
-                              );
-                            }
-                          } else {
-                            await provider.updateLeaveStatus(
-                              l['id'],
+                          if (l['is_business_trip'] == true) {
+                            // business_trips 테이블 반려
+                            await provider.updateBusinessTripStatus(
+                              l['business_trip_id'] ?? l['id'],
                               'rejected',
                             );
+                          } else {
+                            // 그룹화된 항목이면 모든 ID에 대해 처리 (첫 번째만 알림)
+                            final groupedIds = l['grouped_ids'] as List<dynamic>?;
+                            if (groupedIds != null && groupedIds.isNotEmpty) {
+                              for (int i = 0; i < groupedIds.length; i++) {
+                                final isFirstItem = i == 0;
+                                await provider.updateLeaveStatus(
+                                  groupedIds[i],
+                                  'rejected',
+                                  skipNotification: !isFirstItem,
+                                );
+                              }
+                            } else {
+                              await provider.updateLeaveStatus(
+                                l['id'],
+                                'rejected',
+                              );
+                            }
                           }
                         }
                       },
@@ -1827,22 +1846,30 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                           const Color(0xFF34C759),
                         );
                         if (confirmed == true) {
-                          // 그룹화된 항목이면 모든 ID에 대해 처리 (첫 번째만 알림)
-                          final groupedIds = l['grouped_ids'] as List<dynamic>?;
-                          if (groupedIds != null && groupedIds.isNotEmpty) {
-                            for (int i = 0; i < groupedIds.length; i++) {
-                              final isFirstItem = i == 0;
-                              await provider.updateLeaveStatus(
-                                groupedIds[i],
-                                'approved',
-                                skipNotification: !isFirstItem, // 첫 번째만 알림
-                              );
-                            }
-                          } else {
-                            await provider.updateLeaveStatus(
-                              l['id'],
+                          if (l['is_business_trip'] == true) {
+                            // business_trips 테이블 승인
+                            await provider.updateBusinessTripStatus(
+                              l['business_trip_id'] ?? l['id'],
                               'approved',
                             );
+                          } else {
+                            // 그룹화된 항목이면 모든 ID에 대해 처리 (첫 번째만 알림)
+                            final groupedIds = l['grouped_ids'] as List<dynamic>?;
+                            if (groupedIds != null && groupedIds.isNotEmpty) {
+                              for (int i = 0; i < groupedIds.length; i++) {
+                                final isFirstItem = i == 0;
+                                await provider.updateLeaveStatus(
+                                  groupedIds[i],
+                                  'approved',
+                                  skipNotification: !isFirstItem,
+                                );
+                              }
+                            } else {
+                              await provider.updateLeaveStatus(
+                                l['id'],
+                                'approved',
+                              );
+                            }
                           }
                         }
                       },

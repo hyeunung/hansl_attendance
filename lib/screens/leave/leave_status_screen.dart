@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../../providers/leave_provider.dart';
 import 'leave_screen_router.dart';
+import 'card_receipt_upload_screen.dart';
 import '../../providers/user_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
@@ -374,7 +375,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                             child: SizedBox(
                               height: ResponsiveUtils.spacing(context, 65),
                               child: _mainTabButton(
-                                '출장 신청',
+                                '영수증 업로드',
                                 1,
                                 ResponsiveUtils.spacing(context, rValue),
                               ),
@@ -576,7 +577,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const BusinessTripScreenRouter(),
+                  builder: (_) => const CardReceiptUploadScreen(),
                 ),
               );
             }
@@ -738,7 +739,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                 ),
               ),
               const SizedBox(width: 8),
-              if (status == 'pending')
+              if (status == 'pending' && l['type'] != 'biztrip' && l['is_business_trip'] != true)
                 IconButton(
                   onPressed: () => _deleteLeaveRequest(l),
                   icon: const Icon(
@@ -889,13 +890,32 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
   }
 
   Future<void> _deleteLeaveRequest(Map<String, dynamic> leave) async {
+    // 출장 건은 모바일에서 취소 불가
+    if (leave['type'] == 'biztrip' || leave['is_business_trip'] == true) {
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('취소 불가'),
+          content: const Text('출장 건은 웹에서만 취소할 수 있습니다.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('확인'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     // 삭제 확인 다이얼로그
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('신청 취소'),
-        content: Text(
-          '${leave['type'] == 'biztrip' ? '출장' : '연차'} 신청을 취소하시겠습니까?\n취소 후에는 복구할 수 없습니다.',
+        content: const Text(
+          '연차 신청을 취소하시겠습니까?\n취소 후에는 복구할 수 없습니다.',
         ),
         actions: [
           TextButton(

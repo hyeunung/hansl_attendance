@@ -81,11 +81,12 @@ async function createDailyAttendanceRecords() {
     }
 
 
-    // 5. 오늘의 승인된 연차/출장 기록 조회 (출장자 필드 포함)
+    // 5. 오늘의 승인된 연차 기록 조회 (biztrip_migrated 제외)
     const { data: leaveRecords, error: leaveError } = await supabase
       .from('leave')
       .select('user_email, type, start_date, end_date, status, reason, 출장자')
       .eq('status', 'approved')
+      .not('type', 'eq', 'biztrip_migrated')
       .lte('start_date', today)
       .gte('end_date', today)
 
@@ -93,34 +94,57 @@ async function createDailyAttendanceRecords() {
       console.warn(`Warning: Failed to fetch leave records: ${leaveError.message}`)
     }
 
+    // 5-1. 오늘의 승인된 출장 기록 조회 (business_trips 테이블)
+    const { data: businessTripRecords, error: btError } = await supabase
+      .from('business_trips')
+      .select('id, requester_id, trip_start_date, trip_end_date, companions')
+      .in('approval_status', ['approved', 'completed'])
+      .lte('trip_start_date', today)
+      .gte('trip_end_date', today)
+
+    if (btError) {
+      console.warn(`Warning: Failed to fetch business_trips: ${btError.message}`)
+    }
+
     const leaveMap = new Map<string, LeaveRecord>()
     const companionEmailMap = new Map<string, string>() // 동행자 이메일 -> 출장 타입
-    
+
     if (leaveRecords) {
-      // 출장자 이름 수집 (출장자 필드에서)
-      const travelerNames = new Set<string>()
-      
       leaveRecords.forEach((leave: LeaveRecord) => {
-        leaveMap.set(leave.user_email, leave)
-        
-        // 출장인 경우 출장자 배열에서 모든 이름 수집
-        if (leave.type === 'biztrip' && leave.출장자 && leave.출장자.length > 0) {
-          leave.출장자.forEach(name => travelerNames.add(name))
+        // biztrip 타입은 business_trips에서 처리하므로 제외
+        if (leave.type !== 'biztrip') {
+          leaveMap.set(leave.user_email, leave)
         }
       })
-      
-      // 출장자 이름으로 이메일 찾기 (비동기 처리)
-      if (travelerNames.size > 0) {
-        const travelerNameArray = Array.from(travelerNames)
-        const { data: travelerEmployees } = await supabase
-          .from('employees')
-          .select('email, name')
-          .in('name', travelerNameArray)
-        
-        if (travelerEmployees) {
-          travelerEmployees.forEach((emp: { email: string; name: string }) => {
-            companionEmailMap.set(emp.email, 'biztrip')
+    }
+
+    // business_trips에서 신청자 + 동행자 처리
+    if (businessTripRecords && businessTripRecords.length > 0) {
+      for (const bt of businessTripRecords) {
+        // 신청자 이메일 조회
+        const requesterEmp = employees?.find((emp: Employee) => emp.id === bt.requester_id)
+        if (requesterEmp) {
+          // 신청자를 출장 타입으로 leaveMap에 추가
+          leaveMap.set(requesterEmp.email, {
+            user_email: requesterEmp.email,
+            type: 'biztrip',
+            start_date: bt.trip_start_date,
+            end_date: bt.trip_end_date,
+            status: 'approved'
           })
+        }
+
+        // 동행자 처리 (companions jsonb)
+        if (bt.companions && Array.isArray(bt.companions)) {
+          for (const companion of bt.companions) {
+            const compName = companion.name || companion
+            if (compName) {
+              const compEmp = employees?.find((emp: Employee) => emp.name === compName)
+              if (compEmp) {
+                companionEmailMap.set(compEmp.email, 'biztrip')
+              }
+            }
+          }
         }
       }
     }
