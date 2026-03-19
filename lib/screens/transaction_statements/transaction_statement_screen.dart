@@ -9,8 +9,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../providers/user_provider.dart';
 import '../../services/transaction_statement_service.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_shadows.dart';
+import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
+import '../../widgets/common/notification_banner_widget.dart';
+import '../../widgets/shared/flat_section.dart';
 
 // ── 업로드 종류 정의 ─────────────────────────────────────
 class _UploadType {
@@ -29,7 +31,7 @@ const _uploadTypes = [
   _UploadType(
     key: 'default',
     label: '거래명세서',
-    color: Color(0xFF1777CB),
+    color: AppColors.primary,
   ),
   _UploadType(
     key: 'receipt',
@@ -89,12 +91,7 @@ class _TransactionStatementScreenState
         if (showLoading) {
           setState(() => _isLoading = false);
         }
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('거래명세서 목록을 불러오지 못했습니다.'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppBanner.show(context, '거래명세서 목록을 불러오지 못했습니다.', type: BannerType.error);
       }
     }
   }
@@ -170,12 +167,7 @@ class _TransactionStatementScreenState
       await _showPreviewDialog(image);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('이미지 선택 실패: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppBanner.show(context, '이미지 선택 실패: $e', type: BannerType.error);
       }
     }
   }
@@ -213,19 +205,14 @@ class _TransactionStatementScreenState
                       children: [
                         Text(
                           '거래명세서 업로드',
-                          style: ResponsiveUtils.getTextStyle(
-                            dialogContext,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF111827),
-                          ),
+                          style: AppTextStyles.sectionSubtitle(dialogContext),
                         ),
                         const Spacer(),
                         IconButton(
                           onPressed: () => Navigator.pop(dialogContext),
                           icon: const Icon(
                             Icons.close,
-                            color: Color(0xFF9CA3AF),
+                            color: AppColors.textDisabled,
                           ),
                           tooltip: '닫기',
                         ),
@@ -302,7 +289,7 @@ class _TransactionStatementScreenState
                             onPressed: () => Navigator.pop(dialogContext),
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(
-                                color: Color(0xFFE5E7EB),
+                                color: AppColors.border,
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
@@ -312,11 +299,8 @@ class _TransactionStatementScreenState
                             ),
                             child: Text(
                               '다시 선택',
-                              style: ResponsiveUtils.getTextStyle(
-                                dialogContext,
-                                fontSize: 14,
+                              style: AppTextStyles.inputLabel(dialogContext).copyWith(
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF6B7280),
                               ),
                             ),
                           ),
@@ -339,9 +323,9 @@ class _TransactionStatementScreenState
                             style: ElevatedButton.styleFrom(
                               backgroundColor: canUpload
                                   ? AppColors.primary
-                                  : const Color(0xFFD1D5DB),
+                                  : AppColors.gray300,
                               disabledBackgroundColor:
-                                  const Color(0xFFD1D5DB),
+                                  AppColors.gray300,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
@@ -350,13 +334,11 @@ class _TransactionStatementScreenState
                             ),
                             child: Text(
                               '업로드',
-                              style: ResponsiveUtils.getTextStyle(
-                                dialogContext,
-                                fontSize: 14,
+                              style: AppTextStyles.inputLabel(dialogContext).copyWith(
                                 fontWeight: FontWeight.w600,
                                 color: canUpload
                                     ? Colors.white
-                                    : const Color(0xFF9CA3AF),
+                                    : AppColors.textDisabled,
                               ),
                             ),
                           ),
@@ -380,21 +362,15 @@ class _TransactionStatementScreenState
       children: [
         Text(
           label,
-          style: ResponsiveUtils.getTextStyle(
-            ctx,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey[700],
+          style: AppTextStyles.sectionHeader(context).copyWith(
+            color: AppColors.gray700,
           ),
         ),
         const SizedBox(width: 2),
         Text(
           '*',
-          style: ResponsiveUtils.getTextStyle(
-            ctx,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: Colors.red,
+          style: AppTextStyles.sectionHeader(context).copyWith(
+            color: AppColors.error,
           ),
         ),
       ],
@@ -409,9 +385,9 @@ class _TransactionStatementScreenState
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FA),
+        color: AppColors.backgroundSecondary,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: AppColors.border),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       child: DropdownButtonHideUnderline(
@@ -420,7 +396,7 @@ class _TransactionStatementScreenState
           isExpanded: true,
           icon: Icon(
             Icons.arrow_drop_down,
-            color: enabled ? AppColors.primary : Colors.grey,
+            color: enabled ? AppColors.primary : AppColors.textDisabled,
           ),
           items: _uploadTypes.map((type) {
             return DropdownMenuItem<String>(
@@ -438,11 +414,8 @@ class _TransactionStatementScreenState
                   const SizedBox(width: 10),
                   Text(
                     type.label,
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF111827),
+                    style: AppTextStyles.inputLabel(context).copyWith(
+                      color: AppColors.textPrimary,
                     ),
                   ),
                 ],
@@ -463,9 +436,9 @@ class _TransactionStatementScreenState
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FA),
+        color: AppColors.backgroundSecondary,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: AppColors.border),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       child: DropdownButtonHideUnderline(
@@ -474,27 +447,21 @@ class _TransactionStatementScreenState
           isExpanded: true,
           hint: Text(
             '선택하세요',
-            style: ResponsiveUtils.getTextStyle(
-              context,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[400],
+            style: AppTextStyles.inputLabel(context).copyWith(
+              color: AppColors.textDisabled,
             ),
           ),
           icon: Icon(
             Icons.arrow_drop_down,
-            color: enabled ? AppColors.primary : Colors.grey,
+            color: enabled ? AppColors.primary : AppColors.textDisabled,
           ),
           items: [
             DropdownMenuItem(
               value: 'single',
               child: Text(
                 '단일 발주',
-                style: ResponsiveUtils.getTextStyle(
-                  context,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF111827),
+                style: AppTextStyles.inputLabel(context).copyWith(
+                  color: AppColors.textPrimary,
                 ),
               ),
             ),
@@ -502,11 +469,8 @@ class _TransactionStatementScreenState
               value: 'multi',
               child: Text(
                 '다중 발주',
-                style: ResponsiveUtils.getTextStyle(
-                  context,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF111827),
+                style: AppTextStyles.inputLabel(context).copyWith(
+                  color: AppColors.textPrimary,
                 ),
               ),
             ),
@@ -529,16 +493,16 @@ class _TransactionStatementScreenState
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8F9FA),
+          color: AppColors.backgroundSecondary,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFFE0E0E0)),
+          border: Border.all(color: AppColors.border),
         ),
         child: Row(
           children: [
             Icon(
               Icons.calendar_today,
               size: 18,
-              color: value != null ? AppColors.primary : Colors.grey[400],
+              color: value != null ? AppColors.primary : AppColors.textDisabled,
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -546,13 +510,10 @@ class _TransactionStatementScreenState
                 value != null
                     ? _dateFormat.format(value)
                     : '날짜를 선택하세요',
-                style: ResponsiveUtils.getTextStyle(
-                  context,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+                style: AppTextStyles.inputLabel(context).copyWith(
                   color: value != null
-                      ? const Color(0xFF111827)
-                      : Colors.grey[400],
+                      ? AppColors.textPrimary
+                      : AppColors.textDisabled,
                 ),
               ),
             ),
@@ -584,12 +545,7 @@ class _TransactionStatementScreenState
               actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               title: Text(
                 '실입고일 선택',
-                style: ResponsiveUtils.getTextStyle(
-                  dialogCtx,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF111827),
-                ),
+                style: AppTextStyles.sectionSubtitle(dialogCtx),
               ),
               content: SizedBox(
                 width: 320,
@@ -621,10 +577,7 @@ class _TransactionStatementScreenState
                           const SizedBox(width: 8),
                           Text(
                             _dateFormat.format(tempDate),
-                            style: ResponsiveUtils.getTextStyle(
-                              dialogCtx,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
+                            style: AppTextStyles.listTitle(dialogCtx).copyWith(
                               color: AppColors.primary,
                             ),
                           ),
@@ -638,7 +591,7 @@ class _TransactionStatementScreenState
                           primary: AppColors.primary,
                           onPrimary: Colors.white,
                           surface: Colors.white,
-                          onSurface: const Color(0xFF111827),
+                          onSurface: AppColors.textPrimary,
                         ),
                         textButtonTheme: TextButtonThemeData(
                           style: TextButton.styleFrom(
@@ -669,7 +622,7 @@ class _TransactionStatementScreenState
                         onPressed: () => Navigator.pop(dialogCtx),
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(
-                            color: Color(0xFFE5E7EB),
+                            color: AppColors.border,
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
@@ -678,11 +631,8 @@ class _TransactionStatementScreenState
                         ),
                         child: Text(
                           '취소',
-                          style: ResponsiveUtils.getTextStyle(
-                            dialogCtx,
-                            fontSize: 14,
+                          style: AppTextStyles.inputLabel(dialogCtx).copyWith(
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF6B7280),
                           ),
                         ),
                       ),
@@ -700,9 +650,7 @@ class _TransactionStatementScreenState
                         ),
                         child: Text(
                           '선택',
-                          style: ResponsiveUtils.getTextStyle(
-                            dialogCtx,
-                            fontSize: 14,
+                          style: AppTextStyles.inputLabel(dialogCtx).copyWith(
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
                           ),
@@ -730,7 +678,6 @@ class _TransactionStatementScreenState
     if (_isUploading) return;
 
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final messenger = ScaffoldMessenger.of(context);
     final uploaderName = (userProvider.employee?['name'] as String?) ??
         userProvider.name ??
         '알 수 없음';
@@ -768,7 +715,6 @@ class _TransactionStatementScreenState
       uploaderName: uploaderName,
       typeLabel: typeLabel,
       tempId: tempId,
-      messenger: messenger,
     );
   }
 
@@ -780,18 +726,14 @@ class _TransactionStatementScreenState
     required String uploaderName,
     required String typeLabel,
     required String tempId,
-    required ScaffoldMessengerState messenger,
   }) async {
     try {
       final fileSize = await image.length();
       if (fileSize > 10 * 1024 * 1024) {
         _removeOptimisticCard(tempId);
-        messenger.showSnackBar(
-          const SnackBar(
-            content: Text('파일 크기는 10MB 이하여야 합니다.'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (mounted) {
+          AppBanner.show(context, '파일 크기는 10MB 이하여야 합니다.', type: BannerType.error);
+        }
         return;
       }
 
@@ -847,12 +789,7 @@ class _TransactionStatementScreenState
           ];
         });
 
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text('$typeLabel 업로드 완료'),
-            backgroundColor: const Color(0xFF34C759),
-          ),
-        );
+        AppBanner.show(context, '$typeLabel 업로드 완료', type: BannerType.success);
 
         await _loadStatements(showLoading: false);
 
@@ -869,12 +806,9 @@ class _TransactionStatementScreenState
       }
     } catch (_) {
       _removeOptimisticCard(tempId);
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('업로드 중 오류가 발생했습니다.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        AppBanner.show(context, '업로드 중 오류가 발생했습니다.', type: BannerType.error);
+      }
     } finally {
       if (mounted) {
         setState(() => _isUploading = false);
@@ -903,8 +837,8 @@ class _TransactionStatementScreenState
           height: 180,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            color: const Color(0xFFF9FAFB),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
+            color: AppColors.backgroundPrimary,
+            border: Border.all(color: AppColors.border),
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
@@ -934,7 +868,7 @@ class _TransactionStatementScreenState
               SizedBox(width: 8),
               Text(
                 '업로드 중...',
-                style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
               ),
             ],
           ),
@@ -1025,7 +959,7 @@ class _TransactionStatementScreenState
                     clipBehavior: Clip.antiAlias,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                      side: const BorderSide(color: Color(0xFFE5E7EB)),
+                      side: const BorderSide(color: AppColors.border),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
@@ -1044,7 +978,7 @@ class _TransactionStatementScreenState
                           ),
                           const Divider(
                             height: 1,
-                            color: Color(0xFFE5E7EB),
+                            color: AppColors.border,
                           ),
                           _buildFabMenuItem(
                             icon: Icons.photo_outlined,
@@ -1086,14 +1020,14 @@ class _TransactionStatementScreenState
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Row(
             children: [
-              Icon(icon, size: 18, color: const Color(0xFF6B7280)),
+              Icon(icon, size: 18, color: AppColors.textSecondary),
               const SizedBox(width: 8),
               Text(
                 label,
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF111827),
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
@@ -1109,80 +1043,37 @@ class _TransactionStatementScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          '거래명세서',
-          style: ResponsiveUtils.getTextStyle(
-            context,
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        title: AppBarTitle('거래명세서'),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        foregroundColor: AppColors.textPrimary,
+        elevation: 0,
         actions: const [],
       ),
-      body: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              border: Border(
-                bottom: BorderSide(color: Colors.grey[200]!, width: 1),
-              ),
-            ),
-            child: Text(
-              '업로드 목록',
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[600],
-              ),
-            ),
-          ),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _statements.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.insert_drive_file_outlined,
-                              size: 64,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              '업로드된 거래명세서가 없습니다',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 16,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _loadStatements,
-                        child: ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _statements.length,
-                          itemBuilder: (context, index) {
-                            final statement = _statements[index];
-                            return _buildStatementCard(statement);
-                          },
-                        ),
-                      ),
-          ),
-        ],
-      ),
+      backgroundColor: AppColors.backgroundPrimary,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _statements.isEmpty
+              ? const FlatEmptyState(
+                  message: '업로드된 거래명세서가 없습니다',
+                  icon: Icons.insert_drive_file_outlined,
+                )
+              : RefreshIndicator(
+                  onRefresh: () async {
+                    await _loadStatements();
+                    if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+                  },
+                  child: ListView.builder(
+                    itemCount: _statements.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        return const FlatSectionHeader(title: '업로드 목록');
+                      }
+                      final statement = _statements[index - 1];
+                      return _buildStatementRow(statement);
+                    },
+                  ),
+                ),
       floatingActionButton: FloatingActionButton.small(
         key: _uploadFabKey,
         onPressed: _showUploadOptionsMenu,
@@ -1201,96 +1092,72 @@ class _TransactionStatementScreenState
     );
   }
 
-  // ── 리스트 카드 ───────────────────────────────────────
+  // ── 리스트 행 ───────────────────────────────────────
 
-  Widget _buildStatementCard(TransactionStatementSummary statement) {
+  Widget _buildStatementRow(TransactionStatementSummary statement) {
     final statusStyle = _statusStyle(statement.status);
     final modeStyle = _modeStyle(statement.statementMode);
     final uploadedAt = _formatDate(statement.uploadedAt);
-    final statementDate = _formatDate(statement.statementDate);
     final vendorName = statement.vendorName ?? '-';
     final grandTotal = _formatAmount(statement.grandTotal);
     final uploaderName = statement.uploaderName ?? '-';
-    final confirmedByName = statement.confirmedByName ?? '-';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: AppShadows.cardShadow,
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsiveUtils.spacing(context, 16),
+        vertical: ResponsiveUtils.spacing(context, 12),
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 상태 뱃지 + 종류 뱃지
-            Row(
-              children: [
-                // 종류 뱃지
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: modeStyle.backgroundColor,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    modeStyle.label,
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: modeStyle.foregroundColor,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                // 상태 뱃지
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusStyle.backgroundColor,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        statusStyle.icon,
-                        size: 14,
-                        color: statusStyle.foregroundColor,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        statusStyle.label,
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: statusStyle.foregroundColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _buildInfoRow('업로드일', uploadedAt),
-            _buildInfoRow('명세서일', statementDate),
-            _buildInfoRow('거래처명', vendorName),
-            _buildInfoRow('합계금액', grandTotal),
-            _buildInfoRow('등록자', uploaderName),
-            _buildInfoRow('확정자', confirmedByName),
-          ],
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
         ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 상단: 뱃지 행
+          Row(
+            children: [
+              StatusChip(
+                label: modeStyle.label,
+                color: modeStyle.foregroundColor,
+              ),
+              const SizedBox(width: 6),
+              StatusChip(
+                label: statusStyle.label,
+                color: statusStyle.foregroundColor,
+              ),
+              const Spacer(),
+              Text(
+                uploadedAt,
+                style: AppTextStyles.listSubtitle(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // 거래처명
+          Text(
+            vendorName,
+            style: AppTextStyles.listTitle(context),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          // 하단: 금액 + 등록자
+          Row(
+            children: [
+              Text(
+                grandTotal,
+                style: AppTextStyles.tableCell(context),
+              ),
+              const Spacer(),
+              Text(
+                uploaderName,
+                style: AppTextStyles.tableCellSub(context),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -1303,39 +1170,6 @@ class _TransactionStatementScreenState
   String _formatAmount(num? amount) {
     if (amount == null) return '-';
     return '${_amountFormat.format(amount)}원';
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 70,
-            child: Text(
-              label,
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[600],
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 13,
-                color: const Color(0xFF1F2937),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   // ── 상태/종류 스타일 ──────────────────────────────────
@@ -1381,21 +1215,21 @@ class _TransactionStatementScreenState
         return _StatusStyle(
           label: '확정됨',
           icon: Icons.check_circle_outline,
-          backgroundColor: const Color(0xFFE8F5E9),
+          backgroundColor: AppColors.successLight,
           foregroundColor: const Color(0xFF2E7D32),
         );
       case 'rejected':
         return _StatusStyle(
           label: '거부됨',
           icon: Icons.cancel_outlined,
-          backgroundColor: const Color(0xFFFFEBEE),
+          backgroundColor: AppColors.errorLight,
           foregroundColor: const Color(0xFFD32F2F),
         );
       case 'failed':
         return _StatusStyle(
           label: '실패',
           icon: Icons.error_outline,
-          backgroundColor: const Color(0xFFFFEBEE),
+          backgroundColor: AppColors.errorLight,
           foregroundColor: const Color(0xFFD32F2F),
         );
       default:
@@ -1426,7 +1260,7 @@ class _TransactionStatementScreenState
         return _ModeStyle(
           label: '일반',
           backgroundColor: const Color(0xFFEFF6FF),
-          foregroundColor: const Color(0xFF1777CB),
+          foregroundColor: AppColors.primary,
         );
     }
   }

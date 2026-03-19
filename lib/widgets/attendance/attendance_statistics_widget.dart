@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_shadows.dart';
+import '../../theme/app_text_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../utils/responsive_utils.dart';
+import '../shared/flat_section.dart';
 
 class AttendanceStatisticsWidget extends StatefulWidget {
   final Function(bool isNonWorkingDay)? onWorkingDayStatusChanged;
-  
+
   const AttendanceStatisticsWidget({
     super.key,
     this.onWorkingDayStatusChanged,
@@ -22,20 +23,22 @@ class AttendanceStatisticsWidget extends StatefulWidget {
 class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget> {
   final _supabase = Supabase.instance.client;
   bool _isLoading = true;
-  
+
   // 통계 데이터
   int _totalCount = 0;
   int _normalCount = 0;
   int _lateCount = 0;
   int _absentCount = 0;
   int _leaveCount = 0;
-  
+
   // 상세 명단
   List<Map<String, dynamic>> _lateEmployees = [];
   List<Map<String, dynamic>> _absentEmployees = [];
-  
+
   // 주말/공휴일 관련
   bool _isNonWorkingDay = false;
+  bool _lateExpanded = false;
+  bool _absentExpanded = false;
   String? _holidayName;
 
   @override
@@ -53,7 +56,7 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
 
       // 주말 체크 (토요일: 6, 일요일: 7)
       final isWeekend = today.weekday >= 6;
-      
+
       // 공휴일 체크
       final holiday = await _supabase
           .from('holidays')
@@ -74,13 +77,13 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
         } else {
           dayType = '휴일';
         }
-        
+
         setState(() {
           _isNonWorkingDay = true;
           _holidayName = dayType;
           _isLoading = false;
         });
-        
+
         // 부모 위젯에 휴일 상태 전달
         widget.onWorkingDayStatusChanged?.call(true);
         return;
@@ -151,9 +154,9 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
         if (email == null || !activeEmails.contains(email)) {
           continue;
         }
-        
+
         // 휴가/출장자는 제외
-        if (email != null && leaveEmails.contains(email)) {
+        if (leaveEmails.contains(email)) {
           continue;
         }
 
@@ -184,7 +187,7 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
             final timeParts = clockIn.toString().split(':');
             final hour = int.tryParse(timeParts[0]) ?? 0;
             final minute = int.tryParse(timeParts[1]) ?? 0;
-            
+
             if (hour > 13 || (hour == 13 && minute > 30)) {
               late++;
               lateList.add({
@@ -203,7 +206,7 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
             final timeParts = clockIn.toString().split(':');
             final hour = int.tryParse(timeParts[0]) ?? 0;
             final minute = int.tryParse(timeParts[1]) ?? 0;
-            
+
             if (hour > 8 || (hour == 8 && minute > 30)) {
               late++;
               lateList.add({
@@ -233,7 +236,7 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
       // 전체 인원은 정상 + 지각 + 미출근 + 연차/출장의 합
       final actualLeaveCount = todayLeaves.length + halfDayCount;
       final actualTotalCount = normal + late + absent + actualLeaveCount;
-      
+
       if (!mounted) return;
       setState(() {
         _isNonWorkingDay = false;
@@ -247,7 +250,7 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
         _absentEmployees = absentList;
         _isLoading = false;
       });
-      
+
       // 부모 위젯에 근무일 상태 전달
       widget.onWorkingDayStatusChanged?.call(false);
     } catch (e) {
@@ -260,19 +263,14 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
     final attendanceRole = userProvider.employee?['attendance_role'];
-    final hasManagerRole = attendanceRole != null && 
-        attendanceRole is List && 
+    final hasManagerRole = attendanceRole != null &&
+        attendanceRole is List &&
         (attendanceRole).isNotEmpty;
 
     if (_isLoading) {
       return Container(
-        margin: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 20)),
         padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 16)),
-          boxShadow: AppShadows.cardShadow,
-        ),
+        color: Colors.white,
         child: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -283,331 +281,102 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
     }
 
     return Container(
-      margin: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 20)),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
-        boxShadow: AppShadows.cardShadow,
-        border: Border.all(color: const Color(0xFFE9ECEF)),
-      ),
+      color: Colors.white,
       child: Column(
         children: [
-          // 헤더
-          Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: ResponsiveUtils.spacing(context, 16),
-              vertical: ResponsiveUtils.spacing(context, 8),
-            ),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.primary.withValues(alpha: 0.08),
-                  AppColors.primary.withValues(alpha: 0.03),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(ResponsiveUtils.spacing(context, 20)),
-                topRight: Radius.circular(ResponsiveUtils.spacing(context, 20)),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // 섹션 헤더 (회색 배경)
+          const FlatSectionHeader(title: '오늘 출근 현황'),
+
+          // 통계 요약 행 (5칸 그리드)
+          FlatStatGrid(
+            items: [
+              FlatStatItem(label: '전체', value: _totalCount.toString(), color: AppColors.textPrimary),
+              FlatStatItem(label: '정상', value: _normalCount.toString(), color: AppColors.success),
+              FlatStatItem(label: '지각', value: _lateCount.toString(), color: AppColors.late_),
+              FlatStatItem(label: '미출근', value: _absentCount.toString(), color: AppColors.warning),
+              FlatStatItem(label: '연차/출장', value: _leaveCount.toString(), color: AppColors.purple),
+            ],
+          ),
+
+          // 지각 직원 (토글)
+          if (hasManagerRole && _lateEmployees.isNotEmpty)
+            FlatToggleSection(
+              title: '지각 ${_lateEmployees.length}명',
+              icon: Icons.access_time,
+              color: AppColors.late_,
+              isExpanded: _lateExpanded,
+              onTap: () => setState(() => _lateExpanded = !_lateExpanded),
               children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.dashboard_outlined,
-                      color: AppColors.primary,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '오늘의 출근 현황',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF2C3E50),
-                      ),
-                    ),
+                FlatTableColumnHeader(
+                  columns: [
+                    const FlatColumn(label: '이름', flex: 3),
+                    const FlatColumn(label: '출근시간', flex: 2, align: TextAlign.center),
                   ],
+                  trailingWidth: 60,
                 ),
+                ..._lateEmployees.map((emp) => FlatTableRow(
+                  cells: [
+                    Text(emp['name'] ?? '-', style: AppTextStyles.tableCell(context)),
+                    Text(emp['time'] ?? '-', textAlign: TextAlign.center, style: AppTextStyles.tableCellSub(context)),
+                  ],
+                  flexValues: const [3, 2],
+                  trailing: StatusChip(label: '지각', color: AppColors.late_),
+                )),
               ],
             ),
-          ),
-          
-          // 통계 표시
-          Padding(
-            padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+
+          // 미출근 직원 (토글)
+          if (_absentEmployees.isNotEmpty)
+            FlatToggleSection(
+              title: '미출근 ${_absentEmployees.length}명',
+              icon: Icons.cancel_outlined,
+              color: AppColors.warning,
+              isExpanded: _absentExpanded,
+              onTap: () => setState(() => _absentExpanded = !_absentExpanded),
               children: [
-                _buildStatItem('전체', _totalCount, const Color(0xFF1777CB)),
-                _buildStatItem('정상', _normalCount, const Color(0xFF4CAF50)),
-                _buildStatItem('지각', _lateCount, const Color(0xFFE57373)),
-                _buildStatItem('미출근', _absentCount, const Color(0xFFE57373)),
-                _buildStatItem('연차/출장', _leaveCount, const Color(0xFF7E57C2)),
+                ..._absentEmployees.map((emp) => FlatTableRow(
+                  cells: [
+                    Text(emp['name'] ?? '-', style: AppTextStyles.tableCell(context)),
+                    Text('—', textAlign: TextAlign.center, style: AppTextStyles.tableCellSub(context)),
+                  ],
+                  flexValues: const [3, 2],
+                  trailing: StatusChip(label: '미출근', color: AppColors.warning),
+                )),
               ],
             ),
-          ),
-
-          if (hasManagerRole && _lateEmployees.isNotEmpty) ...[
-            const Divider(height: 0.5, color: Color(0xFFE0E0E0)),
-            Padding(
-              padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.access_time,
-                        color: const Color(0xFFE57373),
-                        size: 16,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '지각 ${_lateEmployees.length}명',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF424242),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: _lateEmployees.map((emp) {
-                      return Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: ResponsiveUtils.spacing(context, 10),
-                          vertical: ResponsiveUtils.spacing(context, 6),
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFEBEE),
-                          borderRadius: BorderRadius.circular(
-                            ResponsiveUtils.spacing(context, 6),
-                          ),
-                        ),
-                        child: Text(
-                          '${emp['name']} (${emp['time']})',
-                          style: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontSize: 12,
-                            color: Color(0xFF424242),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ),
-            ),
-          ],
-
-          if (_absentEmployees.isNotEmpty) ...[
-            const Divider(height: 0.5, color: Color(0xFFE0E0E0)),
-            Padding(
-              padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.cancel_outlined,
-                        color: const Color(0xFFE57373),
-                        size: 16,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '미출근 ${_absentEmployees.length}명',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF424242),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: _absentEmployees.map((emp) {
-                      return Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: ResponsiveUtils.spacing(context, 10),
-                          vertical: ResponsiveUtils.spacing(context, 6),
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF3E0),
-                          borderRadius: BorderRadius.circular(
-                            ResponsiveUtils.spacing(context, 6),
-                          ),
-                        ),
-                        child: Text(
-                          emp['name'],
-                          style: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontSize: 12,
-                            color: Color(0xFF424242),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
-    );
-  }
-
-  Widget _buildStatItem(String label, int count, Color color) {
-    return Column(
-      children: [
-        Text(
-          count.toString(),
-          style: ResponsiveUtils.getTextStyle(
-            context,
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-            color: color,
-            height: 1.2,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: ResponsiveUtils.getTextStyle(
-            context,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey[700],
-            letterSpacing: -0.2,
-          ),
-        ),
-      ],
     );
   }
 
   // 주말/공휴일용 위젯
   Widget _buildNonWorkingDayWidget() {
     return Container(
-      margin: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 20)),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
-        boxShadow: AppShadows.cardShadow,
-        border: Border.all(color: const Color(0xFFE9ECEF)),
-      ),
+      color: Colors.white,
       child: Column(
         children: [
-          // 헤더
+          const FlatSectionHeader(title: '오늘 출근 현황'),
           Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: ResponsiveUtils.spacing(context, 16),
-              vertical: ResponsiveUtils.spacing(context, 8),
-            ),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF9E9E9E).withValues(alpha: 0.08),
-                  const Color(0xFF9E9E9E).withValues(alpha: 0.03),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(ResponsiveUtils.spacing(context, 20)),
-                topRight: Radius.circular(ResponsiveUtils.spacing(context, 20)),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.free_breakfast_outlined,
-                      color: const Color(0xFF9E9E9E),
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '오늘의 출근 현황',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF2C3E50),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          
-          // 근무일이 아닙니다 메시지
-          Container(
-            padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 40)),
+            padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 32)),
             child: Column(
               children: [
-                Container(
-                  padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
-                    borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 50)),
-                  ),
-                  child: Icon(
-                    Icons.celebration_outlined,
-                    size: ResponsiveUtils.spacing(context, 48),
-                    color: const Color(0xFF9E9E9E),
-                  ),
+                Icon(
+                  Icons.celebration_outlined,
+                  size: ResponsiveUtils.spacing(context, 40),
+                  color: AppColors.gray400,
                 ),
-                SizedBox(height: ResponsiveUtils.spacing(context, 20)),
+                SizedBox(height: ResponsiveUtils.spacing(context, 12)),
                 Text(
                   '오늘은 근무일이 아닙니다',
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF2C3E50),
-                  ),
+                  style: AppTextStyles.sectionSubtitle(context),
                 ),
-                SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-                if (_holidayName != null)
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: ResponsiveUtils.spacing(context, 16),
-                      vertical: ResponsiveUtils.spacing(context, 8),
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF0F4F8),
-                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
-                      border: Border.all(color: const Color(0xFFE0E6ED)),
-                    ),
-                    child: Text(
-                      _holidayName!,
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF64748B),
-                      ),
-                    ),
+                if (_holidayName != null) ...[
+                  SizedBox(height: ResponsiveUtils.spacing(context, 6)),
+                  Text(
+                    _holidayName!,
+                    style: AppTextStyles.emptyState(context),
                   ),
+                ],
               ],
             ),
           ),

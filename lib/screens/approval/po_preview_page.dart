@@ -4,6 +4,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../widgets/common/notification_banner_widget.dart';
 
 class PoPreviewPage extends StatefulWidget {
   final int purchaseRequestId;
@@ -40,9 +41,7 @@ class _PoPreviewPageState extends State<PoPreviewPage> {
         .single();
 
     if (response['po_file_url'] == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('발주서가 없습니다.')));
+      AppBanner.show(context, '발주서가 없습니다.', type: BannerType.error);
       setState(() => _isLoading = false);
       return;
     }
@@ -60,9 +59,7 @@ class _PoPreviewPageState extends State<PoPreviewPage> {
       });
     } catch (e) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('발주서 다운로드 오류: $e')));
+      AppBanner.show(context, '발주서 다운로드 오류: $e', type: BannerType.error);
     }
   }
 

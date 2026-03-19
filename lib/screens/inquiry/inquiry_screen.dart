@@ -7,8 +7,11 @@ import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
 import '../../services/inquiry_service.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_shadows.dart';
 import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
+import '../../widgets/common/notification_banner_widget.dart';
+import '../../widgets/shared/flat_section.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'inquiry_detail_sheet.dart';
@@ -28,6 +31,23 @@ class _PriceChangeRow {
   String? itemId;
   String changeType;
   String newValue;
+}
+
+class _ItemAddRow {
+  _ItemAddRow({
+    this.itemName = '',
+    this.specification = '',
+    this.quantity = '',
+    this.unit = 'EA',
+    this.unitPrice = '',
+    this.remark = '',
+  });
+  String itemName;
+  String specification;
+  String quantity;
+  String unit;
+  String unitPrice;
+  String remark;
 }
 
 /// 문의하기 화면
@@ -65,6 +85,7 @@ class _InquiryScreenState extends State<InquiryScreen>
   DateTime? _requestedDeliveryDate;
   List<_QuantityChangeRow> _quantityChangeRows = [];
   List<_PriceChangeRow> _priceChangeRows = [];
+  List<_ItemAddRow> _itemAddRows = [];
 
   // 문의 목록
   List<Map<String, dynamic>> _inquiries = [];
@@ -178,14 +199,7 @@ class _InquiryScreenState extends State<InquiryScreen>
   void _showNotification(String message) {
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
-      ),
-    );
+    AppBanner.show(context, message, type: BannerType.success);
   }
 
   /// 문의 제출
@@ -392,6 +406,55 @@ class _InquiryScreenState extends State<InquiryScreen>
       inquiryPayload = {'items': itemsPayload};
     }
 
+    if (selectedType == 'item_add') {
+      final activeRows = _itemAddRows
+          .where((row) => row.itemName.trim().isNotEmpty || row.quantity.trim().isNotEmpty)
+          .toList();
+      if (activeRows.isEmpty) {
+        setState(() => _isSubmitting = false);
+        _showError('추가할 품목을 입력해주세요.');
+        return;
+      }
+
+      final itemsPayload = <Map<String, dynamic>>[];
+      for (final row in activeRows) {
+        if (row.itemName.trim().isEmpty) {
+          setState(() => _isSubmitting = false);
+          _showError('품목명을 입력해주세요.');
+          return;
+        }
+        final quantity = int.tryParse(row.quantity.trim());
+        if (quantity == null || quantity <= 0) {
+          setState(() => _isSubmitting = false);
+          _showError('수량을 올바르게 입력해주세요.');
+          return;
+        }
+        final unitPrice = num.tryParse(row.unitPrice.trim());
+        if (unitPrice == null || unitPrice < 0) {
+          setState(() => _isSubmitting = false);
+          _showError('단가를 올바르게 입력해주세요.');
+          return;
+        }
+
+        itemsPayload.add({
+          'item_name': row.itemName.trim(),
+          'specification': row.specification.trim().isEmpty ? null : row.specification.trim(),
+          'quantity': quantity,
+          'unit': row.unit.trim().isEmpty ? 'EA' : row.unit.trim(),
+          'unit_price': unitPrice,
+          'remark': row.remark.trim().isEmpty ? null : row.remark.trim(),
+        });
+
+        final amount = quantity * unitPrice;
+        summaryLines.add(
+          '${row.itemName.trim()} (${row.specification.trim().isEmpty ? '-' : row.specification.trim()}) '
+          '${quantity}${row.unit.trim().isEmpty ? 'EA' : row.unit.trim()} × ${numberFormat.format(unitPrice)} = ${numberFormat.format(amount)}',
+        );
+      }
+
+      inquiryPayload = {'items': itemsPayload};
+    }
+
     if (selectedType == 'delete') {
       inquiryPayload = {'reason': message};
     }
@@ -459,6 +522,7 @@ class _InquiryScreenState extends State<InquiryScreen>
         _requestedDeliveryDate = null;
         _quantityChangeRows = [];
         _priceChangeRows = [];
+        _itemAddRows = [];
       });
 
       await _loadInquiries();
@@ -473,13 +537,7 @@ class _InquiryScreenState extends State<InquiryScreen>
   void _showError(String message) {
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    AppBanner.show(context, message, type: BannerType.error);
   }
 
   bool _requiresPurchaseType(String? type) {
@@ -490,6 +548,7 @@ class _InquiryScreenState extends State<InquiryScreen>
       'delivery_date_change',
       'quantity_change',
       'price_change',
+      'item_add',
     }.contains(type);
   }
 
@@ -549,6 +608,7 @@ class _InquiryScreenState extends State<InquiryScreen>
       _requestedDeliveryDate = null;
       _quantityChangeRows = [];
       _priceChangeRows = [];
+      _itemAddRows = [];
     });
   }
 
@@ -566,30 +626,25 @@ class _InquiryScreenState extends State<InquiryScreen>
           vertical: ResponsiveUtils.spacing(context, 12),
         ),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8F9FA),
+          color: AppColors.backgroundSecondary,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE5E5EA)),
+          border: Border.all(color: AppColors.border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               label,
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 12,
+              style: AppTextStyles.tableHeader(context).copyWith(
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF8E8E93),
               ),
             ),
             SizedBox(height: ResponsiveUtils.spacing(context, 6)),
             Text(
               _formatDate(value),
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 14,
+              style: AppTextStyles.inputLabel(context).copyWith(
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF1C1C1E),
+                color: AppColors.textPrimary,
               ),
             ),
           ],
@@ -623,7 +678,7 @@ class _InquiryScreenState extends State<InquiryScreen>
           width: ResponsiveUtils.spacing(context, 4),
           height: ResponsiveUtils.spacing(context, 20),
           decoration: BoxDecoration(
-            gradient: AppColors.primaryGradient,
+            color: AppColors.primary,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
@@ -631,11 +686,8 @@ class _InquiryScreenState extends State<InquiryScreen>
         Expanded(
           child: Text(
             title,
-            style: ResponsiveUtils.getTextStyle(
-              context,
-              fontSize: 16,
+            style: AppTextStyles.sectionSubtitle(context).copyWith(
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF1C1C1E),
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -649,19 +701,14 @@ class _InquiryScreenState extends State<InquiryScreen>
               vertical: ResponsiveUtils.spacing(context, 2),
             ),
             decoration: BoxDecoration(
-              color: const Color(0xFFFF3B30).withValues(alpha: 0.1),
+              color: AppColors.error.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(
                 ResponsiveUtils.spacing(context, 4),
               ),
             ),
             child: Text(
               '필수',
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFFFF3B30),
-              ),
+              style: AppTextStyles.chipSmall(context, color: AppColors.error),
             ),
           ),
         ],
@@ -676,38 +723,36 @@ class _InquiryScreenState extends State<InquiryScreen>
     return Container(
       padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FA),
+        color: AppColors.backgroundSecondary,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E5EA)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             '선택된 발주',
-            style: ResponsiveUtils.getTextStyle(
-              context,
-              fontSize: 14,
+            style: AppTextStyles.inputLabel(context).copyWith(
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF1C1C1E),
+              color: AppColors.textPrimary,
             ),
           ),
           SizedBox(height: ResponsiveUtils.spacing(context, 8)),
           Text(
             '발주번호: ${selected['purchase_order_number'] ?? '-'}',
-            style: ResponsiveUtils.getTextStyle(context, fontSize: 13),
+            style: AppTextStyles.cardCaption(context),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
           Text(
             '업체: ${selected['vendor_name'] ?? '-'}',
-            style: ResponsiveUtils.getTextStyle(context, fontSize: 13),
+            style: AppTextStyles.cardCaption(context),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
           Text(
             '요청일: ${selected['request_date'] ?? selected['created_at'] ?? '-'}',
-            style: ResponsiveUtils.getTextStyle(context, fontSize: 13),
+            style: AppTextStyles.cardCaption(context),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -715,11 +760,8 @@ class _InquiryScreenState extends State<InquiryScreen>
             SizedBox(height: ResponsiveUtils.spacing(context, 12)),
             Text(
               '품목',
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF3C3C43),
+              style: AppTextStyles.sectionHeader(context).copyWith(
+                color: AppColors.gray700,
               ),
             ),
             SizedBox(height: ResponsiveUtils.spacing(context, 6)),
@@ -732,10 +774,8 @@ class _InquiryScreenState extends State<InquiryScreen>
                 padding: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 4)),
                 child: Text(
                   '$line. $name ($spec) ${qty}개',
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontSize: 12,
-                    color: const Color(0xFF6E6E73),
+                  style: AppTextStyles.tableHeader(context).copyWith(
+                    color: AppColors.textSecondary,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -759,11 +799,7 @@ class _InquiryScreenState extends State<InquiryScreen>
             Expanded(
               child: Text(
                 '최대 5개, 이미지 파일만 첨부 가능',
-                style: ResponsiveUtils.getTextStyle(
-                  context,
-                  fontSize: 12,
-                  color: const Color(0xFF8E8E93),
-                ),
+                style: AppTextStyles.tableHeader(context),
               ),
             ),
             TextButton.icon(
@@ -796,7 +832,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                     top: -6,
                     right: -6,
                     child: IconButton(
-                      icon: const Icon(Icons.cancel, size: 18, color: Colors.redAccent),
+                      icon: const Icon(Icons.cancel, size: 18, color: AppColors.error),
                       onPressed: () {
                         setState(() {
                           _pendingImages.removeAt(index);
@@ -868,6 +904,18 @@ class _InquiryScreenState extends State<InquiryScreen>
   void _removePriceChangeRow(int index) {
     setState(() {
       _priceChangeRows.removeAt(index);
+    });
+  }
+
+  void _addItemAddRow() {
+    setState(() {
+      _itemAddRows.add(_ItemAddRow());
+    });
+  }
+
+  void _removeItemAddRow(int index) {
+    setState(() {
+      _itemAddRows.removeAt(index);
     });
   }
 
@@ -977,36 +1025,26 @@ class _InquiryScreenState extends State<InquiryScreen>
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: AppColors.backgroundPrimary,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
         elevation: 0,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
-        ),
         centerTitle: true,
-        title: Text(
-          _isAdmin ? '문의 내역' : '문의하기',
-          style: AppTextStyles.appBarTitle(context),
-        ),
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: AppBarTitle(_isAdmin ? '문의 내역' : '문의하기'),
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
         bottom: _isAdmin
             ? null
             : TabBar(
                 controller: _tabController!,
-                indicatorColor: Colors.white,
+                indicatorColor: AppColors.primary,
                 indicatorWeight: 3,
-                labelStyle: ResponsiveUtils.getTextStyle(
-                  context,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                labelStyle: AppTextStyles.listTitle(context).copyWith(
+                  color: AppColors.primary,
                 ),
-                unselectedLabelStyle: ResponsiveUtils.getTextStyle(
-                  context,
-                  fontSize: 15,
+                unselectedLabelStyle: AppTextStyles.listTitle(context).copyWith(
                   fontWeight: FontWeight.w500,
-                  color: Colors.white.withValues(alpha: 0.8),
+                  color: AppColors.textTertiary,
                 ),
                 tabs: const [
                   Tab(text: '문의 작성'),
@@ -1025,9 +1063,10 @@ class _InquiryScreenState extends State<InquiryScreen>
 
   /// 문의 작성 폼
   Widget _buildInquiryForm() {
+    const messageOptionalTypes = {'quantity_change', 'price_change', 'item_add', 'delivery_date_change'};
     final canSubmit = !_isSubmitting &&
         (_selectedType?.isNotEmpty ?? false) &&
-        _messageController.text.trim().isNotEmpty &&
+        (_messageController.text.trim().isNotEmpty || messageOptionalTypes.contains(_selectedType)) &&
         (!_requiresPurchaseType(_selectedType) || _selectedPurchase != null);
 
     return SingleChildScrollView(
@@ -1039,15 +1078,10 @@ class _InquiryScreenState extends State<InquiryScreen>
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(
-                ResponsiveUtils.spacing(context, 16),
+                ResponsiveUtils.spacing(context, 12),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: ResponsiveUtils.spacing(context, 10),
-                  offset: Offset(0, ResponsiveUtils.spacing(context, 2)),
-                ),
-              ],
+              boxShadow: AppShadows.mdShadow,
+              border: Border.all(color: AppColors.borderLight, width: 0.5),
             ),
             child: Padding(
               padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
@@ -1061,18 +1095,15 @@ class _InquiryScreenState extends State<InquiryScreen>
                         width: ResponsiveUtils.spacing(context, 4),
                         height: ResponsiveUtils.spacing(context, 20),
                         decoration: BoxDecoration(
-                          gradient: AppColors.primaryGradient,
+                          color: AppColors.primary,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
                       SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                       Text(
                         '문의 유형',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 16,
+                        style: AppTextStyles.sectionSubtitle(context).copyWith(
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF1C1C1E),
                         ),
                       ),
                     ],
@@ -1086,8 +1117,8 @@ class _InquiryScreenState extends State<InquiryScreen>
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          const Color(0xFFF8F9FA),
-                          const Color(0xFFF2F3F5),
+                          AppColors.backgroundSecondary,
+                          AppColors.gray150,
                         ],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -1096,7 +1127,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                         ResponsiveUtils.spacing(context, 12),
                       ),
                       border: Border.all(
-                        color: const Color(0xFFE5E5EA),
+                        color: AppColors.border,
                       ),
                     ),
                     child: DropdownButtonHideUnderline(
@@ -1105,16 +1136,14 @@ class _InquiryScreenState extends State<InquiryScreen>
                         value: _selectedType,
                         icon: Icon(
                           Icons.keyboard_arrow_down_rounded,
-                          color: const Color(0xFF007AFF),
+                          color: AppColors.info,
                           size: ResponsiveUtils.iconSize(context, 24),
                         ),
                         hint: Text(
                           '문의 유형을 선택해주세요',
-                          style: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontSize: 16,
+                          style: AppTextStyles.sectionSubtitle(context).copyWith(
                             fontWeight: FontWeight.w500,
-                            color: const Color(0xFFAEAEB2),
+                            color: AppColors.textDisabled,
                           ),
                         ),
                         selectedItemBuilder: (_) => InquiryService.getInquiryTypes()
@@ -1124,7 +1153,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                                   Icon(
                                     _getIconForType(type['value']!),
                                     size: ResponsiveUtils.iconSize(context, 18),
-                                    color: const Color(0xFF007AFF),
+                                    color: AppColors.info,
                                   ),
                                   SizedBox(width: ResponsiveUtils.spacing(context, 10)),
                                   Expanded(
@@ -1138,11 +1167,8 @@ class _InquiryScreenState extends State<InquiryScreen>
                               ),
                             )
                             .toList(),
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 16,
+                        style: AppTextStyles.sectionSubtitle(context).copyWith(
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF1C1C1E),
                         ),
                         items: InquiryService.getInquiryTypes()
                             .map(
@@ -1153,7 +1179,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                                     Icon(
                                       _getIconForType(type['value']!),
                                       size: ResponsiveUtils.iconSize(context, 18),
-                                      color: const Color(0xFF007AFF),
+                                      color: AppColors.info,
                                     ),
                                     SizedBox(width: ResponsiveUtils.spacing(context, 10)),
                                     Text(type['label']!),
@@ -1223,16 +1249,12 @@ class _InquiryScreenState extends State<InquiryScreen>
                       Container(
                         padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF2F2F7),
+                          color: AppColors.borderLight,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           '기간을 선택하고 발주요청을 조회해주세요.',
-                          style: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontSize: 13,
-                            color: const Color(0xFF8E8E93),
-                          ),
+                          style: AppTextStyles.cardCaption(context),
                         ),
                       )
                     else if (_purchaseRequests.isNotEmpty)
@@ -1257,13 +1279,13 @@ class _InquiryScreenState extends State<InquiryScreen>
                                 padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? const Color(0xFF007AFF).withValues(alpha: 0.1)
+                                      ? AppColors.info.withValues(alpha: 0.1)
                                       : Colors.white,
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: isSelected
-                                        ? const Color(0xFF007AFF)
-                                        : const Color(0xFFE5E5EA),
+                                        ? AppColors.info
+                                        : AppColors.border,
                                   ),
                                 ),
                                 child: Column(
@@ -1271,10 +1293,9 @@ class _InquiryScreenState extends State<InquiryScreen>
                                   children: [
                                     Text(
                                       '발주번호: ${purchase['purchase_order_number'] ?? '(승인대기)'}',
-                                      style: ResponsiveUtils.getTextStyle(
-                                        context,
-                                        fontSize: 14,
+                                      style: AppTextStyles.inputLabel(context).copyWith(
                                         fontWeight: FontWeight.w600,
+                                        color: AppColors.textPrimary,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -1282,30 +1303,24 @@ class _InquiryScreenState extends State<InquiryScreen>
                                     SizedBox(height: ResponsiveUtils.spacing(context, 4)),
                                     Text(
                                       '업체: ${purchase['vendor_name'] ?? '-'}',
-                                      style: ResponsiveUtils.getTextStyle(
-                                        context,
-                                        fontSize: 12,
-                                        color: const Color(0xFF6E6E73),
+                                      style: AppTextStyles.tableHeader(context).copyWith(
+                                        color: AppColors.textSecondary,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     Text(
                                       '요청일: ${purchase['request_date'] ?? purchase['created_at'] ?? '-'}',
-                                      style: ResponsiveUtils.getTextStyle(
-                                        context,
-                                        fontSize: 12,
-                                        color: const Color(0xFF6E6E73),
+                                      style: AppTextStyles.tableHeader(context).copyWith(
+                                        color: AppColors.textSecondary,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     Text(
                                       '품목 ${items.length}건',
-                                      style: ResponsiveUtils.getTextStyle(
-                                        context,
-                                        fontSize: 12,
-                                        color: const Color(0xFF6E6E73),
+                                      style: AppTextStyles.tableHeader(context).copyWith(
+                                        color: AppColors.textSecondary,
                                       ),
                                     ),
                                   ],
@@ -1325,11 +1340,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                     SizedBox(height: ResponsiveUtils.spacing(context, 12)),
                     Text(
                       '현재 입고요청일: ${_selectedPurchase?['delivery_request_date'] != null ? _formatDate(DateTime.parse(_selectedPurchase!['delivery_request_date'])) : '-'}',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 12,
-                        color: const Color(0xFF8E8E93),
-                      ),
+                      style: AppTextStyles.tableHeader(context),
                     ),
                     SizedBox(height: ResponsiveUtils.spacing(context, 8)),
                     _buildDateField(
@@ -1346,11 +1357,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                     if (_getSelectedPurchaseItems().isEmpty)
                       Text(
                         '발주요청을 먼저 선택해주세요.',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 13,
-                          color: const Color(0xFF8E8E93),
-                        ),
+                        style: AppTextStyles.cardCaption(context),
                       )
                     else ...[
                       ..._quantityChangeRows.asMap().entries.map((entry) {
@@ -1423,11 +1430,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                                 decoration: InputDecoration(
                                   labelText: '변경 수량',
                                   hintText: quantityHint,
-                                  hintStyle: ResponsiveUtils.getTextStyle(
-                                    context,
-                                    fontSize: 12,
-                                    color: const Color(0xFF8E8E93),
-                                  ),
+                                  hintStyle: AppTextStyles.tableHeader(context),
                                   border: const OutlineInputBorder(),
                                 ),
                                 onChanged: (value) {
@@ -1485,11 +1488,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                     if (_getSelectedPurchaseItems().isEmpty)
                       Text(
                         '발주요청을 먼저 선택해주세요.',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 13,
-                          color: const Color(0xFF8E8E93),
-                        ),
+                        style: AppTextStyles.cardCaption(context),
                       )
                     else ...[
                       ..._priceChangeRows.asMap().entries.map((entry) {
@@ -1600,11 +1599,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                                     decoration: InputDecoration(
                                       labelText: '변경 값',
                                       hintText: priceHint,
-                                      hintStyle: ResponsiveUtils.getTextStyle(
-                                        context,
-                                        fontSize: 12,
-                                        color: const Color(0xFF8E8E93),
-                                      ),
+                                      hintStyle: AppTextStyles.tableHeader(context),
                                       suffixText: '원',
                                       border: const OutlineInputBorder(),
                                     ),
@@ -1659,6 +1654,171 @@ class _InquiryScreenState extends State<InquiryScreen>
                     SizedBox(height: ResponsiveUtils.spacing(context, 24)),
                   ],
 
+                  if (_selectedType == 'item_add') ...[
+                    _buildSectionTitle('품목 추가 요청', required: true),
+                    SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+                    if (_selectedPurchase == null)
+                      Text(
+                        '발주요청을 먼저 선택해주세요.',
+                        style: AppTextStyles.cardCaption(context),
+                      )
+                    else ...[
+                      ..._itemAddRows.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final row = entry.value;
+                        return Padding(
+                          padding: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 12)),
+                          child: Container(
+                            padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 10)),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 3,
+                                      child: TextFormField(
+                                        initialValue: row.itemName,
+                                        style: const TextStyle(fontSize: 13),
+                                        decoration: const InputDecoration(
+                                          labelText: '품목명 *',
+                                          border: OutlineInputBorder(),
+                                          isDense: true,
+                                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                        ),
+                                        onChanged: (value) {
+                                          row.itemName = value;
+                                        },
+                                      ),
+                                    ),
+                                    SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+                                    Expanded(
+                                      flex: 2,
+                                      child: TextFormField(
+                                        initialValue: row.specification,
+                                        style: const TextStyle(fontSize: 13),
+                                        decoration: const InputDecoration(
+                                          labelText: '규격',
+                                          border: OutlineInputBorder(),
+                                          isDense: true,
+                                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                        ),
+                                        onChanged: (value) {
+                                          row.specification = value;
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: ResponsiveUtils.spacing(context, 6)),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 2,
+                                      child: TextFormField(
+                                        initialValue: row.quantity,
+                                        keyboardType: TextInputType.number,
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter.digitsOnly,
+                                        ],
+                                        style: const TextStyle(fontSize: 13),
+                                        decoration: const InputDecoration(
+                                          labelText: '수량 *',
+                                          border: OutlineInputBorder(),
+                                          isDense: true,
+                                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                        ),
+                                        onChanged: (value) {
+                                          row.quantity = value;
+                                        },
+                                      ),
+                                    ),
+                                    SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+                                    Expanded(
+                                      flex: 2,
+                                      child: TextFormField(
+                                        initialValue: row.unit,
+                                        style: const TextStyle(fontSize: 13),
+                                        decoration: const InputDecoration(
+                                          labelText: '단위',
+                                          hintText: 'EA',
+                                          border: OutlineInputBorder(),
+                                          isDense: true,
+                                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                        ),
+                                        onChanged: (value) {
+                                          row.unit = value;
+                                        },
+                                      ),
+                                    ),
+                                    SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+                                    Expanded(
+                                      flex: 3,
+                                      child: TextFormField(
+                                        initialValue: row.unitPrice,
+                                        keyboardType: TextInputType.number,
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter.digitsOnly,
+                                        ],
+                                        style: const TextStyle(fontSize: 13),
+                                        decoration: const InputDecoration(
+                                          labelText: '단가 *',
+                                          border: OutlineInputBorder(),
+                                          isDense: true,
+                                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                        ),
+                                        onChanged: (value) {
+                                          row.unitPrice = value;
+                                        },
+                                      ),
+                                    ),
+                                    SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+                                    Expanded(
+                                      flex: 2,
+                                      child: TextFormField(
+                                        initialValue: row.remark,
+                                        style: const TextStyle(fontSize: 13),
+                                        decoration: const InputDecoration(
+                                          labelText: '비고',
+                                          border: OutlineInputBorder(),
+                                          isDense: true,
+                                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                        ),
+                                        onChanged: (value) {
+                                          row.remark = value;
+                                        },
+                                      ),
+                                    ),
+                                    IconButton(
+                                      onPressed: () => _removeItemAddRow(index),
+                                      icon: const Icon(Icons.remove_circle_outline, size: 20),
+                                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                      padding: EdgeInsets.zero,
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          onPressed: _addItemAddRow,
+                          icon: const Icon(Icons.add),
+                          label: const Text('품목 추가'),
+                        ),
+                      ),
+                    ],
+                    SizedBox(height: ResponsiveUtils.spacing(context, 24)),
+                  ],
+
                   // 내용 입력 섹션
                   Row(
                     children: [
@@ -1666,18 +1826,15 @@ class _InquiryScreenState extends State<InquiryScreen>
                         width: ResponsiveUtils.spacing(context, 4),
                         height: ResponsiveUtils.spacing(context, 20),
                         decoration: BoxDecoration(
-                          gradient: AppColors.primaryGradient,
+                          color: AppColors.primary,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
                       SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                       Text(
                         '문의 내용',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 16,
+                        style: AppTextStyles.sectionSubtitle(context).copyWith(
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF1C1C1E),
                         ),
                       ),
                       SizedBox(width: ResponsiveUtils.spacing(context, 8)),
@@ -1687,19 +1844,14 @@ class _InquiryScreenState extends State<InquiryScreen>
                           vertical: ResponsiveUtils.spacing(context, 2),
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFF3B30).withValues(alpha: 0.1),
+                          color: AppColors.error.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(
                             ResponsiveUtils.spacing(context, 4),
                           ),
                         ),
                         child: Text(
                           '필수',
-                          style: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFFFF3B30),
-                          ),
+                          style: AppTextStyles.chipSmall(context, color: AppColors.error),
                         ),
                       ),
                     ],
@@ -1707,32 +1859,28 @@ class _InquiryScreenState extends State<InquiryScreen>
                   SizedBox(height: ResponsiveUtils.spacing(context, 12)),
                   Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF8F9FA),
+                      color: AppColors.backgroundSecondary,
                       borderRadius: BorderRadius.circular(
                         ResponsiveUtils.spacing(context, 12),
                       ),
                       border: Border.all(
                         color: _messageController.text.isNotEmpty 
-                            ? const Color(0xFF007AFF).withValues(alpha: 0.3)
-                            : const Color(0xFFE5E5EA),
+                            ? AppColors.info.withValues(alpha: 0.3)
+                            : AppColors.border,
                       ),
                     ),
                     child: TextField(
                       controller: _messageController,
                       maxLines: 8,
                     maxLength: 1000,
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 16,
-                        color: const Color(0xFF1C1C1E),
+                      style: AppTextStyles.sectionSubtitle(context).copyWith(
+                        fontWeight: FontWeight.w400,
                         height: 1.5,
                       ),
                       decoration: InputDecoration(
                         hintText: '문의하실 내용을 자유롭게 작성해주세요.\n\n예시:\n• 앱 사용 중 발생한 오류\n• 기능 개선 제안\n• 사용 방법 문의\n• 기타 불편 사항',
-                        hintStyle: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 15,
-                          color: const Color(0xFFAEAEB2),
+                        hintStyle: AppTextStyles.cardBody(context).copyWith(
+                          color: AppColors.textDisabled,
                           height: 1.5,
                         ),
                         border: InputBorder.none,
@@ -1757,12 +1905,10 @@ class _InquiryScreenState extends State<InquiryScreen>
                     alignment: Alignment.centerRight,
                     child: Text(
                       '${_messageController.text.length} / 1000',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 12,
+                      style: AppTextStyles.tableHeader(context).copyWith(
                         color: _messageController.text.length > 900
-                            ? const Color(0xFFFF3B30)
-                            : const Color(0xFFAEAEB2),
+                            ? AppColors.error
+                            : AppColors.textDisabled,
                       ),
                     ),
                   ),
@@ -1774,15 +1920,14 @@ class _InquiryScreenState extends State<InquiryScreen>
                     width: double.infinity,
                     height: ResponsiveUtils.spacing(context, 56),
                     decoration: BoxDecoration(
-                      gradient: canSubmit ? AppColors.primaryGradient : null,
-                      color: canSubmit ? null : const Color(0xFFE5E5EA),
+                      color: canSubmit ? AppColors.primary : AppColors.border,
                       borderRadius: BorderRadius.circular(
                         ResponsiveUtils.spacing(context, 14),
                       ),
                       boxShadow: canSubmit
                           ? [
                               BoxShadow(
-                                color: const Color(0xFF007AFF).withValues(alpha: 0.25),
+                                color: AppColors.info.withValues(alpha: 0.25),
                                 blurRadius: ResponsiveUtils.spacing(context, 12),
                                 offset: Offset(0, ResponsiveUtils.spacing(context, 6)),
                               ),
@@ -1808,19 +1953,17 @@ class _InquiryScreenState extends State<InquiryScreen>
                                       Icons.send_rounded,
                                       color: canSubmit
                                           ? Colors.white
-                                          : const Color(0xFF8E8E93),
+                                          : AppColors.textTertiary,
                                       size: ResponsiveUtils.iconSize(context, 20),
                                     ),
                                     SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                                     Text(
                                       '문의 등록하기',
-                                      style: ResponsiveUtils.getTextStyle(
-                                        context,
-                                        fontSize: 17,
+                                      style: AppTextStyles.buttonPrimary(context).copyWith(
                                         fontWeight: FontWeight.w700,
                                         color: canSubmit
                                             ? Colors.white
-                                            : const Color(0xFF8E8E93),
+                                            : AppColors.textTertiary,
                                       ),
                                     ),
                                   ],
@@ -1839,7 +1982,7 @@ class _InquiryScreenState extends State<InquiryScreen>
           Container(
             padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
             decoration: BoxDecoration(
-              color: const Color(0xFFF2F2F7).withValues(alpha: 0.5),
+              color: AppColors.borderLight.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(
                 ResponsiveUtils.spacing(context, 12),
               ),
@@ -1849,7 +1992,7 @@ class _InquiryScreenState extends State<InquiryScreen>
               children: [
                 Icon(
                   Icons.info_outline_rounded,
-                  color: const Color(0xFF8E8E93),
+                  color: AppColors.textTertiary,
                   size: ResponsiveUtils.iconSize(context, 20),
                 ),
                 SizedBox(width: ResponsiveUtils.spacing(context, 10)),
@@ -1859,20 +2002,14 @@ class _InquiryScreenState extends State<InquiryScreen>
                     children: [
                       Text(
                         '빠른 답변을 위한 팁',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF48484A),
+                        style: AppTextStyles.listTitle(context).copyWith(
+                          color: AppColors.gray700,
                         ),
                       ),
                       SizedBox(height: ResponsiveUtils.spacing(context, 6)),
                       Text(
                         '• 문제 발생 시간과 상황을 구체적으로 작성\n• 오류 메시지가 있다면 함께 첨부\n• 업무 시간 내 1~2시간 이내 답변',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 13,
-                          color: const Color(0xFF8E8E93),
+                        style: AppTextStyles.cardCaption(context).copyWith(
                           height: 1.4,
                         ),
                       ),
@@ -1896,6 +2033,8 @@ class _InquiryScreenState extends State<InquiryScreen>
         return Icons.format_list_numbered_rounded;
       case 'price_change':
         return Icons.payments_rounded;
+      case 'item_add':
+        return Icons.add_box_rounded;
       case 'bug':
       case '오류':
         return Icons.error_outline_rounded;
@@ -1926,361 +2065,118 @@ class _InquiryScreenState extends State<InquiryScreen>
     }
 
     if (_inquiries.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 40)),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 24)),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFF007AFF).withValues(alpha: 0.05),
-                      const Color(0xFF0051D5).withValues(alpha: 0.02),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.inbox_rounded,
-                  size: ResponsiveUtils.iconSize(context, 48),
-                  color: const Color(0xFF007AFF).withValues(alpha: 0.5),
-                ),
-              ),
-              SizedBox(height: ResponsiveUtils.spacing(context, 20)),
-              Text(
-                _isAdmin ? '아직 문의가 없습니다' : '작성한 문의가 없습니다',
-                style: ResponsiveUtils.getTextStyle(
-                  context,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF1C1C1E),
-                ),
-              ),
-              SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-              Text(
-                _isAdmin 
-                    ? '직원들의 문의가 등록되면 여기에 표시됩니다' 
-                    : '문의 작성 탭에서 새로운 문의를 등록해보세요',
-                style: ResponsiveUtils.getTextStyle(
-                  context,
-                  fontSize: 14,
-                  color: const Color(0xFF8E8E93),
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
+      return FlatEmptyState(
+        message: _isAdmin ? '아직 문의가 없습니다' : '작성한 문의가 없습니다',
+        icon: Icons.inbox_rounded,
       );
     }
 
     return RefreshIndicator(
-      onRefresh: _loadInquiries,
-      color: const Color(0xFF007AFF),
+      onRefresh: () async {
+        await _loadInquiries();
+        if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+      },
+      color: AppColors.info,
       child: ListView.builder(
-        padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
-        itemCount: _inquiries.length,
+        itemCount: _inquiries.length + 1,
         itemBuilder: (context, index) {
-          final inquiry = _inquiries[index];
-          return _buildInquiryCard(inquiry);
+          if (index == 0) {
+            return FlatSectionHeader(
+              title: _isAdmin ? '전체 문의' : '내 문의 내역',
+              trailing: '${_inquiries.length}건',
+            );
+          }
+          final inquiry = _inquiries[index - 1];
+          return _buildInquiryRow(inquiry);
         },
       ),
     );
   }
 
-  /// 문의 카드
-  Widget _buildInquiryCard(Map<String, dynamic> inquiry) {
+  /// 문의 행 (flat row style)
+  Widget _buildInquiryRow(Map<String, dynamic> inquiry) {
     final createdAt = DateTime.parse(inquiry['created_at']);
     final dateStr = DateFormat('MM/dd HH:mm').format(createdAt);
     final status = inquiry['status'] ?? 'open';
     final statusLabel = InquiryService.getStatusLabel(status);
     final statusColor = Color(InquiryService.getStatusColor(status));
-    final isOpen = status == 'open';  // 대기중 상태 체크
-    
-    // 채팅형 문의로 전환되면서 답변/읽음은 notifications 기반으로 관리됨
-    // 리스트 카드에서 NEW 표시를 쓰고 싶다면, 백엔드에서 has_unread_inquiry_message 같은 필드를 내려주도록 확장 가능
+    final isOpen = status == 'open';
+
     final hasUnreadResponse =
         !_isAdmin && (inquiry['has_unread_inquiry_message'] == true);
 
-    return Container(
-      margin: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 12)),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(
-          ResponsiveUtils.spacing(context, 16),
-        ),
-        border: Border.all(
-          color: isOpen  // 대기중이면 주황색 테두리
-              ? const Color(0xFFFF9500).withValues(alpha: 0.3)
-              : hasUnreadResponse 
-                  ? const Color(0xFF007AFF).withValues(alpha: 0.3)
-                  : const Color(0xFFE5E5EA),
-          width: isOpen || hasUnreadResponse ? 1.5 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isOpen  // 대기중이면 주황색 그림자
-                ? const Color(0xFFFF9500).withValues(alpha: 0.1)
-                : hasUnreadResponse
-                    ? const Color(0xFF007AFF).withValues(alpha: 0.1)
-                    : Colors.black.withValues(alpha: 0.04),
-            blurRadius: ResponsiveUtils.spacing(context, isOpen || hasUnreadResponse ? 8 : 4),
-            offset: Offset(0, ResponsiveUtils.spacing(context, 2)),
+    // Determine chip label/color
+    String chipLabel;
+    Color chipColor;
+    if (hasUnreadResponse) {
+      chipLabel = 'NEW 답변';
+      chipColor = AppColors.error;
+    } else if (isOpen) {
+      chipLabel = '답변 대기중';
+      chipColor = AppColors.warning;
+    } else {
+      chipLabel = statusLabel;
+      chipColor = statusColor;
+    }
+
+    return Material(
+      color: Colors.white,
+      child: InkWell(
+        onTap: () => _showInquiryDetail(inquiry),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: ResponsiveUtils.spacing(context, 16),
+            vertical: ResponsiveUtils.spacing(context, 12),
           ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(
-            ResponsiveUtils.spacing(context, 16),
+          decoration: const BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
+            ),
           ),
-          onTap: () => _showInquiryDetail(inquiry),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 상단 헤더 영역
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: ResponsiveUtils.spacing(context, 16),
-                  vertical: ResponsiveUtils.spacing(context, 12),
-                ),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      statusColor.withValues(alpha: 0.05),
-                      statusColor.withValues(alpha: 0.02),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+              // 상단: 상태 칩 + 날짜
+              Row(
+                children: [
+                  Icon(
+                    _getIconForType(inquiry['inquiry_type'] ?? '기타'),
+                    size: 16,
+                    color: AppColors.info,
                   ),
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(ResponsiveUtils.spacing(context, 16)),
-                    topRight: Radius.circular(ResponsiveUtils.spacing(context, 16)),
+                  const SizedBox(width: 8),
+                  StatusChip(label: chipLabel, color: chipColor),
+                  const Spacer(),
+                  Text(
+                    dateStr,
+                    style: AppTextStyles.listSubtitle(context),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    // 문의 유형 아이콘
-                    Container(
-                      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 8)),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveUtils.spacing(context, 8),
-                        ),
-                      ),
-                      child: Icon(
-                        _getIconForType(inquiry['inquiry_type'] ?? '기타'),
-                        size: ResponsiveUtils.iconSize(context, 18),
-                        color: const Color(0xFF007AFF),
-                      ),
-                    ),
-                    SizedBox(width: ResponsiveUtils.spacing(context, 12)),
-                    // 상태 뱃지 (답변 알림 통합)
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: ResponsiveUtils.spacing(context, 10),
-                        vertical: ResponsiveUtils.spacing(context, 5),
-                      ),
-                      decoration: BoxDecoration(
-                        color: hasUnreadResponse 
-                            ? const Color(0xFFFF3B30).withValues(alpha: 0.15)
-                            : isOpen
-                                ? const Color(0xFFFF9500).withValues(alpha: 0.15)  // 대기중이면 주황색
-                                : statusColor.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveUtils.spacing(context, 20),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (isOpen && !hasUnreadResponse) ...[  // 대기중이면 시계 아이콘
-                            Icon(
-                              Icons.schedule_rounded,
-                              size: ResponsiveUtils.iconSize(context, 14),
-                              color: const Color(0xFFFF9500),
-                            ),
-                            SizedBox(width: ResponsiveUtils.spacing(context, 6)),
-                          ] else ...[
-                            Container(
-                              width: ResponsiveUtils.spacing(context, 6),
-                              height: ResponsiveUtils.spacing(context, 6),
-                              decoration: BoxDecoration(
-                                color: hasUnreadResponse 
-                                    ? const Color(0xFFFF3B30)
-                                    : statusColor,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            SizedBox(width: ResponsiveUtils.spacing(context, 6)),
-                          ],
-                          Text(
-                            hasUnreadResponse 
-                                ? 'NEW 답변' 
-                                : isOpen 
-                                    ? '답변 대기중'  // 대기중 텍스트 명확하게
-                                    : statusLabel,
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: hasUnreadResponse 
-                                  ? const Color(0xFFFF3B30)
-                                  : isOpen
-                                      ? const Color(0xFFFF9500)  // 대기중이면 주황색
-                                      : statusColor,
-                            ),
-                          ),
-                          if (hasUnreadResponse) ...[
-                            SizedBox(width: ResponsiveUtils.spacing(context, 4)),
-                            Icon(
-                              Icons.notification_important_rounded,
-                              size: ResponsiveUtils.iconSize(context, 14),
-                              color: const Color(0xFFFF3B30),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    const Spacer(),
-                    // 날짜
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.schedule_rounded,
-                          size: ResponsiveUtils.iconSize(context, 14),
-                          color: const Color(0xFF8E8E93),
-                        ),
-                        SizedBox(width: ResponsiveUtils.spacing(context, 4)),
-                        Text(
-                          dateStr,
-                          style: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: const Color(0xFF8E8E93),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                ],
               ),
-              
-              // 본문 영역
-              Padding(
-                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 제목
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            inquiry['subject'] ?? '제목 없음',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF1C1C1E),
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (hasUnreadResponse) ...[
-                          SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: ResponsiveUtils.spacing(context, 8),
-                              vertical: ResponsiveUtils.spacing(context, 3),
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFF3B30),
-                              borderRadius: BorderRadius.circular(
-                                ResponsiveUtils.spacing(context, 10),
-                              ),
-                            ),
-                            child: Text(
-                              'NEW',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    
-                    // 내용 미리보기
-                    SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-                    Text(
-                      inquiry['message'] ?? '',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 14,
-                        color: const Color(0xFF6E6E73),
-                        height: 1.4,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-
-                    // 관리자면 작성자 표시
-                    if (_isAdmin) ...[
-                      SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: ResponsiveUtils.spacing(context, 10),
-                          vertical: ResponsiveUtils.spacing(context, 6),
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF2F2F7),
-                          borderRadius: BorderRadius.circular(
-                            ResponsiveUtils.spacing(context, 8),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.person_rounded,
-                              size: ResponsiveUtils.iconSize(context, 14),
-                              color: const Color(0xFF48484A),
-                            ),
-                            SizedBox(width: ResponsiveUtils.spacing(context, 6)),
-                            Flexible(
-                              child: Text(
-                                inquiry['user_name'] ?? '알 수 없음',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF48484A),
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-
-                    // 답변 알림은 상태 뱃지에 통합됨 (중복 제거)
-                  ],
-                ),
+              const SizedBox(height: 8),
+              // 제목
+              Text(
+                inquiry['subject'] ?? '제목 없음',
+                style: AppTextStyles.listTitle(context),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
+              const SizedBox(height: 4),
+              // 내용 미리보기
+              Text(
+                inquiry['message'] ?? '',
+                style: AppTextStyles.tableCellSub(context),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              // 관리자면 작성자 표시
+              if (_isAdmin) ...[
+                const SizedBox(height: 4),
+                Text(
+                  inquiry['user_name'] ?? '알 수 없음',
+                  style: AppTextStyles.listSubtitle(context),
+                ),
+              ],
             ],
           ),
         ),

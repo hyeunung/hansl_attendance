@@ -11,11 +11,11 @@ import '../../utils/responsive_utils.dart';
 import '../../services/timer_manager.dart';
 import '../../services/ui_optimization_service.dart';
 import '../../widgets/attendance/attendance_action_buttons.dart';
-import '../../widgets/attendance/attendance_summary_card.dart';
-import '../../widgets/attendance/attendance_history_card.dart';
 import '../../widgets/attendance/attendance_statistics_widget.dart';
 import '../../widgets/attendance/personal_late_statistics.dart';
+import '../../widgets/attendance/today_absence_widget.dart';
 import '../notification/notification_center_screen.dart';
+import '../../widgets/common/notification_banner_widget.dart';
 
 class AttendanceScreenOptimized extends StatefulWidget {
   final bool autoShowCheckIn;
@@ -37,8 +37,6 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
         AutomaticKeepAliveClientMixin,
         TimerManagementMixin,
         UIOptimizationMixin {
-  String? _bannerMessage;
-  Color _bannerColor = const Color(0xFF357AE8);
   bool _isNonWorkingDay = false;
 
   // UI update frequency optimization
@@ -128,46 +126,11 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
   }
 
   void _showBanner(String msg, {bool error = false}) {
-    // Use optimized setState with throttling
-    optimizedSetState(() {
-      _bannerMessage = msg;
-      _bannerColor = error ? Colors.red : const Color(0xFF357AE8);
-    });
-
-    // Use scoped timer for banner auto-hide
-    createScopedTimer(
-      key: 'banner_hide',
-      delay: const Duration(seconds: 3),
-      callback: () {
-        if (mounted) {
-          optimizedSetState(() => _bannerMessage = null);
-        }
-      },
-      forceRestart: true, // Always restart timer for new banners
-    );
-  }
-
-  Widget _buildBanner() {
-    if (_bannerMessage == null) return const SizedBox.shrink();
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      width: double.infinity,
-      color: _bannerColor,
-      padding: EdgeInsets.symmetric(
-        vertical: ResponsiveUtils.spacing(context, 12),
-      ),
-      child: Center(
-        child: Text(
-          _bannerMessage!,
-          style: ResponsiveUtils.getTextStyle(
-            context,
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
-      ),
+    if (!mounted) return;
+    AppBanner.show(
+      context,
+      msg,
+      type: error ? BannerType.error : BannerType.success,
     );
   }
 
@@ -179,17 +142,16 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
     return Consumer2<AttendanceProvider, FontProvider>(
       builder: (context, attendanceProvider, fontProvider, _) {
         return Scaffold(
-          backgroundColor: const Color(0xFFF8F9FB),
+          backgroundColor: AppColors.backgroundPrimary,
           appBar: AppBar(
-            backgroundColor: Colors.transparent,
+            backgroundColor: Colors.white,
+            surfaceTintColor: Colors.white,
             elevation: 0,
             centerTitle: true,
-            flexibleSpace: Container(
-              decoration: const BoxDecoration(
-                gradient: AppColors.primaryGradient,
-              ),
+            shape: const Border(
+              bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
             ),
-            title: Text('근무 기록', style: AppTextStyles.appBarTitle(context)),
+            title: AppBarTitle('근무 기록'),
             actions: [
               // 알림 아이콘과 배지
               Consumer<NotificationProvider>(
@@ -203,7 +165,7 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
                         IconButton(
                           icon: const Icon(
                             Icons.notifications_outlined,
-                            color: Colors.white,
+                            color: AppColors.textPrimary,
                           ),
                           onPressed: () {
                             Navigator.push(
@@ -225,7 +187,7 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
                             child: Container(
                               padding: const EdgeInsets.all(2),
                               decoration: BoxDecoration(
-                                color: Colors.red,
+                                color: AppColors.error,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               constraints: const BoxConstraints(
@@ -238,8 +200,7 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
                                       ? '99+'
                                       : notificationProvider.unreadCount
                                             .toString(),
-                                  style: ResponsiveUtils.getTextStyle(
-                                    context,
+                                  style: AppTextStyles.compactLabel(context).copyWith(
                                     color: Colors.white,
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
@@ -258,47 +219,44 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
           ),
           body: Column(
             children: [
-              _buildBanner(),
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: () async {
                     await attendanceProvider.forceRefreshAll();
                     _showBanner('새로고침 완료');
                   },
-                  child: SingleChildScrollView(
+                  child: ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: ResponsiveUtils.spacing(context, 20),
-                      vertical: ResponsiveUtils.spacing(context, 20),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // 출근 현황 통계 - 모든 직원에게 표시
-                        AttendanceStatisticsWidget(
-                          onWorkingDayStatusChanged: (isNonWorkingDay) {
-                            setState(() {
-                              _isNonWorkingDay = isNonWorkingDay;
-                            });
-                          },
+                    padding: EdgeInsets.zero,
+                    children: [
+                      // 출근/퇴근 버튼 - 휴일/공휴일에 숨김
+                      if (!_isNonWorkingDay)
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: ResponsiveUtils.spacing(context, 16),
+                            vertical: ResponsiveUtils.spacing(context, 12),
+                          ),
+                          child: AttendanceActionButtons(onShowBanner: _showBanner),
                         ),
 
-                        const PersonalLateStatistics(),
+                      // 지각 현황 배너
+                      const PersonalLateStatistics(),
 
-                        // 출근/퇴근 버튼 - 휴일/공휴일에 숨김
-                        if (!_isNonWorkingDay) ...[
-                          AttendanceActionButtons(onShowBanner: _showBanner),
-                          SizedBox(height: ResponsiveUtils.spacing(context, 25)),
+                      // 출근 현황 통계 (플랫 테이블)
+                      AttendanceStatisticsWidget(
+                        onWorkingDayStatusChanged: (isNonWorkingDay) {
+                          setState(() {
+                            _isNonWorkingDay = isNonWorkingDay;
+                          });
+                        },
+                      ),
 
-                          // 오늘의 근무 요약 카드 - 휴일/공휴일에 숨김
-                          const AttendanceSummaryCard(),
-                        ],
-                        SizedBox(height: ResponsiveUtils.spacing(context, 25)),
+                      // 오늘의 근태현황 (연차/출장/공가)
+                      const TodayAbsenceWidget(),
 
-                        // 최근 기록 카드
-                        const AttendanceHistoryCard(),
-                      ],
-                    ),
+                      // 하단 여백
+                      SizedBox(height: ResponsiveUtils.spacing(context, 20)),
+                    ],
                   ),
                 ),
               ),

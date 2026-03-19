@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/leave_request.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_text_theme.dart';
+import '../../utils/responsive_utils.dart';
 
 /// 선택된 날짜를 칩 형태로 표시하는 위젯
 /// 날짜별로 다른 색상과 삭제 기능을 제공
@@ -16,14 +19,13 @@ class LeaveDateChipsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 날짜가 없으면 빈 위젯 반환
     if (!_hasSelectedDates()) {
       return const SizedBox.shrink();
     }
 
     return Padding(
       padding: const EdgeInsets.only(top: 8.0),
-      child: Wrap(spacing: 8, runSpacing: 8, children: _buildDateChips()),
+      child: Wrap(spacing: 8, runSpacing: 8, children: _buildDateChips(context)),
     );
   }
 
@@ -31,21 +33,23 @@ class LeaveDateChipsWidget extends StatelessWidget {
     return selectedDatesMap.values.any((dates) => dates.isNotEmpty);
   }
 
-  List<Widget> _buildDateChips() {
+  List<Widget> _buildDateChips(BuildContext context) {
     List<Widget> chips = [];
 
     selectedDatesMap.forEach((type, dates) {
       final sortedDates = dates.toList()..sort((a, b) => a.compareTo(b));
 
       for (final date in sortedDates) {
-        chips.add(_buildSingleChip(date, type));
+        chips.add(_buildSingleChip(context, date, type));
       }
     });
 
     return chips;
   }
 
-  Widget _buildSingleChip(DateTime date, LeaveType type) {
+  Widget _buildSingleChip(BuildContext context, DateTime date, LeaveType type) {
+    final typeColor = _getTypeColor(type);
+
     return Chip(
       label: Row(
         mainAxisSize: MainAxisSize.min,
@@ -55,16 +59,14 @@ class LeaveDateChipsWidget extends StatelessWidget {
             height: 8,
             margin: const EdgeInsets.only(right: 6),
             decoration: BoxDecoration(
-              color: _getTypeColor(type),
+              color: typeColor,
               shape: BoxShape.circle,
             ),
           ),
           Text(
             DateFormat('yyyy.MM.dd').format(date),
-            style: TextStyle(
-              color: _getTypeColor(type),
+            style: AppTextStyles.chipLabel(context, color: typeColor).copyWith(
               fontWeight: FontWeight.bold,
-              fontSize: 13,
             ),
           ),
           if (type.days > 0 && type.days < 1)
@@ -72,29 +74,29 @@ class LeaveDateChipsWidget extends StatelessWidget {
               margin: const EdgeInsets.only(left: 4),
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(
-                color: _getTypeColor(type).withValues(alpha: 0.2),
+                color: typeColor.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
                 type == LeaveType.halfAm ? '오전' : '오후',
-                style: TextStyle(
-                  fontSize: 11,
+                style: AppTextStyles.statLabel(context).copyWith(
+                  fontSize: ResponsiveUtils.fontSize(context, 11),
                   fontWeight: FontWeight.bold,
-                  color: _getTypeColor(type),
+                  color: typeColor,
                 ),
               ),
             ),
         ],
       ),
-      backgroundColor: _getTypeColor(type).withValues(alpha: 0.15),
+      backgroundColor: typeColor.withValues(alpha: 0.12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
         side: BorderSide(
-          color: _getTypeColor(type).withValues(alpha: 0.3),
+          color: typeColor.withValues(alpha: 0.25),
           width: 1,
         ),
       ),
-      deleteIcon: Icon(Icons.close, size: 18, color: _getTypeColor(type)),
+      deleteIcon: Icon(Icons.close, size: 18, color: typeColor),
       onDeleted: onDateRemoved != null
           ? () => onDateRemoved!(type, date)
           : null,
@@ -105,15 +107,15 @@ class LeaveDateChipsWidget extends StatelessWidget {
   Color _getTypeColor(LeaveType type) {
     switch (type) {
       case LeaveType.annual:
-        return const Color(0xFF4A90E2); // 파랑
+        return AppColors.info;
       case LeaveType.halfAm:
-        return const Color(0xFFF5A623); // 주황
+        return AppColors.warning;
       case LeaveType.halfPm:
-        return const Color(0xFF7ED321); // 초록
+        return AppColors.success;
       case LeaveType.official:
-        return const Color(0xFF9B9B9B); // 회색
+        return AppColors.textTertiary;
       default:
-        return Colors.grey;
+        return AppColors.gray400;
     }
   }
 }

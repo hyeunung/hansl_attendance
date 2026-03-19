@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
+import '../widgets/common/notification_banner_widget.dart';
 import 'package:path/path.dart' as path;
 
 /// 영수증 업로드 서비스
@@ -355,12 +356,7 @@ class ReceiptUploadService {
                   }
                 } catch (e) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('업로드 실패: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
+                    AppBanner.show(context, '업로드 실패: $e', type: BannerType.error);
                   }
                 }
               },
@@ -381,12 +377,7 @@ class ReceiptUploadService {
                 } catch (e) {
                   if (context.mounted) {
                     Navigator.pop(context); // 에러 시에만 다이얼로그 닫기
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('업로드 실패: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
+                    AppBanner.show(context, '업로드 실패: $e', type: BannerType.error);
                   }
                 }
               },

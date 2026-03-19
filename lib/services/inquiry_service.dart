@@ -658,6 +658,7 @@ class InquiryService {
       {'value': 'delivery_date_change', 'label': '입고일 변경 요청'},
       {'value': 'quantity_change', 'label': '수량 변경 요청'},
       {'value': 'price_change', 'label': '단가/합계 금액 변경 요청'},
+      {'value': 'item_add', 'label': '품목 추가 요청'},
       {'value': 'bug', 'label': '오류 신고'},
       {'value': 'modify', 'label': '수정 요청'},
       {'value': 'delete', 'label': '삭제 요청'},
@@ -710,6 +711,8 @@ class InquiryService {
         return '수량 변경 요청';
       case 'price_change':
         return '단가/합계 금액 변경 요청';
+      case 'item_add':
+        return '품목 추가 요청';
       case 'modify':
         return '수정 요청';
       case 'delete':

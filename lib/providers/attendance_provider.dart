@@ -489,7 +489,26 @@ class AttendanceProvider extends ChangeNotifier
     final todayStr =
         "${DateTime.now().year.toString().padLeft(4, '0')}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}";
 
-    // 서버사이드 시간 검증 (일단 일반 직원 기준으로 처리)
+    // 직원 직급 조회 (아르바이트 지각 기준 분기용)
+    String? employeePosition;
+    try {
+      final empData = await Supabase.instance.client
+          .from('employees')
+          .select('position')
+          .eq('id', userId)
+          .single();
+      employeePosition = empData['position'] as String?;
+    } catch (_) {}
+
+    // 지각 판정 헬퍼: 아르바이트는 9:00, 일반직원은 8:30
+    bool checkLateByPosition(int hour, int minute) {
+      if (employeePosition == '아르바이트') {
+        return hour > 9 || (hour == 9 && minute > 0);
+      }
+      return hour >= 9 || (hour == 8 && minute > 30);
+    }
+
+    // 서버사이드 시간 검증
     Map<String, dynamic> timeResult = {'isValid': true, 'isLate': false};
     if (!kDebugMode) {
       try {
@@ -498,28 +517,18 @@ class AttendanceProvider extends ChangeNotifier
         if (!timeResult['isValid']) {
           // 서버 검증 실패 시 클라이언트에서 지각 여부만 판단하고 계속 진행
           final now = DateTime.now();
-          final hour = now.hour;
-          final minute = now.minute;
-          // 일단 일반 직원 기준으로 처리 (오전반차는 나중에 레코드 확인 후 재판단)
-          isLate = hour >= 9 || (hour == 8 && minute > 30);
+          isLate = checkLateByPosition(now.hour, now.minute);
         } else {
           isLate = timeResult['isLate'] ?? false;
         }
       } catch (e) {
-        
         // 시간 검증 실패해도 출근은 허용 (시간만 클라이언트에서 체크)
         final now = DateTime.now();
-        final hour = now.hour;
-        final minute = now.minute;
-        isLate = hour >= 9 || (hour == 8 && minute > 30);
+        isLate = checkLateByPosition(now.hour, now.minute);
       }
     } else {
-      
-      // 8시 30분 이후면 지각으로 설정
       final now = DateTime.now();
-      final hour = now.hour;
-      final minute = now.minute;
-      isLate = hour >= 9 || (hour == 8 && minute > 30);
+      isLate = checkLateByPosition(now.hour, now.minute);
     }
 
     var now = DateTime.now();

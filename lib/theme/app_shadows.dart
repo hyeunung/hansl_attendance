@@ -1,33 +1,50 @@
 import 'package:flutter/material.dart';
 
+/// Apple 스타일 옅은 그림자 시스템
 class AppShadows {
-  static const BoxShadow card = BoxShadow(
-    color: Color(0x1A000000), // 검정, 10% opacity
-    blurRadius: 12,
-    offset: Offset(0, 4),
+  AppShadows._();
+
+  // ─── Single Shadows ───
+  static const BoxShadow xs = BoxShadow(
+    color: Color(0x08000000), // 3% opacity
+    blurRadius: 2,
+    offset: Offset(0, 1),
   );
 
-  static BoxShadow get button => BoxShadow(
-    color: Colors.black.withValues(alpha: 0.36),
-    blurRadius: 6,
+  static const BoxShadow sm = BoxShadow(
+    color: Color(0x0A000000), // 4% opacity
+    blurRadius: 3,
+    offset: Offset(0, 1),
+  );
+
+  static const BoxShadow md = BoxShadow(
+    color: Color(0x0F000000), // 6% opacity
+    blurRadius: 4,
     offset: Offset(0, 2),
   );
 
-  static const BoxShadow light = BoxShadow(
-    color: Color(0x0D000000), // 검정, 5% opacity
+  static const BoxShadow lg = BoxShadow(
+    color: Color(0x12000000), // 7% opacity
     blurRadius: 6,
-    offset: Offset(0, 2),
+    offset: Offset(0, 3),
   );
 
-  static const BoxShadow strong = BoxShadow(
-    color: Color(0x33000000), // 검정, 20% opacity
-    blurRadius: 24,
-    offset: Offset(0, 8),
-  );
+  // ─── Legacy Aliases (기존 코드 호환) ───
+  static const BoxShadow card = md;
+  static BoxShadow get button => sm;
+  static const BoxShadow light = xs;
+  static const BoxShadow strong = lg;
 
-  // 여러 그림자 조합이 필요할 때 리스트로도 제공
+  // ─── Shadow Lists ───
   static List<BoxShadow> cardShadow = [card];
   static List<BoxShadow> buttonShadow = [button];
   static List<BoxShadow> lightShadow = [light];
   static List<BoxShadow> strongShadow = [strong];
+
+  // ─── New Apple-Style Lists ───
+  static const List<BoxShadow> none = [];
+  static const List<BoxShadow> xsShadow = [xs];
+  static const List<BoxShadow> smShadow = [sm];
+  static const List<BoxShadow> mdShadow = [md];
+  static const List<BoxShadow> lgShadow = [lg];
 }

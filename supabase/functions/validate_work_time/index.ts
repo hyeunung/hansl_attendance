@@ -47,10 +47,10 @@ serve(async (req) => {
       let hasHalfAm = false;
       
       try {
-        // employeeId로 직원 이메일 조회
+        // employeeId로 직원 이메일, 직급 조회
         const { data: employee, error: empError } = await supabase
           .from('employees')
-          .select('email')
+          .select('email, position')
           .eq('id', employeeId)
           .single();
         
@@ -82,6 +82,11 @@ serve(async (req) => {
           if (currentHour > 13 || (currentHour === 13 && currentMinute > 30)) {
             isLate = true; // 13:30 이후는 지각
             message = '오전반차 출근 시간(13:30)을 초과했습니다.';
+          }
+        } else if (employee?.position === '아르바이트') {
+          // 아르바이트: 9:00까지 정상출근, 9:01부터 지각
+          if (currentHour > 9 || (currentHour === 9 && currentMinute > 0)) {
+            isLate = true; // 9:00 초과는 지각
           }
         } else {
           // 일반 출근: 8:30 이후는 지각

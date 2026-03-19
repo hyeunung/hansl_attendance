@@ -3,8 +3,11 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../providers/user_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
+import '../shared/flat_section.dart';
 import '../../utils/user_role_helper.dart';
+import '../../widgets/common/notification_banner_widget.dart';
 import 'package:intl/intl.dart';
 
 // 구매대기 위젯
@@ -214,10 +217,9 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
         Container(
           padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFF4E6),
-            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+            color: AppColors.warningLight,
             border: Border.all(
-              color: const Color(0xFFFF9500).withValues(alpha: 0.3),
+              color: AppColors.warning.withValues(alpha: 0.3),
               width: 1,
             ),
           ),
@@ -231,28 +233,23 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                     children: [
                       Icon(
                         Icons.shopping_cart_outlined,
-                        color: const Color(0xFFFF9500),
+                        color: AppColors.warning,
                         size: ResponsiveUtils.iconSize(context, 18),
                       ),
                       SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                       Text(
                         '구매 진행률',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFFFF9500),
+                        style: AppTextStyles.listTitle(context).copyWith(
+                          color: AppColors.warning,
                         ),
                       ),
                     ],
                   ),
                   Text(
                     '${percentage}% (${completedItems}/${totalItems})',
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 14,
+                    style: AppTextStyles.inputLabel(context).copyWith(
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFFFF9500),
+                      color: AppColors.warning,
                     ),
                   ),
                 ],
@@ -262,13 +259,13 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
               Container(
                 height: ResponsiveUtils.spacing(context, 8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFE4B5),
+                  color: AppColors.warningLight,
                   borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 4)),
                 ),
                 child: LinearProgressIndicator(
                   value: percentage / 100,
                   backgroundColor: Colors.transparent,
-                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF9500)),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.warning),
                   borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 4)),
                 ),
               ),
@@ -284,17 +281,15 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                           width: ResponsiveUtils.spacing(context, 8),
                           height: ResponsiveUtils.spacing(context, 8),
                           decoration: const BoxDecoration(
-                            color: Color(0xFFFFE4B5),
+                            color: AppColors.warningLight,
                             shape: BoxShape.circle,
                           ),
                         ),
                         SizedBox(width: ResponsiveUtils.spacing(context, 6)),
                         Text(
                           '대기: ${pendingItems}건',
-                          style: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontSize: 12,
-                            color: const Color(0xFF8B5A2B),
+                          style: AppTextStyles.tableHeader(context).copyWith(
+                            color: AppColors.gray700,
                           ),
                         ),
                       ],
@@ -308,17 +303,15 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                           width: ResponsiveUtils.spacing(context, 8),
                           height: ResponsiveUtils.spacing(context, 8),
                           decoration: const BoxDecoration(
-                            color: Color(0xFFFF9500),
+                            color: AppColors.warning,
                             shape: BoxShape.circle,
                           ),
                         ),
                         SizedBox(width: ResponsiveUtils.spacing(context, 6)),
                         Text(
                           '완료: ${completedItems}건',
-                          style: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontSize: 12,
-                            color: const Color(0xFF8B5A2B),
+                          style: AppTextStyles.tableHeader(context).copyWith(
+                            color: AppColors.gray700,
                           ),
                         ),
                       ],
@@ -362,16 +355,14 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
             children: [
               Icon(
                 Icons.info_outline,
-                color: const Color(0xFF8E8E93),
+                color: AppColors.textTertiary,
                 size: ResponsiveUtils.iconSize(context, 16),
               ),
               SizedBox(width: ResponsiveUtils.spacing(context, 6)),
               Text(
                 percentage == 100 ? '모든 품목이 구매완료되었습니다' : '미완료 품목: ${pendingItems.length}건',
-                style: ResponsiveUtils.getTextStyle(
-                  context,
-                  fontSize: 12,
-                  color: const Color(0xFF8E8E93),
+                style: AppTextStyles.tableHeader(context).copyWith(
+                  color: AppColors.textTertiary,
                 ),
               ),
             ],
@@ -383,15 +374,10 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
             onPressed: () => _completeAllPayment(items),
             child: Text(
               '전체구매완료',
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
+              style: AppTextStyles.chipLabel(context, color: Colors.white),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF007AFF),
+              backgroundColor: AppColors.info,
               padding: EdgeInsets.symmetric(
                 horizontal: ResponsiveUtils.spacing(context, 16),
                 vertical: ResponsiveUtils.spacing(context, 8),
@@ -413,9 +399,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
       
       if (pendingItems.isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('이미 모든 품목이 구매완료되었습니다')),
-          );
+          AppBanner.show(context, '이미 모든 품목이 구매완료되었습니다', type: BannerType.info);
         }
         return;
       }
@@ -452,18 +436,14 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${pendingItems.length}건의 품목이 구매완료 처리되었습니다')),
-        );
+        AppBanner.show(context, '${pendingItems.length}건의 품목이 구매완료 처리되었습니다', type: BannerType.success);
       }
 
       // 데이터 새로고침
       await _loadPurchaseItems();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('전체구매완료 처리 중 오류가 발생했습니다')),
-        );
+        AppBanner.show(context, '전체구매완료 처리 중 오류가 발생했습니다', type: BannerType.error);
       }
     }
   }
@@ -500,9 +480,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('구매 완료 처리되었습니다')),
-        );
+        AppBanner.show(context, '구매 완료 처리되었습니다', type: BannerType.success);
       }
 
       // 데이터 새로고침
@@ -510,9 +488,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
     } catch (e) {
       // 에러 로깅 제거됨 (Production 코드)
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('구매완료 처리 중 오류가 발생했습니다')),
-        );
+        AppBanner.show(context, '구매완료 처리 중 오류가 발생했습니다', type: BannerType.error);
       }
     }
   }
@@ -535,21 +511,19 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: '발주번호, 업체명, 요청자, 품목명, 규격, 수량, 금액 검색...',
-                hintStyle: ResponsiveUtils.getTextStyle(
-                  context,
-                  fontSize: 12,
-                  color: const Color(0xFF8E8E93),
+                hintStyle: AppTextStyles.tableHeader(context).copyWith(
+                  color: AppColors.textTertiary,
                 ),
                 prefixIcon: Icon(
                   Icons.search,
-                  color: const Color(0xFF8E8E93),
+                  color: AppColors.textTertiary,
                   size: ResponsiveUtils.iconSize(context, 18),
                 ),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
                         icon: Icon(
                           Icons.clear, 
-                          color: const Color(0xFF8E8E93),
+                          color: AppColors.textTertiary,
                           size: ResponsiveUtils.iconSize(context, 18),
                         ),
                         onPressed: () {
@@ -559,28 +533,26 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                     : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                  borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                  borderSide: BorderSide(color: AppColors.border),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                  borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                  borderSide: BorderSide(color: AppColors.border),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                   borderSide: const BorderSide(color: AppColors.primary),
                 ),
                 filled: true,
-                fillColor: const Color(0xFFF8F9FA),
+                fillColor: AppColors.backgroundSecondary,
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: ResponsiveUtils.spacing(context, 12),
                   vertical: ResponsiveUtils.spacing(context, 6),
                 ),
                 isDense: true,
               ),
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 13,
-                color: const Color(0xFF1C1C1E),
+              style: AppTextStyles.cardCaption(context).copyWith(
+                color: AppColors.textPrimary,
               ),
             ),
           ),
@@ -594,15 +566,13 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                 Icon(
                   Icons.search,
                   size: ResponsiveUtils.iconSize(context, 16),
-                  color: const Color(0xFF8E8E93),
+                  color: AppColors.textTertiary,
                 ),
                 SizedBox(width: ResponsiveUtils.spacing(context, 4)),
                 Text(
                   '검색결과: ${_filteredItemsByOrder.length}건',
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontSize: 12,
-                    color: const Color(0xFF8E8E93),
+                  style: AppTextStyles.tableHeader(context).copyWith(
+                    color: AppColors.textTertiary,
                   ),
                 ),
               ],
@@ -621,7 +591,10 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
 
     if (_itemsByOrder.isEmpty) {
       return RefreshIndicator(
-        onRefresh: _loadPurchaseItems,
+        onRefresh: () async {
+          await _loadPurchaseItems();
+          if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+        },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.symmetric(
@@ -636,17 +609,12 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                   Icon(
                     Icons.shopping_cart_outlined,
                     size: ResponsiveUtils.iconSize(context, 80),
-                    color: const Color(0xFFE0E0E0),
+                    color: AppColors.border,
                   ),
                   SizedBox(height: ResponsiveUtils.spacing(context, 20)),
                   Text(
                     '구매대기 항목이 없습니다',
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF333333),
-                    ),
+                    style: AppTextStyles.cardTitle(context),
                   ),
                 ],
               ),
@@ -658,7 +626,10 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
 
     if (itemsToShow.isEmpty && _searchQuery.isNotEmpty) {
       return RefreshIndicator(
-        onRefresh: _loadPurchaseItems,
+        onRefresh: () async {
+          await _loadPurchaseItems();
+          if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+        },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.symmetric(
@@ -673,26 +644,17 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                   Icon(
                     Icons.search_off,
                     size: ResponsiveUtils.iconSize(context, 80),
-                    color: const Color(0xFFE0E0E0),
+                    color: AppColors.border,
                   ),
                   SizedBox(height: ResponsiveUtils.spacing(context, 20)),
                   Text(
                     '검색 결과가 없습니다',
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF333333),
-                    ),
+                    style: AppTextStyles.cardTitle(context),
                   ),
                   SizedBox(height: ResponsiveUtils.spacing(context, 8)),
                   Text(
                     '다른 검색어를 시도해보세요',
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 14,
-                      color: const Color(0xFF8E8E93),
-                    ),
+                    style: AppTextStyles.emptyState(context),
                   ),
                 ],
               ),
@@ -715,23 +677,12 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
           final dateFormat = DateFormat('yyyy-MM-dd');
 
           return Container(
-            margin: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 12)),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-              border: Border.all(
-                color: isExpanded ? AppColors.primary.withValues(alpha: 0.3) : const Color(0xFFE5E7EB),
-                width: isExpanded ? 2 : 1,
+              border: Border(
+                bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
+                left: isExpanded ? BorderSide(color: AppColors.primary, width: 3) : BorderSide.none,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: isExpanded 
-                    ? AppColors.primary.withValues(alpha: 0.1)
-                    : const Color(0xFF000000).withValues(alpha: 0.03),
-                  blurRadius: isExpanded ? 12 : 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
             ),
             child: Column(
               children: [
@@ -742,10 +693,6 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                       _expandedOrders[orderNumber] = !isExpanded;
                     });
                   },
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(ResponsiveUtils.spacing(context, 12)),
-                    bottom: isExpanded ? Radius.zero : Radius.circular(ResponsiveUtils.spacing(context, 12)),
-                  ),
                   child: Container(
                     padding: EdgeInsets.fromLTRB(
                       ResponsiveUtils.spacing(context, 20),
@@ -754,11 +701,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                       ResponsiveUtils.spacing(context, 8),
                     ),
                     decoration: BoxDecoration(
-                      color: isExpanded ? const Color(0xFFF8FAFC) : Colors.white,
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(ResponsiveUtils.spacing(context, 12)),
-                        bottom: isExpanded ? Radius.zero : Radius.circular(ResponsiveUtils.spacing(context, 12)),
-                      ),
+                      color: isExpanded ? AppColors.backgroundSecondary : Colors.white,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -776,19 +719,14 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                                     children: [
                                       Icon(
                                         Icons.shopping_cart,
-                                        color: const Color(0xFFFF9500),
+                                        color: AppColors.warning,
                                         size: ResponsiveUtils.iconSize(context, 20),
                                       ),
                                       SizedBox(width: ResponsiveUtils.spacing(context, 6)),
                                       Expanded(
                                         child: Text(
                                           orderNumber,
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: const Color(0xFF1C1C1E),
-                                          ),
+                                          style: AppTextStyles.cardTitle(context),
                                         ),
                                       ),
                                     ],
@@ -799,18 +737,15 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                                     children: [
                                       Icon(
                                         Icons.business,
-                                        color: const Color(0xFF8E8E93),
+                                        color: AppColors.textTertiary,
                                         size: ResponsiveUtils.iconSize(context, 16),
                                       ),
                                       SizedBox(width: ResponsiveUtils.spacing(context, 6)),
                                       Expanded(
                                         child: Text(
                                           firstItem['vendor_name'] ?? '업체명 없음',
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w500,
-                                            color: const Color(0xFF4B5563),
+                                          style: AppTextStyles.listTitle(context).copyWith(
+                                            color: AppColors.gray700,
                                           ),
                                         ),
                                       ),
@@ -827,34 +762,24 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                           children: [
                             Icon(
                               Icons.person_outline,
-                              color: const Color(0xFF8E8E93),
+                              color: AppColors.textTertiary,
                               size: ResponsiveUtils.iconSize(context, 16),
                             ),
                             SizedBox(width: ResponsiveUtils.spacing(context, 6)),
                             Text(
                               firstItem['requester_name'] ?? '요청자 없음',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: const Color(0xFF4B5563),
-                              ),
+                              style: AppTextStyles.tableCellSub(context),
                             ),
                             SizedBox(width: ResponsiveUtils.spacing(context, 16)),
                             Icon(
                               Icons.calendar_today_outlined,
-                              color: const Color(0xFF8E8E93),
+                              color: AppColors.textTertiary,
                               size: ResponsiveUtils.iconSize(context, 16),
                             ),
                             SizedBox(width: ResponsiveUtils.spacing(context, 6)),
                             Text(
                               dateFormat.format(DateTime.parse(firstItem['request_date'])),
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: const Color(0xFF4B5563),
-                              ),
+                              style: AppTextStyles.tableCellSub(context),
                             ),
                           ],
                         ),
@@ -866,7 +791,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                         Center(
                           child: Icon(
                             isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                            color: const Color(0xFF8E8E93),
+                            color: AppColors.textTertiary,
                             size: ResponsiveUtils.iconSize(context, 20),
                           ),
                         ),
@@ -880,7 +805,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                     decoration: BoxDecoration(
                       border: Border(
                         top: BorderSide(
-                          color: const Color(0xFFE0E0E0).withValues(alpha: 0.5),
+                          color: AppColors.border.withValues(alpha: 0.5),
                           width: 0.5,
                         ),
                       ),
@@ -899,7 +824,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                         return Container(
                           padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
                           decoration: BoxDecoration(
-                            color: isCompleted ? const Color(0xFFF0F9FF) : Colors.transparent,
+                            color: isCompleted ? AppColors.infoLight : Colors.transparent,
                           ),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -910,7 +835,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                                 width: ResponsiveUtils.spacing(context, 20),
                                 height: ResponsiveUtils.spacing(context, 20),
                                 decoration: BoxDecoration(
-                                  color: isCompleted ? const Color(0xFFFF9500) : const Color(0xFFE0E0E0),
+                                  color: isCompleted ? AppColors.warning : AppColors.border,
                                   shape: BoxShape.circle,
                                 ),
                               ),
@@ -920,23 +845,15 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                                   children: [
                                     Text(
                                       '${itemIndex + 1}. ${item['item_name']}',
-                                      style: ResponsiveUtils.getTextStyle(
-                                        context,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: isCompleted ? const Color(0xFF666666) : const Color(0xFF1C1C1E),
-                                      ).copyWith(
+                                      style: AppTextStyles.tableCell(context, color: isCompleted ? AppColors.textSecondary : null).copyWith(
                                         decoration: isCompleted ? TextDecoration.lineThrough : null,
                                       ),
                                     ),
                                     if (item['specification'] != null)
                                       Text(
                                         '규격: ${item['specification']}',
-                                        style: ResponsiveUtils.getTextStyle(
-                                          context,
-                                          fontSize: 14,
-                                          color: isCompleted ? const Color(0xFF999999) : const Color(0xFF666666),
-                                        ).copyWith(
+                                        style: AppTextStyles.tableCellSub(context).copyWith(
+                                          color: isCompleted ? AppColors.textTertiary : null,
                                           decoration: isCompleted ? TextDecoration.lineThrough : null,
                                         ),
                                       ),
@@ -945,22 +862,16 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                                       children: [
                                         Text(
                                           '수량: ${item['quantity']}',
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 13,
-                                            color: isCompleted ? const Color(0xFF999999) : const Color(0xFF666666),
-                                          ).copyWith(
+                                          style: AppTextStyles.listSubtitle(context).copyWith(
+                                            color: isCompleted ? AppColors.textTertiary : AppColors.textSecondary,
                                             decoration: isCompleted ? TextDecoration.lineThrough : null,
                                           ),
                                         ),
                                         SizedBox(width: ResponsiveUtils.spacing(context, 12)),
                                         Text(
                                           '단가: ${numberFormat.format(item['unit_price_value'])}원',
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 13,
-                                            color: isCompleted ? const Color(0xFF999999) : const Color(0xFF666666),
-                                          ).copyWith(
+                                          style: AppTextStyles.listSubtitle(context).copyWith(
+                                            color: isCompleted ? AppColors.textTertiary : AppColors.textSecondary,
                                             decoration: isCompleted ? TextDecoration.lineThrough : null,
                                           ),
                                         ),
@@ -968,11 +879,9 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                                     ),
                                     Text(
                                       '금액: ${numberFormat.format(item['amount_value'])}원',
-                                      style: ResponsiveUtils.getTextStyle(
-                                        context,
-                                        fontSize: 14,
+                                      style: AppTextStyles.tableCellSub(context).copyWith(
                                         fontWeight: FontWeight.w600,
-                                        color: isCompleted ? const Color(0xFF999999) : const Color(0xFFFF9500),
+                                        color: isCompleted ? AppColors.textTertiary : AppColors.warning,
                                       ).copyWith(
                                         decoration: isCompleted ? TextDecoration.lineThrough : null,
                                       ),
@@ -986,7 +895,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                                 ElevatedButton(
                                   onPressed: () => _completePaymentForItem(orderNumber, item['id']),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF007AFF),
+                                    backgroundColor: AppColors.info,
                                     padding: EdgeInsets.symmetric(
                                       horizontal: ResponsiveUtils.spacing(context, 12),
                                       vertical: ResponsiveUtils.spacing(context, 6),
@@ -997,9 +906,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                                   ),
                                   child: Text(
                                     '구매완료',
-                                    style: ResponsiveUtils.getTextStyle(
-                                      context,
-                                      fontSize: 12,
+                                    style: AppTextStyles.tableHeader(context).copyWith(
                                       fontWeight: FontWeight.w600,
                                       color: Colors.white,
                                     ),
@@ -1007,28 +914,9 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                                 )
                               else
                                 // 완료 배지
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: ResponsiveUtils.spacing(context, 12),
-                                    vertical: ResponsiveUtils.spacing(context, 8),
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFF9500).withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                                    border: Border.all(
-                                      color: const Color(0xFFFF9500).withValues(alpha: 0.3),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    '완료됨',
-                                    style: ResponsiveUtils.getTextStyle(
-                                      context,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFFFF9500),
-                                    ),
-                                  ),
+                                StatusChip(
+                                  label: '완료됨',
+                                  color: AppColors.success,
                                 ),
                             ],
                           ),

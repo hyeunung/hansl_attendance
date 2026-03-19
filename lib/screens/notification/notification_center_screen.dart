@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
+import '../../widgets/common/notification_banner_widget.dart';
+import '../../widgets/shared/flat_section.dart';
 import '../main_tab.dart';
 
 class NotificationCenterScreen extends StatefulWidget {
@@ -113,9 +116,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
       });
 
       if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('모든 알림을 읽음으로 표시했습니다')));
+      AppBanner.show(context, '모든 알림을 읽음으로 표시했습니다', type: BannerType.info);
     } catch (e) {
       // Debug print removed
     }
@@ -129,9 +130,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
         _notifications.removeWhere((n) => n['id'] == notificationId);
       });
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('알림을 삭제했습니다')));
+      AppBanner.show(context, '알림을 삭제했습니다', type: BannerType.info);
     } catch (e) {
       // Debug print removed
     }
@@ -141,7 +140,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
     switch (type) {
       case 'leave_request':
       case 'annual':
-        return '🏖️';
+        return '🏖';
       case 'business_trip':
       case 'biztrip':
         return '🚗';
@@ -167,16 +166,16 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
     switch (type) {
       case 'leave_request':
       case 'annual':
-        return Colors.blue;
+        return AppColors.info;
       case 'business_trip':
       case 'biztrip':
-        return Colors.orange;
+        return AppColors.warning;
       case 'leave_result':
-        return Colors.green;
+        return AppColors.success;
       case 'purchase_requests':
       case 'purchase_approval':
       case 'final_approval_request':
-        return Colors.purple;
+        return AppColors.purple;
       case 'purchase_approved':
       case 'purchase_result':
         return Colors.teal;
@@ -185,7 +184,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
       case 'multiple_notifications':
         return Colors.indigo;
       default:
-        return Colors.grey;
+        return AppColors.gray500;
     }
   }
 
@@ -214,45 +213,33 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
         .length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: AppColors.backgroundPrimary,
       appBar: AppBar(
-        title: Text(
-          '알림',
-          style: ResponsiveUtils.getTextStyle(context, fontSize: 18, fontWeight: FontWeight.w600),
-        ),
+        title: AppBarTitle('알림'),
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        surfaceTintColor: Colors.white,
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
         actions: [
           if (unreadCount > 0)
             TextButton(
               onPressed: _markAllAsRead,
-              child: Text('모두 읽음', style: ResponsiveUtils.getTextStyle(context, fontSize: 14)),
+              child: Text('모두 읽음', style: AppTextStyles.tableCellSub(context)),
             ),
         ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _notifications.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.notifications_none,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    '알림이 없습니다',
-                    style: ResponsiveUtils.getTextStyle(context, fontSize: 16, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            )
+          ? FlatEmptyState(
+                message: '알림이 없습니다',
+                icon: Icons.notifications_none,
+              )
           : RefreshIndicator(
-              onRefresh: _loadNotifications,
+              onRefresh: () async {
+                await _loadNotifications();
+                if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+              },
               child: ListView.builder(
                 itemCount: _notifications.length,
                 itemBuilder: (context, index) {
@@ -262,12 +249,15 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                       _normalizeNewlines((notification['title'] ?? '').toString());
                   final body =
                       _normalizeNewlines((notification['body'] ?? '').toString());
+                  final notifColor = _getNotificationColor(
+                    notification['type'] ?? '',
+                  );
 
                   return Dismissible(
                     key: Key(notification['id'].toString()),
                     direction: DismissDirection.endToStart,
                     background: Container(
-                      color: Colors.red,
+                      color: AppColors.error,
                       alignment: Alignment.centerRight,
                       padding: const EdgeInsets.only(right: 20),
                       child: const Icon(Icons.delete, color: Colors.white),
@@ -284,29 +274,30 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                         _handleNotificationTap(notification);
                       },
                       child: Container(
-                        color: isRead ? Colors.white : const Color(0xFFF0F8FF),
+                        color: isRead ? Colors.white : AppColors.infoLight,
                         child: Column(
                           children: [
                             Padding(
-                              padding: const EdgeInsets.all(16),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: ResponsiveUtils.spacing(context, 16),
+                                vertical: ResponsiveUtils.spacing(context, 12),
+                              ),
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Container(
-                                    width: 40,
-                                    height: 40,
+                                    width: 36,
+                                    height: 36,
                                     decoration: BoxDecoration(
-                                      color: _getNotificationColor(
-                                        notification['type'] ?? '',
-                                      ).withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(20),
+                                      color: notifColor.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(18),
                                     ),
                                     child: Center(
                                       child: Text(
                                         _getNotificationIcon(
                                           notification['type'] ?? '',
                                         ),
-                                        style: ResponsiveUtils.getTextStyle(context, fontSize: 20),
+                                        style: const TextStyle(fontSize: 18),
                                       ),
                                     ),
                                   ),
@@ -321,16 +312,9 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                             Expanded(
                                               child: Text(
                                                 title,
-                                                style: ResponsiveUtils.getTextStyle(
-                                                  context,
-                                                  fontSize: 15,
-                                                  fontWeight: isRead
-                                                      ? FontWeight.w500
-                                                      : FontWeight.w600,
-                                                  color: isRead
-                                                      ? Colors.grey[700]
-                                                      : Colors.black,
-                                                ),
+                                                style: isRead
+                                                    ? AppTextStyles.tableCellSub(context)
+                                                    : AppTextStyles.listTitle(context),
                                               ),
                                             ),
                                             if (!isRead)
@@ -348,13 +332,11 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                         const SizedBox(height: 4),
                                         Text(
                                           body,
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 14,
-                                            color: isRead
-                                                ? Colors.grey[600]
-                                                : Colors.grey[700],
-                                          ),
+                                          style: isRead
+                                              ? AppTextStyles.listSubtitle(context)
+                                              : AppTextStyles.tableCellSub(context).copyWith(
+                                                  color: AppColors.gray700,
+                                                ),
                                           softWrap: true,
                                           maxLines: 3,
                                           overflow: TextOverflow.ellipsis,
@@ -364,11 +346,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                           _formatDate(
                                             notification['created_at'],
                                           ),
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 12,
-                                            color: Colors.grey[500],
-                                          ),
+                                          style: AppTextStyles.listSubtitle(context),
                                         ),
                                       ],
                                     ),
@@ -376,7 +354,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                 ],
                               ),
                             ),
-                            Divider(height: 1, color: Colors.grey[300]),
+                            const Divider(height: 0.5, thickness: 0.5, color: AppColors.borderLight),
                           ],
                         ),
                       ),
@@ -391,7 +369,6 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
   void _handleNotificationTap(Map<String, dynamic> notification) async {
     // 알림 타입에 따라 적절한 화면으로 이동
     final type = notification['type'] ?? '';
-    // final data = notification['data'] ?? {}; // 미사용 변수 주석 처리
 
     // 먼저 현재 사용자 정보와 권한 가져오기
     final user = _supabase.auth.currentUser;

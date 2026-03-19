@@ -9,6 +9,8 @@ import 'transaction_statements/transaction_statement_screen.dart';
 import 'calendar/calendar_screen.dart';
 import 'settings/settings_screen.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_decorations.dart';
+import '../theme/app_text_theme.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/attendance_provider.dart';
@@ -20,6 +22,7 @@ import '../utils/responsive_utils.dart';
 import '../utils/user_role_helper.dart';
 import '../services/notification_service.dart';
 import '../services/badge_count_service.dart';
+import '../widgets/common/notification_banner_widget.dart';
 
 // KeepAlive 위젯 정의
 class KeepAlive extends StatefulWidget {
@@ -248,12 +251,7 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
       await Future.wait(futures);
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('모든 데이터가 새로고침되었습니다'),
-            duration: Duration(seconds: 1),
-          ),
-        );
+        AppBanner.show(context, '모든 데이터가 새로고침되었습니다', type: BannerType.success);
       }
     } catch (e) {
       // Debug code removed
@@ -281,9 +279,9 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
     // 초기화가 완료되지 않았으면 빈 컨테이너 (깜빡임 방지)
     if (!_isInitialized || _screens == null) {
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.backgroundPrimary,
         body: Container(
-          color: Colors.white,
+          color: AppColors.backgroundPrimary,
           width: double.infinity,
           height: double.infinity,
         ),
@@ -468,7 +466,7 @@ final List<dynamic> attendanceRoles =
           ),
           child: Icon(
             Icons.access_time,
-            color: _currentIndex == 0 ? const Color(0xFFFF9500) : Colors.grey,
+            color: _currentIndex == 0 ? AppColors.primary : AppColors.gray400,
           ),
         ),
         label: '',
@@ -481,7 +479,7 @@ final List<dynamic> attendanceRoles =
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Icon(
             Icons.beach_access,
-            color: _currentIndex == 1 ? AppColors.primary : Colors.grey,
+            color: _currentIndex == 1 ? AppColors.primary : AppColors.gray400,
           ),
         ),
         label: '',
@@ -497,7 +495,7 @@ final List<dynamic> attendanceRoles =
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Icon(
               Icons.check_circle,
-              color: _currentIndex == 2 ? const Color(0xFF34C759) : Colors.grey,
+              color: _currentIndex == 2 ? AppColors.primary : AppColors.gray400,
             ),
           ),
           label: '',
@@ -511,7 +509,7 @@ final List<dynamic> attendanceRoles =
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Icon(
               Icons.description,
-              color: _currentIndex == 3 ? AppColors.primary : Colors.grey,
+              color: _currentIndex == 3 ? AppColors.primary : AppColors.gray400,
             ),
           ),
           label: '',
@@ -526,8 +524,8 @@ final List<dynamic> attendanceRoles =
             child: Icon(
               Icons.calendar_today,
               color: _currentIndex == 4
-                  ? const Color(0xFFFF3B30)
-                  : Colors.grey,
+                  ? AppColors.primary
+                  : AppColors.gray400,
             ),
           ),
           label: '',
@@ -542,8 +540,8 @@ final List<dynamic> attendanceRoles =
             child: Icon(
               Icons.settings,
               color: _currentIndex == 5
-                  ? const Color(0xFF8E8E93)
-                  : Colors.grey,
+                  ? AppColors.primary
+                  : AppColors.gray400,
             ),
           ),
           label: '',
@@ -560,7 +558,7 @@ final List<dynamic> attendanceRoles =
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Icon(
                 Icons.check_circle,
-                color: _currentIndex == 2 ? const Color(0xFF9C27B0) : Colors.grey,
+                color: _currentIndex == 2 ? AppColors.primary : AppColors.gray400,
               ),
             ),
             label: '',
@@ -573,7 +571,7 @@ final List<dynamic> attendanceRoles =
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Icon(
                 Icons.check_circle,
-                color: _currentIndex == 2 ? const Color(0xFF34C759) : Colors.grey,
+                color: _currentIndex == 2 ? AppColors.primary : AppColors.gray400,
               ),
             ),
             label: '',
@@ -588,7 +586,7 @@ final List<dynamic> attendanceRoles =
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Icon(
               Icons.description,
-              color: _currentIndex == 3 ? AppColors.primary : Colors.grey,
+              color: _currentIndex == 3 ? AppColors.primary : AppColors.gray400,
             ),
           ),
           label: '',
@@ -605,7 +603,7 @@ final List<dynamic> attendanceRoles =
               child: Icon(
                 Icons.receipt_long,
                 color:
-                    _currentIndex == 4 ? const Color(0xFFFF9500) : Colors.grey,
+                    _currentIndex == 4 ? AppColors.primary : AppColors.gray400,
               ),
             ),
             label: '',
@@ -620,8 +618,8 @@ final List<dynamic> attendanceRoles =
               child: Icon(
                 Icons.calendar_today,
                 color: _currentIndex == 5
-                    ? const Color(0xFFFF3B30)
-                    : Colors.grey,
+                    ? AppColors.primary
+                    : AppColors.gray400,
               ),
             ),
             label: '',
@@ -636,8 +634,8 @@ final List<dynamic> attendanceRoles =
               child: Icon(
                 Icons.settings,
                 color: _currentIndex == 6
-                    ? const Color(0xFF8E8E93)
-                    : Colors.grey,
+                    ? AppColors.primary
+                    : AppColors.gray400,
               ),
             ),
             label: '',
@@ -653,8 +651,8 @@ final List<dynamic> attendanceRoles =
               child: Icon(
                 Icons.calendar_today,
                 color: _currentIndex == 4
-                    ? const Color(0xFFFF3B30)
-                    : Colors.grey,
+                    ? AppColors.primary
+                    : AppColors.gray400,
               ),
             ),
             label: '',
@@ -669,8 +667,8 @@ final List<dynamic> attendanceRoles =
               child: Icon(
                 Icons.settings,
                 color: _currentIndex == 5
-                    ? const Color(0xFF8E8E93)
-                    : Colors.grey,
+                    ? AppColors.primary
+                    : AppColors.gray400,
               ),
             ),
             label: '',
@@ -701,12 +699,7 @@ final List<dynamic> attendanceRoles =
       ),
       bottomNavigationBar: RepaintBoundary(
         child: Container(
-          decoration: const BoxDecoration(
-            border: Border(
-              top: BorderSide(color: Color(0xFFE0E0E0), width: 1.5),
-            ),
-            color: Colors.white,
-          ),
+          decoration: AppDecorations.bottomNavBar,
           child: BottomNavigationBar(
             backgroundColor: Colors.white,
             currentIndex: _currentIndex,
@@ -714,8 +707,8 @@ final List<dynamic> attendanceRoles =
             type: BottomNavigationBarType.fixed,
             selectedFontSize: 14,
             unselectedFontSize: 14,
-            selectedLabelStyle: ResponsiveUtils.getTextStyle(context, fontSize: 12, fontWeight: FontWeight.w600),
-            unselectedLabelStyle: ResponsiveUtils.getTextStyle(context, fontSize: 12, fontWeight: FontWeight.w600),
+            selectedLabelStyle: AppTextStyles.compactLabel(context).copyWith(fontSize: 12, fontWeight: FontWeight.w600),
+            unselectedLabelStyle: AppTextStyles.compactLabel(context).copyWith(fontSize: 12, fontWeight: FontWeight.w600),
             selectedIconTheme: IconThemeData(
               size: ResponsiveUtils.iconSize(context, 30),
             ),

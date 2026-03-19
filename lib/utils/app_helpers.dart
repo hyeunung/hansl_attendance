@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
+import '../widgets/common/notification_banner_widget.dart';
 
 /// 앱 전체에서 사용하는 공통 헬퍼 클래스
 class AppHelpers {
@@ -46,13 +47,13 @@ class AppHelpers {
   /// 공통 구분선
   static Widget get divider => Container(
     height: 1,
-    color: const Color(0xFFEEEEEE),
+    color: const Color(0xFFF0F1F3),
   );
   
   /// 공통 구분선 (두께 지정)
   static Widget dividerWithHeight(double height) => Container(
     height: height,
-    color: const Color(0xFFEEEEEE),
+    color: const Color(0xFFF0F1F3),
   );
   
   /// 안전한 Navigator.pop
@@ -111,20 +112,14 @@ class AppHelpers {
     return result ?? false;
   }
   
-  /// 공통 스낵바 표시
+  /// 공통 배너 표시
   static void showSnackBar(
     BuildContext context,
     String message, {
-    Duration duration = const Duration(seconds: 2),
+    Duration duration = const Duration(seconds: 1),
     SnackBarAction? action,
   }) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: duration,
-        action: action,
-      ),
-    );
+    AppBanner.show(context, message);
   }
   
   /// try-catch 래퍼

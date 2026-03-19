@@ -9,12 +9,14 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
 import '../../providers/user_provider.dart';
+import '../../widgets/shared/flat_section.dart';
 import '../../widgets/purchase/purchase_approval_widget.dart';
 import '../../widgets/purchase/purchase_waiting_widget.dart';
 import '../../widgets/purchase/receiving_waiting_widget.dart';
 import '../../services/badge_cache_service.dart';
 import '../../utils/user_role_helper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../widgets/common/notification_banner_widget.dart';
 
 class ApprovalScreen extends StatefulWidget {
   final int? initialMainTab; // 0: 연차/출장, 1: 발주승인, 2: 구매대기, 3: 입고대기
@@ -413,11 +415,13 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: AppColors.backgroundPrimary,
       appBar: AppBar(
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Image.asset('assets/icons/icon_40.png', width: 34, height: 34),
+            SizedBox(width: ResponsiveUtils.spacing(context, 8)),
             Text(appBarTitle, style: AppTextStyles.appBarTitle(context)),
             if (isAdminOrSuper) ...[
               SizedBox(width: ResponsiveUtils.spacing(context, 8)),
@@ -427,12 +431,12 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                   vertical: ResponsiveUtils.spacing(context, 4),
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(
                     ResponsiveUtils.spacing(context, 12),
                   ),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.3),
+                    color: AppColors.primary.withValues(alpha: 0.2),
                   ),
                 ),
                 child: Row(
@@ -440,17 +444,15 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                   children: [
                     Icon(
                       Icons.admin_panel_settings,
-                      color: Colors.white,
+                      color: AppColors.primary,
                       size: ResponsiveUtils.iconSize(context, 16),
                     ),
                     SizedBox(width: ResponsiveUtils.spacing(context, 4)),
                     Text(
                       'ADMIN',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        color: Colors.white,
+                      style: AppTextStyles.chipSmall(context).copyWith(
+                        color: AppColors.primary,
                         fontSize: 12,
-                        fontWeight: FontWeight.w600,
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -461,21 +463,11 @@ class _ApprovalScreenState extends State<ApprovalScreen>
           ],
         ),
         centerTitle: true,
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            onPressed: () {
-              _loadData();
-            },
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            tooltip: '새로고침',
-          ),
-        ],
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
-        ),
+        iconTheme: IconThemeData(color: AppColors.textPrimary),
+        actions: const [],
       ),
       body: Consumer<LeaveProvider>(
         builder: (context, provider, _) {
@@ -606,7 +598,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                   margin: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
                   padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 4)),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF2F3F5),
+                    color: AppColors.backgroundSecondary,
                     borderRadius: BorderRadius.circular(
                       ResponsiveUtils.spacing(context, 12),
                     ),
@@ -633,15 +625,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                               ResponsiveUtils.spacing(context, 10),
                             ),
                             boxShadow: _mainTabController.index == 0
-                                ? [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.08,
-                                      ),
-                                      blurRadius: 3,
-                                      offset: const Offset(0, 1),
-                                    ),
-                                  ]
+                                ? AppShadows.smShadow
                                 : null,
                           ),
                           child: Column(
@@ -656,7 +640,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     size: ResponsiveUtils.iconSize(context, 26),
                                     color: _mainTabController.index == 0
                                         ? AppColors.primary
-                                        : const Color(0xFF8E8E93),
+                                        : AppColors.textTertiary,
                                   ),
                                   if (pending.isNotEmpty)
                                     Positioned(
@@ -671,22 +655,21 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                           minHeight: ResponsiveUtils.spacing(context, 18),
                                         ),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFFF3B30),
+                                          color: AppColors.error,
                                           borderRadius: BorderRadius.circular(
                                             ResponsiveUtils.spacing(context, 8),
                                           ),
                                           border: Border.all(
                                             color: _mainTabController.index == 0
                                                 ? Colors.white
-                                                : const Color(0xFFF2F3F5),
+                                                : AppColors.backgroundSecondary,
                                             width: 1.5,
                                           ),
                                         ),
                                         child: Center(
                                           child: Text(
                                             '${pending.isNotEmpty ? pending.length : (_cachedBadgeCounts['leave_count'] ?? 0)}',
-                                            style: ResponsiveUtils.getTextStyle(
-                                              context,
+                                            style: AppTextStyles.compactLabel(context).copyWith(
                                               fontSize: 10,
                                               fontWeight: FontWeight.w700,
                                               color: Colors.white,
@@ -702,15 +685,13 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                               ),
                               Text(
                                 '연차/출장',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontSize: 14,
+                                style: AppTextStyles.inputLabel(context).copyWith(
                                   fontWeight: _mainTabController.index == 0
                                       ? FontWeight.w600
                                       : FontWeight.w500,
                                   color: _mainTabController.index == 0
-                                      ? const Color(0xFF1C1C1E)
-                                      : const Color(0xFF8E8E93),
+                                      ? AppColors.textPrimary
+                                      : AppColors.textTertiary,
                                 ),
                                 textAlign: TextAlign.center,
                                 maxLines: 1,
@@ -741,15 +722,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                 ResponsiveUtils.spacing(context, 10),
                               ),
                               boxShadow: _mainTabController.index == 1
-                                  ? [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.08,
-                                        ),
-                                        blurRadius: 3,
-                                        offset: const Offset(0, 1),
-                                      ),
-                                    ]
+                                  ? AppShadows.smShadow
                                   : null,
                             ),
                             child: Column(
@@ -764,7 +737,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                       size: ResponsiveUtils.iconSize(context, 26),
                                       color: _mainTabController.index == 1
                                           ? AppColors.primary
-                                          : const Color(0xFF8E8E93),
+                                          : AppColors.textTertiary,
                                     ),
                                     if (pendingApprovalCount > 0)
                                       Positioned(
@@ -779,22 +752,21 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                             minHeight: ResponsiveUtils.spacing(context, 18),
                                           ),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFFFF3B30),
+                                            color: AppColors.error,
                                             borderRadius: BorderRadius.circular(
                                               ResponsiveUtils.spacing(context, 8),
                                             ),
                                             border: Border.all(
                                               color: _mainTabController.index == 1
                                                   ? Colors.white
-                                                  : const Color(0xFFF2F3F5),
+                                                  : AppColors.backgroundSecondary,
                                               width: 1.5,
                                             ),
                                           ),
                                           child: Center(
                                             child: Text(
                                               '$pendingApprovalCount',
-                                              style: ResponsiveUtils.getTextStyle(
-                                                context,
+                                              style: AppTextStyles.compactLabel(context).copyWith(
                                                 fontSize: 10,
                                                 fontWeight: FontWeight.w700,
                                                 color: Colors.white,
@@ -810,15 +782,13 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                 ),
                                 Text(
                                   '발주승인',
-                                  style: ResponsiveUtils.getTextStyle(
-                                    context,
-                                    fontSize: 14,
+                                  style: AppTextStyles.inputLabel(context).copyWith(
                                     fontWeight: _mainTabController.index == 1
                                         ? FontWeight.w600
                                         : FontWeight.w500,
                                     color: _mainTabController.index == 1
-                                        ? const Color(0xFF1C1C1E)
-                                        : const Color(0xFF8E8E93),
+                                        ? AppColors.textPrimary
+                                        : AppColors.textTertiary,
                                   ),
                                   textAlign: TextAlign.center,
                                   maxLines: 1,
@@ -849,15 +819,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                               ResponsiveUtils.spacing(context, 10),
                             ),
                             boxShadow: _mainTabController.index == 2
-                                ? [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.08,
-                                      ),
-                                      blurRadius: 3,
-                                      offset: const Offset(0, 1),
-                                    ),
-                                  ]
+                                ? AppShadows.smShadow
                                 : null,
                           ),
                           child: Column(
@@ -872,7 +834,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     size: ResponsiveUtils.iconSize(context, 26),
                                     color: _mainTabController.index == 2
                                         ? AppColors.primary
-                                        : const Color(0xFF8E8E93),
+                                        : AppColors.textTertiary,
                                   ),
                                   // 구매대기 배지 - 로컬 캐시 + Provider 조합으로 즉시 표시
                                   Consumer<PurchaseProvider>(
@@ -893,22 +855,21 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                               minHeight: ResponsiveUtils.spacing(context, 18),
                                             ),
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFFF3B30),
+                                              color: AppColors.error,
                                               borderRadius: BorderRadius.circular(
                                                 ResponsiveUtils.spacing(context, 8),
                                               ),
                                               border: Border.all(
                                                 color: _mainTabController.index == 2
                                                     ? Colors.white
-                                                    : const Color(0xFFF2F3F5),
+                                                    : AppColors.backgroundSecondary,
                                                 width: 1.5,
                                               ),
                                             ),
                                             child: Center(
                                               child: Text(
                                                 '$count',
-                                                style: ResponsiveUtils.getTextStyle(
-                                                  context,
+                                                style: AppTextStyles.compactLabel(context).copyWith(
                                                   fontSize: 10,
                                                   fontWeight: FontWeight.w700,
                                                   color: Colors.white,
@@ -928,15 +889,13 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                               ),
                               Text(
                                 '구매대기',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontSize: 14,
+                                style: AppTextStyles.inputLabel(context).copyWith(
                                   fontWeight: _mainTabController.index == 2
                                       ? FontWeight.w600
                                       : FontWeight.w500,
                                   color: _mainTabController.index == 2
-                                      ? const Color(0xFF1C1C1E)
-                                      : const Color(0xFF8E8E93),
+                                      ? AppColors.textPrimary
+                                      : AppColors.textTertiary,
                                 ),
                                 textAlign: TextAlign.center,
                                 maxLines: 1,
@@ -967,15 +926,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                               ResponsiveUtils.spacing(context, 10),
                             ),
                             boxShadow: _mainTabController.index == 3
-                                ? [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.08,
-                                      ),
-                                      blurRadius: 3,
-                                      offset: const Offset(0, 1),
-                                    ),
-                                  ]
+                                ? AppShadows.smShadow
                                 : null,
                           ),
                           child: Column(
@@ -990,7 +941,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     size: ResponsiveUtils.iconSize(context, 26),
                                     color: _mainTabController.index == 3
                                         ? AppColors.primary
-                                        : const Color(0xFF8E8E93),
+                                        : AppColors.textTertiary,
                                   ),
                                   // 입고대기 배지 - 로컬 캐시 + Provider 조합으로 즉시 표시
                                   Consumer<PurchaseProvider>(
@@ -1011,22 +962,21 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                               minHeight: ResponsiveUtils.spacing(context, 18),
                                             ),
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFFF3B30),
+                                              color: AppColors.error,
                                               borderRadius: BorderRadius.circular(
                                                 ResponsiveUtils.spacing(context, 8),
                                               ),
                                               border: Border.all(
                                                 color: _mainTabController.index == 3
                                                     ? Colors.white
-                                                    : const Color(0xFFF2F3F5),
+                                                    : AppColors.backgroundSecondary,
                                                 width: 1.5,
                                               ),
                                             ),
                                             child: Center(
                                               child: Text(
                                                 '$count',
-                                                style: ResponsiveUtils.getTextStyle(
-                                                  context,
+                                                style: AppTextStyles.compactLabel(context).copyWith(
                                                   fontSize: 10,
                                                   fontWeight: FontWeight.w700,
                                                   color: Colors.white,
@@ -1046,15 +996,13 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                               ),
                               Text(
                                 '입고대기',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontSize: 14,
+                                style: AppTextStyles.inputLabel(context).copyWith(
                                   fontWeight: _mainTabController.index == 3
                                       ? FontWeight.w600
                                       : FontWeight.w500,
                                   color: _mainTabController.index == 3
-                                      ? const Color(0xFF1C1C1E)
-                                      : const Color(0xFF8E8E93),
+                                      ? AppColors.textPrimary
+                                      : AppColors.textTertiary,
                                 ),
                                 textAlign: TextAlign.center,
                                 maxLines: 1,
@@ -1113,20 +1061,18 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                   decoration: BoxDecoration(
                                     color: _subTabController.index == 0
                                         ? AppColors.primary
-                                        : const Color(0xFFF2F3F5),
-                                    borderRadius: BorderRadius.circular(20),
+                                        : AppColors.backgroundSecondary,
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Row(
                                     children: [
                                       Text(
                                         '대기중',
-                                        style: ResponsiveUtils.getTextStyle(
-                                          context,
-                                          fontSize: 14,
+                                        style: AppTextStyles.inputLabel(context).copyWith(
                                           fontWeight: FontWeight.w600,
                                           color: _subTabController.index == 0
                                               ? Colors.white
-                                              : const Color(0xFF1C1C1E),
+                                              : AppColors.textPrimary,
                                         ),
                                       ),
                                       if (pending.isNotEmpty) ...[
@@ -1152,21 +1098,16 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                                 ? Colors.white.withValues(
                                                     alpha: 0.3,
                                                   )
-                                                : const Color(0xFFFF3B30),
+                                                : AppColors.error,
                                             borderRadius: BorderRadius.circular(
                                               8,
                                             ),
                                           ),
                                           child: Text(
                                             '${pending.length}',
-                                            style: ResponsiveUtils.getTextStyle(
-                                              context,
-                                              fontSize: 11,
+                                            style: AppTextStyles.chipSmall(context).copyWith(
                                               fontWeight: FontWeight.w700,
-                                              color:
-                                                  _subTabController.index == 0
-                                                  ? Colors.white
-                                                  : Colors.white,
+                                              color: Colors.white,
                                             ),
                                           ),
                                         ),
@@ -1198,18 +1139,16 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                   decoration: BoxDecoration(
                                     color: _subTabController.index == 1
                                         ? AppColors.primary
-                                        : const Color(0xFFF2F3F5),
-                                    borderRadius: BorderRadius.circular(20),
+                                        : AppColors.backgroundSecondary,
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
                                     '처리완료',
-                                    style: ResponsiveUtils.getTextStyle(
-                                      context,
-                                      fontSize: 14,
+                                    style: AppTextStyles.inputLabel(context).copyWith(
                                       fontWeight: FontWeight.w600,
                                       color: _subTabController.index == 1
                                           ? Colors.white
-                                          : const Color(0xFF1C1C1E),
+                                          : AppColors.textPrimary,
                                     ),
                                   ),
                                 ),
@@ -1230,6 +1169,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     context,
                                     listen: false,
                                   ).fetchAllLeaves(forceRefresh: true);
+                                  if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
                                 },
                                 child: pending.isEmpty
                                     ? ListView(
@@ -1250,7 +1190,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                                     context,
                                                     80,
                                                   ),
-                                                  color: const Color(0xFFE0E0E0),
+                                                  color: AppColors.border,
                                                 ),
                                                 SizedBox(
                                                   height: ResponsiveUtils.spacing(
@@ -1260,15 +1200,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                                 ),
                                                 Text(
                                                   '승인 대기 중인 항목이 없습니다',
-                                                  style:
-                                                      ResponsiveUtils.getTextStyle(
-                                                        context,
-                                                        fontSize: 18,
-                                                        fontWeight: FontWeight.w600,
-                                                        color: const Color(
-                                                          0xFF8E8E93,
-                                                        ),
-                                                      ),
+                                                  style: AppTextStyles.cardTitle(context).copyWith(
+                                                    color: AppColors.textTertiary,
+                                                  ),
                                                 ),
                                                 SizedBox(
                                                   height: ResponsiveUtils.spacing(
@@ -1278,14 +1212,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                                 ),
                                                 Text(
                                                   '새로운 신청이 들어오면 여기에 표시됩니다',
-                                                  style:
-                                                      ResponsiveUtils.getTextStyle(
-                                                        context,
-                                                        fontSize: 14,
-                                                        color: const Color(
-                                                          0xFFB0B0B0,
-                                                        ),
-                                                      ),
+                                                  style: AppTextStyles.emptyState(context),
                                                 ),
                                               ],
                                             ),
@@ -1346,6 +1273,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     context,
                                     listen: false,
                                   ).fetchAllLeaves(forceRefresh: true);
+                                  if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
                                 },
                                 child: thisMonthDone.isEmpty
                                     ? ListView(
@@ -1365,7 +1293,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                                     context,
                                                     80,
                                                   ),
-                                                  color: const Color(0xFFE0E0E0),
+                                                  color: AppColors.border,
                                                 ),
                                                 SizedBox(
                                                   height: ResponsiveUtils.spacing(
@@ -1375,15 +1303,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                                 ),
                                                 Text(
                                                   '이번 달 처리 완료 내역이 없습니다',
-                                                  style:
-                                                      ResponsiveUtils.getTextStyle(
-                                                        context,
-                                                        fontSize: 18,
-                                                        fontWeight: FontWeight.w600,
-                                                        color: const Color(
-                                                          0xFF8E8E93,
-                                                        ),
-                                                      ),
+                                                  style: AppTextStyles.cardTitle(context).copyWith(
+                                                    color: AppColors.textTertiary,
+                                                  ),
                                                 ),
                                                 SizedBox(
                                                   height: ResponsiveUtils.spacing(
@@ -1393,14 +1315,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                                 ),
                                                 Text(
                                                   '승인하거나 반려한 항목이 여기에 표시됩니다',
-                                                  style:
-                                                      ResponsiveUtils.getTextStyle(
-                                                        context,
-                                                        fontSize: 14,
-                                                        color: const Color(
-                                                          0xFFB0B0B0,
-                                                        ),
-                                                      ),
+                                                  style: AppTextStyles.emptyState(context),
                                                 ),
                                               ],
                                             ),
@@ -1466,40 +1381,33 @@ class _ApprovalScreenState extends State<ApprovalScreen>
   }) {
     final type = l['type'];
     String typeLabel;
-    Color typeBgColor;
     Color typeTextColor;
     switch (type) {
       case 'annual':
         typeLabel = '연차';
-        typeBgColor = const Color(0xFFE3F2FD);
-        typeTextColor = const Color(0xFF1976D2);
+        typeTextColor = AppColors.biztrip;
         break;
       case 'halfAm':
       case 'half_am':
         typeLabel = '오전반차';
-        typeBgColor = const Color(0xFFFFF3E0);
-        typeTextColor = const Color(0xFFFF9800);
+        typeTextColor = AppColors.warning;
         break;
       case 'halfPm':
       case 'half_pm':
         typeLabel = '오후반차';
-        typeBgColor = const Color(0xFFE8F5E9);
-        typeTextColor = const Color(0xFF388E3C);
+        typeTextColor = AppColors.success;
         break;
       case 'official':
         typeLabel = '공가';
-        typeBgColor = const Color(0xFFF5F5F5);
-        typeTextColor = const Color(0xFF757575);
+        typeTextColor = AppColors.gray600;
         break;
       case 'biztrip':
         typeLabel = '출장';
-        typeBgColor = const Color(0xFFF3E5F5);
-        typeTextColor = const Color(0xFF7B1FA2);
+        typeTextColor = AppColors.purple;
         break;
       default:
         typeLabel = '연차';
-        typeBgColor = const Color(0xFFE3F2FD);
-        typeTextColor = const Color(0xFF1976D2);
+        typeTextColor = AppColors.biztrip;
     }
     final isBiztrip = type == 'biztrip';
     final name = l['name'] ?? l['user_email'] ?? '-';
@@ -1531,14 +1439,12 @@ class _ApprovalScreenState extends State<ApprovalScreen>
         (l['출장자'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
     final travelersText = travelersList.where((e) => e.trim().isNotEmpty).join(', ');
     return Container(
-      margin: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 16)),
       padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 18)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(
-          ResponsiveUtils.spacing(context, 14),
+        border: Border(
+          bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
         ),
-        boxShadow: [AppShadows.card],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1555,34 +1461,10 @@ class _ApprovalScreenState extends State<ApprovalScreen>
               Expanded(
                 child: Text(
                   name,
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
+                  style: AppTextStyles.cardTitle(context),
                 ),
               ),
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: ResponsiveUtils.spacing(context, 10),
-                  vertical: ResponsiveUtils.spacing(context, 4),
-                ),
-                decoration: BoxDecoration(
-                  color: typeBgColor,
-                  borderRadius: BorderRadius.circular(
-                    ResponsiveUtils.spacing(context, 8),
-                  ),
-                ),
-                child: Text(
-                  typeLabel,
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontSize: 14,
-                    color: typeTextColor,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
+              StatusChip(label: typeLabel, color: typeTextColor),
               SizedBox(width: ResponsiveUtils.spacing(context, 8)),
               _statusChip(status),
             ],
@@ -1621,18 +1503,14 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             width: double.infinity,
             padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 14)),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8F9FA),
+              color: AppColors.backgroundSecondary,
               borderRadius: BorderRadius.circular(
                 ResponsiveUtils.spacing(context, 10),
               ),
             ),
             child: Text(
               reason,
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 16,
-                color: const Color(0xFF6C757D),
-              ),
+              style: AppTextStyles.cardBody(context),
             ),
           ),
           if (showDeleteButton && status != 'pending') ...[
@@ -1667,22 +1545,15 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                           await _showEditDialog(context, l, provider);
                         } catch (e) {
                           if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('수정 화면을 열 수 없습니다: $e'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
+                            AppBanner.show(context, '수정 화면을 열 수 없습니다: $e', type: BannerType.error);
                           }
                         }
                       },
                       icon: const Icon(Icons.edit),
                       label: Text(
                         '수정',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
+                        style: AppTextStyles.sectionSubtitle(context).copyWith(
+                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -1700,7 +1571,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                     ),
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF3B30),
+                        backgroundColor: AppColors.error,
                         foregroundColor: Colors.white,
                         padding: EdgeInsets.symmetric(
                           vertical: ResponsiveUtils.spacing(context, 14),
@@ -1717,7 +1588,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                           '삭제 확인',
                           '이 $typeLabel 기록을 삭제하시겠습니까?\n삭제 후 복구할 수 없으며, 신청자에게 알림이 전송됩니다.',
                           '삭제',
-                          const Color(0xFFFF3B30),
+                          AppColors.error,
                         );
                         if (confirmed == true) {
                           await _deleteApprovedLeave(l, provider);
@@ -1726,10 +1597,8 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                       icon: const Icon(Icons.delete_outline),
                       label: Text(
                         '삭제',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
+                        style: AppTextStyles.sectionSubtitle(context).copyWith(
+                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -1751,7 +1620,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                     ),
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF3B30),
+                        backgroundColor: AppColors.error,
                         foregroundColor: Colors.white,
                         padding: EdgeInsets.symmetric(
                           vertical: ResponsiveUtils.spacing(context, 18),
@@ -1771,7 +1640,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                           '반려 확인',
                           '$name님의 $typeLabel 신청$groupedCountMsg을 반려하시겠습니까?',
                           '반려',
-                          const Color(0xFFFF3B30),
+                          AppColors.error,
                         );
                         if (confirmed == true) {
                           if (l['is_business_trip'] == true) {
@@ -1803,11 +1672,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                       },
                       child: Text(
                         '반려',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 18,
-                        ),
+                        style: AppTextStyles.buttonPrimary(context),
                       ),
                     ),
                   ),
@@ -1823,7 +1688,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                     ),
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF34C759),
+                        backgroundColor: AppColors.success,
                         foregroundColor: Colors.white,
                         padding: EdgeInsets.symmetric(
                           vertical: ResponsiveUtils.spacing(context, 18),
@@ -1843,7 +1708,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                           '승인 확인',
                           '$name님의 $typeLabel 신청$groupedCountMsg을 승인하시겠습니까?',
                           '승인',
-                          const Color(0xFF34C759),
+                          AppColors.success,
                         );
                         if (confirmed == true) {
                           if (l['is_business_trip'] == true) {
@@ -1875,11 +1740,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                       },
                       child: Text(
                         '승인',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 18,
-                        ),
+                        style: AppTextStyles.buttonPrimary(context),
                       ),
                     ),
                   ),
@@ -1895,7 +1756,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                 vertical: ResponsiveUtils.spacing(context, 12),
               ),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFA726).withValues(alpha: 0.12),
+                color: AppColors.warning.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(
                   ResponsiveUtils.spacing(context, 8),
                 ),
@@ -1905,17 +1766,14 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                 children: [
                   Icon(
                     Icons.info,
-                    color: const Color(0xFFFFA726),
+                    color: AppColors.warning,
                     size: ResponsiveUtils.iconSize(context, 20),
                   ),
                   SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                   Text(
                     '승인 권한이 없습니다',
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      color: const Color(0xFFFFA726),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                    style: AppTextStyles.sectionSubtitle(context).copyWith(
+                      color: AppColors.warning,
                     ),
                   ),
                 ],
@@ -1931,21 +1789,19 @@ class _ApprovalScreenState extends State<ApprovalScreen>
               ),
               decoration: BoxDecoration(
                 color: status == 'approved'
-                    ? const Color(0xFF34C759).withValues(alpha: 0.12)
-                    : const Color(0xFFFF3B30).withValues(alpha: 0.12),
+                    ? AppColors.success.withValues(alpha: 0.12)
+                    : AppColors.error.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(
                   ResponsiveUtils.spacing(context, 8),
                 ),
               ),
               child: Text(
                 status == 'approved' ? '승인 완료' : '반려',
-                style: ResponsiveUtils.getTextStyle(
-                  context,
+                style: AppTextStyles.cardTitle(context).copyWith(
                   color: status == 'approved'
-                      ? const Color(0xFF34C759)
-                      : const Color(0xFFFF3B30),
+                      ? AppColors.success
+                      : AppColors.error,
                   fontWeight: FontWeight.w700,
-                  fontSize: 18,
                 ),
               ),
             ),
@@ -1998,12 +1854,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
 
       // 성공 메시지
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('삭제가 완료되었습니다.'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        AppBanner.show(context, '삭제가 완료되었습니다.', type: BannerType.success);
       }
     } catch (e) {
       // 로딩 닫기
@@ -2011,12 +1862,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
 
       // 에러 메시지
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('삭제 중 오류가 발생했습니다: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppBanner.show(context, '삭제 중 오류가 발생했습니다: $e', type: BannerType.error);
       }
     }
   }
@@ -2028,25 +1874,21 @@ class _ApprovalScreenState extends State<ApprovalScreen>
         children: [
           Icon(
             icon,
-            color: const Color(0xFFB0B0B0),
+            color: AppColors.textDisabled,
             size: ResponsiveUtils.iconSize(context, 18),
           ),
           SizedBox(width: ResponsiveUtils.spacing(context, 8)),
           Text(
             label,
-            style: ResponsiveUtils.getTextStyle(
-              context,
-              fontSize: 14,
-              color: const Color(0xFF888888),
+            style: AppTextStyles.tableCellSub(context).copyWith(
+              color: AppColors.textTertiary,
             ),
           ),
           SizedBox(width: ResponsiveUtils.spacing(context, 8)),
           Expanded(
             child: Text(
               value,
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 14,
+              style: AppTextStyles.tableCellSub(context).copyWith(
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -2057,42 +1899,19 @@ class _ApprovalScreenState extends State<ApprovalScreen>
   }
 
   Widget _statusChip(String status) {
-    Color bg, fg;
+    Color fg;
     String label;
     if (status == 'approved') {
-      bg = const Color(0xFF34C759).withValues(alpha: 0.12);
-      fg = const Color(0xFF34C759);
+      fg = AppColors.success;
       label = '승인';
     } else if (status == 'rejected') {
-      bg = const Color(0xFFFF3B30).withValues(alpha: 0.12);
-      fg = const Color(0xFFFF3B30);
+      fg = AppColors.error;
       label = '반려';
     } else {
-      bg = const Color(0xFFFFA726).withValues(alpha: 0.12);
-      fg = const Color(0xFFFFA726);
+      fg = AppColors.warning;
       label = '대기';
     }
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: ResponsiveUtils.spacing(context, 10),
-        vertical: ResponsiveUtils.spacing(context, 4),
-      ),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(
-          ResponsiveUtils.spacing(context, 8),
-        ),
-      ),
-      child: Text(
-        label,
-        style: ResponsiveUtils.getTextStyle(
-          context,
-          fontSize: 14,
-          color: fg,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
+    return StatusChip(label: label, color: fg);
   }
 
   // 수정 다이얼로그
@@ -2127,7 +1946,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
           builder: (context, setState) {
             return Dialog(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(12),
               ),
               insetPadding: const EdgeInsets.all(16),
               child: Container(
@@ -2137,18 +1956,14 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                   children: [
                     // 헤더
                     Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppColors.primary,
-                            AppColors.primary.withOpacity(0.8),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: const BorderRadius.only(
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(20),
                           topRight: Radius.circular(20),
+                        ),
+                        border: Border(
+                          bottom: BorderSide(color: AppColors.border, width: 1),
                         ),
                       ),
                       padding: const EdgeInsets.all(20),
@@ -2157,12 +1972,12 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: AppColors.primary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.edit_calendar,
-                              color: Colors.white,
+                              color: AppColors.primary,
                               size: 24,
                             ),
                           ),
@@ -2170,16 +1985,11 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                           Expanded(
                             child: Text(
                               '휴가 정보 수정',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: AppTextStyles.sectionTitle(context),
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.close, color: Colors.white),
+                            icon: Icon(Icons.close, color: AppColors.textTertiary),
                             onPressed: () => Navigator.pop(context),
                           ),
                         ],
@@ -2197,23 +2007,21 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF0F8FF),
+                                color: AppColors.infoLight,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: AppColors.primary.withOpacity(0.2),
+                                  color: AppColors.primary.withValues(alpha:0.2),
                                 ),
                               ),
                               child: Row(
                                 children: [
                                   CircleAvatar(
-                                    backgroundColor: AppColors.primary.withOpacity(0.1),
+                                    backgroundColor: AppColors.primary.withValues(alpha:0.1),
                                     child: Text(
                                       (leave['name'] ?? '?')[0],
-                                      style: ResponsiveUtils.getTextStyle(
-                                        context,
+                                      style: AppTextStyles.sectionSubtitle(context).copyWith(
                                         color: AppColors.primary,
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 16,
                                       ),
                                     ),
                                   ),
@@ -2223,19 +2031,15 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     children: [
                                       Text(
                                         '신청자: ${leave['name'] ?? '알 수 없음'}',
-                                        style: ResponsiveUtils.getTextStyle(
-                                          context,
+                                        style: AppTextStyles.sectionSubtitle(context).copyWith(
                                           fontWeight: FontWeight.bold,
-                                          fontSize: 16,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
                                         '신청일: ${leave['created_at']?.substring(0, 10) ?? ''}',
-                                        style: ResponsiveUtils.getTextStyle(
-                                          context,
-                                          color: Colors.grey[600],
-                                          fontSize: 14,
+                                        style: AppTextStyles.inputLabel(context).copyWith(
+                                          color: AppColors.textSecondary,
                                         ),
                                       ),
                                     ],
@@ -2259,9 +2063,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                 const SizedBox(width: 8),
                                 Text(
                                   '휴가 유형',
-                                  style: ResponsiveUtils.getTextStyle(
-                                    context,
-                                    fontSize: 16,
+                                  style: AppTextStyles.sectionSubtitle(context).copyWith(
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -2271,9 +2073,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF8F9FA),
+                                color: AppColors.backgroundSecondary,
                                 borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: const Color(0xFFE0E0E0)),
+                                border: Border.all(color: AppColors.border),
                               ),
                               child: DropdownButtonHideUnderline(
                                 child: DropdownButton<String>(
@@ -2331,9 +2133,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                 const SizedBox(width: 8),
                                 Text(
                                   '휴가 기간',
-                                  style: ResponsiveUtils.getTextStyle(
-                                    context,
-                                    fontSize: 16,
+                                  style: AppTextStyles.sectionSubtitle(context).copyWith(
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -2362,9 +2162,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     child: Container(
                                       padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFF8F9FA),
+                                        color: AppColors.backgroundSecondary,
                                         borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(color: const Color(0xFFE0E0E0)),
+                                        border: Border.all(color: AppColors.border),
                                       ),
                                       child: Row(
                                         children: [
@@ -2379,12 +2179,10 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                               startDateController.text.isEmpty
                                                   ? '시작일'
                                                   : startDateController.text,
-                                              style: ResponsiveUtils.getTextStyle(
-                                                context,
+                                              style: AppTextStyles.inputLabel(context).copyWith(
                                                 color: startDateController.text.isEmpty
-                                                    ? Colors.grey
-                                                    : Colors.black,
-                                                fontSize: 14,
+                                                    ? AppColors.gray400
+                                                    : AppColors.textPrimary,
                                               ),
                                             ),
                                           ),
@@ -2414,9 +2212,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     child: Container(
                                       padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFF8F9FA),
+                                        color: AppColors.backgroundSecondary,
                                         borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(color: const Color(0xFFE0E0E0)),
+                                        border: Border.all(color: AppColors.border),
                                       ),
                                       child: Row(
                                         children: [
@@ -2431,12 +2229,10 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                               endDateController.text.isEmpty
                                                   ? '종료일'
                                                   : endDateController.text,
-                                              style: ResponsiveUtils.getTextStyle(
-                                                context,
+                                              style: AppTextStyles.inputLabel(context).copyWith(
                                                 color: endDateController.text.isEmpty
-                                                    ? Colors.grey
-                                                    : Colors.black,
-                                                fontSize: 14,
+                                                    ? AppColors.gray400
+                                                    : AppColors.textPrimary,
                                               ),
                                             ),
                                           ),
@@ -2463,9 +2259,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                 const SizedBox(width: 8),
                                 Text(
                                   '사유',
-                                  style: ResponsiveUtils.getTextStyle(
-                                    context,
-                                    fontSize: 16,
+                                  style: AppTextStyles.sectionSubtitle(context).copyWith(
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -2474,9 +2268,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                             const SizedBox(height: 12),
                             Container(
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF8F9FA),
+                                color: AppColors.backgroundSecondary,
                                 borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: const Color(0xFFE0E0E0)),
+                                border: Border.all(color: AppColors.border),
                               ),
                               child: TextField(
                                 controller: reasonController,
@@ -2496,7 +2290,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                     // 버튼 영역
                     Container(
                       decoration: const BoxDecoration(
-                        color: Color(0xFFF8F9FA),
+                        color: AppColors.backgroundSecondary,
                         borderRadius: BorderRadius.only(
                           bottomLeft: Radius.circular(20),
                           bottomRight: Radius.circular(20),
@@ -2509,21 +2303,17 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                             child: TextButton(
                               style: TextButton.styleFrom(
                                 backgroundColor: Colors.white,
-                                foregroundColor: Colors.grey[700],
+                                foregroundColor: AppColors.gray700,
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
-                                  side: BorderSide(color: Colors.grey[300]!),
+                                  side: BorderSide(color: AppColors.gray300),
                                 ),
                               ),
                               onPressed: () => Navigator.pop(context),
                               child: Text(
                                 '취소',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                style: AppTextStyles.sectionSubtitle(context),
                               ),
                             ),
                           ),
@@ -2535,12 +2325,12 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                 gradient: LinearGradient(
                                   colors: [
                                     AppColors.primary,
-                                    AppColors.primary.withOpacity(0.8),
+                                    AppColors.primary.withValues(alpha:0.8),
                                   ],
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppColors.primary.withOpacity(0.3),
+                                    color: AppColors.primary.withValues(alpha:0.3),
                                     blurRadius: 8,
                                     offset: const Offset(0, 2),
                                   ),
@@ -2559,29 +2349,19 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                   
                                   // 수정 로직 구현
                                   if (selectedStartDate == null || selectedEndDate == null) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('시작일과 종료일을 선택해주세요'),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
+                                    AppBanner.show(context, '시작일과 종료일을 선택해주세요', type: BannerType.error);
                                     return;
                                   }
-                                  
+
                                   if (reasonController.text.trim().isEmpty) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('사유를 입력해주세요'),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
+                                    AppBanner.show(context, '사유를 입력해주세요', type: BannerType.error);
                                     return;
                                   }
                                   
                                   
                                   // BuildContext를 먼저 저장
                                   final navigatorContext = Navigator.of(context);
-                                  final scaffoldMessenger = ScaffoldMessenger.of(context);
+                                  final savedContext = context;
                                   
                                   // 수정 다이얼로그 닫기
                                   Navigator.pop(context);
@@ -2625,12 +2405,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     }
                                     
                                     // 성공 메시지
-                                    scaffoldMessenger.showSnackBar(
-                                      const SnackBar(
-                                        content: Text('휴가 정보가 수정되었습니다'),
-                                        backgroundColor: Colors.green,
-                                      ),
-                                    );
+                                    AppBanner.show(savedContext, '휴가 정보가 수정되었습니다', type: BannerType.success);
                                     
                                     // 데이터 새로고침
                                     await provider.fetchAllLeaves(forceRefresh: true);
@@ -2648,20 +2423,13 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     }
                                     
                                     // 에러 메시지
-                                    scaffoldMessenger.showSnackBar(
-                                      SnackBar(
-                                        content: Text('수정 중 오류가 발생했습니다: $e'),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
+                                    AppBanner.show(savedContext, '수정 중 오류가 발생했습니다: $e', type: BannerType.error);
                                   }
                                 },
                                 child: Text(
                                   '수정하기',
-                                  style: ResponsiveUtils.getTextStyle(
-                                    context,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
+                                  style: AppTextStyles.sectionSubtitle(context).copyWith(
+                                    color: Colors.white,
                                   ),
                                 ),
                               ),
@@ -2693,16 +2461,16 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     
     if (title.contains('삭제')) {
       iconData = Icons.delete_outline;
-      iconBgColor = const Color(0xFFFF3B30).withOpacity(0.1);
+      iconBgColor = AppColors.error.withValues(alpha:0.1);
     } else if (title.contains('반려')) {
       iconData = Icons.warning_amber_rounded;
-      iconBgColor = const Color(0xFFFF9500).withOpacity(0.1);
+      iconBgColor = AppColors.warning.withValues(alpha: 0.1);
     } else if (title.contains('승인')) {
       iconData = Icons.check_circle_outline;
-      iconBgColor = const Color(0xFF34C759).withOpacity(0.1);
+      iconBgColor = AppColors.success.withValues(alpha:0.1);
     } else {
       iconData = Icons.info_outline;
-      iconBgColor = AppColors.primary.withOpacity(0.1);
+      iconBgColor = AppColors.primary.withValues(alpha:0.1);
     }
 
     return showDialog<bool>(
@@ -2710,7 +2478,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       builder: (BuildContext context) {
         return Dialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(12),
           ),
           elevation: 0,
           backgroundColor: Colors.transparent,
@@ -2718,14 +2486,8 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             constraints: const BoxConstraints(maxWidth: 400),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: AppShadows.lgShadow,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -2753,12 +2515,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                       // 제목
                       Text(
                         title,
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1C1C1E),
-                        ),
+                        style: AppTextStyles.sectionTitle(context),
                       ),
                     ],
                   ),
@@ -2769,10 +2526,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Text(
                     message,
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 16,
-                      color: Color(0xFF8E8E93),
+                    style: AppTextStyles.sectionSubtitle(context).copyWith(
+                      color: AppColors.textTertiary,
+                      fontWeight: FontWeight.normal,
                       height: 1.5,
                     ),
                     textAlign: TextAlign.center,
@@ -2783,7 +2539,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                 // 버튼 영역
                 Container(
                   decoration: const BoxDecoration(
-                    color: Color(0xFFF8F9FA),
+                    color: AppColors.backgroundSecondary,
                     borderRadius: BorderRadius.only(
                       bottomLeft: Radius.circular(20),
                       bottomRight: Radius.circular(20),
@@ -2795,18 +2551,12 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                       Expanded(
                         child: Container(
                           decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
+                            boxShadow: AppShadows.xsShadow,
                           ),
                           child: TextButton(
                             style: TextButton.styleFrom(
                               backgroundColor: Colors.white,
-                              foregroundColor: const Color(0xFF1C1C1E),
+                              foregroundColor: AppColors.textPrimary,
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
@@ -2815,11 +2565,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                             onPressed: () => Navigator.of(context).pop(false),
                             child: Text(
                               '취소',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: AppTextStyles.sectionSubtitle(context),
                             ),
                           ),
                         ),
@@ -2830,7 +2576,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                           decoration: BoxDecoration(
                             boxShadow: [
                               BoxShadow(
-                                color: confirmColor.withOpacity(0.3),
+                                color: confirmColor.withValues(alpha:0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -2848,10 +2594,8 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                             onPressed: () => Navigator.of(context).pop(true),
                             child: Text(
                               confirmText,
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                              style: AppTextStyles.sectionSubtitle(context).copyWith(
+                                color: Colors.white,
                               ),
                             ),
                           ),

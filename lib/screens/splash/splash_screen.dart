@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -47,13 +48,11 @@ class _SplashScreenState extends State<SplashScreen>
             children: [
               Text(
                 'HANSL',
-                style: ResponsiveUtils.getTextStyle(
-                  context,
+                style: AppTextStyles.appBarTitle(context).copyWith(
                   fontSize: 44,
                   fontWeight: FontWeight.w600,
                   color: AppColors.primary,
                   letterSpacing: 4,
-                ).copyWith(
                   shadows: const [
                     Shadow(
                       offset: Offset(0.5, 1),
@@ -66,13 +65,11 @@ class _SplashScreenState extends State<SplashScreen>
               SizedBox(height: ResponsiveUtils.spacing(context, 4)),
               Text(
                 '근태기록시스템',
-                style: ResponsiveUtils.getTextStyle(
-                  context,
+                style: AppTextStyles.buttonPrimary(context).copyWith(
                   fontSize: 17,
                   fontWeight: FontWeight.w400,
-                  color: const Color(0xFFB0B8C1),
+                  color: AppColors.gray400,
                   letterSpacing: 1.2,
-                ).copyWith(
                   shadows: const [
                     Shadow(
                       offset: Offset(0.5, 1),
