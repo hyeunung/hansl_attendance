@@ -12,7 +12,9 @@ import '../../services/receipt_upload_service.dart';
 import '../../utils/responsive_utils.dart';
 import '../../utils/user_role_helper.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_shadows.dart';
+import '../../theme/app_text_theme.dart';
+import '../../widgets/common/notification_banner_widget.dart';
+import '../../widgets/shared/flat_section.dart';
 
 /// 영수증 전용 화면
 class ReceiptsScreen extends StatefulWidget {
@@ -35,35 +37,82 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
     _loadReceipts();
   }
 
-  /// 영수증 목록 로드
+  /// 영수증 목록 로드 (웹앱과 동일 패턴: purchase_receipts + receipt_ocr_jobs/results 별도 조회 후 merge)
   Future<void> _loadReceipts() async {
     try {
       setState(() => _isLoading = true);
-      
+
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final userEmail = userProvider.email;
-      // final purchaseRole = userProvider.employee?['purchase_role'];
-      
+
       if (userEmail == null) return;
 
-      // app_admin, hr, lead_buyer 모두 전체 영수증 조회 가능
+      // 1단계: purchase_receipts 기본 데이터 조회 (OCR 컬럼은 별도 테이블)
       final data = await _supabase
           .from('purchase_receipts')
-          .select()
+          .select('id, receipt_image_url, file_name, file_size, uploaded_by, uploaded_by_name, uploaded_at, memo, is_printed, printed_at, printed_by, printed_by_name, group_id')
           .order('uploaded_at', ascending: false);
-          
+
+      final baseReceipts = List<Map<String, dynamic>>.from(data);
+
+      if (baseReceipts.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _receipts = [];
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      // 2단계: receipt_ocr_jobs + receipt_ocr_results 에서 OCR 데이터 조회
+      final receiptIds = baseReceipts.map((r) => r['id']).toList();
+      Map<String, Map<String, dynamic>> ocrByReceiptId = {};
+      try {
+        final ocrJobs = await _supabase
+            .from('receipt_ocr_jobs')
+            .select('source_receipt_id, status, created_at, receipt_ocr_results(merchant_name, item_name, payment_date, quantity, unit_price, total_amount)')
+            .inFilter('source_receipt_id', receiptIds)
+            .order('created_at', ascending: false);
+
+        for (final job in List<Map<String, dynamic>>.from(ocrJobs)) {
+          final sourceId = job['source_receipt_id']?.toString() ?? '';
+          if (sourceId.isEmpty || ocrByReceiptId.containsKey(sourceId)) continue;
+          final results = job['receipt_ocr_results'];
+          final result = results is List ? (results.isNotEmpty ? results[0] : null) : results;
+          ocrByReceiptId[sourceId] = {
+            'ocr_status': job['status'],
+            'ocr_merchant_name': result?['merchant_name'],
+            'ocr_item_name': result?['item_name'],
+            'ocr_payment_date': result?['payment_date'],
+            'ocr_quantity': result?['quantity'],
+            'ocr_unit_price': result?['unit_price'],
+            'ocr_total_amount': result?['total_amount'],
+          };
+        }
+      } catch (_) {
+        // OCR 조회 실패해도 기본 영수증 목록은 표시
+      }
+
+      // 3단계: merge
+      final merged = baseReceipts.map((receipt) {
+        final ocr = ocrByReceiptId[receipt['id']?.toString() ?? ''];
+        if (ocr != null) {
+          return {...receipt, ...ocr};
+        }
+        return receipt;
+      }).toList();
+
       if (mounted) {
         setState(() {
-          _receipts = List<Map<String, dynamic>>.from(data);
+          _receipts = merged;
           _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('영수증 로드 실패: $e')),
-        );
+        AppBanner.show(context, '영수증 로드 실패: $e', type: BannerType.error);
       }
     }
   }
@@ -100,12 +149,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
       await _showPreviewDialog([File(image.path)]);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('이미지 선택 실패: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppBanner.show(context, '이미지 선택 실패: $e', type: BannerType.error);
       }
     }
   }
@@ -191,7 +235,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                     clipBehavior: Clip.antiAlias,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                      side: const BorderSide(color: Color(0xFFE5E7EB)),
+                      side: const BorderSide(color: AppColors.border),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
@@ -208,7 +252,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                                 Navigator.of(context, rootNavigator: true)
                                     .pop(ImageSource.camera),
                           ),
-                          const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                          const Divider(height: 1, color: AppColors.border),
                           _buildUploadMenuItem(
                             icon: Icons.photo_outlined,
                             label: '보관함',
@@ -251,15 +295,14 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
               Icon(
                 icon,
                 size: 18,
-                color: const Color(0xFF6B7280),
+                color: AppColors.textSecondary,
               ),
               const SizedBox(width: 8),
               Text(
                 label,
-                style: const TextStyle(
-                  fontSize: 14,
+                style: AppTextStyles.inputLabel(context).copyWith(
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF111827),
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
@@ -290,17 +333,12 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                   children: [
                     Text(
                       '영수증 확인',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF111827),
-                      ),
+                      style: AppTextStyles.sectionSubtitle(context),
                     ),
                     const Spacer(),
                     IconButton(
                       onPressed: isUploading ? null : () => Navigator.pop(context),
-                      icon: const Icon(Icons.close, color: Color(0xFF9CA3AF)),
+                      icon: const Icon(Icons.close, color: AppColors.textDisabled),
                       tooltip: '닫기',
                     ),
                   ],
@@ -329,17 +367,17 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                                 Navigator.pop(context);
                               },
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFFE5E7EB)),
+                          side: const BorderSide(color: AppColors.border),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
-                        child: const Text(
+                        child: Text(
                           '다시 선택',
-                          style: TextStyle(
+                          style: AppTextStyles.inputLabel(context).copyWith(
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF6B7280),
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ),
@@ -351,12 +389,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                             ? null
                             : () async {
                                 if (selectedFiles.isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('이미지를 선택해주세요.'),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
+                                  AppBanner.show(context, '이미지를 선택해주세요.', type: BannerType.error);
                                   return;
                                 }
                                 setState(() => isUploading = true);
@@ -388,9 +421,12 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                                   color: Colors.white,
                                 ),
                               )
-                            : const Text(
+                            : Text(
                                 '업로드',
-                                style: TextStyle(fontWeight: FontWeight.w600),
+                                style: AppTextStyles.inputLabel(context).copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
                               ),
                       ),
                     ),
@@ -422,18 +458,14 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
           height: 200,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            color: const Color(0xFFF9FAFB),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
+            color: AppColors.backgroundPrimary,
+            border: Border.all(color: AppColors.border),
           ),
           child: imageFiles.isEmpty
               ? Center(
                   child: Text(
                     '선택된 이미지가 없습니다',
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 13,
-                      color: Colors.grey[500],
-                    ),
+                    style: AppTextStyles.cardCaption(context),
                   ),
                 )
               : isMulti
@@ -507,11 +539,8 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
           const SizedBox(height: 8),
           Text(
             '총 ${imageFiles.length}장 선택됨',
-            style: ResponsiveUtils.getTextStyle(
-              context,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF6B7280),
+            style: AppTextStyles.sectionHeader(context).copyWith(
+              fontSize: ResponsiveUtils.fontSize(context, 12),
             ),
           ),
         ],
@@ -520,11 +549,8 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
         // 메모 입력
         Text(
           '메모 (선택사항)',
-          style: ResponsiveUtils.getTextStyle(
-            context,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF6B7280),
+          style: AppTextStyles.sectionHeader(context).copyWith(
+            fontSize: ResponsiveUtils.fontSize(context, 12),
           ),
         ),
         const SizedBox(height: 8),
@@ -534,14 +560,13 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
           maxLength: 200,
           decoration: InputDecoration(
             hintText: '영수증에 대한 메모를 입력하세요',
-            hintStyle: ResponsiveUtils.getTextStyle(
-              context,
-              fontSize: 12,
-              color: Colors.grey[500],
+            hintStyle: AppTextStyles.compactLabel(context).copyWith(
+              fontSize: ResponsiveUtils.fontSize(context, 12),
+              fontWeight: FontWeight.w400,
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: AppColors.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -561,9 +586,12 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
               const SizedBox(width: 8),
-              const Text(
+              Text(
                 '업로드 중...',
-                style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                style: AppTextStyles.compactLabel(context).copyWith(
+                  fontSize: ResponsiveUtils.fontSize(context, 12),
+                  color: AppColors.textSecondary,
+                ),
               ),
             ],
           ),
@@ -596,22 +624,12 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ 영수증이 업로드되었습니다.'),
-            backgroundColor: Color(0xFF34C759),
-          ),
-        );
+        AppBanner.show(context, '✅ 영수증이 업로드되었습니다.', type: BannerType.success);
         _loadReceipts(); // 목록 새로고침
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('업로드 실패: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppBanner.show(context, '업로드 실패: $e', type: BannerType.error);
       }
       rethrow;
     }
@@ -630,106 +648,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
         '${hex.substring(20, 32)}';
   }
 
-  /// Step 2: 이미지 선택
-  Future<void> _selectImage(ImageSource source) async {
-    try {
-      final picker = ImagePicker();
-      final XFile? image = await picker.pickImage(
-        source: source,
-        imageQuality: 85,
-        maxWidth: 1920,
-        maxHeight: 1920,
-      );
-
-      // 이 함수는 더 이상 사용되지 않음 (통합 모달로 대체됨)
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('이미지 선택 실패: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-
-
-
-  /// 업로드 옵션 위젯
-  Widget _buildUploadOption({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: AppShadows.cardShadow,
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 26,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF111827),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      subtitle,
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 13,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(
-                Icons.arrow_forward_ios,
-                color: Color(0xFF9CA3AF),
-                size: 16,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  // _selectImage and _buildUploadOption removed (unused, replaced by unified upload modal)
 
   /// 메모 입력 다이얼로그
 
@@ -747,7 +666,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('삭제', style: TextStyle(color: Colors.red)),
+            child: const Text('삭제', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -761,20 +680,10 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
         receiptUrl: receipt['receipt_image_url'],
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✅ 영수증 삭제 완료'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      AppBanner.show(context, '✅ 영수증 삭제 완료', type: BannerType.success);
       _loadReceipts(); // 목록 새로고침
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('삭제 실패: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppBanner.show(context, '삭제 실패: $e', type: BannerType.error);
     }
   }
 
@@ -797,78 +706,42 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('영수증 관리', style: ResponsiveUtils.getTextStyle(
-          context,
-          fontSize: 22,
-          fontWeight: FontWeight.w700,
-          color: Colors.white,
-        )),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        title: AppBarTitle('영수증 관리'),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        foregroundColor: AppColors.textPrimary,
+        elevation: 0,
       ),
-      body: Column(
-        children: [
-          // 년도 표시 (상단 바)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              border: Border(
-                bottom: BorderSide(color: Colors.grey[200]!, width: 1),
-              ),
-            ),
-            child: Text(
-              '${DateTime.now().year}',
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[600],
-              ),
-            ),
-          ),
-          
-          // 영수증 목록
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _receipts.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.insert_drive_file_outlined,
-                              size: 64,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              '업로드된 영수증이 없습니다',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 16,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _loadReceipts,
-                        child: ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _receipts.length,
-                          itemBuilder: (context, index) {
-                            final receipt = _receipts[index];
-                            return _buildReceiptCard(receipt, index);
-                          },
-                        ),
-                      ),
-          ),
-        ],
-      ),
+      backgroundColor: AppColors.backgroundPrimary,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _receipts.isEmpty
+              ? const FlatEmptyState(
+                  message: '업로드된 영수증이 없습니다',
+                  icon: Icons.insert_drive_file_outlined,
+                )
+              : RefreshIndicator(
+                  onRefresh: () async {
+                    await _loadReceipts();
+                    if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+                  },
+                  child: ListView.builder(
+                    itemCount: _receipts.length + 2, // header + table header + items
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        return FlatSectionHeader(
+                          title: '${DateTime.now().year}',
+                          trailing: '${_receipts.length}건',
+                        );
+                      }
+                      if (index == 1) {
+                        return _buildTableHeader();
+                      }
+                      final receipt = _receipts[index - 2];
+                      return _buildReceiptCard(receipt, index - 2);
+                    },
+                  ),
+                ),
       floatingActionButton: FloatingActionButton.small(
         key: _uploadFabKey,
         onPressed: _showUploadOptionsMenu,
@@ -878,249 +751,204 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
     );
   }
 
+  /// 테이블 헤더 (업로드일 | 결제일 | 거래처 | 품명 | 합계)
+  Widget _buildTableHeader() {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsiveUtils.spacing(context, 16),
+        vertical: ResponsiveUtils.spacing(context, 10),
+      ),
+      decoration: const BoxDecoration(
+        color: AppColors.backgroundSecondary,
+        border: Border(
+          bottom: BorderSide(color: AppColors.border, width: 0.5),
+        ),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 52,
+            child: Text('업로드일', style: AppTextStyles.tableHeader(context)),
+          ),
+          SizedBox(
+            width: 52,
+            child: Text('결제일', style: AppTextStyles.tableHeader(context)),
+          ),
+          Expanded(
+            flex: 2,
+            child: Text('거래처', style: AppTextStyles.tableHeader(context)),
+          ),
+          Expanded(
+            flex: 2,
+            child: Text('품명', style: AppTextStyles.tableHeader(context)),
+          ),
+          SizedBox(
+            width: 70,
+            child: Text('합계', style: AppTextStyles.tableHeader(context), textAlign: TextAlign.right),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildReceiptCard(Map<String, dynamic> receipt, int index) {
-    // 한국 시간대(UTC+9)로 변환하여 표시
     final uploadedAt = DateTime.parse(receipt['uploaded_at']).toLocal();
-    final memo = receipt['memo'] ?? '';
-    final fileName = receipt['file_name'] ?? 'receipt.jpg';
 
     return Consumer<UserProvider>(
       builder: (context, userProvider, child) {
         final purchaseRole = userProvider.employee?['purchase_role'];
         final canDelete = UserRoleHelper.isAppAdmin(purchaseRole);
 
-        // app_admin만 스와이프 삭제 가능
+        final content = _buildReceiptRow(receipt, uploadedAt);
+
         if (canDelete) {
-          return Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            child: Dismissible(
-              key: Key('receipt_${receipt['id']}_$index'),
-              direction: DismissDirection.endToStart,
-              confirmDismiss: (direction) async {
-                return await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+          return Dismissible(
+            key: Key('receipt_${receipt['id']}_$index'),
+            direction: DismissDirection.endToStart,
+            confirmDismiss: (direction) async {
+              return await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  title: Text('영수증 삭제', style: AppTextStyles.cardTitle(context)),
+                  content: Text('정말로 이 영수증을 삭제하시겠습니까?', style: AppTextStyles.cardBody(context)),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text('취소', style: AppTextStyles.cardBody(context).copyWith(color: AppColors.textSecondary)),
                     ),
-                    title: const Text(
-                      '영수증 삭제',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    content: const Text(
-                      '정말로 이 영수증을 삭제하시겠습니까?',
-                      style: TextStyle(fontSize: 15),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: Text(
-                          '취소',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 15,
-                          ),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        child: const Text(
-                          '삭제',
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-              onDismissed: (direction) => _deleteReceipt(receipt),
-              background: Container(
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                alignment: Alignment.centerRight,
-                padding: const EdgeInsets.only(right: 24),
-                child: const Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.delete_outline,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      '삭제',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: Text('삭제', style: AppTextStyles.cardBody(context).copyWith(color: AppColors.error, fontWeight: FontWeight.w600)),
                     ),
                   ],
                 ),
-              ),
-              child: _buildReceiptCardContent(receipt, uploadedAt, memo, fileName, canDelete),
+              );
+            },
+            onDismissed: (direction) => _deleteReceipt(receipt),
+            background: Container(
+              color: AppColors.error,
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 24),
+              child: const Icon(Icons.delete_outline, color: Colors.white, size: 24),
             ),
+            child: content,
           );
         } else {
-          // 일반 사용자는 스와이프 삭제 불가
-          return Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            child: _buildReceiptCardContent(receipt, uploadedAt, memo, fileName, canDelete),
-          );
+          return content;
         }
-       },
-     );
-   }
+      },
+    );
+  }
 
-   Widget _buildReceiptCardContent(
-     Map<String, dynamic> receipt,
-     DateTime uploadedAt,
-     String memo,
-     String fileName,
-     bool canDelete,
-   ) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+  Widget _buildReceiptRow(Map<String, dynamic> receipt, DateTime uploadedAt) {
+    final paymentDate = receipt['ocr_payment_date'] as String?;
+    final merchant = receipt['ocr_merchant_name'] as String? ?? '-';
+    final itemName = receipt['ocr_item_name'] as String? ?? '-';
+    final totalAmount = receipt['ocr_total_amount'];
+
+    return Material(
+      color: Colors.white,
+      child: InkWell(
+        onTap: () => _viewReceipt(receipt),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: ResponsiveUtils.spacing(context, 16),
+            vertical: ResponsiveUtils.spacing(context, 12),
           ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _viewReceipt(receipt),
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Row(
-              children: [
-                // 인쇄 상태 표시
-                Container(
-                  width: 48,
-                  height: 48,
-                  alignment: Alignment.center,
-                  child: Icon(
-                    (receipt['is_printed'] == true) 
-                        ? Icons.check_circle 
-                        : Icons.pending,
-                    color: (receipt['is_printed'] == true) 
-                        ? Colors.green[600] 
-                        : Colors.grey[400],
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 18),
-                
-                // 영수증 정보
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 라벨 (작은 텍스트)
-                      Row(
-                        children: [
-                          Text(
-                            '날짜',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 12,
-                              color: Colors.grey[500],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(width: 40),
-                          Text(
-                            '파일명',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 12,
-                              color: Colors.grey[500],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      
-                      const SizedBox(height: 4),
-                      
-                      // 메인 정보 (한 줄에)
-                      Row(
-                        children: [
-                          // 날짜 (10/27 형태)
-                          Text(
-                            '${uploadedAt.month}/${uploadedAt.day}',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFF1F2937),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          // 파일명
-                          Expanded(
-                            child: Text(
-                              fileName,
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: const Color(0xFF4B5563),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      
-                      // 메모 (있는 경우)
-                      if (memo.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey[200]!),
-                          ),
-                          child: Text(
-                            memo,
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 13,
-                              color: Colors.grey[700],
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
+          decoration: const BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
             ),
+          ),
+          child: Row(
+            children: [
+              // 업로드일
+              SizedBox(
+                width: 52,
+                child: Text(
+                  _formatShortDate(uploadedAt),
+                  style: AppTextStyles.tableHeader(context).copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+              // 결제일
+              SizedBox(
+                width: 52,
+                child: Text(
+                  _formatPaymentDate(paymentDate),
+                  style: AppTextStyles.tableHeader(context).copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+              // 거래처
+              Expanded(
+                flex: 2,
+                child: Text(
+                  merchant,
+                  style: AppTextStyles.listTitle(context).copyWith(fontSize: 13),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              // 품명
+              Expanded(
+                flex: 2,
+                child: Text(
+                  itemName,
+                  style: AppTextStyles.tableCellSub(context).copyWith(fontSize: 13),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              // 합계
+              SizedBox(
+                width: 70,
+                child: Text(
+                  _formatKrw(totalAmount),
+                  style: AppTextStyles.tableCell(context).copyWith(fontSize: 13),
+                  textAlign: TextAlign.right,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
+  }
+
+  String _formatShortDate(DateTime dt) {
+    return '${dt.month.toString().padLeft(2, '0')}.${dt.day.toString().padLeft(2, '0')}';
+  }
+
+  String _formatPaymentDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return '-';
+    try {
+      final dt = DateTime.parse(dateStr).toLocal();
+      return '${dt.month.toString().padLeft(2, '0')}.${dt.day.toString().padLeft(2, '0')}';
+    } catch (_) {
+      // OCR 결과가 날짜 형식이 아닐 수 있음
+      if (dateStr.length > 5) return dateStr.substring(0, 5);
+      return dateStr;
+    }
+  }
+
+  String _formatKrw(dynamic amount) {
+    if (amount == null) return '-';
+    final num value = amount is num ? amount : num.tryParse(amount.toString()) ?? 0;
+    if (value == 0) return '-';
+    // 천 단위 콤마
+    final parts = value.toInt().toString().split('');
+    final buffer = StringBuffer();
+    for (int i = 0; i < parts.length; i++) {
+      if (i > 0 && (parts.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(parts[i]);
+    }
+    return buffer.toString();
   }
 }
 
@@ -1194,12 +1022,7 @@ class _ReceiptDetailScreenState extends State<_ReceiptDetailScreen> {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('인쇄 실패: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppBanner.show(context, '인쇄 실패: $e', type: BannerType.error);
       }
     }
   }
@@ -1216,49 +1039,47 @@ class _ReceiptDetailScreenState extends State<_ReceiptDetailScreen> {
           children: [
             Icon(
               Icons.check_circle_outline,
-              color: Colors.green[600],
+              color: AppColors.success,
               size: 28,
             ),
             const SizedBox(width: 12),
-            const Text(
+            Text(
               '인쇄 완료',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppTextStyles.sectionTitle(context),
             ),
           ],
         ),
-        content: const Text(
+        content: Text(
           '이 영수증의 인쇄상태를 완료 처리 하시겠습니까?',
-          style: TextStyle(fontSize: 16),
+          style: AppTextStyles.sectionSubtitle(context).copyWith(
+            fontWeight: FontWeight.w400,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: Text(
               '취소',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
+              style: AppTextStyles.sectionSubtitle(context).copyWith(
+                fontWeight: FontWeight.w400,
+                color: AppColors.textSecondary,
               ),
             ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.success,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
-            child: const Text(
+            child: Text(
               '완료',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+              style: AppTextStyles.sectionSubtitle(context).copyWith(
+                color: Colors.white,
               ),
             ),
           ),
@@ -1279,12 +1100,7 @@ class _ReceiptDetailScreenState extends State<_ReceiptDetailScreen> {
       final employee = userProvider.employee;
 
       if (employee == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('사용자 정보를 불러올 수 없습니다'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppBanner.show(context, '사용자 정보를 불러올 수 없습니다', type: BannerType.error);
         return;
       }
 
@@ -1304,25 +1120,14 @@ class _ReceiptDetailScreenState extends State<_ReceiptDetailScreen> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ 인쇄 완료 처리되었습니다'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
-        
+        AppBanner.show(context, '✅ 인쇄 완료 처리되었습니다', type: BannerType.success);
+
         // 인쇄 완료 처리 후 메인 화면에 새로고침 신호 전달
         Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('인쇄 완료 처리 실패: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppBanner.show(context, '인쇄 완료 처리 실패: $e', type: BannerType.error);
       }
     }
   }
@@ -1332,8 +1137,10 @@ class _ReceiptDetailScreenState extends State<_ReceiptDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.receipt['file_name'] ?? 'Receipt'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        foregroundColor: AppColors.textPrimary,
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.print),
@@ -1354,13 +1161,13 @@ class _ReceiptDetailScreenState extends State<_ReceiptDetailScreen> {
                 margin: const EdgeInsets.only(bottom: 20),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.green[50],
+                  color: AppColors.success.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.green[200]!, width: 1),
+                  border: Border.all(color: AppColors.success.withValues(alpha: 0.3), width: 1),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.check_circle, color: Colors.green[700], size: 24),
+                    const Icon(Icons.check_circle, color: AppColors.success, size: 24),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -1368,26 +1175,24 @@ class _ReceiptDetailScreenState extends State<_ReceiptDetailScreen> {
                         children: [
                           Text(
                             '✅ 인쇄 완료',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.green[700],
+                            style: AppTextStyles.sectionSubtitle(context).copyWith(
+                              color: AppColors.success,
                             ),
                           ),
                           if (widget.receipt['printed_by_name'] != null)
                             Text(
                               '${widget.receipt['printed_by_name']}님이 인쇄함',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.green[600],
+                              style: AppTextStyles.compactLabel(context).copyWith(
+                                fontSize: ResponsiveUtils.fontSize(context, 12),
+                                color: AppColors.success,
                               ),
                             ),
                           if (widget.receipt['printed_at'] != null)
                             Text(
                               _formatDateTime(widget.receipt['printed_at']),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.green[600],
+                              style: AppTextStyles.compactLabel(context).copyWith(
+                                fontSize: ResponsiveUtils.fontSize(context, 12),
+                                color: AppColors.success,
                               ),
                             ),
                         ],
@@ -1407,7 +1212,7 @@ class _ReceiptDetailScreenState extends State<_ReceiptDetailScreen> {
                   errorBuilder: (context, error, stackTrace) => Container(
                     width: 200,
                     height: 200,
-                    color: Colors.grey[300],
+                    color: AppColors.gray200,
                     child: const Icon(Icons.error, size: 50),
                   ),
                 ),
@@ -1450,16 +1255,18 @@ class _ReceiptDetailScreenState extends State<_ReceiptDetailScreen> {
             width: 100,
             child: Text(
               label,
-              style: const TextStyle(
+              style: AppTextStyles.inputLabel(context).copyWith(
                 fontWeight: FontWeight.w600,
-                color: Colors.grey,
+                color: AppColors.gray400,
               ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontSize: 16),
+              style: AppTextStyles.sectionSubtitle(context).copyWith(
+                fontWeight: FontWeight.w400,
+              ),
             ),
           ),
         ],

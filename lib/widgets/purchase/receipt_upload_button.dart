@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/receipt_upload_service.dart';
 import '../../providers/user_provider.dart';
+import '../../theme/app_colors.dart';
 import '../../utils/responsive_utils.dart';
+import '../../widgets/common/notification_banner_widget.dart';
 
 /// 영수증 업로드 버튼 위젯 (현장결제 항목 전용)
 class ReceiptUploadButton extends StatefulWidget {
@@ -33,12 +35,7 @@ class _ReceiptUploadButtonState extends State<ReceiptUploadButton> {
     final userEmail = userProvider.email;
 
     if (userEmail == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('사용자 정보를 찾을 수 없습니다.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppBanner.show(context, '사용자 정보를 찾을 수 없습니다.', type: BannerType.error);
       return;
     }
 
@@ -52,7 +49,7 @@ class _ReceiptUploadButtonState extends State<ReceiptUploadButton> {
           child: Wrap(
             children: [
               ListTile(
-                leading: const Icon(Icons.camera_alt, color: Color(0xFF007AFF)),
+                leading: Icon(Icons.camera_alt, color: AppColors.info),
                 title: const Text('카메라로 촬영'),
                 onTap: () async {
                   Navigator.pop(context);
@@ -65,7 +62,7 @@ class _ReceiptUploadButtonState extends State<ReceiptUploadButton> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.photo_library, color: Color(0xFF34C759)),
+                leading: Icon(Icons.photo_library, color: AppColors.success),
                 title: const Text('갤러리에서 선택'),
                 onTap: () async {
                   Navigator.pop(context);
@@ -78,7 +75,7 @@ class _ReceiptUploadButtonState extends State<ReceiptUploadButton> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.cancel, color: Color(0xFF8E8E93)),
+                leading: Icon(Icons.cancel, color: AppColors.textTertiary),
                 title: const Text('취소'),
                 onTap: () => Navigator.pop(context),
               ),
@@ -89,22 +86,12 @@ class _ReceiptUploadButtonState extends State<ReceiptUploadButton> {
 
       if (result != null && mounted) {
         // 업로드 성공
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ 영수증이 업로드되었습니다.'),
-            backgroundColor: Color(0xFF34C759),
-          ),
-        );
+        AppBanner.show(context, '✅ 영수증이 업로드되었습니다.', type: BannerType.success);
         widget.onUploadComplete();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('업로드 실패: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppBanner.show(context, '업로드 실패: $e', type: BannerType.error);
       }
     } finally {
       if (mounted) {
@@ -146,22 +133,12 @@ class _ReceiptUploadButtonState extends State<ReceiptUploadButton> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ 영수증이 삭제되었습니다.'),
-            backgroundColor: Color(0xFF34C759),
-          ),
-        );
+        AppBanner.show(context, '✅ 영수증이 삭제되었습니다.', type: BannerType.success);
         widget.onUploadComplete();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('삭제 실패: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppBanner.show(context, '삭제 실패: $e', type: BannerType.error);
       }
     } finally {
       if (mounted) {
@@ -243,14 +220,14 @@ class _ReceiptUploadButtonState extends State<ReceiptUploadButton> {
                 ),
               );
             },
-            icon: const Icon(Icons.receipt, color: Color(0xFF34C759)),
+            icon: Icon(Icons.receipt, color: AppColors.success),
             tooltip: '영수증 보기',
             iconSize: ResponsiveUtils.iconSize(context, 24),
           ),
           // 영수증 삭제 버튼
           IconButton(
             onPressed: _handleDelete,
-            icon: const Icon(Icons.delete_outline, color: Color(0xFFFF3B30)),
+            icon: Icon(Icons.delete_outline, color: AppColors.error),
             tooltip: '영수증 삭제',
             iconSize: ResponsiveUtils.iconSize(context, 24),
           ),
@@ -261,7 +238,7 @@ class _ReceiptUploadButtonState extends State<ReceiptUploadButton> {
     // 영수증이 없는 경우 - 업로드 버튼
     return IconButton(
       onPressed: _handleUpload,
-      icon: const Icon(Icons.camera_alt, color: Color(0xFF007AFF)),
+      icon: Icon(Icons.camera_alt, color: AppColors.info),
       tooltip: '영수증 촬영',
       iconSize: ResponsiveUtils.iconSize(context, 24),
     );

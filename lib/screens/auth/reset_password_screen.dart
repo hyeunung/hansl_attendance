@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../utils/error_translator.dart';
 import '../../utils/responsive_utils.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_shadows.dart';
+import '../../theme/app_text_theme.dart';
+import '../../widgets/common/notification_banner_widget.dart';
 import 'login_screen.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
@@ -71,12 +75,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
         // 성공 메시지 표시 후 로그인 화면으로 이동
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('비밀번호가 성공적으로 변경되었습니다.'),
-              backgroundColor: Colors.green,
-            ),
-          );
+          AppBanner.show(context, '비밀번호가 성공적으로 변경되었습니다.', type: BannerType.success);
 
           // 로그아웃 후 로그인 화면으로 이동
           await Supabase.instance.client.auth.signOut();
@@ -104,7 +103,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     final fieldRadius = BorderRadius.circular(8);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.backgroundPrimary,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -119,11 +118,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 const SizedBox(height: 10),
                 Text(
                   '비밀번호 재설정',
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontSize: 20,
+                  style: AppTextStyles.sectionTitle(context).copyWith(
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF222222),
                   ),
                 ),
                 const SizedBox(height: 40),
@@ -136,39 +132,25 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: boxRadius,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    boxShadow: AppShadows.mdShadow,
                   ),
                   child: _isSuccess
                       ? Column(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.check_circle,
-                              color: Colors.green,
+                              color: AppColors.success,
                               size: 64,
                             ),
                             const SizedBox(height: 16),
                             Text(
                               '비밀번호가 변경되었습니다',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: AppTextStyles.cardTitle(context),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               '잠시 후 로그인 화면으로 이동합니다',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 14,
-                                color: const Color(0xFF666666),
-                              ),
+                              style: AppTextStyles.tableCellSub(context),
                             ),
                           ],
                         )
@@ -179,17 +161,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                 _error!.contains('유효하지 않은 링크')) ...[
                               Icon(
                                 Icons.error_outline,
-                                color: Colors.red,
+                                color: AppColors.error,
                                 size: 48,
                               ),
                               const SizedBox(height: 16),
                               Text(
                                 _error!,
                                 textAlign: TextAlign.center,
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  color: const Color(0xFFE53935),
-                                  fontSize: 14,
+                                style: AppTextStyles.tableCellSub(context).copyWith(
+                                  color: AppColors.error,
                                 ),
                               ),
                               const SizedBox(height: 16),
@@ -202,44 +182,38 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                   );
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF1777CB),
+                                  backgroundColor: AppColors.primary,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: boxRadius,
                                   ),
                                 ),
                                 child: Text(
                                   '로그인 화면으로',
-                                  style: ResponsiveUtils.getTextStyle(context, fontSize: 16, color: Colors.white),
+                                  style: AppTextStyles.sectionSubtitle(context).copyWith(
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
                             ] else ...[
                               Text(
                                 '새로운 비밀번호를 입력해주세요',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontSize: 14,
-                                  color: const Color(0xFF666666),
-                                ),
+                                style: AppTextStyles.inputLabel(context),
                               ),
                               const SizedBox(height: 20),
                               TextField(
                                 controller: _passwordController,
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontSize: 16,
+                                style: AppTextStyles.sectionSubtitle(context).copyWith(
+                                  fontWeight: FontWeight.w400,
                                 ),
                                 decoration: InputDecoration(
                                   labelText: '새 비밀번호',
-                                  labelStyle: ResponsiveUtils.getTextStyle(
-                                    context,
+                                  labelStyle: AppTextStyles.listTitle(context).copyWith(
                                     fontWeight: FontWeight.w500,
-                                    fontSize: 15,
-                                    color: Color(0xFF222222),
                                   ),
                                   hintText: '6자 이상 입력',
-                                  hintStyle: ResponsiveUtils.getTextStyle(context, fontSize: 14, color: Color(0xFFB0B8C1)),
+                                  hintStyle: AppTextStyles.emptyState(context).copyWith(color: AppColors.textDisabled),
                                   filled: true,
-                                  fillColor: const Color(0xFFF8F9FA),
+                                  fillColor: AppColors.backgroundSecondary,
                                   border: OutlineInputBorder(
                                     borderRadius: fieldRadius,
                                     borderSide: BorderSide.none,
@@ -250,23 +224,18 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                               const SizedBox(height: 14),
                               TextField(
                                 controller: _confirmPasswordController,
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontSize: 16,
+                                style: AppTextStyles.sectionSubtitle(context).copyWith(
+                                  fontWeight: FontWeight.w400,
                                 ),
                                 decoration: InputDecoration(
                                   labelText: '비밀번호 확인',
-                                  labelStyle: ResponsiveUtils.getTextStyle(
-                                    context,
+                                  labelStyle: AppTextStyles.listTitle(context).copyWith(
                                     fontWeight: FontWeight.w500,
-                                    fontSize: 15,
-                                    color: Color(0xFF222222),
                                   ),
                                   hintText: '비밀번호 재입력',
-                                  hintStyle:
-                                      ResponsiveUtils.getTextStyle(context, fontSize: 14, color: Color(0xFFB0B8C1)),
+                                  hintStyle: AppTextStyles.emptyState(context).copyWith(color: AppColors.textDisabled),
                                   filled: true,
-                                  fillColor: const Color(0xFFF8F9FA),
+                                  fillColor: AppColors.backgroundSecondary,
                                   border: OutlineInputBorder(
                                     borderRadius: fieldRadius,
                                     borderSide: BorderSide.none,
@@ -279,10 +248,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                 const SizedBox(height: 8),
                                 Text(
                                   _error!,
-                                  style: ResponsiveUtils.getTextStyle(
-                                    context,
-                                    color: const Color(0xFFE53935),
-                                    fontSize: 14,
+                                  style: AppTextStyles.tableCellSub(context).copyWith(
+                                    color: AppColors.error,
                                   ),
                                 ),
                               ],
@@ -295,7 +262,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                   child: ElevatedButton(
                                     onPressed: _resetPassword,
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF1777CB),
+                                      backgroundColor: AppColors.primary,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: boxRadius,
                                       ),
@@ -304,11 +271,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                     ),
                                     child: Text(
                                       '비밀번호 변경',
-                                      style: ResponsiveUtils.getTextStyle(
-                                        context,
-                                        fontWeight: FontWeight.bold,
+                                      style: AppTextStyles.buttonPrimary(context).copyWith(
                                         fontSize: 18,
-                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ),

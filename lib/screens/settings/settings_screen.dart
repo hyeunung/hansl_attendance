@@ -2,11 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_text_theme.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
 import '../../providers/leave_provider.dart';
 import '../../providers/notification_provider.dart';
-import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/font_provider.dart';
@@ -18,6 +18,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../services/cache_recovery_service.dart';
 import '../../providers/attendance_provider.dart';
 import '../../services/badge_count_service.dart';
+import '../../widgets/shared/flat_section.dart';
+import '../../widgets/common/notification_banner_widget.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -113,7 +115,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       });
     } catch (e) {
       setState(() {
-        _appVersion = '앱 버전 3.4.7';
+        _appVersion = '앱 버전 4.0.0';
       });
     }
   }
@@ -179,9 +181,8 @@ class _SettingsScreenState extends State<SettingsScreen>
             const SizedBox(width: 8),
             Text(
               size,
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: _getFontSizePreview(size),
+              style: AppTextStyles.cardBody(context).copyWith(
+                fontSize: ResponsiveUtils.fontSize(context, _getFontSizePreview(size)),
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -219,21 +220,15 @@ class _SettingsScreenState extends State<SettingsScreen>
         return CupertinoAlertDialog(
           title: Text(
             '계정 삭제',
-            style: ResponsiveUtils.getTextStyle(
-              context,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFFD32F2F),
-              fontSize: 18,
+            style: AppTextStyles.cardTitle(context).copyWith(
+              color: AppColors.error,
             ),
           ),
           content: Padding(
             padding: const EdgeInsets.only(top: 12),
             child: Text(
               '계정을 삭제하면 모든 데이터가 영구적으로 삭제됩니다.\n\n• 출퇴근 기록\n• 연차 신청 내역\n• 개인 정보\n\n이 작업은 되돌릴 수 없습니다.',
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 14,
-              ),
+              style: AppTextStyles.tableCellSub(context),
             ),
           ),
           actions: [
@@ -311,7 +306,7 @@ class _SettingsScreenState extends State<SettingsScreen>
 
         // 4. 로그아웃 (Auth 사용자는 관리자가 별도 삭제)
         await supabase.auth.signOut();
-        
+
         // 배지 제거
         await BadgeCountService.updateBadgeCount();
 
@@ -326,12 +321,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       Navigator.pop(context);
 
       // 성공 메시지 표시
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('계정이 성공적으로 삭제되었습니다.'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      AppBanner.show(context, '계정이 성공적으로 삭제되었습니다.', type: BannerType.success);
 
       // 로그인 화면으로 이동
       Navigator.of(context).pushAndRemoveUntil(
@@ -343,19 +333,14 @@ class _SettingsScreenState extends State<SettingsScreen>
       Navigator.pop(context);
 
       // 에러 메시지 표시
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('계정 삭제 중 오류가 발생했습니다: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppBanner.show(context, '계정 삭제 중 오류가 발생했습니다: $e', type: BannerType.error);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context); // AutomaticKeepAliveClientMixin 필수
-    
+
     return Consumer<FontProvider>(
       builder: (context, fontProvider, _) {
         // FontProvider 상태가 변경되면 _fontSize 동기화
@@ -366,11 +351,9 @@ class _SettingsScreenState extends State<SettingsScreen>
             });
           });
         }
-        
+
         final userProvider = Provider.of<UserProvider>(context);
         final leaveProvider = Provider.of<LeaveProvider>(context);
-
-    // Debug code removed
 
     // 데이터가 없으면 여기서 로드
     if (!leaveProvider.isLoading && leaveProvider.myLeaves.isEmpty) {
@@ -404,11 +387,11 @@ class _SettingsScreenState extends State<SettingsScreen>
           );
         }
       });
-      
+
       // 로그인 화면으로 이동하는 동안 로딩 표시
       return Scaffold(
         body: Container(
-          color: const Color(0xFFF8F9FA),
+          color: AppColors.backgroundPrimary,
           child: const Center(child: CircularProgressIndicator()),
         ),
       );
@@ -425,16 +408,14 @@ class _SettingsScreenState extends State<SettingsScreen>
       );
     }
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: AppColors.backgroundPrimary,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
         elevation: 0,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
-        ),
         centerTitle: true,
-        title: Text('설정', style: AppTextStyles.appBarTitle(context)),
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: AppBarTitle('설정'),
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       body: isLoading
           ? const Center(child: CupertinoActivityIndicator())
@@ -464,560 +445,146 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                   ],
                 ]);
+                if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
               },
-              child: SingleChildScrollView(
+              child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
-                child: Column(
-                  children: [
-                    // 프로필 카드
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveUtils.spacing(context, 12),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: ResponsiveUtils.spacing(context, 3),
-                            offset: Offset(
-                              0,
-                              ResponsiveUtils.spacing(context, 1),
-                            ),
-                          ),
-                        ],
-                      ),
-                      padding: EdgeInsets.all(
-                        ResponsiveUtils.spacing(context, 20),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: ResponsiveUtils.spacing(context, 60),
-                            height: ResponsiveUtils.spacing(context, 60),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF1E90FF), Color(0xFF00BFFF)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(
-                                ResponsiveUtils.spacing(context, 30),
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                name.isNotEmpty ? name[0] : '-',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  color: Colors.white,
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: ResponsiveUtils.spacing(context, 16)),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  name,
-                                  style: ResponsiveUtils.getTextStyle(
-                                    context,
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF1C1C1E),
-                                  ),
-                                ),
-                                SizedBox(
-                                  height: ResponsiveUtils.spacing(context, 4),
-                                ),
-                                Text(
-                                  '${(department?.isNotEmpty ?? false) ? department : '-'} • ${(position?.isNotEmpty ?? false) ? position : '-'}',
-                                  style: ResponsiveUtils.getTextStyle(
-                                    context,
-                                    fontSize: 16,
-                                    color: const Color(0xFF8E8E93),
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                children: [
+                  // 프로필 섹션
+                  FlatSectionHeader(title: '프로필'),
+                  Container(
+                    color: Colors.white,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: ResponsiveUtils.spacing(context, 16),
+                      vertical: ResponsiveUtils.spacing(context, 16),
                     ),
-
-                    SizedBox(height: ResponsiveUtils.spacing(context, 20)),
-
-                    // 연차 현황
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveUtils.spacing(context, 12),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: ResponsiveUtils.spacing(context, 3),
-                            offset: Offset(
-                              0,
-                              ResponsiveUtils.spacing(context, 1),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: ResponsiveUtils.spacing(context, 52),
+                          height: ResponsiveUtils.spacing(context, 52),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(
+                              ResponsiveUtils.spacing(context, 26),
                             ),
                           ),
-                        ],
-                      ),
-                      padding: EdgeInsets.all(
-                        ResponsiveUtils.spacing(context, 20),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
+                          child: Center(
+                            child: Text(
+                              name.isNotEmpty ? name[0] : '-',
+                              style: AppTextStyles.statNumber(context, color: Colors.white).copyWith(
+                                fontSize: ResponsiveUtils.fontSize(context, 24),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: ResponsiveUtils.spacing(context, 14)),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(
-                                child: Text(
-                                  '📅 연차 현황',
-                                  style: ResponsiveUtils.getTextStyle(
-                                    context,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w800,
-                                    color: const Color(0xFF1C1C1E),
-                                  ),
+                              Text(
+                                name,
+                                style: AppTextStyles.sectionSubtitle(context).copyWith(
+                                  fontSize: ResponsiveUtils.fontSize(context, 20),
+                                ),
+                              ),
+                              SizedBox(
+                                height: ResponsiveUtils.spacing(context, 2),
+                              ),
+                              Text(
+                                '${(department?.isNotEmpty ?? false) ? department : '-'} / ${(position?.isNotEmpty ?? false) ? position : '-'}',
+                                style: AppTextStyles.listSubtitle(context).copyWith(
+                                  fontSize: ResponsiveUtils.fontSize(context, 14),
                                 ),
                               ),
                             ],
                           ),
-                          SizedBox(
-                            height: ResponsiveUtils.spacing(context, 12),
-                          ),
-                          Row(
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 0.5, thickness: 0.5, color: AppColors.borderLight),
+
+                  // 연차 현황 섹션
+                  FlatSectionHeader(title: '연차 현황'),
+                  FlatStatGrid(
+                    items: [
+                      FlatStatItem(
+                        label: '총 연차',
+                        value: '$totalAnnual',
+                        color: AppColors.primaryLight,
+                      ),
+                      FlatStatItem(
+                        label: '소모 연차',
+                        value: '$usedAnnual',
+                        color: AppColors.primaryLight,
+                      ),
+                      FlatStatItem(
+                        label: '잔여',
+                        value: '$remainAnnual',
+                        color: AppColors.primaryLight,
+                      ),
+                    ],
+                  ),
+
+                  // 앱 설정 섹션
+                  FlatSectionHeader(title: '앱 설정'),
+                  FlatListTile(
+                    title: '폰트 크기',
+                    value: _fontSize,
+                    leading: Icon(
+                      Icons.text_fields,
+                      size: ResponsiveUtils.iconSize(context, 20),
+                      color: AppColors.info,
+                    ),
+                    onTap: _showFontSizeDialog,
+                  ),
+                  FlatListTile(
+                    title: _isAdmin ? '문의 관리' : '문의하기',
+                    value: _isAdmin
+                        ? (_inquiryBadgeCount > 0
+                            ? '미처리 $_inquiryBadgeCount건'
+                            : '처리 완료')
+                        : null,
+                    leading: Icon(
+                      Icons.support_agent,
+                      size: ResponsiveUtils.iconSize(context, 20),
+                      color: AppColors.success,
+                    ),
+                    trailing: _inquiryBadgeCount > 0
+                        ? Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Expanded(
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: ResponsiveUtils.spacing(
-                                      context,
-                                      16,
+                              Container(
+                                width: ResponsiveUtils.spacing(context, 22),
+                                height: ResponsiveUtils.spacing(context, 22),
+                                decoration: const BoxDecoration(
+                                  color: AppColors.error,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    _inquiryBadgeCount.toString(),
+                                    style: AppTextStyles.tableHeader(context).copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                    horizontal: ResponsiveUtils.spacing(
-                                      context,
-                                      8,
-                                    ),
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF8F9FA),
-                                    borderRadius: BorderRadius.circular(
-                                      ResponsiveUtils.spacing(context, 10),
-                                    ),
-                                    border: Border.all(
-                                      color: const Color(0xFFF2F2F7),
-                                    ),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Text(
-                                        '$totalAnnual',
-                                        style: ResponsiveUtils.getTextStyle(
-                                          context,
-                                          fontSize: 22,
-                                          fontWeight: FontWeight.bold,
-                                          color: const Color(0xFF1E90FF),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height: ResponsiveUtils.spacing(
-                                          context,
-                                          2,
-                                        ),
-                                      ),
-                                      FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        child: Text(
-                                          '총 연차',
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 19,
-                                            fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF8E8E93),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
                                   ),
                                 ),
                               ),
-                              SizedBox(
-                                width: ResponsiveUtils.spacing(context, 8),
-                              ),
-                              Expanded(
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: ResponsiveUtils.spacing(
-                                      context,
-                                      16,
-                                    ),
-                                    horizontal: ResponsiveUtils.spacing(
-                                      context,
-                                      8,
-                                    ),
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF8F9FA),
-                                    borderRadius: BorderRadius.circular(
-                                      ResponsiveUtils.spacing(context, 10),
-                                    ),
-                                    border: Border.all(
-                                      color: const Color(0xFFF2F2F7),
-                                    ),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Text(
-                                        '$usedAnnual',
-                                        style: ResponsiveUtils.getTextStyle(
-                                          context,
-                                          fontSize: 22,
-                                          fontWeight: FontWeight.bold,
-                                          color: const Color(0xFF1E90FF),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height: ResponsiveUtils.spacing(
-                                          context,
-                                          2,
-                                        ),
-                                      ),
-                                      FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        child: Text(
-                                          '소모 연차',
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 19,
-                                            fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF8E8E93),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              SizedBox(
-                                width: ResponsiveUtils.spacing(context, 8),
-                              ),
-                              Expanded(
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: ResponsiveUtils.spacing(
-                                      context,
-                                      16,
-                                    ),
-                                    horizontal: ResponsiveUtils.spacing(
-                                      context,
-                                      8,
-                                    ),
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF8F9FA),
-                                    borderRadius: BorderRadius.circular(
-                                      ResponsiveUtils.spacing(context, 10),
-                                    ),
-                                    border: Border.all(
-                                      color: const Color(0xFFF2F2F7),
-                                    ),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Text(
-                                        '$remainAnnual',
-                                        style: ResponsiveUtils.getTextStyle(
-                                          context,
-                                          fontSize: 22,
-                                          fontWeight: FontWeight.bold,
-                                          color: const Color(0xFF1E90FF),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height: ResponsiveUtils.spacing(
-                                          context,
-                                          2,
-                                        ),
-                                      ),
-                                      FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        child: Text(
-                                          '잔여',
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 19,
-                                            fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF8E8E93),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                              SizedBox(width: ResponsiveUtils.spacing(context, 4)),
+                              Icon(
+                                Icons.chevron_right,
+                                size: 20,
+                                color: AppColors.textTertiary,
                               ),
                             ],
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    SizedBox(height: ResponsiveUtils.spacing(context, 20)),
-
-                    // 앱 설정 섹션 (폰트 크기, 문의하기 통합)
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveUtils.spacing(context, 12),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: ResponsiveUtils.spacing(context, 3),
-                            offset: Offset(
-                              0,
-                              ResponsiveUtils.spacing(context, 1),
-                            ),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.fromLTRB(
-                              ResponsiveUtils.spacing(context, 20),
-                              ResponsiveUtils.spacing(context, 20),
-                              ResponsiveUtils.spacing(context, 20),
-                              ResponsiveUtils.spacing(context, 12),
-                            ),
-                            child: Row(
-                              children: [
-                                Text(
-                                  '⚙️ 앱 설정',
-                                  style: ResponsiveUtils.getTextStyle(
-                                    context,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w800,
-                                    color: const Color(0xFF1C1C1E),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          
-                          // 구분선
-                          Container(
-                            height: 0.5,
-                            color: const Color(0xFFE5E5EA),
-                            margin: EdgeInsets.symmetric(
-                              horizontal: ResponsiveUtils.spacing(context, 20),
-                            ),
-                          ),
-                          
-                          // 폰트 크기
-                          Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () => _showFontSizeDialog(),
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: ResponsiveUtils.spacing(context, 20),
-                                  vertical: ResponsiveUtils.spacing(context, 16),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: ResponsiveUtils.spacing(context, 36),
-                                      height: ResponsiveUtils.spacing(context, 36),
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            const Color(0xFF007AFF).withValues(alpha: 0.1),
-                                            const Color(0xFF007AFF).withValues(alpha: 0.05),
-                                          ],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        ),
-                                        borderRadius: BorderRadius.circular(
-                                          ResponsiveUtils.spacing(context, 8),
-                                        ),
-                                      ),
-                                      child: Center(
-                                        child: Icon(
-                                          Icons.text_fields,
-                                          size: ResponsiveUtils.iconSize(context, 20),
-                                          color: const Color(0xFF007AFF),
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: ResponsiveUtils.spacing(context, 14),
-                                    ),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            '폰트 크기',
-                                            style: ResponsiveUtils.getTextStyle(
-                                              context,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w600,
-                                              color: const Color(0xFF1C1C1E),
-                                            ),
-                                          ),
-                                          SizedBox(
-                                            height: ResponsiveUtils.spacing(context, 2),
-                                          ),
-                                          Text(
-                                            '현재: $_fontSize',
-                                            style: ResponsiveUtils.getTextStyle(
-                                              context,
-                                              fontSize: 13,
-                                              color: const Color(0xFF8E8E93),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Icon(
-                                      Icons.chevron_right,
-                                      color: const Color(0xFFC7C7CC),
-                                      size: ResponsiveUtils.iconSize(context, 20),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          
-                          // 구분선
-                          Container(
-                            height: 0.5,
-                            color: const Color(0xFFE5E5EA),
-                            margin: EdgeInsets.symmetric(
-                              horizontal: ResponsiveUtils.spacing(context, 20),
-                            ),
-                          ),
-                          
-                          // 문의하기
-                          Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: _showInquiryDialog,
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: ResponsiveUtils.spacing(context, 20),
-                                  vertical: ResponsiveUtils.spacing(context, 16),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: ResponsiveUtils.spacing(context, 36),
-                                      height: ResponsiveUtils.spacing(context, 36),
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            const Color(0xFF34C759).withValues(alpha: 0.1),
-                                            const Color(0xFF34C759).withValues(alpha: 0.05),
-                                          ],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        ),
-                                        borderRadius: BorderRadius.circular(
-                                          ResponsiveUtils.spacing(context, 8),
-                                        ),
-                                      ),
-                                      child: Center(
-                                        child: Icon(
-                                          Icons.support_agent,
-                                          size: ResponsiveUtils.iconSize(context, 20),
-                                          color: const Color(0xFF34C759),
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: ResponsiveUtils.spacing(context, 14),
-                                    ),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            _isAdmin ? '문의 관리' : '문의하기',
-                                            style: ResponsiveUtils.getTextStyle(
-                                              context,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w600,
-                                              color: const Color(0xFF1C1C1E),
-                                            ),
-                                          ),
-                                          SizedBox(
-                                            height: ResponsiveUtils.spacing(context, 2),
-                                          ),
-                                          Text(
-                                            _isAdmin 
-                                              ? (_inquiryBadgeCount > 0 
-                                                  ? '미처리 문의 $_inquiryBadgeCount건' 
-                                                  : '모든 문의가 처리되었습니다')
-                                              : '앱 사용 중 궁금한 점을 문의하세요',
-                                            style: ResponsiveUtils.getTextStyle(
-                                              context,
-                                              fontSize: 13,
-                                              color: const Color(0xFF8E8E93),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    if (_inquiryBadgeCount > 0) ...[
-                                      Container(
-                                        width: ResponsiveUtils.spacing(context, 24),
-                                        height: ResponsiveUtils.spacing(context, 24),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFFF3B30),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            _inquiryBadgeCount.toString(),
-                                            style: ResponsiveUtils.getTextStyle(
-                                              context,
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                                    ],
-                                    Icon(
-                                      Icons.chevron_right,
-                                      color: const Color(0xFFC7C7CC),
-                                      size: ResponsiveUtils.iconSize(context, 20),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                          )
+                        : null,
+                    onTap: _showInquiryDialog,
+                  ),
+                ],
               ),
             ),
       bottomNavigationBar: Padding(
@@ -1043,16 +610,14 @@ class _SettingsScreenState extends State<SettingsScreen>
                       child: TextButton.icon(
                         icon: Icon(
                           Icons.restore,
-                          color: const Color(0xFF007AFF),
+                          color: AppColors.info,
                           size: ResponsiveUtils.iconSize(context, 18),
                         ),
                         label: Text(
                           '캐시 복원',
-                          style: ResponsiveUtils.getTextStyle(
-                            context,
+                          style: AppTextStyles.tableCellSub(context).copyWith(
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xFF007AFF),
-                            fontSize: 14,
+                            color: AppColors.info,
                           ),
                         ),
                         style: TextButton.styleFrom(
@@ -1070,12 +635,7 @@ class _SettingsScreenState extends State<SettingsScreen>
 
                           // 성공 메시지
                           if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('캐시 데이터 복원 완료! 디버그 콘솔을 확인하세요.'),
-                                backgroundColor: Color(0xFF007AFF),
-                              ),
-                            );
+                            AppBanner.show(context, '캐시 데이터 복원 완료! 디버그 콘솔을 확인하세요.', type: BannerType.info);
                           }
                         },
                       ),
@@ -1094,16 +654,14 @@ class _SettingsScreenState extends State<SettingsScreen>
                   child: TextButton.icon(
                     icon: Icon(
                       Icons.delete_forever,
-                      color: const Color(0xFFFF3B30),
+                      color: AppColors.error,
                       size: ResponsiveUtils.iconSize(context, 18),
                     ),
                     label: Text(
                       '계정 삭제',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
+                      style: AppTextStyles.tableCellSub(context).copyWith(
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFFFF3B30),
-                        fontSize: 14,
+                        color: AppColors.error,
                       ),
                     ),
                     style: TextButton.styleFrom(
@@ -1122,16 +680,14 @@ class _SettingsScreenState extends State<SettingsScreen>
                   child: TextButton.icon(
                     icon: Icon(
                       Icons.logout,
-                      color: const Color(0xFFFF3B30),
+                      color: AppColors.error,
                       size: ResponsiveUtils.iconSize(context, 18),
                     ),
                     label: Text(
                       '로그아웃',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
+                      style: AppTextStyles.tableCellSub(context).copyWith(
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFFFF3B30),
-                        fontSize: 14,
+                        color: AppColors.error,
                       ),
                     ),
                     style: TextButton.styleFrom(
@@ -1144,7 +700,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       // Supabase 세션 종료
                       final supabase = Supabase.instance.client;
                       await supabase.auth.signOut();
-                      
+
                       // 배지 제거
                       await BadgeCountService.updateBadgeCount();
                       BadgeCountService.removeSubscriptions();
@@ -1176,11 +732,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             SizedBox(height: ResponsiveUtils.spacing(context, 6)),
             Text(
               _appVersion,
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                color: const Color(0xFFB0B0B0),
-                fontSize: 13,
-              ),
+              style: AppTextStyles.listSubtitle(context),
             ),
           ],
         ),

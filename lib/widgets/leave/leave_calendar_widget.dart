@@ -4,14 +4,14 @@ import 'package:table_calendar/table_calendar.dart';
 import '../../models/leave_request.dart';
 import '../../providers/leave_provider.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_shadows.dart';
+import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
 
 /// 연차 신청 화면의 캘린더 위젯
 /// 날짜 선택 및 표시를 담당하는 재사용 가능한 컴포넌트
 class LeaveCalendarWidget extends StatelessWidget {
   final Map<LeaveType, Set<DateTime>> selectedDatesMap;
-  final LeaveType selectedType;
+  final LeaveType? selectedType;
   final List<Map<String, dynamic>> myLeaves;
   final Function(DateTime) onDayTapped;
 
@@ -26,15 +26,12 @@ class LeaveCalendarWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-
-    // 이미 신청된 날짜들을 계산
     final Set<DateTime> disabledDates = _getDisabledDates();
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: AppShadows.cardShadow,
+        border: Border(bottom: BorderSide(color: AppColors.borderLight, width: 0.5)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
@@ -49,7 +46,6 @@ class LeaveCalendarWidget extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context) {
-    // 사용연차 계산
     double usedDaysSum = 0;
     for (final type in LeaveType.values) {
       if (selectedDatesMap.containsKey(type)) {
@@ -61,17 +57,18 @@ class LeaveCalendarWidget extends StatelessWidget {
       children: [
         Text(
           '날짜',
-          style: ResponsiveUtils.getTextStyle(context, fontWeight: FontWeight.bold, fontSize: 17),
+          style: AppTextStyles.sectionSubtitle(context),
         ),
-        Text('  *', style: ResponsiveUtils.getTextStyle(context, color: Colors.red, fontSize: 17)),
+        Text(
+          '  *',
+          style: AppTextStyles.sectionSubtitle(context).copyWith(color: AppColors.error),
+        ),
         const SizedBox(width: 12),
         Text(
           '선택된 일수: ${usedDaysSum % 1 == 0 ? usedDaysSum.toInt() : usedDaysSum}일',
-          style: ResponsiveUtils.getTextStyle(
-            context,
-            fontWeight: FontWeight.bold,
+          style: AppTextStyles.inputLabel(context).copyWith(
             color: AppColors.primary,
-            fontSize: 14,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ],
@@ -93,17 +90,15 @@ class LeaveCalendarWidget extends StatelessWidget {
       calendarStyle: _getCalendarStyle(context),
       enabledDayPredicate: (day) => _isEnabledDay(context, day, disabledDates),
       daysOfWeekStyle: DaysOfWeekStyle(
-        weekdayStyle: ResponsiveUtils.getTextStyle(
-          context,
-          color: Colors.black87,
+        weekdayStyle: AppTextStyles.tableHeader(context).copyWith(
+          color: AppColors.textPrimary,
           fontWeight: FontWeight.w600,
-          fontSize: 13,
+          fontSize: ResponsiveUtils.fontSize(context, 13),
         ),
-        weekendStyle: ResponsiveUtils.getTextStyle(
-          context,
-          color: Colors.black87, // 요일 헤더는 기본 색상으로
+        weekendStyle: AppTextStyles.tableHeader(context).copyWith(
+          color: AppColors.textPrimary,
           fontWeight: FontWeight.w600,
-          fontSize: 13,
+          fontSize: ResponsiveUtils.fontSize(context, 13),
         ),
       ),
       daysOfWeekHeight: 28,
@@ -111,20 +106,9 @@ class LeaveCalendarWidget extends StatelessWidget {
         formatButtonVisible: false,
         titleCentered: true,
         titleTextFormatter: (date, locale) {
-          // 강제로 한글 월 표시
           const months = [
-            '1월',
-            '2월',
-            '3월',
-            '4월',
-            '5월',
-            '6월',
-            '7월',
-            '8월',
-            '9월',
-            '10월',
-            '11월',
-            '12월',
+            '1월', '2월', '3월', '4월', '5월', '6월',
+            '7월', '8월', '9월', '10월', '11월', '12월',
           ];
           return '${date.year}년 ${months[date.month - 1]}';
         },
@@ -144,14 +128,18 @@ class LeaveCalendarWidget extends StatelessWidget {
         color: AppColors.primary.withValues(alpha: 0.2),
         shape: BoxShape.circle,
       ),
-      disabledTextStyle: ResponsiveUtils.getTextStyle(context, fontSize: 14, color: Colors.grey.shade400),
-      // 주말 스타일 설정 제거 - defaultBuilder에서 처리
-      weekendTextStyle: ResponsiveUtils.getTextStyle(
-        context,
-        fontSize: 14,
-        color: Colors.black87, // 기본 색상으로 설정
+      disabledTextStyle: AppTextStyles.tableCellSub(context).copyWith(
+        color: AppColors.textDisabled,
+        fontSize: ResponsiveUtils.fontSize(context, 14),
       ),
-      defaultTextStyle: ResponsiveUtils.getTextStyle(context, fontSize: 14, color: Colors.black87),
+      weekendTextStyle: AppTextStyles.tableCellSub(context).copyWith(
+        color: AppColors.textPrimary,
+        fontSize: ResponsiveUtils.fontSize(context, 14),
+      ),
+      defaultTextStyle: AppTextStyles.tableCellSub(context).copyWith(
+        color: AppColors.textPrimary,
+        fontSize: ResponsiveUtils.fontSize(context, 14),
+      ),
     );
   }
 
@@ -160,7 +148,6 @@ class LeaveCalendarWidget extends StatelessWidget {
 
     return CalendarBuilders(
       defaultBuilder: (context, day, focusedDay) {
-        // 선택된 날짜가 있으면 그것을 우선 표시
         final selectedWidget = _buildDayWidget(context, day);
         if (selectedWidget != null) return selectedWidget;
 
@@ -170,144 +157,115 @@ class LeaveCalendarWidget extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               '${day.day}',
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                color: Color(0xFFFF5252), // 밝은 빨간색
+              style: AppTextStyles.tableCell(context, color: AppColors.holiday).copyWith(
                 fontWeight: FontWeight.w800,
-                fontSize: 15,
+                fontSize: ResponsiveUtils.fontSize(context, 15),
               ),
             ),
           );
         }
 
-        // 일요일 - 빨간색
         if (day.weekday == DateTime.sunday) {
           return Container(
             margin: const EdgeInsets.all(4),
             alignment: Alignment.center,
             child: Text(
               '${day.day}',
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                color: Color(0xFFEF5350), // 밝은 빨간색
+              style: AppTextStyles.tableCell(context, color: AppColors.sunday).copyWith(
                 fontWeight: FontWeight.w700,
-                fontSize: 14,
+                fontSize: ResponsiveUtils.fontSize(context, 14),
               ),
             ),
           );
         }
 
-        // 토요일 - 파란색
         if (day.weekday == DateTime.saturday) {
           return Container(
             margin: const EdgeInsets.all(4),
             alignment: Alignment.center,
             child: Text(
               '${day.day}',
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                color: Color(0xFF2196F3), // 밝은 파란색
+              style: AppTextStyles.tableCell(context, color: AppColors.saturday).copyWith(
                 fontWeight: FontWeight.w700,
-                fontSize: 14,
+                fontSize: ResponsiveUtils.fontSize(context, 14),
               ),
             ),
           );
         }
 
-        return null; // 평일은 기본 스타일 사용
+        return null;
       },
       selectedBuilder: (context, day, focusedDay) => _buildDayWidget(context, day),
       todayBuilder: (context, day, focusedDay) => _buildTodayWidget(context, day),
       disabledBuilder: (context, day, focusedDay) {
-        // 비활성화된 날짜의 색상 처리
-
-        // 공휴일 - 밝은 빨간색
         if (leaveProvider.isHoliday(day)) {
           return Container(
             margin: const EdgeInsets.all(4),
             alignment: Alignment.center,
             child: Text(
               '${day.day}',
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                color: const Color(
-                  0xFFFF5252,
-                ).withValues(alpha: 0.7), // 밝은 빨간색 70%
+              style: AppTextStyles.listSubtitle(context).copyWith(
+                color: AppColors.holiday.withValues(alpha: 0.7),
                 fontWeight: FontWeight.w600,
-                fontSize: 13,
               ),
             ),
           );
-        }
-        // 일요일 - 밝은 빨간색
-        else if (day.weekday == DateTime.sunday) {
+        } else if (day.weekday == DateTime.sunday) {
           return Container(
             margin: const EdgeInsets.all(4),
             alignment: Alignment.center,
             child: Text(
               '${day.day}',
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                color: const Color(
-                  0xFFEF5350,
-                ).withValues(alpha: 0.7), // 밝은 빨간색 70%
+              style: AppTextStyles.listSubtitle(context).copyWith(
+                color: AppColors.sunday.withValues(alpha: 0.7),
                 fontWeight: FontWeight.w500,
-                fontSize: 12,
+                fontSize: ResponsiveUtils.fontSize(context, 12),
               ),
             ),
           );
-        }
-        // 토요일 - 밝은 파란색
-        else if (day.weekday == DateTime.saturday) {
+        } else if (day.weekday == DateTime.saturday) {
           return Container(
             margin: const EdgeInsets.all(4),
             alignment: Alignment.center,
             child: Text(
               '${day.day}',
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                color: const Color(
-                  0xFF2196F3,
-                ).withValues(alpha: 0.7), // 밝은 파란색 70%
+              style: AppTextStyles.listSubtitle(context).copyWith(
+                color: AppColors.saturday.withValues(alpha: 0.7),
                 fontWeight: FontWeight.w500,
-                fontSize: 12,
+                fontSize: ResponsiveUtils.fontSize(context, 12),
               ),
             ),
           );
         }
 
-        // 평일 비활성화
         return Container(
           margin: const EdgeInsets.all(4),
           alignment: Alignment.center,
           child: Text(
             '${day.day}',
-            style: ResponsiveUtils.getTextStyle(
-              context,
-              color: Colors.grey.shade400,
+            style: AppTextStyles.listSubtitle(context).copyWith(
+              color: AppColors.textDisabled,
               fontWeight: FontWeight.w400,
-              fontSize: 12,
+              fontSize: ResponsiveUtils.fontSize(context, 12),
             ),
           ),
         );
       },
       dowBuilder: (context, day) {
-        // 요일을 한글로 표시
         final weekdays = ['일', '월', '화', '수', '목', '금', '토'];
         final text = weekdays[day.weekday % 7];
 
         return Center(
           child: Text(
             text,
-            style: ResponsiveUtils.getTextStyle(
-              context,
+            style: AppTextStyles.tableHeader(context).copyWith(
               color: day.weekday == DateTime.sunday
-                  ? const Color(0xFFEF5350) // 일요일은 밝은 빨간색
+                  ? AppColors.sunday
                   : day.weekday == DateTime.saturday
-                  ? const Color(0xFF2196F3) // 토요일은 밝은 파란색
-                  : Colors.black87,
+                  ? AppColors.saturday
+                  : AppColors.textPrimary,
               fontWeight: FontWeight.w600,
-              fontSize: 13,
+              fontSize: ResponsiveUtils.fontSize(context, 13),
             ),
           ),
         );
@@ -335,7 +293,10 @@ class LeaveCalendarWidget extends StatelessWidget {
       alignment: Alignment.center,
       child: Text(
         '${day.day}',
-        style: ResponsiveUtils.getTextStyle(context, fontSize: 14, color: AppColors.primary, fontWeight: FontWeight.bold),
+        style: AppTextStyles.tableCell(context, color: AppColors.primary).copyWith(
+          fontWeight: FontWeight.bold,
+          fontSize: ResponsiveUtils.fontSize(context, 14),
+        ),
       ),
     );
   }
@@ -366,11 +327,9 @@ class LeaveCalendarWidget extends StatelessWidget {
           alignment: Alignment.center,
           child: Text(
             '${day.day}',
-            style: ResponsiveUtils.getTextStyle(
-              context,
-              fontSize: 14,
-              color: Colors.black,
+            style: AppTextStyles.tableCell(context).copyWith(
               fontWeight: FontWeight.bold,
+              fontSize: ResponsiveUtils.fontSize(context, 14),
             ),
           ),
         ),
@@ -389,11 +348,9 @@ class LeaveCalendarWidget extends StatelessWidget {
           child: Center(
             child: Text(
               '${day.day}',
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 14,
-                color: Colors.black,
+              style: AppTextStyles.tableCell(context).copyWith(
                 fontWeight: FontWeight.bold,
+                fontSize: ResponsiveUtils.fontSize(context, 14),
               ),
             ),
           ),
@@ -405,19 +362,18 @@ class LeaveCalendarWidget extends StatelessWidget {
   Color _getTypeColor(LeaveType type) {
     switch (type) {
       case LeaveType.annual:
-        return const Color(0xFFB3D8FF); // 연파랑
+        return const Color(0xFFB3D8FF);
       case LeaveType.halfAm:
-        return const Color(0xFFFFE0B2); // 연주황
+        return const Color(0xFFFFE0B2);
       case LeaveType.halfPm:
-        return const Color(0xFFC8E6C9); // 연초록
+        return const Color(0xFFC8E6C9);
       case LeaveType.official:
-        return const Color(0xFFE0E0E0); // 연회색
+        return AppColors.gray200;
       default:
-        return Colors.black;
+        return AppColors.textPrimary;
     }
   }
 
-  /// 해당 날짜에 신청된 연차 유형들을 반환
   Set<String> _getLeaveTypesForDate(DateTime day) {
     final types = <String>{};
     for (final leave in myLeaves) {
@@ -435,29 +391,19 @@ class LeaveCalendarWidget extends StatelessWidget {
     return types;
   }
 
-  /// 해당 날짜가 현재 선택된 유형으로 신청 가능한지 확인
   bool _canSelectDateForType(DateTime day) {
     final existingTypes = _getLeaveTypesForDate(day);
-    
-    // 아무것도 신청되지 않았으면 선택 가능
     if (existingTypes.isEmpty) return true;
-    
-    // 연차(annual) 또는 공가(official)가 있으면 해당 날짜 사용 불가
     if (existingTypes.contains('annual') || existingTypes.contains('official')) {
       return false;
     }
-    
-    // 현재 선택하려는 타입에 따라 판단
     switch (selectedType) {
       case LeaveType.annual:
       case LeaveType.official:
-        // 연차/공가를 신청하려면 해당 날짜에 아무것도 없어야 함
         return existingTypes.isEmpty;
       case LeaveType.halfAm:
-        // 오전반차를 신청하려면 오전반차가 없어야 함 (오후반차는 있어도 됨)
         return !existingTypes.contains('half_am') && !existingTypes.contains('halfAm');
       case LeaveType.halfPm:
-        // 오후반차를 신청하려면 오후반차가 없어야 함 (오전반차는 있어도 됨)
         return !existingTypes.contains('half_pm') && !existingTypes.contains('halfPm');
       default:
         return existingTypes.isEmpty;
@@ -465,7 +411,6 @@ class LeaveCalendarWidget extends StatelessWidget {
   }
 
   Set<DateTime> _getDisabledDates() {
-    // 이 함수는 이제 연차/공가가 신청된 날짜만 반환 (반차는 제외)
     return myLeaves
         .where((l) => l['status'] != 'rejected')
         .where((l) => l['type'] == 'annual' || l['type'] == 'official')
@@ -499,20 +444,12 @@ class LeaveCalendarWidget extends StatelessWidget {
     if (day.weekday == DateTime.saturday || day.weekday == DateTime.sunday) {
       return false;
     }
-
-    // 공휴일은 비활성화
     final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
     if (leaveProvider.isHoliday(day)) {
       return false;
     }
-
-    // 연차/공가가 신청된 날짜는 무조건 비활성화
     if (disabledDates.any((d) => isSameDay(d, day))) return false;
-
-    // 반차 중복 체크: 현재 선택된 유형으로 해당 날짜 선택 가능한지 확인
     if (!_canSelectDateForType(day)) return false;
-
-    // 다른 휴가 유형으로 이미 선택된 날짜는 비활성화
     for (final type in LeaveType.values) {
       if (type != selectedType &&
           selectedDatesMap.containsKey(type) &&
@@ -534,7 +471,6 @@ class LeaveCalendarWidget extends StatelessWidget {
   }
 }
 
-/// 반달 모양을 그리는 CustomPainter
 class HalfCirclePainter extends CustomPainter {
   final Color color;
   final bool isTop;

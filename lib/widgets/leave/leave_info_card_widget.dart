@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
 
 /// 연차 정보를 표시하는 카드 위젯
@@ -28,15 +29,8 @@ class LeaveInfoCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -63,10 +57,8 @@ class LeaveInfoCardWidget extends StatelessWidget {
           ),
           child: Text(
             '신청 가능',
-            style: ResponsiveUtils.getTextStyle(
-              context,
+            style: AppTextStyles.inputLabel(context).copyWith(
               color: Colors.white,
-              fontSize: 14,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -90,10 +82,9 @@ class LeaveInfoCardWidget extends StatelessWidget {
       ),
       child: Text(
         '사용률 ${usedPercentage.toStringAsFixed(0)}%',
-        style: ResponsiveUtils.getTextStyle(
-          context,
+        style: AppTextStyles.statLabel(context).copyWith(
+          fontSize: ResponsiveUtils.fontSize(context, 12),
           color: Colors.white,
-          fontSize: 12,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -116,7 +107,9 @@ class LeaveInfoCardWidget extends StatelessWidget {
           children: [
             Text(
               '사용: ${_formatDays(usedAnnual)}일',
-              style: ResponsiveUtils.getTextStyle(context, color: Colors.white70, fontSize: 14),
+              style: AppTextStyles.inputLabel(context).copyWith(
+                color: Colors.white70,
+              ),
             ),
             const SizedBox(height: 4),
             Container(
@@ -150,31 +143,23 @@ class LeaveInfoCardWidget extends StatelessWidget {
               children: [
                 Text(
                   _formatDays(remainAnnual),
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
-                    color: Colors.white,
-                    fontSize: 40,
-                    fontWeight: FontWeight.bold,
-                    height: 1,
+                  style: AppTextStyles.statNumber(context, color: Colors.white).copyWith(
+                    fontSize: ResponsiveUtils.fontSize(context, 40),
                   ),
                 ),
                 Text(
                   '일',
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
+                  style: AppTextStyles.sectionTitle(context).copyWith(
                     color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+                    fontSize: ResponsiveUtils.fontSize(context, 24),
                   ),
                 ),
               ],
             ),
             Text(
               '/ ${_formatDays(grantedAnnual)}일',
-              style: ResponsiveUtils.getTextStyle(
-                context,
+              style: AppTextStyles.sectionSubtitle(context).copyWith(
                 color: Colors.white70,
-                fontSize: 16,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -207,7 +192,9 @@ class LeaveInfoCardWidget extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             '$year.01.01 ~ $year.12.31',
-            style: ResponsiveUtils.getTextStyle(context, color: Colors.white, fontSize: 14),
+            style: AppTextStyles.inputLabel(context).copyWith(
+              color: Colors.white,
+            ),
           ),
           const Spacer(),
           Container(
@@ -218,10 +205,8 @@ class LeaveInfoCardWidget extends StatelessWidget {
             ),
             child: Text(
               '${_formatDays(granted)}일',
-              style: ResponsiveUtils.getTextStyle(
-                context,
+              style: AppTextStyles.inputLabel(context).copyWith(
                 color: Colors.white,
-                fontSize: 14,
                 fontWeight: FontWeight.bold,
               ),
             ),

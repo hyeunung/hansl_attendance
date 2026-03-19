@@ -5,6 +5,7 @@ import '../../providers/leave_provider.dart';
 import '../../providers/user_provider.dart';
 import '../../models/leave_request.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_shadows.dart';
 import '../../theme/app_text_theme.dart';
 import '../../widgets/leave/leave_calendar_widget.dart';
 import '../../widgets/leave/leave_type_selector_widget.dart';
@@ -13,7 +14,7 @@ import '../../widgets/leave/leave_memo_input_widget.dart';
 import '../../widgets/leave/leave_date_chips_widget.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import '../../utils/validators/leave_validators.dart';
-import '../../utils/responsive_utils.dart';
+
 
 /// 성능 최적화된 연차 신청 화면
 /// - 불필요한 rebuild 방지
@@ -35,7 +36,7 @@ class _AnnualLeaveRequestScreenOptimizedState
   final FocusNode _memoFocusNode = FocusNode();
 
   // State
-  LeaveType _selectedType = LeaveType.annual;
+  LeaveType? _selectedType;
   final Map<LeaveType, Set<DateTime>> _selectedDatesMap = {
     LeaveType.annual: {},
     LeaveType.halfAm: {},
@@ -156,7 +157,7 @@ class _AnnualLeaveRequestScreenOptimizedState
     }
     
     // 현재 선택하려는 타입에 따라 판단
-    switch (_selectedType) {
+    switch (_selectedType!) {
       case LeaveType.annual:
       case LeaveType.official:
         // 연차/공가를 신청하려면 해당 날짜에 아무것도 없어야 함
@@ -174,6 +175,15 @@ class _AnnualLeaveRequestScreenOptimizedState
 
   /// 날짜 선택 처리 (최적화됨)
   void _onDayTapped(DateTime day) {
+    // 유형 미선택 시 날짜 선택 차단
+    if (_selectedType == null) {
+      showBanner(
+        '먼저 휴가 유형을 선택해주세요.',
+        type: BannerType.warning,
+      );
+      return;
+    }
+
     // 연차/공가가 신청된 날짜는 완전 비활성화
     if (_cachedDisabledDates?.any((d) => isSameDay(d, day)) ?? false) {
       showBanner(
@@ -224,12 +234,12 @@ class _AnnualLeaveRequestScreenOptimizedState
 
     setState(() {
       // null 체크 추가
-      _selectedDatesMap[_selectedType] ??= {};
+      _selectedDatesMap[_selectedType!] ??= {};
 
-      if (_selectedDatesMap[_selectedType]!.any((d) => isSameDay(d, day))) {
-        _selectedDatesMap[_selectedType]!.removeWhere((d) => isSameDay(d, day));
+      if (_selectedDatesMap[_selectedType!]!.any((d) => isSameDay(d, day))) {
+        _selectedDatesMap[_selectedType!]!.removeWhere((d) => isSameDay(d, day));
       } else {
-        _selectedDatesMap[_selectedType]!.add(day);
+        _selectedDatesMap[_selectedType!]!.add(day);
       }
     });
   }
@@ -242,7 +252,7 @@ class _AnnualLeaveRequestScreenOptimizedState
   }
 
   /// 휴가 유형 변경
-  void _onTypeChanged(LeaveType type) {
+  void _onTypeChanged(LeaveType? type) {
     setState(() {
       _selectedType = type;
     });
@@ -416,7 +426,7 @@ class _AnnualLeaveRequestScreenOptimizedState
 
     return Scaffold(
       appBar: _buildAppBar(),
-      backgroundColor: const Color(0xFFF6F7FA),
+      backgroundColor: AppColors.backgroundPrimary,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _buildBody(),
@@ -502,17 +512,15 @@ class _AnnualLeaveRequestScreenOptimizedState
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.white,
       elevation: 0,
-      flexibleSpace: Container(
-        decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
-      ),
       centerTitle: true,
       leading: IconButton(
-        icon: Icon(Icons.arrow_back, color: AppColors.primary),
+        icon: Icon(Icons.arrow_back, color: AppColors.textPrimary),
         onPressed: () => Navigator.pop(context),
       ),
-      title: Text('연차 신청', style: AppTextStyles.appBarTitle(context)),
+      title: AppBarTitle('연차 신청'),
     );
   }
 
@@ -552,18 +560,9 @@ class _AnnualLeaveRequestScreenOptimizedState
         duration: const Duration(milliseconds: 200),
         height: 54,
         decoration: BoxDecoration(
-          gradient: _canSubmit ? AppColors.primaryGradient : null,
-          color: _canSubmit ? null : const Color(0xFFE0E0E0),
+          color: _canSubmit ? AppColors.primary : AppColors.border,
           borderRadius: BorderRadius.circular(14),
-          boxShadow: _canSubmit
-              ? [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
+          boxShadow: _canSubmit ? AppShadows.smShadow : null,
         ),
         alignment: Alignment.center,
         child: _isSubmitting
@@ -577,11 +576,10 @@ class _AnnualLeaveRequestScreenOptimizedState
               )
             : Text(
                 '신청하기',
-                style: ResponsiveUtils.getTextStyle(
-                  context,
+                style: AppTextStyles.buttonPrimary(context).copyWith(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: _canSubmit ? Colors.white : const Color(0xFFB0B0B0),
+                  color: _canSubmit ? Colors.white : AppColors.textDisabled,
                 ),
               ),
       ),

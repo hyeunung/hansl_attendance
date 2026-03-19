@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'responsive_utils.dart';
+import '../theme/app_text_theme.dart';
+import '../widgets/common/notification_banner_widget.dart';
 
 /// 전역 에러 처리 유틸리티
 class ErrorHandler {
@@ -144,35 +145,10 @@ class ErrorHandler {
     }
   }
 
-  /// 에러 스낵바 표시
+  /// 에러 배너 표시
   static void _showErrorSnackBar(BuildContext context, String message) {
     if (!context.mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error_outline, color: Colors.white, size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(message, style: ResponsiveUtils.getTextStyle(context, fontSize: 14)),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.red.shade600,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        duration: const Duration(seconds: 4),
-        action: SnackBarAction(
-          label: '닫기',
-          textColor: Colors.white,
-          onPressed: () {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          },
-        ),
-      ),
-    );
+    AppBanner.show(context, message, type: BannerType.error);
   }
 
   /// Try-Catch 래퍼

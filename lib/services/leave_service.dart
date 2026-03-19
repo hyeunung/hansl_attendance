@@ -373,12 +373,10 @@ class LeaveService {
       final requester = bt['employees'] as Map<String, dynamic>?;
       final requesterName = requester?['name'] ?? '알 수 없음';
       final requesterEmail = requester?['email'] ?? '';
-      final companionNames = <String>[];
-      if (bt['companions'] != null && bt['companions'] is List) {
-        for (final c in bt['companions']) {
-          if (c is Map && c['name'] != null) companionNames.add(c['name'].toString());
-        }
-      }
+      final destination = bt['trip_destination'] ?? '';
+      final purpose = bt['trip_purpose'] ?? '';
+
+      // 요청자 행 추가
       result.add({
         'id': 'bt_${bt['id']}',
         'user_email': requesterEmail,
@@ -386,12 +384,32 @@ class LeaveService {
         'type': 'biztrip',
         'start_date': bt['trip_start_date'],
         'end_date': bt['trip_end_date'],
-        'reason': bt['trip_purpose'],
-        'place': bt['trip_destination'],
-        '출장자': [requesterName, ...companionNames],
+        'reason': purpose,
+        'place': destination,
         'status': 'approved',
         'is_business_trip': true,
       });
+
+      // 동행자 각각 개별 행으로 추가 (is_companion 플래그로 구분)
+      if (bt['companions'] != null && bt['companions'] is List) {
+        for (final c in bt['companions']) {
+          if (c is Map && c['name'] != null) {
+            result.add({
+              'id': 'bt_${bt['id']}_${c['id'] ?? c['name']}',
+              'user_email': '',
+              'name': c['name'].toString(),
+              'type': 'biztrip',
+              'start_date': bt['trip_start_date'],
+              'end_date': bt['trip_end_date'],
+              'reason': purpose,
+              'place': destination,
+              'status': 'approved',
+              'is_business_trip': true,
+              'is_companion': true,
+            });
+          }
+        }
+      }
     }
 
     return result;

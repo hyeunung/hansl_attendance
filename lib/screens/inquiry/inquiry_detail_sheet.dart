@@ -4,7 +4,9 @@ import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/inquiry_service.dart';
 import '../../theme/app_colors.dart';
-import '../../utils/responsive_utils.dart';
+import '../../theme/app_text_theme.dart';
+import '../../theme/app_shadows.dart';
+import '../../widgets/common/notification_banner_widget.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -428,13 +430,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
 
   void _showSnack(String msg, {bool isError = false}) {
     if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-        content: Text(msg),
-        backgroundColor: isError ? Colors.red : Colors.green,
-        behavior: SnackBarBehavior.floating,
-          ),
-        );
+    AppBanner.show(context, msg, type: isError ? BannerType.error : BannerType.success);
   }
 
   Future<void> _openPurchaseDetail() async {
@@ -480,11 +476,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
               Expanded(
                 child: Text(
                   '발주 상세',
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: AppTextStyles.cardTitle(context),
                 ),
               ),
               if (widget.isAdmin)
@@ -540,24 +532,22 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                 children: [
                   Text(
                     '발주번호: ${purchase['purchase_order_number'] ?? '-'}',
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 14,
+                    style: AppTextStyles.inputLabel(context).copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     '업체명: ${purchase['vendor_name'] ?? '-'}',
-                    style: ResponsiveUtils.getTextStyle(context, fontSize: 13),
+                    style: AppTextStyles.cardCaption(context),
                   ),
                   Text(
                     '요청자: ${purchase['requester_name'] ?? '-'}',
-                    style: ResponsiveUtils.getTextStyle(context, fontSize: 13),
+                    style: AppTextStyles.cardCaption(context),
                   ),
                   Text(
                     '요청일: ${purchase['request_date'] ?? purchase['created_at'] ?? '-'}',
-                    style: ResponsiveUtils.getTextStyle(context, fontSize: 13),
+                    style: AppTextStyles.cardCaption(context),
                   ),
                   const SizedBox(height: 12),
                   ...items.map((item) {
@@ -565,46 +555,44 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8F9FA),
+                        color: AppColors.backgroundSecondary,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE5E5EA)),
+                        border: Border.all(color: AppColors.border),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             '${item['line_number'] ?? '-'}번 ${item['item_name'] ?? ''}',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 14,
+                            style: AppTextStyles.inputLabel(context).copyWith(
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                           Text(
                             '규격: ${item['specification'] ?? '-'}',
-                            style: ResponsiveUtils.getTextStyle(context, fontSize: 12),
+                            style: AppTextStyles.tableHeader(context),
                           ),
                           Text(
                             '수량: ${item['quantity'] ?? '-'}',
-                            style: ResponsiveUtils.getTextStyle(context, fontSize: 12),
+                            style: AppTextStyles.tableHeader(context),
                           ),
                           Text(
                             '단가: ${(item['unit_price_value'] ?? '-').toString()}',
-                            style: ResponsiveUtils.getTextStyle(context, fontSize: 12),
+                            style: AppTextStyles.tableHeader(context),
                           ),
                           Text(
                             '금액: ${(item['amount_value'] ?? '-').toString()}',
-                            style: ResponsiveUtils.getTextStyle(context, fontSize: 12),
+                            style: AppTextStyles.tableHeader(context),
                           ),
                           if (item['remark'] != null && item['remark'].toString().isNotEmpty)
                             Text(
                               '비고: ${item['remark']}',
-                              style: ResponsiveUtils.getTextStyle(context, fontSize: 12),
+                              style: AppTextStyles.tableHeader(context),
                             ),
                           if (item['link'] != null && item['link'].toString().isNotEmpty)
                             Text(
                               '링크: ${item['link']}',
-                              style: ResponsiveUtils.getTextStyle(context, fontSize: 12),
+                              style: AppTextStyles.tableHeader(context),
                             ),
                           if (widget.isAdmin)
                             Row(
@@ -757,7 +745,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
           children: [
             Icon(
               Icons.warning_amber_rounded,
-              color: Colors.orange.shade600,
+              color: AppColors.warning,
               size: 24,
             ),
             const SizedBox(width: 8),
@@ -770,15 +758,13 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
           children: [
             Text(
               '이 문의를 삭제하시겠습니까?',
-              style: ResponsiveUtils.getTextStyle(context, fontSize: 16, fontWeight: FontWeight.w600),
+              style: AppTextStyles.sectionSubtitle(context),
             ),
             const SizedBox(height: 8),
             Text(
               '삭제된 문의는 복구할 수 없습니다.',
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 14,
-                color: Colors.grey.shade700,
+              style: AppTextStyles.inputLabel(context).copyWith(
+                color: AppColors.gray700,
                 height: 1.4,
               ),
             ),
@@ -789,11 +775,9 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
             onPressed: () => Navigator.pop(context),
             child: Text(
               '취소',
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                color: Colors.grey,
+              style: AppTextStyles.inputLabel(context).copyWith(
+                color: AppColors.textTertiary,
                 fontWeight: FontWeight.w600,
-                fontSize: 14,
               ),
             ),
           ),
@@ -803,7 +787,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
               await _deleteInquiry();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade600,
+              backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -811,7 +795,10 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
             ),
             child: Text(
               '삭제',
-              style: ResponsiveUtils.getTextStyle(context, fontWeight: FontWeight.w600, fontSize: 14),
+              style: AppTextStyles.inputLabel(context).copyWith(
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
             ),
           ),
         ],
@@ -841,27 +828,15 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
       
       // 성공 메시지
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message']),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppBanner.show(context, result['message'], type: BannerType.success);
       }
-      
+
       // 목록 새로고침
       widget.onDelete?.call();
     } else {
       // 에러 메시지
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message']),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppBanner.show(context, result['message'], type: BannerType.error);
       }
     }
   }
@@ -875,6 +850,8 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
         return Icons.format_list_numbered_rounded;
       case 'price_change':
         return Icons.payments_rounded;
+      case 'item_add':
+        return Icons.add_box_rounded;
       case 'bug':
       case '오류':
         return Icons.error_outline_rounded;
@@ -913,7 +890,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
     return Container(
       height: MediaQuery.of(context).size.height * 0.9,
       decoration: const BoxDecoration(
-        color: Color(0xFFF8F9FA),
+        color: AppColors.backgroundSecondary,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Scaffold(
@@ -927,7 +904,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: const Color(0xFFD1D1D6),
+              color: AppColors.gray300,
               borderRadius: BorderRadius.circular(100),
             ),
           ),
@@ -939,7 +916,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
               color: Colors.white,
               border: Border(
                 bottom: BorderSide(
-                  color: Color(0xFFE5E5EA),
+                  color: AppColors.border,
                   width: 0.5,
                 ),
               ),
@@ -950,17 +927,12 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFF007AFF).withValues(alpha: 0.1),
-                        const Color(0xFF0051D5).withValues(alpha: 0.05),
-                      ],
-                    ),
+                    color: AppColors.info.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     _getIconForType(_inquiry['inquiry_type'] ?? '기타'),
-                    color: const Color(0xFF007AFF),
+                    color: AppColors.info,
                     size: 22,
                   ),
                 ),
@@ -973,21 +945,12 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                     children: [
                       Text(
                         '문의 상세',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF1C1C1E),
-                        ),
+                        style: AppTextStyles.cardTitle(context),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         dateStr,
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 13,
-                          color: Color(0xFF8E8E93),
-                        ),
+                        style: AppTextStyles.listSubtitle(context),
                       ),
                     ],
                   ),
@@ -1004,12 +967,12 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                         if (canDelete) ...[
                           Container(
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFF3B30).withValues(alpha: 0.1),
+                              color: AppColors.error.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: IconButton(
                               icon: const Icon(Icons.delete_outline_rounded, size: 20),
-                              color: const Color(0xFFFF3B30),
+                              color: AppColors.error,
                               onPressed: () => _showDeleteConfirmation(context),
                               constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                             ),
@@ -1018,12 +981,12 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                         ],
                         Container(
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF2F2F7),
+                            color: AppColors.borderLight,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: IconButton(
                             icon: const Icon(Icons.close_rounded, size: 20),
-                            color: const Color(0xFF3C3C43),
+                            color: AppColors.gray700,
                             onPressed: () => Navigator.pop(context),
                             constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                           ),
@@ -1047,14 +1010,9 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.04),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: AppShadows.smShadow,
+                      border: Border.all(color: AppColors.borderLight, width: 0.5),
                     ),
                     child: Column(
                       children: [
@@ -1095,9 +1053,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                                     const SizedBox(width: 8),
                                     Text(
                                       statusLabel,
-                                      style: ResponsiveUtils.getTextStyle(
-                                        context,
-                                        fontSize: 14,
+                                      style: AppTextStyles.inputLabel(context).copyWith(
                                         fontWeight: FontWeight.w600,
                                         color: statusColor,
                                       ),
@@ -1113,12 +1069,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                                 ),
                               Text(
                                 '#${_inquiry['id']}',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF8E8E93),
-                                ),
+                                style: AppTextStyles.listSubtitle(context),
                               ),
                             ],
                           ),
@@ -1183,14 +1134,9 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.04),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: AppShadows.smShadow,
+                      border: Border.all(color: AppColors.borderLight, width: 0.5),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1201,35 +1147,25 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                             Icon(
                               Icons.title_rounded,
                               size: 18,
-                              color: const Color(0xFF007AFF),
+                              color: AppColors.info,
                             ),
                             const SizedBox(width: 8),
                             Text(
                               '제목',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF8E8E93),
-                              ),
+                              style: AppTextStyles.inputLabel(context),
                             ),
                           ],
                         ),
                         const SizedBox(height: 10),
                         Text(
                           _inquiry['subject'] ?? '제목 없음',
-                          style: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF1C1C1E),
-                          ),
+                          style: AppTextStyles.sectionSubtitle(context),
                         ),
 
                         Container(
                           margin: const EdgeInsets.symmetric(vertical: 20),
                           height: 1,
-                          color: const Color(0xFFE5E5EA),
+                          color: AppColors.border,
                         ),
 
                         // 내용
@@ -1238,17 +1174,12 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                             Icon(
                               Icons.message_outlined,
                               size: 18,
-                              color: const Color(0xFF007AFF),
+                              color: AppColors.info,
                             ),
                             const SizedBox(width: 8),
                             Text(
                               '문의 내용',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF8E8E93),
-                              ),
+                              style: AppTextStyles.inputLabel(context),
                             ),
                           ],
                         ),
@@ -1257,19 +1188,16 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF8F9FA),
+                            color: AppColors.backgroundSecondary,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: const Color(0xFFE5E5EA),
+                              color: AppColors.border,
                               width: 0.5,
                             ),
                           ),
                           child: Text(
                             _inquiry['message'] ?? '내용 없음',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 15,
-                              color: Color(0xFF1C1C1E),
+                            style: AppTextStyles.cardBody(context).copyWith(
                               height: 1.5,
                             ),
                           ),
@@ -1281,17 +1209,12 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                               Icon(
                                 Icons.image_outlined,
                                 size: 18,
-                                color: const Color(0xFF007AFF),
+                                color: AppColors.info,
                               ),
                               const SizedBox(width: 8),
                               Text(
                                 '첨부 이미지',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF8E8E93),
-                                ),
+                                style: AppTextStyles.inputLabel(context),
                               ),
                             ],
                           ),
@@ -1355,13 +1278,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: AppShadows.smShadow,
                         border: Border.all(
           color: statusColor.withValues(alpha: 0.18),
                         ),
@@ -1376,16 +1293,13 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                 const Icon(
                   Icons.chat_bubble_outline_rounded,
                                 size: 18,
-                  color: Color(0xFF007AFF),
+                  color: AppColors.info,
                               ),
                               const SizedBox(width: 8),
                               Text(
                   '대화',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                    fontSize: 15,
+                                style: AppTextStyles.listTitle(context).copyWith(
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1C1C1E),
                                 ),
                               ),
                               const Spacer(),
@@ -1397,9 +1311,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                   ),
                   child: Text(
                     statusLabel,
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 12,
+                                          style: AppTextStyles.tableHeader(context).copyWith(
                       fontWeight: FontWeight.w700,
                       color: statusColor,
                                     ),
@@ -1417,10 +1329,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
               const SizedBox(height: 8),
               Text(
                 '아직 대화가 없습니다.\n아래에서 메시지를 보내보세요.',
-                style: ResponsiveUtils.getTextStyle(
-                  context,
-                  fontSize: 13,
-                  color: const Color(0xFF8E8E93),
+                style: AppTextStyles.listSubtitle(context).copyWith(
                   height: 1.35,
                 ),
               ),
@@ -1450,16 +1359,14 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-            color: const Color(0xFFF2F2F7),
+            color: AppColors.borderLight,
             borderRadius: BorderRadius.circular(999),
           ),
           child: Text(
             m.message,
-            style: ResponsiveUtils.getTextStyle(
-              context,
-              fontSize: 12,
+            style: AppTextStyles.tableHeader(context).copyWith(
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF8E8E93),
+              color: AppColors.textTertiary,
             ),
           ),
         ),
@@ -1469,8 +1376,8 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
     final isUserMsg = m.senderRole == 'user';
     final isMine = widget.isAdmin ? !isUserMsg : isUserMsg;
 
-    final bubbleColor = isMine ? const Color(0xFF007AFF) : Colors.white;
-    final textColor = isMine ? Colors.white : const Color(0xFF1C1C1E);
+    final bubbleColor = isMine ? AppColors.info : Colors.white;
+    final textColor = isMine ? Colors.white : AppColors.textPrimary;
     final align = isMine ? Alignment.centerRight : Alignment.centerLeft;
 
     final timeStr = DateFormat('HH:mm').format(m.createdAt);
@@ -1489,14 +1396,8 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                 borderRadius: BorderRadius.circular(14),
                 border: isMine
                     ? null
-                    : Border.all(color: const Color(0xFFE5E5EA), width: 0.8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                    : Border.all(color: AppColors.border, width: 0.8),
+                boxShadow: AppShadows.smShadow,
               ),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1508,9 +1409,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                   if (m.message.trim().isNotEmpty)
                                       Text(
                       m.message,
-                                        style: ResponsiveUtils.getTextStyle(
-                                          context,
-                        fontSize: 14,
+                                        style: AppTextStyles.inputLabel(context).copyWith(
                         color: textColor,
                         height: 1.35,
                       ),
@@ -1521,10 +1420,8 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
             const SizedBox(height: 4),
                                         Text(
               timeStr,
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                fontSize: 11,
-                color: const Color(0xFFAEAEB2),
+                                          style: AppTextStyles.compactLabel(context).copyWith(
+                color: AppColors.textDisabled,
                                           ),
                                         ),
                                     ],
@@ -1534,7 +1431,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
   }
 
   Widget _buildMessageAttachments(List<SupportAttachment> attachments, {required bool isMine}) {
-    final bg = isMine ? Colors.white.withValues(alpha: 0.15) : const Color(0xFFF8F9FA);
+    final bg = isMine ? Colors.white.withValues(alpha: 0.15) : AppColors.backgroundSecondary;
 
     return Container(
       padding: const EdgeInsets.all(8),
@@ -1558,7 +1455,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                 errorBuilder: (_, __, ___) => Container(
                   width: 74,
                   height: 74,
-                  color: const Color(0xFFE5E5EA),
+                  color: AppColors.border,
                   child: const Icon(Icons.broken_image_outlined),
                 ),
               ),
@@ -1620,7 +1517,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
       decoration: const BoxDecoration(
                 color: Colors.white,
         border: Border(
-          top: BorderSide(color: Color(0xFFE5E5EA), width: 0.5),
+          top: BorderSide(color: AppColors.border, width: 0.5),
         ),
       ),
       child: SafeArea(
@@ -1680,12 +1577,12 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                               children: [
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF2F2F7),
+                    color: AppColors.borderLight,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: IconButton(
                     icon: const Icon(Icons.image_outlined),
-                    color: disabled ? const Color(0xFFAEAEB2) : const Color(0xFF007AFF),
+                    color: disabled ? AppColors.textDisabled : AppColors.info,
                     onPressed: disabled ? null : _openAttachmentPicker,
                   ),
                 ),
@@ -1693,9 +1590,9 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF8F9FA),
+                      color: AppColors.backgroundSecondary,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFE5E5EA)),
+                      border: Border.all(color: AppColors.border),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: TextField(
@@ -1706,16 +1603,12 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                       decoration: InputDecoration(
                         border: InputBorder.none,
                         hintText: disabled ? '완료된 문의입니다' : '메시지 입력',
-                        hintStyle: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 14,
-                          color: const Color(0xFFAEAEB2),
+                        hintStyle: AppTextStyles.inputLabel(context).copyWith(
+                          color: AppColors.textDisabled,
                         ),
                       ),
-                                  style: ResponsiveUtils.getTextStyle(
-                                    context,
-                        fontSize: 14,
-                        color: const Color(0xFF1C1C1E),
+                                  style: AppTextStyles.inputLabel(context).copyWith(
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   ),
@@ -1723,15 +1616,14 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                 const SizedBox(width: 10),
                 Container(
                   decoration: BoxDecoration(
-                    gradient: canSend ? AppColors.primaryGradient : null,
-                    color: canSend ? null : const Color(0xFFE5E5EA),
+                    color: canSend ? AppColors.primary : AppColors.border,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: IconButton(
                     icon: _isSending
                         ? const CupertinoActivityIndicator(color: Colors.white)
                         : const Icon(Icons.send_rounded),
-                    color: canSend ? Colors.white : const Color(0xFF8E8E93),
+                    color: canSend ? Colors.white : AppColors.textTertiary,
                     onPressed: canSend ? _sendMessage : null,
                   ),
                 ),
@@ -1739,14 +1631,14 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                   const SizedBox(width: 10),
                   Container(
                     decoration: BoxDecoration(
-                      color: _isClosedOrResolved ? const Color(0xFFE5E5EA) : const Color(0xFF34C759),
+                      color: _isClosedOrResolved ? AppColors.border : AppColors.success,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: IconButton(
                       icon: _isResolving
                           ? const CupertinoActivityIndicator(color: Colors.white)
                           : const Icon(Icons.check_circle_outline_rounded),
-                      color: _isClosedOrResolved ? const Color(0xFF8E8E93) : Colors.white,
+                      color: _isClosedOrResolved ? AppColors.textTertiary : Colors.white,
                       onPressed: (_isClosedOrResolved || _isResolving) ? null : _resolveFromChat,
                     ),
                   ),
@@ -1774,26 +1666,20 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
               Icon(
                 icon,
                 size: 18,
-                color: const Color(0xFF8E8E93),
+                color: AppColors.textTertiary,
               ),
               const SizedBox(width: 10),
               Text(
                 label,
-                style: ResponsiveUtils.getTextStyle(
-                  context,
-                  fontSize: 13,
-                  color: Color(0xFF8E8E93),
-                ),
+                style: AppTextStyles.listSubtitle(context),
               ),
               const Spacer(),
               Flexible(
                 child: Text(
                   value,
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontSize: 14,
+                  style: AppTextStyles.tableCellSub(context).copyWith(
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF1C1C1E),
+                    color: AppColors.textPrimary,
                   ),
                   textAlign: TextAlign.right,
                   overflow: TextOverflow.ellipsis,
@@ -1805,7 +1691,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
         if (!isLast)
           Container(
             height: 1,
-            color: const Color(0xFFE5E5EA).withValues(alpha: 0.5),
+            color: AppColors.border.withValues(alpha: 0.5),
           ),
       ],
     );

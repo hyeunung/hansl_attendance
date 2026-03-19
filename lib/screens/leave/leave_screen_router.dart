@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hansl/services/feature_flag_service.dart';
 import 'package:hansl/services/performance_monitor.dart';
-import '../../utils/responsive_utils.dart';
+import '../../theme/app_text_theme.dart';
 import 'annual_leave_request_screen_optimized.dart';
 
 /// 연차 신청 화면 라우터
@@ -63,7 +63,7 @@ class _LeaveScreenRouterState extends State<LeaveScreenRouter> {
               ),
               child: Text(
                 'Version: $_screenVersion',
-                style: ResponsiveUtils.getTextStyle(context, color: Colors.white, fontSize: 10),
+                style: AppTextStyles.compactLabel(context).copyWith(color: Colors.white, fontSize: 10),
               ),
             ),
           ),

@@ -10,6 +10,10 @@ import '../../providers/user_provider.dart';
 import '../../services/notification_service.dart';
 import '../../utils/error_translator.dart';
 import '../../utils/responsive_utils.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_text_theme.dart';
+import '../../theme/app_shadows.dart';
+import '../../widgets/common/notification_banner_widget.dart';
 
 class LoginScreen extends StatefulWidget {
   final String? initialEmail;
@@ -42,9 +46,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (newSaveId) {
       savedId = prefs.getString('savedId') ?? '';
     }
-    
+
     // 값이 변경되었을 때만 setState 호출
-    if (mounted && (newAutoLogin != _autoLogin || newSaveId != _saveId || 
+    if (mounted && (newAutoLogin != _autoLogin || newSaveId != _saveId ||
         (savedId != null && savedId.isNotEmpty && savedId != _emailController.text))) {
       setState(() {
         _autoLogin = newAutoLogin;
@@ -80,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
             parent: animation,
             curve: Curves.easeInOut,
           ));
-          
+
           return FadeTransition(
             opacity: fadeAnimation,
             child: child,
@@ -206,10 +210,8 @@ _navigateWithTransition(MainTab());
                           const SizedBox(height: 8),
                           Text(
                             errorMsg!,
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              color: Colors.red,
-                              fontSize: 13,
+                            style: AppTextStyles.cardCaption(context).copyWith(
+                              color: AppColors.error,
                             ),
                           ),
                         ],
@@ -263,13 +265,14 @@ setState(
     final boxRadius = BorderRadius.circular(8);
     final fieldRadius = BorderRadius.circular(8);
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.backgroundPrimary,
       appBar: AppBar(
         backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
         elevation: 0,
         leading: kIsWeb
             ? null
-            : (Platform.isAndroid ? BackButton(color: Colors.black) : null),
+            : (Platform.isAndroid ? BackButton(color: AppColors.textPrimary) : null),
       ),
       body: SafeArea(
         child: Center(
@@ -282,11 +285,9 @@ setState(
                 SizedBox(height: ResponsiveUtils.spacing(context, 10)),
                 Text(
                   '근태 기록 시스템',
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
+                  style: AppTextStyles.cardBody(context).copyWith(
                     fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    color: const Color(0xFFB0B8C1),
+                    color: AppColors.textDisabled,
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -300,39 +301,28 @@ setState(
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: boxRadius,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    boxShadow: AppShadows.smShadow,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       TextField(
                         controller: _emailController,
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 16,
+                        style: AppTextStyles.sectionSubtitle(context).copyWith(
+                          fontWeight: FontWeight.w400,
                         ),
                         decoration: InputDecoration(
                           labelText: '이메일',
-                          labelStyle: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontWeight: FontWeight.w500,
+                          labelStyle: AppTextStyles.inputLabel(context).copyWith(
                             fontSize: 15,
-                            color: Color(0xFF222222),
+                            color: AppColors.textPrimary,
                           ),
                           hintText: '이메일 주소 입력',
-                          hintStyle: ResponsiveUtils.getTextStyle(
-                            context,
-                            color: Color(0xFFB0B8C1),
-                            fontSize: 14,
+                          hintStyle: AppTextStyles.inputLabel(context).copyWith(
+                            color: AppColors.textDisabled,
                           ),
                           filled: true,
-                          fillColor: Color(0xFFF8F9FA),
+                          fillColor: AppColors.backgroundSecondary,
                           border: OutlineInputBorder(
                             borderRadius: fieldRadius,
                             borderSide: BorderSide.none,
@@ -349,26 +339,21 @@ setState(
                       const SizedBox(height: 14),
                       TextField(
                         controller: _passwordController,
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 16,
+                        style: AppTextStyles.sectionSubtitle(context).copyWith(
+                          fontWeight: FontWeight.w400,
                         ),
                         decoration: InputDecoration(
                           labelText: '비밀번호',
-                          labelStyle: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontWeight: FontWeight.w500,
+                          labelStyle: AppTextStyles.inputLabel(context).copyWith(
                             fontSize: 15,
-                            color: Color(0xFF222222),
+                            color: AppColors.textPrimary,
                           ),
                           hintText: '비밀번호 입력',
-                          hintStyle: ResponsiveUtils.getTextStyle(
-                            context,
-                            color: Color(0xFFB0B8C1),
-                            fontSize: 14,
+                          hintStyle: AppTextStyles.inputLabel(context).copyWith(
+                            color: AppColors.textDisabled,
                           ),
                           filled: true,
-                          fillColor: Color(0xFFF8F9FA),
+                          fillColor: AppColors.backgroundSecondary,
                           border: OutlineInputBorder(
                             borderRadius: fieldRadius,
                             borderSide: BorderSide.none,
@@ -391,10 +376,8 @@ setState(
                           ),
                           Text(
                             '자동 로그인',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 15,
-                              color: const Color(0xFF222222),
+                            style: AppTextStyles.listTitle(context).copyWith(
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -411,10 +394,8 @@ setState(
                           ),
                           Text(
                             '아이디 저장',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 15,
-                              color: const Color(0xFF222222),
+                            style: AppTextStyles.listTitle(context).copyWith(
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ],
@@ -423,10 +404,8 @@ setState(
                         const SizedBox(height: 8),
                         Text(
                           _error!,
-                          style: ResponsiveUtils.getTextStyle(
-                            context,
-                            color: const Color(0xFFE53935),
-                            fontSize: 14,
+                          style: AppTextStyles.inputLabel(context).copyWith(
+                            color: AppColors.error,
                           ),
                         ),
                       ],
@@ -439,26 +418,22 @@ setState(
                           child: ElevatedButton(
                             onPressed: _login,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1777CB),
+                              backgroundColor: AppColors.primary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: boxRadius,
                               ),
-                              textStyle: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontWeight: FontWeight.bold,
+                              textStyle: AppTextStyles.buttonPrimary(context).copyWith(
                                 fontSize: 18,
-                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
                               ),
                               foregroundColor: Colors.white,
                               elevation: 0,
                             ),
                             child: Text(
                               '로그인',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontWeight: FontWeight.bold,
+                              style: AppTextStyles.buttonPrimary(context).copyWith(
                                 fontSize: 18,
-                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
@@ -485,31 +460,26 @@ setState(
                               },
                               child: Text(
                                 '회원가입',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontWeight: FontWeight.w500,
+                                style: AppTextStyles.inputLabel(context).copyWith(
                                   fontSize: 15,
-                                  color: Color(0xFF1777CB),
+                                  color: AppColors.primary,
                                 ),
                               ),
                             ),
                             Text(
                               '|',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 16,
-                                color: Color(0xFFB0B8C1),
+                              style: AppTextStyles.sectionSubtitle(context).copyWith(
+                                fontWeight: FontWeight.w400,
+                                color: AppColors.textDisabled,
                               ),
                             ),
                             TextButton(
                               onPressed: _showResetPasswordDialog,
                               child: Text(
                                 '비밀번호 재설정',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontWeight: FontWeight.w500,
+                                style: AppTextStyles.inputLabel(context).copyWith(
                                   fontSize: 15,
-                                  color: Color(0xFF1777CB),
+                                  color: AppColors.primary,
                                 ),
                               ),
                             ),
@@ -586,9 +556,7 @@ class _SignupScreenState extends State<SignupScreen> {
       );
       if (response.user != null) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('회원가입이 완료되었습니다. 로그인 해주세요.')),
-        );
+        AppBanner.show(context, '회원가입이 완료되었습니다. 로그인 해주세요.', type: BannerType.success);
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
@@ -636,11 +604,12 @@ class _SignupScreenState extends State<SignupScreen> {
     final boxRadius = BorderRadius.circular(8);
     final fieldRadius = BorderRadius.circular(8);
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.backgroundPrimary,
       appBar: AppBar(
         backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
         elevation: 0,
-        leading: BackButton(color: Colors.black),
+        leading: BackButton(color: AppColors.textPrimary),
       ),
       body: SafeArea(
         child: Center(
@@ -651,22 +620,14 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 32),
                 Text(
                   'HANSL',
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 40,
-                    color: Color(0xFF1777CB),
-                    letterSpacing: 4,
-                  ),
+                  style: ResponsiveTextStyles.logoTitle(context),
                 ),
                 const SizedBox(height: 10),
                 Text(
                   '근태 기록 시스템',
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontWeight: FontWeight.w400,
+                  style: AppTextStyles.cardBody(context).copyWith(
                     fontSize: 16,
-                    color: Color(0xFFB0B8C1),
+                    color: AppColors.textDisabled,
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -680,33 +641,24 @@ class _SignupScreenState extends State<SignupScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: boxRadius,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    boxShadow: AppShadows.smShadow,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       TextField(
                         controller: _nameController,
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 16,
+                        style: AppTextStyles.sectionSubtitle(context).copyWith(
+                          fontWeight: FontWeight.w400,
                         ),
                         decoration: InputDecoration(
                           labelText: '이름',
-                          labelStyle: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontWeight: FontWeight.w500,
+                          labelStyle: AppTextStyles.inputLabel(context).copyWith(
                             fontSize: 15,
-                            color: Color(0xFF222222),
+                            color: AppColors.textPrimary,
                           ),
                           filled: true,
-                          fillColor: Color(0xFFF8F9FA),
+                          fillColor: AppColors.backgroundSecondary,
                           border: OutlineInputBorder(
                             borderRadius: fieldRadius,
                             borderSide: BorderSide.none,
@@ -716,26 +668,21 @@ class _SignupScreenState extends State<SignupScreen> {
                       const SizedBox(height: 14),
                       TextField(
                         controller: _emailController,
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 16,
+                        style: AppTextStyles.sectionSubtitle(context).copyWith(
+                          fontWeight: FontWeight.w400,
                         ),
                         decoration: InputDecoration(
                           labelText: '이메일',
-                          labelStyle: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontWeight: FontWeight.w500,
+                          labelStyle: AppTextStyles.inputLabel(context).copyWith(
                             fontSize: 15,
-                            color: Color(0xFF222222),
+                            color: AppColors.textPrimary,
                           ),
                           hintText: '이메일 주소 입력',
-                          hintStyle: ResponsiveUtils.getTextStyle(
-                            context,
-                            color: Color(0xFFB0B8C1),
-                            fontSize: 14,
+                          hintStyle: AppTextStyles.inputLabel(context).copyWith(
+                            color: AppColors.textDisabled,
                           ),
                           filled: true,
-                          fillColor: Color(0xFFF8F9FA),
+                          fillColor: AppColors.backgroundSecondary,
                           border: OutlineInputBorder(
                             borderRadius: fieldRadius,
                             borderSide: BorderSide.none,
@@ -749,26 +696,21 @@ class _SignupScreenState extends State<SignupScreen> {
                       const SizedBox(height: 14),
                       TextField(
                         controller: _passwordController,
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 16,
+                        style: AppTextStyles.sectionSubtitle(context).copyWith(
+                          fontWeight: FontWeight.w400,
                         ),
                         decoration: InputDecoration(
                           labelText: '비밀번호',
-                          labelStyle: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontWeight: FontWeight.w500,
+                          labelStyle: AppTextStyles.inputLabel(context).copyWith(
                             fontSize: 15,
-                            color: Color(0xFF222222),
+                            color: AppColors.textPrimary,
                           ),
                           hintText: '비밀번호 입력',
-                          hintStyle: ResponsiveUtils.getTextStyle(
-                            context,
-                            color: Color(0xFFB0B8C1),
-                            fontSize: 14,
+                          hintStyle: AppTextStyles.inputLabel(context).copyWith(
+                            color: AppColors.textDisabled,
                           ),
                           filled: true,
-                          fillColor: Color(0xFFF8F9FA),
+                          fillColor: AppColors.backgroundSecondary,
                           border: OutlineInputBorder(
                             borderRadius: fieldRadius,
                             borderSide: BorderSide.none,
@@ -779,26 +721,21 @@ class _SignupScreenState extends State<SignupScreen> {
                       const SizedBox(height: 14),
                       TextField(
                         controller: _passwordConfirmController,
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 16,
+                        style: AppTextStyles.sectionSubtitle(context).copyWith(
+                          fontWeight: FontWeight.w400,
                         ),
                         decoration: InputDecoration(
                           labelText: '비밀번호 확인',
-                          labelStyle: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontWeight: FontWeight.w500,
+                          labelStyle: AppTextStyles.inputLabel(context).copyWith(
                             fontSize: 15,
-                            color: Color(0xFF222222),
+                            color: AppColors.textPrimary,
                           ),
                           hintText: '비밀번호 확인',
-                          hintStyle: ResponsiveUtils.getTextStyle(
-                            context,
-                            color: Color(0xFFB0B8C1),
-                            fontSize: 14,
+                          hintStyle: AppTextStyles.inputLabel(context).copyWith(
+                            color: AppColors.textDisabled,
                           ),
                           filled: true,
-                          fillColor: Color(0xFFF8F9FA),
+                          fillColor: AppColors.backgroundSecondary,
                           border: OutlineInputBorder(
                             borderRadius: fieldRadius,
                             borderSide: BorderSide.none,
@@ -813,44 +750,37 @@ class _SignupScreenState extends State<SignupScreen> {
                         isExpanded: true,
                         icon: const Icon(
                           Icons.keyboard_arrow_down_rounded,
-                          color: Color(0xFFB0B8C1),
+                          color: AppColors.textDisabled,
                         ),
                         dropdownColor: Colors.white,
                         borderRadius: fieldRadius,
                         decoration: InputDecoration(
                           labelText: '직원 유형',
-                          labelStyle: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontWeight: FontWeight.w500,
+                          labelStyle: AppTextStyles.inputLabel(context).copyWith(
                             fontSize: 15,
-                            color: Color(0xFF222222),
+                            color: AppColors.textPrimary,
                           ),
                           hintText: '직원 유형 선택',
-                          hintStyle: ResponsiveUtils.getTextStyle(
-                            context,
-                            color: Color(0xFFB0B8C1),
-                            fontSize: 14,
+                          hintStyle: AppTextStyles.inputLabel(context).copyWith(
+                            color: AppColors.textDisabled,
                           ),
                           filled: true,
-                          fillColor: Color(0xFFF8F9FA),
+                          fillColor: AppColors.backgroundSecondary,
                           border: OutlineInputBorder(
                             borderRadius: fieldRadius,
                             borderSide: BorderSide.none,
                           ),
                         ),
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 16,
-                          color: Color(0xFF222222),
+                        style: AppTextStyles.sectionSubtitle(context).copyWith(
+                          fontWeight: FontWeight.w400,
                         ),
                         items: ['알바', '계약직', '정직원'].map((String value) {
                           return DropdownMenuItem<String>(
                             value: value,
                             child: Text(
                               value,
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 16,
+                              style: AppTextStyles.sectionSubtitle(context).copyWith(
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                           );
@@ -865,10 +795,8 @@ class _SignupScreenState extends State<SignupScreen> {
                         const SizedBox(height: 8),
                         Text(
                           _error!,
-                          style: ResponsiveUtils.getTextStyle(
-                            context,
-                            color: const Color(0xFFE53935),
-                            fontSize: 14,
+                          style: AppTextStyles.inputLabel(context).copyWith(
+                            color: AppColors.error,
                           ),
                         ),
                       ],
@@ -881,26 +809,22 @@ class _SignupScreenState extends State<SignupScreen> {
                           child: ElevatedButton(
                             onPressed: _signup,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1777CB),
+                              backgroundColor: AppColors.primary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: boxRadius,
                               ),
-                              textStyle: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontWeight: FontWeight.bold,
+                              textStyle: AppTextStyles.buttonPrimary(context).copyWith(
                                 fontSize: 18,
-                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
                               ),
                               foregroundColor: Colors.white,
                               elevation: 0,
                             ),
                             child: Text(
                               '회원가입 완료',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontWeight: FontWeight.bold,
+                              style: AppTextStyles.buttonPrimary(context).copyWith(
                                 fontSize: 18,
-                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),

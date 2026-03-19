@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../utils/responsive_utils.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_text_theme.dart';
 
 /// 알림 배너 위젯
 /// 성공, 에러, 정보 메시지를 표시하는 재사용 가능한 컴포넌트
@@ -27,48 +28,17 @@ class NotificationBannerWidget extends StatelessWidget {
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
       width: double.infinity,
-      alignment: Alignment.center,
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: _getBannerColor(),
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(16),
-          bottomRight: Radius.circular(16),
+      color: _getBannerColor(),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      child: Center(
+        child: Text(
+          message!,
+          textAlign: TextAlign.center,
+          style: AppTextStyles.sectionSubtitle(context).copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: _getBannerColor().withValues(alpha: 0.18),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
-      child: Row(
-        children: [
-          _getIcon(),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              message!,
-              textAlign: TextAlign.center,
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                letterSpacing: 0.2,
-              ),
-            ),
-          ),
-          if (onDismiss != null)
-            IconButton(
-              icon: const Icon(Icons.close, color: Colors.white, size: 20),
-              onPressed: onDismiss,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-        ],
       ),
     );
   }
@@ -76,38 +46,150 @@ class NotificationBannerWidget extends StatelessWidget {
   Color _getBannerColor() {
     switch (type) {
       case BannerType.success:
-        return const Color(0xFF4CAF50);
-      case BannerType.error:
-        return const Color(0xFFF44336);
-      case BannerType.warning:
-        return const Color(0xFFFF9800);
       case BannerType.info:
-        return const Color(0xFF2196F3);
-    }
-  }
-
-  Widget _getIcon() {
-    IconData iconData;
-    switch (type) {
-      case BannerType.success:
-        iconData = Icons.check_circle_outline;
-        break;
+        return AppColors.primary;
       case BannerType.error:
-        iconData = Icons.error_outline;
-        break;
+        return AppColors.error;
       case BannerType.warning:
-        iconData = Icons.warning_amber_outlined;
-        break;
-      case BannerType.info:
-        iconData = Icons.info_outline;
-        break;
+        return AppColors.warning;
     }
-
-    return Icon(iconData, color: Colors.white, size: 24);
   }
 }
 
 enum BannerType { success, error, warning, info }
+
+/// 글로벌 배너 — 어디서든 호출 가능
+/// AppBanner.show(context, '메시지', type: BannerType.success);
+class AppBanner {
+  static OverlayEntry? _currentEntry;
+
+  static void show(
+    BuildContext context,
+    String message, {
+    BannerType type = BannerType.info,
+    Duration duration = const Duration(seconds: 1),
+  }) {
+    _currentEntry?.remove();
+    _currentEntry = null;
+
+    final overlay = Overlay.of(context);
+    final topPadding = MediaQuery.of(context).padding.top +
+        kToolbarHeight; // 앱바 아래 위치
+
+    late OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (context) => _AnimatedBannerOverlay(
+        message: message,
+        type: type,
+        topOffset: topPadding,
+        duration: duration,
+        onDismiss: () {
+          entry.remove();
+          if (_currentEntry == entry) _currentEntry = null;
+        },
+      ),
+    );
+
+    _currentEntry = entry;
+    overlay.insert(entry);
+  }
+}
+
+class _AnimatedBannerOverlay extends StatefulWidget {
+  final String message;
+  final BannerType type;
+  final double topOffset;
+  final Duration duration;
+  final VoidCallback onDismiss;
+
+  const _AnimatedBannerOverlay({
+    required this.message,
+    required this.type,
+    required this.topOffset,
+    required this.duration,
+    required this.onDismiss,
+  });
+
+  @override
+  State<_AnimatedBannerOverlay> createState() => _AnimatedBannerOverlayState();
+}
+
+class _AnimatedBannerOverlayState extends State<_AnimatedBannerOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, -1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+
+    _controller.forward();
+
+    Future.delayed(widget.duration, () {
+      if (mounted) {
+        _controller.reverse().then((_) {
+          if (mounted) widget.onDismiss();
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Color _bgColor() {
+    switch (widget.type) {
+      case BannerType.success:
+      case BannerType.info:
+        return AppColors.primary;
+      case BannerType.error:
+        return AppColors.error;
+      case BannerType.warning:
+        return AppColors.warning;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      top: widget.topOffset,
+      left: 0,
+      right: 0,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            width: double.infinity,
+            color: _bgColor(),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            child: Center(
+              child: Text(
+                widget.message,
+                style: AppTextStyles.sectionSubtitle(context).copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 /// 배너 컨트롤러 믹스인
 /// StatefulWidget에서 배너를 쉽게 관리할 수 있도록 하는 믹스인
@@ -128,13 +210,12 @@ mixin BannerControllerMixin<T extends StatefulWidget> on State<T> {
       _bannerType = type;
     });
 
-    if (duration != null) {
-      Future.delayed(duration, () {
-        if (mounted) {
-          hideBanner();
-        }
-      });
-    }
+    final effectiveDuration = duration ?? const Duration(seconds: 1);
+    Future.delayed(effectiveDuration, () {
+      if (mounted) {
+        hideBanner();
+      }
+    });
   }
 
   void hideBanner() {

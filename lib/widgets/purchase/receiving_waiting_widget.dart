@@ -5,9 +5,12 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../providers/user_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
+import '../shared/flat_section.dart';
 import '../../utils/user_role_helper.dart';
 import '../../services/inquiry_service.dart';
+import '../../widgets/common/notification_banner_widget.dart';
 import 'package:intl/intl.dart';
 
 // 입고대기 위젯
@@ -85,11 +88,9 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                 children: [
                   Text(
                     '입고 처리',
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
+                    style: AppTextStyles.cardTitle(context).copyWith(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF0F172A),
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -97,21 +98,13 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                     item['item_name']?.toString() ?? '',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF475467),
-                    ),
+                    style: AppTextStyles.inputLabel(context),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     '요청 수량 ${requestedQty}개',
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF94A3B8),
+                    style: AppTextStyles.tableHeader(context).copyWith(
+                      color: AppColors.gray400,
                     ),
                   ),
                 ],
@@ -136,32 +129,28 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
+                        color: AppColors.backgroundSecondary,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                        border: Border.all(color: AppColors.border),
                       ),
                       child: Row(
                         children: [
                       Text(
                         '실제 입고일',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 14,
-                              color: const Color(0xFF475467),
+                            style: AppTextStyles.inputLabel(context).copyWith(
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                           const Spacer(),
                           Text(
                             _dateFormat.format(selectedDate),
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 14,
+                            style: AppTextStyles.inputLabel(context).copyWith(
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF0F172A),
+                              color: AppColors.textPrimary,
                             ),
                           ),
                           const SizedBox(width: 6),
-                          const Icon(Icons.chevron_right, size: 18, color: Color(0xFF94A3B8)),
+                          const Icon(Icons.chevron_right, size: 18, color: AppColors.gray400),
                         ],
                       ),
                     ),
@@ -172,10 +161,8 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                     children: [
                       Text(
                         '실입고 수량',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 14,
-                          color: const Color(0xFF475467),
+                        style: AppTextStyles.inputLabel(context).copyWith(
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                       const Spacer(),
@@ -204,21 +191,19 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                     decoration: InputDecoration(
                       hintText: '실입고 수량',
                       helperText: '요청 수량: $requestedQty',
-                      helperStyle: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 11,
-                        color: const Color(0xFF9CA3AF),
+                      helperStyle: AppTextStyles.compactLabel(context).copyWith(
+                        color: AppColors.gray400,
                       ),
                       contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                       filled: true,
-                      fillColor: const Color(0xFFF9FAFB),
+                      fillColor: AppColors.backgroundSecondary,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                        borderSide: const BorderSide(color: AppColors.border),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                        borderSide: const BorderSide(color: AppColors.border),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -234,14 +219,14 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                       hintText: '비고 (선택)',
                       contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                       filled: true,
-                      fillColor: const Color(0xFFF9FAFB),
+                      fillColor: AppColors.backgroundSecondary,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                        borderSide: const BorderSide(color: AppColors.border),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                        borderSide: const BorderSide(color: AppColors.border),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -257,7 +242,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                 TextButton(
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    foregroundColor: const Color(0xFF6B7280),
+                    foregroundColor: AppColors.textSecondary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(6),
                     ),
@@ -271,7 +256,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                     final isValid = parsedQty != null && parsedQty > 0;
                     return FilledButton(
                       style: FilledButton.styleFrom(
-                        backgroundColor: isValid ? AppColors.primary : const Color(0xFFD1D5DB),
+                        backgroundColor: isValid ? AppColors.primary : AppColors.gray300,
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(6),
@@ -698,9 +683,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
 
       if (!canComplete) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('입고 완료 권한이 없습니다')),
-          );
+          AppBanner.show(context, '입고 완료 권한이 없습니다', type: BannerType.warning);
         }
         return;
       }
@@ -715,9 +698,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       final unreceivedItems = items.where((item) => item['is_received'] != true).toList();
       if (unreceivedItems.isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('이미 모든 품목이 입고완료되었습니다')),
-          );
+          AppBanner.show(context, '이미 모든 품목이 입고완료되었습니다', type: BannerType.info);
         }
         return;
       }
@@ -759,9 +740,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${unreceivedItems.length}건의 품목이 입고완료 처리되었습니다')),
-        );
+        AppBanner.show(context, '${unreceivedItems.length}건의 품목이 입고완료 처리되었습니다', type: BannerType.success);
       }
 
       // 데이터 새로고침
@@ -770,11 +749,9 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
     } catch (e) {
       // 에러 발생 시 UI 상태 되돌리기
       await _loadReceivingItems();
-      
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('전체 입고완료 처리 중 오류가 발생했습니다')),
-        );
+        AppBanner.show(context, '전체 입고완료 처리 중 오류가 발생했습니다', type: BannerType.error);
       }
     }
   }
@@ -807,9 +784,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       }
 
       if (!canComplete) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('입고 완료 권한이 없습니다')),
-        );
+        AppBanner.show(context, '입고 완료 권한이 없습니다', type: BannerType.warning);
         return;
       }
 
@@ -819,9 +794,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
         orElse: () => <String, dynamic>{},
       );
       if (item == null || item.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('품목 정보를 찾을 수 없습니다')),
-        );
+        AppBanner.show(context, '품목 정보를 찾을 수 없습니다', type: BannerType.error);
         return;
       }
 
@@ -871,9 +844,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(fullyReceived ? '입고 완료 처리되었습니다' : '부분 입고 처리되었습니다')),
-        );
+        AppBanner.show(context, fullyReceived ? '입고 완료 처리되었습니다' : '부분 입고 처리되었습니다', type: BannerType.success);
       }
 
       // 로컬 상태 업데이트 (전체 새로고침 대신)
@@ -899,11 +870,9 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
         _filterItems();
       });
     } catch (e) {
-      // 에러 로깅 제겄됨 (Production 코드)
+      // 에러 로깅 제거됨 (Production 코드)
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('입고완료 처리 중 오류가 발생했습니다')),
-        );
+        AppBanner.show(context, '입고완료 처리 중 오류가 발생했습니다', type: BannerType.error);
       }
     }
   }
@@ -941,31 +910,23 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
             child: Container(
               height: ResponsiveUtils.spacing(context, 36),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8F9FA),
+                color: AppColors.backgroundSecondary,
                 borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                border: Border.all(color: const Color(0xFFE0E0E0)),
+                border: Border.all(color: AppColors.border),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
                   value: _selectedDepartment,
                   hint: Text(
                     '부서 선택',
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 13,
-                      color: const Color(0xFF8E8E93),
-                    ),
+                    style: AppTextStyles.cardCaption(context),
                   ),
                   icon: Icon(
                     Icons.arrow_drop_down,
-                    color: const Color(0xFF8E8E93),
+                    color: AppColors.textTertiary,
                     size: ResponsiveUtils.iconSize(context, 18),
                   ),
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontSize: 13,
-                    color: const Color(0xFF1C1C1E),
-                  ),
+                  style: AppTextStyles.chipLabel(context, color: AppColors.textPrimary),
                   dropdownColor: Colors.white,
                   isDense: true,
                   isExpanded: true,
@@ -978,11 +939,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                         padding: EdgeInsets.symmetric(horizontal: ResponsiveUtils.spacing(context, 12)),
                         child: Text(
                           department,
-                          style: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontSize: 13,
-                            color: const Color(0xFF1C1C1E),
-                          ),
+                          style: AppTextStyles.chipLabel(context, color: AppColors.textPrimary),
                         ),
                       ),
                     );
@@ -999,31 +956,23 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
             child: Container(
               height: ResponsiveUtils.spacing(context, 36),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8F9FA),
+                color: AppColors.backgroundSecondary,
                 borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                border: Border.all(color: const Color(0xFFE0E0E0)),
+                border: Border.all(color: AppColors.border),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
                   value: _selectedEmployee,
                   hint: Text(
                     '이름 선택',
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 13,
-                      color: const Color(0xFF8E8E93),
-                    ),
+                    style: AppTextStyles.cardCaption(context),
                   ),
                   icon: Icon(
                     Icons.arrow_drop_down,
-                    color: const Color(0xFF8E8E93),
+                    color: AppColors.textTertiary,
                     size: ResponsiveUtils.iconSize(context, 18),
                   ),
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontSize: 13,
-                    color: const Color(0xFF1C1C1E),
-                  ),
+                  style: AppTextStyles.chipLabel(context, color: AppColors.textPrimary),
                   dropdownColor: Colors.white,
                   isDense: true,
                   isExpanded: true,
@@ -1036,11 +985,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                         padding: EdgeInsets.symmetric(horizontal: ResponsiveUtils.spacing(context, 12)),
                         child: Text(
                           employee,
-                          style: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontSize: 13,
-                            color: const Color(0xFF1C1C1E),
-                          ),
+                          style: AppTextStyles.chipLabel(context, color: AppColors.textPrimary),
                         ),
                       ),
                     );
@@ -1080,21 +1025,17 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: '발주번호, 업체명, 요청자, 품목명, 규격, 수량, 금액 검색...',
-                hintStyle: ResponsiveUtils.getTextStyle(
-                  context,
-                  fontSize: 12,
-                  color: const Color(0xFF8E8E93),
-                ),
+                hintStyle: AppTextStyles.tableHeader(context),
                 prefixIcon: Icon(
                   Icons.search,
-                  color: const Color(0xFF8E8E93),
+                  color: AppColors.textTertiary,
                   size: ResponsiveUtils.iconSize(context, 18),
                 ),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
                         icon: Icon(
                           Icons.clear, 
-                          color: const Color(0xFF8E8E93),
+                          color: AppColors.textTertiary,
                           size: ResponsiveUtils.iconSize(context, 18),
                         ),
                         onPressed: () {
@@ -1104,29 +1045,25 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                     : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                  borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                  borderSide: const BorderSide(color: AppColors.border),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                  borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                  borderSide: const BorderSide(color: AppColors.border),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                   borderSide: const BorderSide(color: AppColors.primary),
                 ),
                 filled: true,
-                fillColor: const Color(0xFFF8F9FA),
+                fillColor: AppColors.backgroundSecondary,
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: ResponsiveUtils.spacing(context, 12),
                   vertical: ResponsiveUtils.spacing(context, 6),
                 ),
                 isDense: true,
               ),
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 13,
-                color: const Color(0xFF1C1C1E),
-              ),
+              style: AppTextStyles.chipLabel(context, color: AppColors.textPrimary),
             ),
           ),
         ),
@@ -1139,14 +1076,12 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
               Icon(
                 Icons.filter_alt_outlined,
                 size: ResponsiveUtils.iconSize(context, 16),
-                color: const Color(0xFF8E8E93),
+                color: AppColors.textTertiary,
               ),
               SizedBox(width: ResponsiveUtils.spacing(context, 4)),
               Text(
                 '필터: ${_selectedDepartment ?? "전체"} > ${_selectedEmployee ?? "전체"}',
-                style: ResponsiveUtils.getTextStyle(
-                  context,
-                  fontSize: 12,
+                style: AppTextStyles.tableHeader(context).copyWith(
                   color: AppColors.primary,
                   fontWeight: FontWeight.w600,
                 ),
@@ -1157,25 +1092,17 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                 Icon(
                   Icons.search,
                   size: ResponsiveUtils.iconSize(context, 16),
-                  color: const Color(0xFF8E8E93),
+                  color: AppColors.textTertiary,
                 ),
                 SizedBox(width: ResponsiveUtils.spacing(context, 4)),
                 Text(
                   '검색: ${_filteredItemsByOrder.length}건',
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontSize: 12,
-                    color: const Color(0xFF8E8E93),
-                  ),
+                  style: AppTextStyles.tableHeader(context),
                 ),
               ] else ...[
                 Text(
                   '총 ${_filteredItemsByOrder.length}건',
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontSize: 12,
-                    color: const Color(0xFF8E8E93),
-                  ),
+                  style: AppTextStyles.tableHeader(context),
                 ),
               ],
             ],
@@ -1195,7 +1122,10 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
 
     if (_itemsByOrder.isEmpty) {
       return RefreshIndicator(
-        onRefresh: _loadReceivingItems,
+        onRefresh: () async {
+          await _loadReceivingItems();
+          if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+        },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.symmetric(
@@ -1210,17 +1140,12 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                   Icon(
                     Icons.inventory_2_outlined,
                     size: ResponsiveUtils.iconSize(context, 80),
-                    color: const Color(0xFFE0E0E0),
+                    color: AppColors.border,
                   ),
                   SizedBox(height: ResponsiveUtils.spacing(context, 20)),
                   Text(
                     '입고대기 항목이 없습니다',
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF333333),
-                    ),
+                    style: AppTextStyles.cardTitle(context),
                   ),
                 ],
               ),
@@ -1232,7 +1157,10 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
 
     if (itemsToShow.isEmpty && _searchQuery.isNotEmpty) {
       return RefreshIndicator(
-        onRefresh: _loadReceivingItems,
+        onRefresh: () async {
+          await _loadReceivingItems();
+          if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+        },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.symmetric(
@@ -1247,26 +1175,17 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                   Icon(
                     Icons.search_off,
                     size: ResponsiveUtils.iconSize(context, 80),
-                    color: const Color(0xFFE0E0E0),
+                    color: AppColors.border,
                   ),
                   SizedBox(height: ResponsiveUtils.spacing(context, 20)),
                   Text(
                     '검색 결과가 없습니다',
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF333333),
-                    ),
+                    style: AppTextStyles.cardTitle(context),
                   ),
                   SizedBox(height: ResponsiveUtils.spacing(context, 8)),
                   Text(
                     '다른 검색어를 시도해보세요',
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 14,
-                      color: const Color(0xFF8E8E93),
-                    ),
+                    style: AppTextStyles.emptyState(context),
                   ),
                 ],
               ),
@@ -1299,23 +1218,12 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                             firstItem['requester_name'] == userName;
 
           return Container(
-            margin: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 12)),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-              border: Border.all(
-                color: isExpanded ? AppColors.primary.withValues(alpha: 0.3) : const Color(0xFFE5E7EB),
-                width: isExpanded ? 2 : 1,
+              border: Border(
+                bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
+                left: isExpanded ? BorderSide(color: AppColors.primary, width: 3) : BorderSide.none,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: isExpanded 
-                    ? AppColors.primary.withValues(alpha: 0.1)
-                    : const Color(0xFF000000).withValues(alpha: 0.03),
-                  blurRadius: isExpanded ? 12 : 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
             ),
             child: Column(
               children: [
@@ -1338,11 +1246,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                       ResponsiveUtils.spacing(context, 8),
                     ),
                     decoration: BoxDecoration(
-                      color: isExpanded ? const Color(0xFFF8FAFC) : Colors.white,
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(ResponsiveUtils.spacing(context, 12)),
-                        bottom: isExpanded ? Radius.zero : Radius.circular(ResponsiveUtils.spacing(context, 12)),
-                      ),
+                      color: isExpanded ? AppColors.backgroundSecondary : Colors.white,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1367,12 +1271,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                       Expanded(
                                         child: Text(
                                           orderNumber,
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: const Color(0xFF1C1C1E),
-                                          ),
+                                          style: AppTextStyles.cardTitle(context),
                                         ),
                                       ),
                                       // 수정요청 버튼 (요청자 본인만 표시)
@@ -1387,18 +1286,15 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                     children: [
                                       Icon(
                                         Icons.business,
-                                        color: const Color(0xFF8E8E93),
+                                        color: AppColors.textTertiary,
                                         size: ResponsiveUtils.iconSize(context, 16),
                                       ),
                                       SizedBox(width: ResponsiveUtils.spacing(context, 6)),
                                       Expanded(
                                         child: Text(
                                           firstItem['vendor_name'] ?? '업체명 없음',
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w500,
-                                            color: const Color(0xFF4B5563),
+                                          style: AppTextStyles.listTitle(context).copyWith(
+                                            color: AppColors.gray700,
                                           ),
                                         ),
                                       ),
@@ -1420,19 +1316,14 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                 children: [
                                   Icon(
                                     Icons.person_outline,
-                                    color: const Color(0xFF8E8E93),
+                                    color: AppColors.textTertiary,
                                     size: ResponsiveUtils.iconSize(context, 16),
                                   ),
                                   SizedBox(width: ResponsiveUtils.spacing(context, 6)),
                                   Flexible(
                                     child: Text(
                                       firstItem['requester_name'] ?? '요청자 없음',
-                                      style: ResponsiveUtils.getTextStyle(
-                                        context,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        color: const Color(0xFF4B5563),
-                                      ),
+                                      style: AppTextStyles.tableCellSub(context),
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
@@ -1447,7 +1338,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                 children: [
                                   Icon(
                                     Icons.schedule_outlined,
-                                    color: const Color(0xFF8E8E93),
+                                    color: AppColors.textTertiary,
                                     size: ResponsiveUtils.iconSize(context, 16),
                                   ),
                                   SizedBox(width: ResponsiveUtils.spacing(context, 6)),
@@ -1457,20 +1348,13 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                       children: [
                                         Text(
                                           '입고예정일',
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w500,
-                                            color: const Color(0xFF8E8E93),
-                                          ),
+                                          style: AppTextStyles.tableHeader(context),
                                         ),
                                         Text(
                                           firstItem['delivery_request_date'] != null && firstItem['delivery_request_date'].toString().isNotEmpty
                                               ? dateFormat.format(DateTime.parse(firstItem['delivery_request_date']))
                                               : '미정',
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 14,
+                                          style: AppTextStyles.inputLabel(context).copyWith(
                                             fontWeight: FontWeight.w600,
                                             color: AppColors.primary,
                                           ),
@@ -1489,7 +1373,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                 children: [
                                   Icon(
                                     Icons.edit_calendar_outlined,
-                                    color: const Color(0xFF8E8E93),
+                                    color: AppColors.textTertiary,
                                     size: ResponsiveUtils.iconSize(context, 16),
                                   ),
                                   SizedBox(width: ResponsiveUtils.spacing(context, 6)),
@@ -1499,20 +1383,13 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                       children: [
                                         Text(
                                           '변경입고일',
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w500,
-                                            color: const Color(0xFF8E8E93),
-                                          ),
+                                          style: AppTextStyles.tableHeader(context),
                                         ),
                                         Text(
                                           firstItem['revised_delivery_request_date'] != null && firstItem['revised_delivery_request_date'].toString().isNotEmpty
                                               ? dateFormat.format(DateTime.parse(firstItem['revised_delivery_request_date']))
                                               : '미정',
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 14,
+                                          style: AppTextStyles.inputLabel(context).copyWith(
                                             fontWeight: FontWeight.w600,
                                             color: AppColors.primary,
                                           ),
@@ -1533,7 +1410,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                         Center(
                           child: Icon(
                             isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                            color: const Color(0xFF8E8E93),
+                            color: AppColors.textTertiary,
                             size: ResponsiveUtils.iconSize(context, 20),
                           ),
                         ),
@@ -1547,7 +1424,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                     decoration: BoxDecoration(
                       border: Border(
                         top: BorderSide(
-                          color: const Color(0xFFE0E0E0).withValues(alpha: 0.5),
+                          color: AppColors.border.withValues(alpha: 0.5),
                           width: 0.5,
                         ),
                       ),
@@ -1568,7 +1445,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                         return Container(
                           padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
                           decoration: BoxDecoration(
-                            color: isReceived ? const Color(0xFFF0F9FF) : Colors.transparent,
+                            color: isReceived ? AppColors.infoLight : Colors.transparent,
                           ),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1579,7 +1456,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                 width: ResponsiveUtils.spacing(context, 20),
                                 height: ResponsiveUtils.spacing(context, 20),
                                 decoration: BoxDecoration(
-                                  color: isReceived ? AppColors.primary : const Color(0xFFE0E0E0),
+                                  color: isReceived ? AppColors.primary : AppColors.border,
                                   shape: BoxShape.circle,
                                 ),
                               ),
@@ -1592,93 +1469,42 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                         Expanded(
                                           child: Text(
                                             '${itemIndex + 1}. ${item['item_name']}',
-                                            style: ResponsiveUtils.getTextStyle(
-                                              context,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w600,
-                                              color: isReceived ? const Color(0xFF8E8E93) : const Color(0xFF1C1C1E),
-                                            ).copyWith(
+                                            style: AppTextStyles.tableCell(context, color: isReceived ? AppColors.textTertiary : null).copyWith(
                                               decoration: isReceived ? TextDecoration.lineThrough : null,
                                             ),
                                           ),
                                         ),
                                       if (deliveryStatus == 'partial')
-                                        Container(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: ResponsiveUtils.spacing(context, 6),
-                                            vertical: ResponsiveUtils.spacing(context, 2),
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.orange.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                                            border: Border.all(
-                                              color: Colors.orange.withValues(alpha: 0.3),
-                                              width: 1,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            '부분입고',
-                                            style: ResponsiveUtils.getTextStyle(
-                                              context,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.orange.shade700,
-                                            ),
-                                          ),
+                                        StatusChip(
+                                          label: '부분입고',
+                                          color: AppColors.warning,
                                         )
                                       else if (isReceived)
-                                          Container(
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: ResponsiveUtils.spacing(context, 6),
-                                              vertical: ResponsiveUtils.spacing(context, 2),
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: AppColors.primary.withValues(alpha: 0.1),
-                                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                                              border: Border.all(
-                                                color: AppColors.primary.withValues(alpha: 0.3),
-                                                width: 1,
-                                              ),
-                                            ),
-                                            child: Text(
-                                              '완료됨',
-                                              style: ResponsiveUtils.getTextStyle(
-                                                context,
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                                color: AppColors.primary,
-                                              ),
-                                            ),
-                                          ),
+                                        StatusChip(
+                                          label: '완료됨',
+                                          color: AppColors.primary,
+                                        ),
                                       ],
                                     ),
                                     if (item['specification'] != null)
                                       Text(
                                         '규격: ${item['specification']}',
-                                        style: ResponsiveUtils.getTextStyle(
-                                          context,
-                                          fontSize: 14,
-                                          color: const Color(0xFF666666),
-                                        ),
+                                        style: AppTextStyles.tableCellSub(context),
                                       ),
                                     SizedBox(height: ResponsiveUtils.spacing(context, 4)),
                                     Row(
                                       children: [
                                         Text(
                                           '수량: ${item['quantity']}',
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 13,
-                                            color: const Color(0xFF666666),
+                                          style: AppTextStyles.listSubtitle(context).copyWith(
+                                            color: AppColors.textSecondary,
                                           ),
                                         ),
                                         SizedBox(width: ResponsiveUtils.spacing(context, 12)),
                                         Text(
                                           '단가: ${numberFormat.format(item['unit_price_value'])}원',
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 13,
-                                            color: const Color(0xFF666666),
+                                          style: AppTextStyles.listSubtitle(context).copyWith(
+                                            color: AppColors.textSecondary,
                                           ),
                                         ),
                                       ],
@@ -1688,9 +1514,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                       children: [
                                         Text(
                                           '금액: ${numberFormat.format(item['amount_value'])}원',
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 14,
+                                          style: AppTextStyles.tableCellSub(context).copyWith(
                                             fontWeight: FontWeight.w600,
                                             color: AppColors.primary,
                                           ),
@@ -1700,10 +1524,8 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                             padding: EdgeInsets.only(top: ResponsiveUtils.spacing(context, 4)),
                                             child: Text(
                                               '실입고 수량: $receivedQty',
-                                              style: ResponsiveUtils.getTextStyle(
-                                                context,
-                                                fontSize: 13,
-                                                color: const Color(0xFF4B5563),
+                                              style: AppTextStyles.listSubtitle(context).copyWith(
+                                                color: AppColors.gray700,
                                               ),
                                             ),
                                           ),
@@ -1712,10 +1534,8 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                             padding: EdgeInsets.only(top: ResponsiveUtils.spacing(context, 2)),
                                             child: Text(
                                               '실입고일: ${_dateFormat.format(DateTime.parse(actualReceivedDateStr))}',
-                                              style: ResponsiveUtils.getTextStyle(
-                                                context,
-                                                fontSize: 13,
-                                                color: const Color(0xFF4B5563),
+                                              style: AppTextStyles.cardCaption(context).copyWith(
+                                                color: AppColors.gray700,
                                               ),
                                             ),
                                           ),
@@ -1724,10 +1544,8 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                             padding: EdgeInsets.only(top: ResponsiveUtils.spacing(context, 2)),
                                             child: Text(
                                               '비고: ${item['delivery_notes']}',
-                                              style: ResponsiveUtils.getTextStyle(
-                                                context,
-                                                fontSize: 13,
-                                                color: const Color(0xFF4B5563),
+                                              style: AppTextStyles.cardCaption(context).copyWith(
+                                                color: AppColors.gray700,
                                               ),
                                             ),
                                           ),
@@ -1741,7 +1559,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                 ElevatedButton(
                                   onPressed: () => _completeReceivingForItem(orderNumber, item['id']),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF007AFF),
+                                    backgroundColor: AppColors.info,
                                     padding: EdgeInsets.symmetric(
                                       horizontal: ResponsiveUtils.spacing(context, 12),
                                       vertical: ResponsiveUtils.spacing(context, 6),
@@ -1752,11 +1570,8 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                   ),
                                   child: Text(
                                     '입고완료',
-                                    style: ResponsiveUtils.getTextStyle(
-                                      context,
+                                    style: AppTextStyles.chipSmall(context, color: Colors.white).copyWith(
                                       fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white,
                                     ),
                                   ),
                                 ),
@@ -1787,7 +1602,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
         Container(
           padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
           decoration: BoxDecoration(
-            color: const Color(0xFFE3F2FD),
+            color: AppColors.infoLight,
             borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
             border: Border.all(
               color: AppColors.primary.withValues(alpha: 0.3),
@@ -1810,10 +1625,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                       SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                       Text(
                         '입고 진행률',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
+                        style: AppTextStyles.listTitle(context).copyWith(
                           color: AppColors.primary,
                         ),
                       ),
@@ -1821,9 +1633,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                   ),
                   Text(
                     '${percentage}% (${receivedItems}/${totalItems})',
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 14,
+                    style: AppTextStyles.inputLabel(context).copyWith(
                       fontWeight: FontWeight.w600,
                       color: AppColors.primary,
                     ),
@@ -1835,7 +1645,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
               Container(
                 height: ResponsiveUtils.spacing(context, 8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFBBDEFB),
+                  color: AppColors.infoLight,
                   borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 4)),
                 ),
                 child: LinearProgressIndicator(
@@ -1857,17 +1667,15 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                           width: ResponsiveUtils.spacing(context, 8),
                           height: ResponsiveUtils.spacing(context, 8),
                           decoration: const BoxDecoration(
-                            color: Color(0xFFBBDEFB),
+                            color: AppColors.infoLight,
                             shape: BoxShape.circle,
                           ),
                         ),
                         SizedBox(width: ResponsiveUtils.spacing(context, 6)),
                         Text(
                           '대기: ${pendingItems}건',
-                          style: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontSize: 12,
-                            color: const Color(0xFF1565C0),
+                          style: AppTextStyles.tableHeader(context).copyWith(
+                            color: AppColors.primary,
                           ),
                         ),
                       ],
@@ -1888,10 +1696,8 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                         SizedBox(width: ResponsiveUtils.spacing(context, 6)),
                         Text(
                           '완료: ${receivedItems}건',
-                          style: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontSize: 12,
-                            color: const Color(0xFF1565C0),
+                          style: AppTextStyles.tableHeader(context).copyWith(
+                            color: AppColors.primary,
                           ),
                         ),
                       ],
@@ -1935,17 +1741,13 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
             children: [
               Icon(
                 Icons.info_outline,
-                color: const Color(0xFF8E8E93),
+                color: AppColors.textTertiary,
                 size: ResponsiveUtils.iconSize(context, 16),
               ),
               SizedBox(width: ResponsiveUtils.spacing(context, 6)),
               Text(
                 percentage == 100 ? '모든 품목이 입고완료되었습니다' : '미완료 품목: ${pendingItems.length}건',
-                style: ResponsiveUtils.getTextStyle(
-                  context,
-                  fontSize: 12,
-                  color: const Color(0xFF8E8E93),
-                ),
+                style: AppTextStyles.tableHeader(context),
               ),
             ],
           ),
@@ -1956,15 +1758,10 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
             onPressed: () => _completeAllReceiving(items),
             child: Text(
               '전체입고완료',
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
+              style: AppTextStyles.chipLabel(context, color: Colors.white),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF007AFF),
+              backgroundColor: AppColors.info,
               padding: EdgeInsets.symmetric(
                 horizontal: ResponsiveUtils.spacing(context, 16),
                 vertical: ResponsiveUtils.spacing(context, 8),
@@ -2027,11 +1824,8 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                 SizedBox(width: ResponsiveUtils.spacing(context, 4)),
                 Text(
                   '수정요청',
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
+                  style: AppTextStyles.chipSmall(context, color: AppColors.primary).copyWith(
                     fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
                   ),
                 ),
               ],
@@ -2116,12 +1910,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       final user = _supabase.auth.currentUser;
       if (user == null) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('로그인이 필요합니다.'),
-              backgroundColor: Color(0xFFEF4444),
-            ),
-          );
+          AppBanner.show(context, '로그인이 필요합니다.', type: BannerType.error);
         }
         return false;
       }
@@ -2244,12 +2033,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       
       // 로딩 표시
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('수정요청을 등록 중입니다...'),
-            duration: Duration(seconds: 1),
-          ),
-        );
+        AppBanner.show(context, '수정요청을 등록 중입니다...', type: BannerType.info);
       }
       
       final inquiryService = InquiryService();
@@ -2269,32 +2053,17 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       
       if (mounted) {
         if (result['success'] == true) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result['message'] ?? '수정 요청이 전송되었습니다.'),
-              backgroundColor: const Color(0xFF10B981),
-            ),
-          );
+          AppBanner.show(context, result['message'] ?? '수정 요청이 전송되었습니다.', type: BannerType.success);
           return true;
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result['message'] ?? '수정요청 등록에 실패했습니다.'),
-              backgroundColor: const Color(0xFFEF4444),
-            ),
-          );
+          AppBanner.show(context, result['message'] ?? '수정요청 등록에 실패했습니다.', type: BannerType.error);
           return false;
         }
       }
       return false;
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('수정요청 등록 중 오류가 발생했습니다.'),
-            backgroundColor: Color(0xFFEF4444),
-          ),
-        );
+        AppBanner.show(context, '수정요청 등록 중 오류가 발생했습니다.', type: BannerType.error);
       }
       return false;
     }
@@ -2317,15 +2086,15 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () => _showAdminEditDialog(context, orderNumber, items),
-          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
+          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
           child: Container(
             padding: EdgeInsets.symmetric(
               horizontal: ResponsiveUtils.spacing(context, 12),
               vertical: ResponsiveUtils.spacing(context, 6),
             ),
             decoration: BoxDecoration(
-              color: const Color(0xFF10B981),
-              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
+              color: AppColors.success,
+              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -2338,11 +2107,8 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                 SizedBox(width: ResponsiveUtils.spacing(context, 4)),
                 Text(
                   '수정',
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
+                  style: AppTextStyles.chipSmall(context, color: Colors.white).copyWith(
                     fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
                   ),
                 ),
               ],
@@ -2388,11 +2154,9 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           title: Text(
             '날짜 선택',
-            style: ResponsiveUtils.getTextStyle(
-              context,
+            style: AppTextStyles.cardTitle(context).copyWith(
               fontSize: 17,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF0F172A),
             ),
           ),
           content: SizedBox(
@@ -2416,22 +2180,20 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
+                    color: AppColors.backgroundSecondary,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                    border: Border.all(color: AppColors.border),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.info_outline, size: 18, color: Color(0xFF0EA5E9)),
+                      const Icon(Icons.info_outline, size: 18, color: AppColors.info),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           '요청입고수량과 동일한 수량으로 입력됩니다.',
-                          style: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontSize: 13,
-                            color: const Color(0xFF0F172A),
+                          style: AppTextStyles.cardCaption(context).copyWith(
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ),
@@ -2446,7 +2208,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
             TextButton(
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                foregroundColor: const Color(0xFF6B7280),
+                foregroundColor: AppColors.textSecondary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(6),
                 ),
@@ -2615,16 +2377,14 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
           width: double.infinity,
           padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
           decoration: BoxDecoration(
-            color: const Color(0xFFFEE2E2),
+            color: AppColors.errorLight,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFFCA5A5)),
+            border: Border.all(color: AppColors.errorLight),
           ),
           child: Text(
             '유형 섹션 렌더 오류: ${error.toString()}',
-            style: ResponsiveUtils.getTextStyle(
-              context,
-              fontSize: 12,
-              color: const Color(0xFF991B1B),
+            style: AppTextStyles.tableHeader(context).copyWith(
+              color: AppColors.error,
             ),
           ),
         ),
@@ -2640,16 +2400,14 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
       width: double.infinity,
       padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
       decoration: BoxDecoration(
-        color: const Color(0xFFFEE2E2),
+        color: AppColors.errorLight,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFCA5A5)),
+        border: Border.all(color: AppColors.errorLight),
       ),
       child: Text(
         '모달 렌더 오류: $_uiErrorMessage',
-        style: ResponsiveUtils.getTextStyle(
-          context,
-          fontSize: 12,
-          color: const Color(0xFF991B1B),
+        style: AppTextStyles.tableHeader(context).copyWith(
+          color: AppColors.error,
         ),
       ),
     );
@@ -2667,12 +2425,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
         Expanded(
           child: Text(
             title,
-            style: ResponsiveUtils.getTextStyle(
-              context,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF1E293B),
-            ),
+            style: AppTextStyles.sectionSubtitle(context),
           ),
         ),
       ],
@@ -2682,36 +2435,26 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
   Future<void> _submit() async {
     final content = _messageController.text.trim();
     if (_selectedType == null || _selectedType!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('문의 유형을 선택해주세요.'), backgroundColor: Color(0xFFEF4444)),
-      );
+      AppBanner.show(context, '문의 유형을 선택해주세요.', type: BannerType.error);
       return;
     }
     if (content.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('문의 내용을 입력해주세요.'), backgroundColor: Color(0xFFEF4444)),
-      );
+      AppBanner.show(context, '문의 내용을 입력해주세요.', type: BannerType.error);
       return;
     }
 
     if (_selectedType == 'delivery_date_change' && _requestedDeliveryDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('변경 입고일을 선택해주세요.'), backgroundColor: Color(0xFFEF4444)),
-      );
+      AppBanner.show(context, '변경 입고일을 선택해주세요.', type: BannerType.error);
       return;
     }
 
     if (_selectedType == 'quantity_change') {
       if (widget.itemsForOrder.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('품목 정보가 없습니다.'), backgroundColor: Color(0xFFEF4444)),
-        );
+        AppBanner.show(context, '품목 정보가 없습니다.', type: BannerType.error);
         return;
       }
       if (_quantityRows.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('수량 변경 항목을 추가해주세요.'), backgroundColor: Color(0xFFEF4444)),
-        );
+        AppBanner.show(context, '수량 변경 항목을 추가해주세요.', type: BannerType.error);
         return;
       }
       final invalidRow = _quantityRows.any((row) {
@@ -2719,24 +2462,18 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
         return row.itemIndex == null || qty == null || qty <= 0;
       });
       if (invalidRow) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('수량 변경 항목을 모두 입력해주세요.'), backgroundColor: Color(0xFFEF4444)),
-        );
+        AppBanner.show(context, '수량 변경 항목을 모두 입력해주세요.', type: BannerType.error);
         return;
       }
     }
 
     if (_selectedType == 'price_change') {
       if (widget.itemsForOrder.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('품목 정보가 없습니다.'), backgroundColor: Color(0xFFEF4444)),
-        );
+        AppBanner.show(context, '품목 정보가 없습니다.', type: BannerType.error);
         return;
       }
       if (_priceRows.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('단가/합계 변경 항목을 추가해주세요.'), backgroundColor: Color(0xFFEF4444)),
-        );
+        AppBanner.show(context, '단가/합계 변경 항목을 추가해주세요.', type: BannerType.error);
         return;
       }
       final invalidRow = _priceRows.any((row) {
@@ -2744,9 +2481,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
         return row.itemIndex == null || value == null || value <= 0;
       });
       if (invalidRow) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('단가/합계 변경 항목을 모두 입력해주세요.'), backgroundColor: Color(0xFFEF4444)),
-        );
+        AppBanner.show(context, '단가/합계 변경 항목을 모두 입력해주세요.', type: BannerType.error);
         return;
       }
     }
@@ -2782,7 +2517,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
 
     return AlertDialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 16)),
+        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
       ),
       title: Container(
         padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
@@ -2807,10 +2542,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
             Expanded(
               child: Text(
                 '수정 요청',
-                style: ResponsiveUtils.getTextStyle(
-                  context,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                style: AppTextStyles.cardTitle(context).copyWith(
                   color: Colors.white,
                 ),
               ),
@@ -2848,7 +2580,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                     borderSide: const BorderSide(
-                      color: Color(0xFFE2E8F0),
+                      color: AppColors.border,
                       width: 1,
                     ),
                   ),
@@ -2869,10 +2601,10 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
               Container(
                 padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
+                  color: AppColors.backgroundSecondary,
                   borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                   border: Border.all(
-                    color: const Color(0xFFE2E8F0),
+                    color: AppColors.border,
                     width: 1,
                   ),
                 ),
@@ -2890,11 +2622,9 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                         Expanded(
                           child: Text(
                             '발주번호: ${widget.orderNumber}',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 14,
+                            style: AppTextStyles.inputLabel(context).copyWith(
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF1E293B),
+                              color: AppColors.textPrimary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -2907,18 +2637,15 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                       children: [
                         Icon(
                           Icons.business,
-                          color: const Color(0xFF64748B),
+                          color: AppColors.textSecondary,
                           size: ResponsiveUtils.iconSize(context, 18),
                         ),
                         SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                         Expanded(
                           child: Text(
                             '업체명: ${widget.vendorName}',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: const Color(0xFF475569),
+                            style: AppTextStyles.inputLabel(context).copyWith(
+                              color: AppColors.gray700,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -2929,28 +2656,22 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                     SizedBox(height: ResponsiveUtils.spacing(context, 8)),
                     Text(
                       '요청일: $requestDateLabel',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 12,
-                        color: const Color(0xFF64748B),
+                      style: AppTextStyles.tableHeader(context).copyWith(
+                        color: AppColors.textSecondary,
                       ),
                     ),
                     SizedBox(height: ResponsiveUtils.spacing(context, 6)),
                     Text(
                       '현재 입고요청일: $currentDateLabel',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 12,
-                        color: const Color(0xFF64748B),
+                      style: AppTextStyles.tableHeader(context).copyWith(
+                        color: AppColors.textSecondary,
                       ),
                     ),
                     SizedBox(height: ResponsiveUtils.spacing(context, 6)),
                     Text(
                       '품목:\n$_itemsText',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 12,
-                        color: const Color(0xFF64748B),
+                      style: AppTextStyles.tableHeader(context).copyWith(
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -2987,19 +2708,18 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                       ),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        border: Border.all(color: AppColors.border),
                         color: Colors.white,
                       ),
                       child: Text(
                         _requestedDeliveryDate != null
                             ? _dateFormat.format(_requestedDeliveryDate!)
                             : '변경 입고일 선택',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 14,
+                        style: AppTextStyles.inputLabel(context).copyWith(
+                          fontWeight: FontWeight.w400,
                           color: _requestedDeliveryDate != null
-                              ? const Color(0xFF1E293B)
-                              : const Color(0xFF94A3B8),
+                              ? AppColors.textPrimary
+                              : AppColors.gray400,
                         ),
                       ),
                     ),
@@ -3015,10 +2735,8 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                   if (_itemOptions.isEmpty)
                     Text(
                       '품목 정보가 없습니다.',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 13,
-                        color: const Color(0xFF94A3B8),
+                      style: AppTextStyles.cardCaption(context).copyWith(
+                        color: AppColors.gray400,
                       ),
                     ),
                   if (_itemOptions.isNotEmpty) ...[
@@ -3089,7 +2807,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                                         });
                                       },
                                 icon: const Icon(Icons.remove_circle_outline),
-                                color: const Color(0xFFEF4444),
+                                color: AppColors.error,
                               ),
                             ),
                           ],
@@ -3122,10 +2840,8 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                   if (_itemOptions.isEmpty)
                     Text(
                       '품목 정보가 없습니다.',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 13,
-                        color: const Color(0xFF94A3B8),
+                      style: AppTextStyles.cardCaption(context).copyWith(
+                        color: AppColors.gray400,
                       ),
                     ),
                   if (_itemOptions.isNotEmpty) ...[
@@ -3224,7 +2940,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                                         });
                                       },
                                 icon: const Icon(Icons.remove_circle_outline),
-                                color: const Color(0xFFEF4444),
+                                color: AppColors.error,
                               ),
                             ),
                           ],
@@ -3256,15 +2972,14 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                 maxLines: 4,
                 decoration: InputDecoration(
                   hintText: '문의 내용을 자세히 입력해주세요.',
-                  hintStyle: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontSize: 14,
-                    color: const Color(0xFF94A3B8),
+                  hintStyle: AppTextStyles.inputLabel(context).copyWith(
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.gray400,
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                     borderSide: const BorderSide(
-                      color: Color(0xFFE2E8F0),
+                      color: AppColors.border,
                       width: 1,
                     ),
                   ),
@@ -3281,10 +2996,8 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
               SizedBox(height: ResponsiveUtils.spacing(context, 8)),
               Text(
                 '필수 입력 항목입니다.',
-                style: ResponsiveUtils.getTextStyle(
-                  context,
-                  fontSize: 12,
-                  color: const Color(0xFFEF4444),
+                style: AppTextStyles.tableHeader(context).copyWith(
+                  color: AppColors.error,
                 ),
               ),
             ],
@@ -3296,11 +3009,8 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
           onPressed: () => Navigator.of(context).pop(false),
           child: Text(
             '취소',
-            style: ResponsiveUtils.getTextStyle(
-              context,
-              fontSize: 14,
+            style: AppTextStyles.inputLabel(context).copyWith(
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF64748B),
             ),
           ),
         ),
@@ -3331,9 +3041,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                     SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                     Text(
                       '전송 중...',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 14,
+                      style: AppTextStyles.inputLabel(context).copyWith(
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
                       ),
@@ -3342,9 +3050,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                 )
               : Text(
                   '요청 전송',
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontSize: 14,
+                  style: AppTextStyles.inputLabel(context).copyWith(
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),
@@ -3502,10 +3208,7 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
                   Expanded(
                     child: Text(
                       '발주 정보 수정',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                      style: AppTextStyles.cardTitle(context).copyWith(
                         color: Colors.white,
                       ),
                     ),
@@ -3517,17 +3220,12 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
                         vertical: ResponsiveUtils.spacing(context, 4),
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.orange,
+                        color: AppColors.warning,
                         borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                       ),
                       child: Text(
                         '수정됨',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
+                        style: AppTextStyles.chipSmall(context, color: Colors.white),
                       ),
                     ),
                 ],
@@ -3592,7 +3290,7 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
             Container(
               padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
               decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
+                border: Border(top: BorderSide(color: AppColors.border)),
               ),
               child: Row(
                 children: [
@@ -3607,11 +3305,8 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
                       ),
                       child: Text(
                         '취소',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF6B7280),
+                        style: AppTextStyles.sectionSubtitle(context).copyWith(
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     ),
@@ -3639,9 +3334,7 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
                             )
                           : Text(
                               '저장',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 16,
+                              style: AppTextStyles.sectionSubtitle(context).copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                               ),
@@ -3661,9 +3354,9 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
     return Container(
       padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FA),
+        color: AppColors.backgroundSecondary,
         borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-        border: Border.all(color: const Color(0xFFE9ECEF)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [
@@ -3679,22 +3372,14 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
               children: [
                 Text(
                   label,
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF6B7280),
+                  style: AppTextStyles.tableHeader(context).copyWith(
+                    color: AppColors.textSecondary,
                   ),
                 ),
                 SizedBox(height: ResponsiveUtils.spacing(context, 4)),
                 Text(
                   value,
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF1F2937),
-                  ),
+                  style: AppTextStyles.sectionSubtitle(context),
                 ),
               ],
             ),
@@ -3707,11 +3392,8 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: ResponsiveUtils.getTextStyle(
-        context,
-        fontSize: 16,
+      style: AppTextStyles.sectionSubtitle(context).copyWith(
         fontWeight: FontWeight.bold,
-        color: const Color(0xFF1F2937),
       ),
     );
   }
@@ -3734,11 +3416,11 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
         prefixIcon: Icon(icon, color: AppColors.primary),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
@@ -3762,11 +3444,11 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
         prefixIcon: Icon(Icons.category, color: AppColors.primary),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
@@ -3780,9 +3462,7 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
           value: category,
           child: Text(
             category,
-            style: ResponsiveUtils.getTextStyle(
-              context,
-              fontSize: 16,
+            style: AppTextStyles.sectionSubtitle(context).copyWith(
               fontWeight: FontWeight.w400,
             ),
           ),
@@ -3810,7 +3490,7 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
         ),
         decoration: BoxDecoration(
           color: Colors.white,
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: AppColors.border),
           borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
         ),
         child: Row(
@@ -3827,11 +3507,8 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
                 children: [
                   Text(
                     '입고예정일',
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF6B7280),
+                    style: AppTextStyles.tableHeader(context).copyWith(
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   SizedBox(height: ResponsiveUtils.spacing(context, 4)),
@@ -3839,13 +3516,10 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
                     _expectedDeliveryDate != null
                         ? DateFormat('yyyy년 MM월 dd일').format(_expectedDeliveryDate!)
                         : '날짜를 선택해주세요',
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                    style: AppTextStyles.sectionSubtitle(context).copyWith(
                       color: _expectedDeliveryDate != null
-                          ? const Color(0xFF1F2937)
-                          : const Color(0xFF9CA3AF),
+                          ? AppColors.textPrimary
+                          : AppColors.gray400,
                     ),
                   ),
                 ],
@@ -3853,7 +3527,7 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
             ),
             Icon(
               Icons.arrow_forward_ios,
-              color: const Color(0xFF9CA3AF),
+              color: AppColors.gray400,
               size: ResponsiveUtils.iconSize(context, 16),
             ),
           ],
@@ -3872,7 +3546,7 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
         ),
         decoration: BoxDecoration(
           color: Colors.white,
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: AppColors.border),
           borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
         ),
         child: Row(
@@ -3889,11 +3563,8 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
                 children: [
                   Text(
                     '변경요청일',
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF6B7280),
+                    style: AppTextStyles.tableHeader(context).copyWith(
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   SizedBox(height: ResponsiveUtils.spacing(context, 4)),
@@ -3901,13 +3572,10 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
                     _revisedDeliveryDate != null
                         ? DateFormat('yyyy년 MM월 dd일').format(_revisedDeliveryDate!)
                         : '날짜를 선택해주세요',
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                    style: AppTextStyles.sectionSubtitle(context).copyWith(
                       color: _revisedDeliveryDate != null
-                          ? const Color(0xFF1F2937)
-                          : const Color(0xFF9CA3AF),
+                          ? AppColors.textPrimary
+                          : AppColors.gray400,
                     ),
                   ),
                 ],
@@ -3915,7 +3583,7 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
             ),
             Icon(
               Icons.arrow_forward_ios,
-              color: const Color(0xFF9CA3AF),
+              color: AppColors.gray400,
               size: ResponsiveUtils.iconSize(context, 16),
             ),
           ],
@@ -3991,7 +3659,7 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -4010,11 +3678,8 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
                 ),
                 child: Text(
                   '품목 ${index + 1}',
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
+                  style: AppTextStyles.chipSmall(context, color: AppColors.primary).copyWith(
                     fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
                   ),
                 ),
               ),
@@ -4139,22 +3804,12 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
 
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('수정이 완료되었습니다.'),
-            backgroundColor: Color(0xFF10B981),
-          ),
-        );
+        AppBanner.show(context, '수정이 완료되었습니다.', type: BannerType.success);
         widget.onSave();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('수정 중 오류가 발생했습니다: $e'),
-            backgroundColor: Color(0xFFEF4444),
-          ),
-        );
+        AppBanner.show(context, '수정 중 오류가 발생했습니다: $e', type: BannerType.error);
       }
     } finally {
       if (mounted) {

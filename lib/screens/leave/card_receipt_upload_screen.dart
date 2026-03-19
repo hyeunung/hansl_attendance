@@ -7,9 +7,11 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import '../../providers/leave_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_decorations.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
+import '../../widgets/common/notification_banner_widget.dart';
 
 class CardReceiptUploadScreen extends StatefulWidget {
   const CardReceiptUploadScreen({super.key});
@@ -52,22 +54,23 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('영수증 업로드', style: AppTextStyles.appBarTitle(context)),
-        backgroundColor: Colors.transparent,
+        title: AppBarTitle('영수증 업로드'),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
         elevation: 0,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
-        ),
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: AppColors.textPrimary),
       ),
-      backgroundColor: const Color(0xFFF6F7FA),
+      backgroundColor: AppColors.backgroundPrimary,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _cardUsages.isEmpty
               ? _buildEmptyState()
               : RefreshIndicator(
-                  onRefresh: _loadCardUsages,
+                  onRefresh: () async {
+                    await _loadCardUsages();
+                    if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+                  },
                   child: ListView.builder(
                     padding: EdgeInsets.symmetric(
                       horizontal: ResponsiveUtils.spacing(context, 20),
@@ -92,26 +95,22 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
             Icon(
               Icons.receipt_long,
               size: ResponsiveUtils.iconSize(context, 64),
-              color: const Color(0xFFBBBBBB),
+              color: AppColors.textDisabled,
             ),
             SizedBox(height: ResponsiveUtils.spacing(context, 16)),
             Text(
               '업로드 가능한 카드 사용 건이 없습니다.',
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 16,
+              style: AppTextStyles.sectionSubtitle(context).copyWith(
                 fontWeight: FontWeight.w500,
-                color: const Color(0xFF888888),
+                color: AppColors.textTertiary,
               ),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: ResponsiveUtils.spacing(context, 8)),
             Text(
               '웹에서 출장/카드 신청이 승인된 후\n여기에서 영수증을 업로드할 수 있습니다.',
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 14,
-                color: const Color(0xFFAAAAAA),
+              style: AppTextStyles.emptyState(context).copyWith(
+                color: AppColors.textDisabled,
               ),
               textAlign: TextAlign.center,
             ),
@@ -135,13 +134,7 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
       margin: EdgeInsets.only(
         bottom: ResponsiveUtils.spacing(context, 12),
       ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(
-          ResponsiveUtils.spacing(context, rValue),
-        ),
-        boxShadow: [AppShadows.card],
-      ),
+      decoration: AppDecorations.defaultCard,
       child: Padding(
         padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 18)),
         child: Column(
@@ -156,8 +149,8 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: (bt != null
-                            ? const Color(0xFF1976D2)
-                            : const Color(0xFF34C759))
+                            ? AppColors.biztrip
+                            : AppColors.success)
                         .withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(
                       ResponsiveUtils.spacing(context, 8),
@@ -167,8 +160,8 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
                     bt != null ? Icons.flight_takeoff : Icons.credit_card,
                     size: ResponsiveUtils.iconSize(context, 18),
                     color: bt != null
-                        ? const Color(0xFF1976D2)
-                        : const Color(0xFF34C759),
+                        ? AppColors.biztrip
+                        : AppColors.success,
                   ),
                 ),
                 SizedBox(width: ResponsiveUtils.spacing(context, 10)),
@@ -179,11 +172,8 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
                         : description.isNotEmpty
                             ? description
                             : '카드 사용',
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 17,
-                      color: const Color(0xFF222222),
+                    style: AppTextStyles.buttonPrimary(context).copyWith(
+                      color: AppColors.textPrimary,
                       letterSpacing: -0.2,
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -200,7 +190,7 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
                 vertical: ResponsiveUtils.spacing(context, 10),
               ),
               decoration: BoxDecoration(
-                color: const Color(0xFFF2F2F7),
+                color: AppColors.backgroundSecondary,
                 borderRadius: BorderRadius.circular(
                   ResponsiveUtils.spacing(context, 10),
                 ),
@@ -210,20 +200,12 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
                 children: [
                   Text(
                     '카드: $cardNumber',
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 14,
-                      color: const Color(0xFF666666),
-                    ),
+                    style: AppTextStyles.tableCellSub(context),
                   ),
                   SizedBox(height: ResponsiveUtils.spacing(context, 2)),
                   Text(
                     '기간: $startDate ~ $endDate',
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 14,
-                      color: const Color(0xFF666666),
-                    ),
+                    style: AppTextStyles.tableCellSub(context),
                   ),
                 ],
               ),
@@ -236,16 +218,13 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
                   Icon(
                     Icons.check_circle,
                     size: ResponsiveUtils.iconSize(context, 16),
-                    color: const Color(0xFF34C759),
+                    color: AppColors.success,
                   ),
                   SizedBox(width: ResponsiveUtils.spacing(context, 6)),
                   Text(
                     '업로드된 영수증: ${receipts.length}건',
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF34C759),
+                    style: AppTextStyles.inputLabel(context).copyWith(
+                      color: AppColors.success,
                     ),
                   ),
                 ],
@@ -270,15 +249,12 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
                   ),
                   label: Text(
                     '영수증 촬영/업로드',
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                    style: AppTextStyles.sectionSubtitle(context).copyWith(
                       color: Colors.white,
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF007AFF),
+                    backgroundColor: AppColors.info,
                     foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(
                       vertical: ResponsiveUtils.spacing(context, 14),
@@ -302,8 +278,21 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
   Future<void> _showUploadDialog(Map<String, dynamic> cardUsage) async {
     final merchantController = TextEditingController();
     final itemController = TextEditingController();
+    final quantityController = TextEditingController(text: '1');
+    final unitPriceController = TextEditingController();
     final amountController = TextEditingController();
+    final remarkController = TextEditingController();
     XFile? selectedImage;
+
+    void calcTotal(StateSetter setModalState) {
+      final qty = int.tryParse(quantityController.text) ?? 0;
+      final price = int.tryParse(unitPriceController.text.replaceAll(',', '')) ?? 0;
+      if (qty > 0 && price > 0) {
+        setModalState(() {
+          amountController.text = (qty * price).toString();
+        });
+      }
+    }
 
     final result = await showModalBottomSheet<bool>(
       context: context,
@@ -335,7 +324,7 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
                         width: ResponsiveUtils.spacing(context, 40),
                         height: ResponsiveUtils.spacing(context, 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFD1D1D6),
+                          color: AppColors.gray400,
                           borderRadius: BorderRadius.circular(
                             ResponsiveUtils.spacing(context, 2),
                           ),
@@ -345,11 +334,7 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
                     SizedBox(height: ResponsiveUtils.spacing(context, 20)),
                     Text(
                       '영수증 업로드',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 22,
-                        color: const Color(0xFF1D1D1F),
+                      style: AppTextStyles.appBarTitle(context).copyWith(
                         letterSpacing: -0.3,
                       ),
                     ),
@@ -419,16 +404,48 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
                     SizedBox(height: ResponsiveUtils.spacing(context, 12)),
                     _buildInputField(
                       controller: itemController,
-                      label: '품명',
+                      label: '상세내역/품명',
                       hint: '예: 점심식사, 주유',
+                    ),
+                    SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+                    // 수량 + 단가 (가로 배치)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildInputField(
+                            controller: quantityController,
+                            label: '수량',
+                            hint: '1',
+                            keyboardType: TextInputType.number,
+                            onChanged: (_) => calcTotal(setModalState),
+                          ),
+                        ),
+                        SizedBox(width: ResponsiveUtils.spacing(context, 12)),
+                        Expanded(
+                          child: _buildInputField(
+                            controller: unitPriceController,
+                            label: '단가',
+                            hint: '예: 10000',
+                            suffix: '원',
+                            keyboardType: TextInputType.number,
+                            onChanged: (_) => calcTotal(setModalState),
+                          ),
+                        ),
+                      ],
                     ),
                     SizedBox(height: ResponsiveUtils.spacing(context, 12)),
                     _buildInputField(
                       controller: amountController,
-                      label: '합계 금액',
+                      label: '합계',
                       hint: '예: 15000',
                       suffix: '원',
                       keyboardType: TextInputType.number,
+                    ),
+                    SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+                    _buildInputField(
+                      controller: remarkController,
+                      label: '비고',
+                      hint: '선택사항',
                     ),
                     SizedBox(height: ResponsiveUtils.spacing(context, 24)),
                     SizedBox(
@@ -438,8 +455,8 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
                             ? null
                             : () => Navigator.of(context).pop(true),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF007AFF),
-                          disabledBackgroundColor: const Color(0xFFD1D1D6),
+                          backgroundColor: AppColors.info,
+                          disabledBackgroundColor: AppColors.gray400,
                           foregroundColor: Colors.white,
                           padding: EdgeInsets.symmetric(
                             vertical: ResponsiveUtils.spacing(context, 16),
@@ -453,12 +470,7 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
                         ),
                         child: Text(
                           '업로드',
-                          style: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 17,
-                            color: Colors.white,
-                          ),
+                          style: AppTextStyles.buttonPrimary(context),
                         ),
                       ),
                     ),
@@ -479,7 +491,10 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
       imagePath: selectedImage!.path,
       merchantName: merchantController.text.trim(),
       itemName: itemController.text.trim(),
-      totalAmount: amountController.text.trim(),
+      quantity: quantityController.text.trim(),
+      unitPrice: unitPriceController.text.trim().replaceAll(',', ''),
+      totalAmount: amountController.text.trim().replaceAll(',', ''),
+      remark: remarkController.text.trim(),
     );
   }
 
@@ -500,7 +515,7 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
             vertical: ResponsiveUtils.spacing(context, 14),
           ),
           decoration: BoxDecoration(
-            border: Border.all(color: const Color(0xFFD1D1D6)),
+            border: Border.all(color: AppColors.gray400),
             borderRadius: BorderRadius.circular(
               ResponsiveUtils.spacing(context, 10),
             ),
@@ -511,16 +526,14 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
               Icon(
                 icon,
                 size: ResponsiveUtils.iconSize(context, 20),
-                color: const Color(0xFF007AFF),
+                color: AppColors.info,
               ),
               SizedBox(width: ResponsiveUtils.spacing(context, 8)),
               Text(
                 label,
-                style: ResponsiveUtils.getTextStyle(
-                  context,
+                style: AppTextStyles.listTitle(context).copyWith(
                   fontWeight: FontWeight.w500,
-                  fontSize: 15,
-                  color: const Color(0xFF007AFF),
+                  color: AppColors.info,
                 ),
               ),
             ],
@@ -536,31 +549,27 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
     required String hint,
     String? suffix,
     TextInputType? keyboardType,
+    ValueChanged<String>? onChanged,
   }) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
-      style: ResponsiveUtils.getTextStyle(
-        context,
-        fontSize: 16,
-        color: const Color(0xFF1D1D1F),
+      onChanged: onChanged,
+      style: AppTextStyles.sectionSubtitle(context).copyWith(
+        fontWeight: FontWeight.w400,
       ),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
         suffixText: suffix,
-        labelStyle: ResponsiveUtils.getTextStyle(
-          context,
-          fontSize: 14,
-          color: const Color(0xFF8E8E93),
+        labelStyle: AppTextStyles.emptyState(context).copyWith(
+          color: AppColors.textTertiary,
         ),
-        hintStyle: ResponsiveUtils.getTextStyle(
-          context,
-          fontSize: 15,
-          color: const Color(0xFFC7C7CC),
+        hintStyle: AppTextStyles.cardBody(context).copyWith(
+          color: AppColors.gray400,
         ),
         filled: true,
-        fillColor: const Color(0xFFF2F2F7),
+        fillColor: AppColors.backgroundSecondary,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(
             ResponsiveUtils.spacing(context, 10),
@@ -580,7 +589,10 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
     required String imagePath,
     required String merchantName,
     required String itemName,
+    required String quantity,
+    required String unitPrice,
     required String totalAmount,
+    required String remark,
   }) async {
     showDialog(
       context: context,
@@ -610,8 +622,16 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
           merchantName.isNotEmpty ? merchantName : '미입력';
       request.fields['item_name'] =
           itemName.isNotEmpty ? itemName : '미입력';
+      request.fields['quantity'] =
+          quantity.isNotEmpty ? quantity : '1';
+      if (unitPrice.isNotEmpty) {
+        request.fields['unit_price'] = unitPrice;
+      }
       request.fields['total_amount'] =
           totalAmount.isNotEmpty ? totalAmount : '0';
+      if (remark.isNotEmpty) {
+        request.fields['remark'] = remark;
+      }
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
@@ -620,12 +640,7 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
 
       if (response.statusCode == 200) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('영수증이 업로드되었습니다.'),
-              backgroundColor: Color(0xFF34C759),
-            ),
-          );
+          AppBanner.show(context, '영수증이 업로드되었습니다.', type: BannerType.success);
         }
         await _loadCardUsages();
       } else {
@@ -634,12 +649,7 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
     } catch (e) {
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('업로드 중 오류: $e'),
-            backgroundColor: const Color(0xFFFF3B30),
-          ),
-        );
+        AppBanner.show(context, '업로드 중 오류: $e', type: BannerType.error);
       }
     }
   }

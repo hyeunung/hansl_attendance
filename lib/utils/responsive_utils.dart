@@ -132,7 +132,7 @@ class ResponsiveTextStyles {
         context,
         fontSize: 22,
         fontWeight: FontWeight.w700,
-        color: Colors.white,
+        color: const Color(0xFF1A2332),
       );
 
   static TextStyle logoTitle(BuildContext context) =>

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import '../../models/leave_request.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_shadows.dart';
+import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
 
 /// 연차 유형 선택 드롭다운 위젯
 /// 연차, 반차, 공가 등을 선택할 수 있는 재사용 가능한 컴포넌트
 class LeaveTypeSelectorWidget extends StatefulWidget {
-  final LeaveType selectedType;
-  final Function(LeaveType) onTypeChanged;
+  final LeaveType? selectedType;
+  final Function(LeaveType?) onTypeChanged;
   final List<LeaveType> availableTypes;
 
   const LeaveTypeSelectorWidget({
@@ -42,19 +42,18 @@ class _LeaveTypeSelectorWidgetState extends State<LeaveTypeSelectorWidget> {
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: AppShadows.cardShadow,
+              border: Border(bottom: BorderSide(color: AppColors.borderLight, width: 0.5)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  widget.selectedType.label,
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  widget.selectedType?.label ?? '선택',
+                  style: widget.selectedType != null
+                      ? AppTextStyles.sectionTitle(context)
+                      : AppTextStyles.sectionTitle(context).copyWith(
+                          color: AppColors.textDisabled,
+                        ),
                 ),
                 Icon(
                   _dropdownOpen ? Icons.expand_less : Icons.expand_more,
@@ -69,7 +68,7 @@ class _LeaveTypeSelectorWidgetState extends State<LeaveTypeSelectorWidget> {
           height: _dropdownOpen ? (widget.availableTypes.length * 48.0) : 0,
           curve: Curves.easeInOut,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
             child: ListView(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -106,15 +105,13 @@ class _LeaveTypeSelectorWidgetState extends State<LeaveTypeSelectorWidget> {
                           ),
                           Text(
                             type.label,
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 18,
+                            style: AppTextStyles.cardTitle(context).copyWith(
                               fontWeight: widget.selectedType == type
                                   ? FontWeight.bold
                                   : FontWeight.normal,
                               color: widget.selectedType == type
                                   ? AppColors.primary
-                                  : Colors.black87,
+                                  : AppColors.textPrimary,
                             ),
                           ),
                           if (type.days > 0)
@@ -132,9 +129,8 @@ class _LeaveTypeSelectorWidgetState extends State<LeaveTypeSelectorWidget> {
                               ),
                               child: Text(
                                 '${type.days}일',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontSize: 12,
+                                style: AppTextStyles.statLabel(context).copyWith(
+                                  fontSize: ResponsiveUtils.fontSize(context, 12),
                                   fontWeight: FontWeight.bold,
                                   color: _getTypeColor(type),
                                 ),
@@ -156,15 +152,15 @@ class _LeaveTypeSelectorWidgetState extends State<LeaveTypeSelectorWidget> {
   Color _getTypeColor(LeaveType type) {
     switch (type) {
       case LeaveType.annual:
-        return const Color(0xFF4A90E2); // 파랑
+        return AppColors.info;
       case LeaveType.halfAm:
-        return const Color(0xFFF5A623); // 주황
+        return AppColors.warning;
       case LeaveType.halfPm:
-        return const Color(0xFF7ED321); // 초록
+        return AppColors.success;
       case LeaveType.official:
-        return const Color(0xFF9B9B9B); // 회색
+        return AppColors.textTertiary;
       default:
-        return Colors.black;
+        return AppColors.textPrimary;
     }
   }
 }

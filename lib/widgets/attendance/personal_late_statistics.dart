@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_text_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../utils/responsive_utils.dart';
 
@@ -26,10 +28,10 @@ class _PersonalLateStatisticsState extends State<PersonalLateStatistics> {
   Future<void> _loadLateStatistics() async {
     try {
       setState(() => _isLoading = true);
-      
+
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final userEmail = userProvider.email;
-      
+
       if (userEmail == null) {
         if (!mounted) return;
         setState(() => _isLoading = false);
@@ -39,7 +41,7 @@ class _PersonalLateStatisticsState extends State<PersonalLateStatistics> {
       final now = DateTime.now();
       final thisMonth = DateTime(now.year, now.month, 1);
       final thisYear = DateTime(now.year, 1, 1);
-      
+
       // 이번 달 지각 횟수 조회
       final monthlyData = await _supabase
           .from('attendance_records')
@@ -47,7 +49,7 @@ class _PersonalLateStatisticsState extends State<PersonalLateStatistics> {
           .eq('user_email', userEmail)
           .eq('status', '지각')
           .gte('date', thisMonth.toIso8601String().split('T')[0]);
-      
+
       // 올해 지각 횟수 조회
       final yearlyData = await _supabase
           .from('attendance_records')
@@ -55,7 +57,7 @@ class _PersonalLateStatisticsState extends State<PersonalLateStatistics> {
           .eq('user_email', userEmail)
           .eq('status', '지각')
           .gte('date', thisYear.toIso8601String().split('T')[0]);
-      
+
       if (!mounted) return;
       setState(() {
         _monthlyLateCount = (monthlyData as List).length;
@@ -79,60 +81,34 @@ class _PersonalLateStatisticsState extends State<PersonalLateStatistics> {
       return const SizedBox.shrink();
     }
 
-    // 한 줄로 간결한 디자인
+    // 플랫 배너 스타일
     return Container(
-      margin: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 20)),
       padding: EdgeInsets.symmetric(
-        horizontal: ResponsiveUtils.spacing(context, 20),
-        vertical: ResponsiveUtils.spacing(context, 14),
+        horizontal: ResponsiveUtils.spacing(context, 16),
+        vertical: ResponsiveUtils.spacing(context, 12),
       ),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFFE57373), // 파스텔 레드
-            const Color(0xFFEF5350), // 약간 더 진한 파스텔 레드
-          ],
+      decoration: const BoxDecoration(
+        color: AppColors.errorLight,
+        border: Border(
+          bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
         ),
-        borderRadius: BorderRadius.circular(
-          ResponsiveUtils.spacing(context, 16),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFE57373).withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.warning_amber_rounded,
-            color: Colors.white,
-            size: ResponsiveUtils.iconSize(context, 20),
+            color: AppColors.error,
+            size: ResponsiveUtils.iconSize(context, 18),
           ),
-          SizedBox(width: ResponsiveUtils.spacing(context, 12)),
+          SizedBox(width: ResponsiveUtils.spacing(context, 8)),
           Text(
-            '나의 지각 현황',
-            style: ResponsiveUtils.getTextStyle(
-              context,
-              fontSize: 14,
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
+            '나의 지각',
+            style: AppTextStyles.chipLabel(context, color: AppColors.error),
           ),
-          SizedBox(width: ResponsiveUtils.spacing(context, 20)),
-          Container(
-            width: 1,
-            height: 20,
-            color: Colors.white.withValues(alpha: 0.3),
-          ),
-          SizedBox(width: ResponsiveUtils.spacing(context, 20)),
+          const Spacer(),
           _buildStatItem('이번 달', _monthlyLateCount),
-          SizedBox(width: ResponsiveUtils.spacing(context, 24)),
+          SizedBox(width: ResponsiveUtils.spacing(context, 16)),
           _buildStatItem('올해', _yearlyLateCount),
         ],
       ),
@@ -144,30 +120,14 @@ class _PersonalLateStatisticsState extends State<PersonalLateStatistics> {
       children: [
         Text(
           label,
-          style: ResponsiveUtils.getTextStyle(
-            context,
-            fontSize: 13,
-            color: Colors.white.withValues(alpha: 0.9),
-          ),
+          style: AppTextStyles.statLabel(context),
         ),
-        SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-        Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: ResponsiveUtils.spacing(context, 10),
-            vertical: ResponsiveUtils.spacing(context, 4),
-          ),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.25),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            '$count회',
-            style: ResponsiveUtils.getTextStyle(
-              context,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+        SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+        Text(
+          '$count회',
+          style: AppTextStyles.chipLabel(context, color: AppColors.error).copyWith(
+            fontSize: ResponsiveUtils.fontSize(context, 14),
+            fontWeight: FontWeight.w700,
           ),
         ),
       ],

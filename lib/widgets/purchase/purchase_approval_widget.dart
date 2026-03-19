@@ -7,8 +7,11 @@ import '../../providers/purchase_provider.dart';
 import '../../providers/user_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
+import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
+import '../shared/flat_section.dart';
 import '../../utils/user_role_helper.dart';
+import '../../widgets/common/notification_banner_widget.dart';
 
 class PurchaseApprovalWidget extends StatefulWidget {
   const PurchaseApprovalWidget({super.key});
@@ -179,21 +182,15 @@ return;
                         children: [
                           Text(
                             '발주 상세정보',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
+                            style: AppTextStyles.tableHeader(context).copyWith(
                               color: Colors.white.withValues(alpha: 0.7),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
                             ),
                           ),
                           SizedBox(height: ResponsiveUtils.spacing(context, 2)),
                           Text(
                             group.purchaseOrderNumber,
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
+                            style: AppTextStyles.cardTitle(context).copyWith(
                               color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
@@ -207,24 +204,19 @@ return;
                       ),
                       decoration: BoxDecoration(
                         color: group.paymentCategory == '발주' 
-                            ? const Color(0xFF10B981).withValues(alpha: 0.2)
-                            : const Color(0xFF8B5CF6).withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 16)),
+                            ? AppColors.success.withValues(alpha: 0.2)
+                            : AppColors.purple.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                         border: Border.all(
                           color: group.paymentCategory == '발주' 
-                              ? const Color(0xFF10B981).withValues(alpha: 0.5)
-                              : const Color(0xFF8B5CF6).withValues(alpha: 0.5),
+                              ? AppColors.success.withValues(alpha: 0.5)
+                              : AppColors.purple.withValues(alpha: 0.5),
                           width: 1,
                         ),
                       ),
                       child: Text(
                         group.paymentCategory ?? '',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
+                        style: AppTextStyles.chipSmall(context, color: Colors.white),
                       ),
                     ),
                     SizedBox(width: ResponsiveUtils.spacing(context, 8)),
@@ -250,21 +242,16 @@ return;
                     Container(
                       padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFAFAFA),
+                        color: AppColors.backgroundSecondary,
                         borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-                        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+                        border: Border.all(color: AppColors.border, width: 1),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             '기본 정보',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF1F2937),
-                            ),
+                            style: AppTextStyles.sectionSubtitle(context),
                           ),
                           SizedBox(height: ResponsiveUtils.spacing(context, 12)),
                           _buildInfoRow(context, '요청자', group.requesterName),
@@ -325,26 +312,18 @@ return;
                                 ResponsiveUtils.spacing(context, 10),
                               ),
                               border: Border.all(
-                                color: const Color(0xFFE5E7EB),
+                                color: AppColors.border,
                               ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.02),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 1),
-                                ),
-                              ],
+                              boxShadow: AppShadows.xsShadow,
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   '${item.lineNumber}. ${item.itemName.isNotEmpty ? item.itemName : "품목명 없음"}',
-                                  style: ResponsiveUtils.getTextStyle(
-                                    context,
+                                  style: AppTextStyles.inputLabel(context).copyWith(
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    color: const Color(0xFF1C1C1E),
+                                    color: AppColors.textPrimary,
                                   ),
                                 ),
                                 SizedBox(
@@ -370,20 +349,14 @@ return;
                                           ),
                                           child: Text(
                                             '규격:',
-                                            style: ResponsiveUtils.getTextStyle(
-                                              context,
-                                              fontSize: 13,
-                                              color: const Color(0xFF8E8E93),
-                                            ),
+                                            style: AppTextStyles.cardCaption(context),
                                           ),
                                         ),
                                         Expanded(
                                           child: Text(
                                             item.specification,
-                                            style: ResponsiveUtils.getTextStyle(
-                                              context,
-                                              fontSize: 13,
-                                              color: const Color(0xFF1C1C1E),
+                                            style: AppTextStyles.cardCaption(context).copyWith(
+                                              color: AppColors.textPrimary,
                                             ),
                                           ),
                                         ),
@@ -404,19 +377,13 @@ return;
                                         ),
                                         child: Text(
                                           '수량:',
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 13,
-                                            color: const Color(0xFF8E8E93),
-                                          ),
+                                          style: AppTextStyles.cardCaption(context),
                                         ),
                                       ),
                                       Text(
                                         '${item.quantity}',
-                                        style: ResponsiveUtils.getTextStyle(
-                                          context,
-                                          fontSize: 13,
-                                          color: const Color(0xFF1C1C1E),
+                                        style: AppTextStyles.cardCaption(context).copyWith(
+                                          color: AppColors.textPrimary,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
@@ -437,19 +404,13 @@ return;
                                         ),
                                         child: Text(
                                           '단가:',
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 13,
-                                            color: const Color(0xFF8E8E93),
-                                          ),
+                                          style: AppTextStyles.cardCaption(context),
                                         ),
                                       ),
                                       Text(
                                         '₩${currencyFormat.format(item.unitPriceValue)}',
-                                        style: ResponsiveUtils.getTextStyle(
-                                          context,
-                                          fontSize: 13,
-                                          color: const Color(0xFF1C1C1E),
+                                        style: AppTextStyles.cardCaption(context).copyWith(
+                                          color: AppColors.textPrimary,
                                         ),
                                       ),
                                     ],
@@ -465,18 +426,12 @@ return;
                                       ),
                                       child: Text(
                                         '금액:',
-                                        style: ResponsiveUtils.getTextStyle(
-                                          context,
-                                          fontSize: 13,
-                                          color: const Color(0xFF8E8E93),
-                                        ),
+                                        style: AppTextStyles.cardCaption(context),
                                       ),
                                     ),
                                     Text(
                                       '₩${currencyFormat.format(item.amountValue)}',
-                                      style: ResponsiveUtils.getTextStyle(
-                                        context,
-                                        fontSize: 14,
+                                      style: AppTextStyles.inputLabel(context).copyWith(
                                         fontWeight: FontWeight.bold,
                                         color: AppColors.primary,
                                       ),
@@ -500,20 +455,14 @@ return;
                                         ),
                                         child: Text(
                                           '비고:',
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 13,
-                                            color: const Color(0xFF8E8E93),
-                                          ),
+                                          style: AppTextStyles.cardCaption(context),
                                         ),
                                       ),
                                       Expanded(
                                         child: Text(
                                           item.remark!,
-                                          style: ResponsiveUtils.getTextStyle(
-                                            context,
-                                            fontSize: 13,
-                                            color: const Color(0xFF1C1C1E),
+                                          style: AppTextStyles.cardCaption(context).copyWith(
+                                            color: AppColors.textPrimary,
                                           ),
                                         ),
                                       ),
@@ -535,10 +484,10 @@ return;
                                           icon: Icon(
                                             Icons.edit_outlined,
                                             size: ResponsiveUtils.iconSize(context, 16),
-                                            color: const Color(0xFF28A745),
+                                            color: AppColors.success,
                                           ),
                                           style: IconButton.styleFrom(
-                                            backgroundColor: const Color(0xFFE8F5E8),
+                                            backgroundColor: AppColors.successLight,
                                             shape: RoundedRectangleBorder(
                                               borderRadius: BorderRadius.circular(
                                                 ResponsiveUtils.spacing(context, 8),
@@ -559,10 +508,10 @@ return;
                                           icon: Icon(
                                             Icons.delete_outline,
                                             size: ResponsiveUtils.iconSize(context, 16),
-                                            color: const Color(0xFFDC3545),
+                                            color: AppColors.error,
                                           ),
                                           style: IconButton.styleFrom(
-                                            backgroundColor: const Color(0xFFFFF5F5),
+                                            backgroundColor: AppColors.errorLight,
                                             shape: RoundedRectangleBorder(
                                               borderRadius: BorderRadius.circular(
                                                 ResponsiveUtils.spacing(context, 8),
@@ -601,19 +550,15 @@ return;
             width: ResponsiveUtils.spacing(context, 80),
             child: Text(
               label,
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                color: const Color(0xFF8E8E93),
-                fontSize: 14,
+              style: AppTextStyles.tableCellSub(context).copyWith(
+                color: AppColors.textTertiary,
               ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 14,
+              style: AppTextStyles.tableCellSub(context).copyWith(
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -631,21 +576,15 @@ return;
           width: ResponsiveUtils.spacing(context, 70),
           child: Text(
             label,
-            style: ResponsiveUtils.getTextStyle(
-              context,
-              fontSize: 13,
-              color: const Color(0xFF8E8E93),
-            ),
+            style: AppTextStyles.listSubtitle(context),
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: ResponsiveUtils.getTextStyle(
-              context,
-              fontSize: 13,
+            style: AppTextStyles.listSubtitle(context).copyWith(
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF1C1C1E),
+              color: AppColors.textPrimary,
             ),
           ),
         ),
@@ -686,7 +625,7 @@ return;
                       decoration: BoxDecoration(
                         color: _tabController.index == 0
                             ? AppColors.primary
-                            : const Color(0xFFF2F3F5),
+                            : AppColors.backgroundSecondary,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -694,13 +633,11 @@ return;
                         children: [
                           Text(
                             '대기중',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 14,
+                            style: AppTextStyles.inputLabel(context).copyWith(
                               fontWeight: FontWeight.w600,
                               color: _tabController.index == 0
                                   ? Colors.white
-                                  : const Color(0xFF1C1C1E),
+                                  : AppColors.textPrimary,
                             ),
                           ),
                           // 배지 제거됨 (메인 탭에 이미 표시되므로 중복 제거)
@@ -723,18 +660,16 @@ return;
                       decoration: BoxDecoration(
                         color: _tabController.index == 1
                             ? AppColors.primary
-                            : const Color(0xFFF2F3F5),
+                            : AppColors.backgroundSecondary,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         '처리완료',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 14,
+                        style: AppTextStyles.inputLabel(context).copyWith(
                           fontWeight: FontWeight.w600,
                           color: _tabController.index == 1
                               ? Colors.white
-                              : const Color(0xFF1C1C1E),
+                              : AppColors.textPrimary,
                         ),
                       ),
                     ),
@@ -755,9 +690,9 @@ return;
                               vertical: ResponsiveUtils.spacing(context, 8),
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF8F9FA),
+                              color: AppColors.backgroundSecondary,
                               borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 18)),
-                              border: Border.all(color: const Color(0xFFE5E7EB)),
+                              border: Border.all(color: AppColors.border),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -772,12 +707,7 @@ return;
                                   _startDate != null && _endDate != null
                                       ? '${DateFormat('MM/dd').format(_startDate!)} - ${DateFormat('MM/dd').format(_endDate!)}'
                                       : '한달',
-                                  style: ResponsiveUtils.getTextStyle(
-                                    context,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.primary,
-                                  ),
+                                  style: AppTextStyles.chipLabel(context, color: AppColors.primary),
                                 ),
                               ],
                             ),
@@ -790,9 +720,9 @@ return;
                           child: Container(
                             padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 8)),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF8F9FA),
+                              color: AppColors.backgroundSecondary,
                               borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 18)),
-                              border: Border.all(color: const Color(0xFFE5E7EB)),
+                              border: Border.all(color: AppColors.border),
                             ),
                             child: Icon(
                               Icons.refresh,
@@ -883,6 +813,7 @@ return;
               await purchaseProvider.fetchPendingPurchases(
                 employee: userProvider.employee,
               );
+              if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
             },
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -898,25 +829,20 @@ return;
                       Icon(
                         Icons.check_circle_outline,
                         size: ResponsiveUtils.iconSize(context, 80),
-                        color: const Color(0xFFE0E0E0),
+                        color: AppColors.border,
                       ),
                       SizedBox(height: ResponsiveUtils.spacing(context, 20)),
                       Text(
                         '승인 대기 중인 발주가 없습니다',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF8E8E93),
+                        style: AppTextStyles.cardTitle(context).copyWith(
+                          color: AppColors.textTertiary,
                         ),
                       ),
                       SizedBox(height: ResponsiveUtils.spacing(context, 8)),
                       Text(
                         '새로운 발주 신청이 들어오면 여기에 표시됩니다',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 14,
-                          color: const Color(0xFFB0B0B0),
+                        style: AppTextStyles.emptyState(context).copyWith(
+                          color: AppColors.textDisabled,
                         ),
                       ),
                     ],
@@ -932,6 +858,7 @@ return;
             await purchaseProvider.fetchPendingPurchases(
               employee: userProvider.employee,
             );
+            if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
           },
           child: ListView.builder(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -996,11 +923,14 @@ return;
 
         if (orders.isEmpty) {
           return RefreshIndicator(
-            onRefresh: () => purchaseProvider.fetchCompletedPurchases(
-              employee: userProvider.employee,
-              startDate: _startDate,
-              endDate: _endDate,
-            ),
+            onRefresh: () async {
+              await purchaseProvider.fetchCompletedPurchases(
+                employee: userProvider.employee,
+                startDate: _startDate,
+                endDate: _endDate,
+              );
+              if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+            },
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.symmetric(
@@ -1015,25 +945,20 @@ return;
                       Icon(
                         Icons.task_alt,
                         size: ResponsiveUtils.iconSize(context, 80),
-                        color: const Color(0xFFE0E0E0),
+                        color: AppColors.border,
                       ),
                       SizedBox(height: ResponsiveUtils.spacing(context, 20)),
                       Text(
                         '오늘 처리한 발주가 없습니다',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF8E8E93),
+                        style: AppTextStyles.cardTitle(context).copyWith(
+                          color: AppColors.textTertiary,
                         ),
                       ),
                       SizedBox(height: ResponsiveUtils.spacing(context, 8)),
                       Text(
                         '오늘 승인하거나 반려한 항목이 여기에 표시됩니다',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 14,
-                          color: const Color(0xFFB0B0B0),
+                        style: AppTextStyles.emptyState(context).copyWith(
+                          color: AppColors.textDisabled,
                         ),
                       ),
                     ],
@@ -1069,24 +994,23 @@ return;
                 height: ResponsiveUtils.spacing(context, 36),
                 child: TextField(
                   controller: _searchController,
-                  style: ResponsiveUtils.getTextStyle(context, fontSize: 13),
+                  style: AppTextStyles.cardCaption(context).copyWith(
+                    color: AppColors.textPrimary,
+                  ),
                   decoration: InputDecoration(
                     hintText: '발주번호, 업체명, 품목명, 규격으로 검색',
-                    hintStyle: ResponsiveUtils.getTextStyle(context, 
-                      fontSize: 12, 
-                      color: const Color(0xFF8E8E93)
-                    ),
+                    hintStyle: AppTextStyles.tableHeader(context),
                     prefixIcon: Icon(
                       Icons.search,
                       size: ResponsiveUtils.iconSize(context, 18),
-                      color: const Color(0xFF8E8E93),
+                      color: AppColors.textTertiary,
                     ),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
                             icon: Icon(
                               Icons.clear,
                               size: ResponsiveUtils.iconSize(context, 18),
-                              color: const Color(0xFF8E8E93),
+                              color: AppColors.textTertiary,
                             ),
                             onPressed: () {
                               _searchController.clear();
@@ -1095,11 +1019,11 @@ return;
                         : null,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                      borderSide: const BorderSide(color: AppColors.border),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                      borderSide: const BorderSide(color: AppColors.border),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
@@ -1118,11 +1042,14 @@ return;
             // 리스트 뷰
             Expanded(
               child: RefreshIndicator(
-                onRefresh: () => purchaseProvider.fetchCompletedPurchases(
-                  employee: userProvider.employee,
-                  startDate: _startDate,
-                  endDate: _endDate,
-                ),
+                onRefresh: () async {
+                  await purchaseProvider.fetchCompletedPurchases(
+                    employee: userProvider.employee,
+                    startDate: _startDate,
+                    endDate: _endDate,
+                  );
+                  if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+                },
                 child: filteredOrders.isEmpty
                     ? ListView(
                         physics: const AlwaysScrollableScrollPhysics(),
@@ -1138,18 +1065,15 @@ return;
                                 Icon(
                                   _searchQuery.isNotEmpty ? Icons.search_off : Icons.task_alt,
                                   size: ResponsiveUtils.iconSize(context, 80),
-                                  color: const Color(0xFFE0E0E0),
+                                  color: AppColors.border,
                                 ),
                                 SizedBox(height: ResponsiveUtils.spacing(context, 20)),
                                 Text(
                                   _searchQuery.isNotEmpty 
                                       ? '검색 결과가 없습니다'
                                       : '선택한 기간에 처리한 발주가 없습니다',
-                                  style: ResponsiveUtils.getTextStyle(
-                                    context,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF8E8E93),
+                                  style: AppTextStyles.cardTitle(context).copyWith(
+                                    color: AppColors.textTertiary,
                                   ),
                                 ),
                                 SizedBox(height: ResponsiveUtils.spacing(context, 8)),
@@ -1157,10 +1081,8 @@ return;
                                   _searchQuery.isNotEmpty
                                       ? '다른 검색어를 시도해보세요'
                                       : '다른 기간을 선택해보세요',
-                                  style: ResponsiveUtils.getTextStyle(
-                                    context,
-                                    fontSize: 14,
-                                    color: const Color(0xFFB0B0B0),
+                                  style: AppTextStyles.emptyState(context).copyWith(
+                                    color: AppColors.textDisabled,
                                   ),
                                 ),
                               ],
@@ -1198,63 +1120,43 @@ return;
     final headerItem = group.headerItem;
 
     // payment_category에 따른 색상 설정
-    final Color categoryBgColor;
     final Color categoryTextColor;
     if (group.paymentCategory == '발주') {
-      categoryBgColor = const Color(0xFFE8F5E9); // 연한 녹색 배경
-      categoryTextColor = const Color(0xFF4CAF50); // 녹색 텍스트
+      categoryTextColor = AppColors.success;
     } else {
-      categoryBgColor = const Color(0xFFE3F2FD); // 연한 파란색 배경
-      categoryTextColor = const Color(0xFF1976D2); // 파란색 텍스트
+      categoryTextColor = AppColors.biztrip;
     }
 
     // 승인 상태에 따른 색상 설정
-    final Color statusBgColor;
     final Color statusTextColor;
     String statusLabel;
     if (group.finalManagerStatus == 'approved') {
-      statusBgColor = const Color(0xFFE8F5E9);
-      statusTextColor = const Color(0xFF388E3C);
+      statusTextColor = AppColors.success;
       statusLabel = '최종승인';
     } else if (group.middleManagerStatus == 'approved') {
-      statusBgColor = const Color(0xFFFFF3E0);
-      statusTextColor = const Color(0xFFFF9800);
+      statusTextColor = AppColors.warning;
       statusLabel = '1차승인';
     } else {
-      statusBgColor = const Color(0xFFFFEBEE);
-      statusTextColor = const Color(0xFFC62828);
+      statusTextColor = AppColors.error;
       statusLabel = '대기중';
     }
 
     // 선진행 여부에 따른 카드 배경색 설정
     final bool isPreProgress = group.progressType == '선진행';
     final Color cardBackgroundColor = isPreProgress 
-        ? const Color(0xFFFFEBEE)  // 연붉은색
+        ? AppColors.errorLight  // 연붉은색
         : Colors.white;
     
-    // 선진행 디버깅 로그 (간소화)
-    if (isPreProgress) {
-      print('🔴 선진행 항목: ${group.purchaseOrderNumber} - progressType: "${group.progressType}"');
-    }
-
     return Container(
-      margin: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 16)),
       decoration: BoxDecoration(
         color: cardBackgroundColor,  // 선진행이면 연붉은색
-        borderRadius: BorderRadius.circular(
-          ResponsiveUtils.spacing(context, 14),
+        border: Border(
+          bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
+          left: isPreProgress ? BorderSide(color: AppColors.error, width: 3) : BorderSide.none,
         ),
-        boxShadow: AppShadows.cardShadow,
-        // 선진행일 때 테두리 추가
-        border: isPreProgress 
-            ? Border.all(color: const Color(0xFFFFCDD2), width: 1.5)
-            : null,
       ),
       child: InkWell(
         onTap: () => _showOrderDetails(context, group),
-        borderRadius: BorderRadius.circular(
-          ResponsiveUtils.spacing(context, 14),
-        ),
         child: Padding(
             padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 18)),
             child: Column(
@@ -1272,56 +1174,18 @@ return;
                     Expanded(
                       child: Text(
                         group.purchaseOrderNumber,
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                        style: AppTextStyles.sectionSubtitle(context),
                       ),
                     ),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: ResponsiveUtils.spacing(context, 10),
-                        vertical: ResponsiveUtils.spacing(context, 4),
-                      ),
-                      decoration: BoxDecoration(
-                        color: categoryBgColor,
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveUtils.spacing(context, 8),
-                        ),
-                      ),
-                      child: Text(
-                        group.paymentCategory ?? '',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 14,
-                          color: categoryTextColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                    StatusChip(
+                      label: group.paymentCategory ?? '',
+                      color: categoryTextColor,
                     ),
                     SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                    Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: ResponsiveUtils.spacing(context, 10),
-                      vertical: ResponsiveUtils.spacing(context, 4),
+                    StatusChip(
+                      label: statusLabel,
+                      color: statusTextColor,
                     ),
-                    decoration: BoxDecoration(
-                      color: statusBgColor,
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveUtils.spacing(context, 8),
-                      ),
-                    ),
-                    child: Text(
-                      statusLabel,
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 14,
-                        color: statusTextColor,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
                 ],
               ),
 
@@ -1333,32 +1197,24 @@ return;
                   Icon(
                     Icons.person_outline,
                     size: ResponsiveUtils.iconSize(context, 16),
-                    color: const Color(0xFF8E8E93),
+                    color: AppColors.textTertiary,
                   ),
                   SizedBox(width: ResponsiveUtils.spacing(context, 4)),
                   Text(
                     group.requesterName,
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 14,
-                      color: const Color(0xFF1C1C1E),
-                    ),
+                    style: AppTextStyles.tableCellSub(context),
                   ),
                   SizedBox(width: ResponsiveUtils.spacing(context, 16)),
                   Icon(
                     Icons.business,
                     size: ResponsiveUtils.iconSize(context, 16),
-                    color: const Color(0xFF8E8E93),
+                    color: AppColors.textTertiary,
                   ),
                   SizedBox(width: ResponsiveUtils.spacing(context, 4)),
                   Expanded(
                     child: Text(
                       group.vendorName,
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 14,
-                        color: const Color(0xFF1C1C1E),
-                      ),
+                      style: AppTextStyles.tableCellSub(context),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -1371,7 +1227,7 @@ return;
               Container(
                 padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 10)),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8F9FA),
+                  color: AppColors.backgroundSecondary,
                   borderRadius: BorderRadius.circular(
                     ResponsiveUtils.spacing(context, 8),
                   ),
@@ -1384,11 +1240,7 @@ return;
                       headerItem.itemName.isNotEmpty
                           ? headerItem.itemName
                           : '품목명 없음',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
+                      style: AppTextStyles.listTitle(context),
                     ),
                     SizedBox(height: ResponsiveUtils.spacing(context, 4)),
                     // 규격과 수량을 한 줄에 표시
@@ -1398,11 +1250,7 @@ return;
                           Expanded(
                             child: Text(
                               '규격: ${headerItem.specification}',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 12,
-                                color: const Color(0xFF8E8E93),
-                              ),
+                              style: AppTextStyles.tableHeader(context),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -1410,10 +1258,7 @@ return;
                         ],
                         Text(
                           '수량: ${headerItem.quantity}',
-                          style: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontSize: 12,
-                            color: const Color(0xFF8E8E93),
+                          style: AppTextStyles.tableHeader(context).copyWith(
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -1435,9 +1280,7 @@ return;
                         ),
                         child: Text(
                           '외 ${group.additionalItemCount}개 품목',
-                          style: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontSize: 12,
+                          style: AppTextStyles.tableHeader(context).copyWith(
                             color: AppColors.primary,
                             fontWeight: FontWeight.bold,
                           ),
@@ -1459,18 +1302,11 @@ return;
                     children: [
                       Text(
                         '총 금액',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 12,
-                          color: const Color(0xFF8E8E93),
-                        ),
+                        style: AppTextStyles.tableHeader(context),
                       ),
                       Text(
                         '₩${currencyFormat.format(group.totalAmount)}',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                        style: AppTextStyles.cardTitle(context).copyWith(
                           color: AppColors.primary,
                         ),
                       ),
@@ -1513,14 +1349,12 @@ return;
                                           60,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: const Color(
-                                            0xFF4CAF50,
-                                          ).withValues(alpha: 0.102),
+                                          color: AppColors.success.withValues(alpha: 0.102),
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
                                           Icons.check_circle_outline,
-                                          color: const Color(0xFF4CAF50),
+                                          color: AppColors.success,
                                           size: ResponsiveUtils.iconSize(
                                             context,
                                             32,
@@ -1537,12 +1371,7 @@ return;
                                       // 제목
                                       Text(
                                         '1차 승인',
-                                        style: ResponsiveUtils.getTextStyle(
-                                          context,
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                          color: const Color(0xFF1C1C1E),
-                                        ),
+                                        style: AppTextStyles.sectionTitle(context),
                                       ),
                                       SizedBox(
                                         height: ResponsiveUtils.spacing(
@@ -1554,11 +1383,7 @@ return;
                                       // 설명
                                       Text(
                                         '발주를 승인하시겠습니까?',
-                                        style: ResponsiveUtils.getTextStyle(
-                                          context,
-                                          fontSize: 14,
-                                          color: const Color(0xFF8E8E93),
-                                        ),
+                                        style: AppTextStyles.emptyState(context),
                                       ),
                                       SizedBox(
                                         height: ResponsiveUtils.spacing(
@@ -1574,7 +1399,7 @@ return;
                                           ResponsiveUtils.spacing(context, 16),
                                         ),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFF8F9FA),
+                                          color: AppColors.backgroundSecondary,
                                           borderRadius: BorderRadius.circular(
                                             ResponsiveUtils.spacing(
                                               context,
@@ -1659,21 +1484,15 @@ return;
                                                         ),
                                                       ),
                                                   side: const BorderSide(
-                                                    color: Color(0xFFE0E0E0),
+                                                    color: AppColors.border,
                                                   ),
                                                 ),
                                               ),
                                               child: Text(
                                                 '취소',
                                                 style:
-                                                    ResponsiveUtils.getTextStyle(
-                                                      context,
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color: const Color(
-                                                        0xFF8E8E93,
-                                                      ),
+                                                    AppTextStyles.sectionSubtitle(context).copyWith(
+                                                      color: AppColors.textTertiary,
                                                     ),
                                               ),
                                             ),
@@ -1690,9 +1509,7 @@ return;
                                                 context,
                                               ).pop(true),
                                               style: ElevatedButton.styleFrom(
-                                                backgroundColor: const Color(
-                                                  0xFF4CAF50,
-                                                ),
+                                                backgroundColor: AppColors.success,
                                                 padding: EdgeInsets.symmetric(
                                                   vertical:
                                                       ResponsiveUtils.spacing(
@@ -1713,11 +1530,7 @@ return;
                                               child: Text(
                                                 '승인',
                                                 style:
-                                                    ResponsiveUtils.getTextStyle(
-                                                      context,
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                          FontWeight.w600,
+                                                    AppTextStyles.sectionSubtitle(context).copyWith(
                                                       color: Colors.white,
                                                     ),
                                               ),
@@ -1760,7 +1573,7 @@ return;
                                     barrierDismissible: false,
                                     builder: (dialogContext) => Dialog(
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(20),
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Container(
                                         padding: const EdgeInsets.all(24),
@@ -1771,31 +1584,25 @@ return;
                                               width: 60,
                                               height: 60,
                                               decoration: BoxDecoration(
-                                                color: Colors.green.withValues(alpha: 0.1),
+                                                color: AppColors.success.withValues(alpha: 0.1),
                                                 borderRadius: BorderRadius.circular(30),
                                               ),
                                               child: const Icon(
                                                 Icons.check_circle,
-                                                color: Colors.green,
+                                                color: AppColors.success,
                                                 size: 40,
                                               ),
                                             ),
                                             const SizedBox(height: 16),
                                             Text(
                                               '1차 승인 완료',
-                                              style: ResponsiveUtils.getTextStyle(
-                                                context,
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                              ),
+                                              style: AppTextStyles.cardTitle(context),
                                             ),
                                             const SizedBox(height: 8),
                                             Text(
                                               '발주번호: ${group.purchaseOrderNumber}',
-                                              style: ResponsiveUtils.getTextStyle(
-                                                context,
-                                                fontSize: 14,
-                                                color: Colors.grey[600],
+                                              style: AppTextStyles.emptyState(context).copyWith(
+                                                color: AppColors.textSecondary,
                                               ),
                                             ),
                                             const SizedBox(height: 20),
@@ -1804,7 +1611,7 @@ return;
                                                 Navigator.of(dialogContext).pop();
                                               },
                                               style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.green,
+                                                backgroundColor: AppColors.success,
                                                 padding: const EdgeInsets.symmetric(
                                                   horizontal: 32,
                                                   vertical: 12,
@@ -1815,10 +1622,8 @@ return;
                                               ),
                                               child: Text(
                                                 '확인',
-                                                style: ResponsiveUtils.getTextStyle(
-                                                  context,
+                                                style: AppTextStyles.sectionSubtitle(context).copyWith(
                                                   color: Colors.white,
-                                                  fontSize: 16,
                                                 ),
                                               ),
                                             ),
@@ -1833,18 +1638,13 @@ return;
                                     employee: userProvider.employee,
                                   );
                                 } else {
-                                  ScaffoldMessenger.of(scaffoldContext).showSnackBar(
-                                    SnackBar(
-                                      content: Text('1차 승인 실패: ${purchaseProvider.error ?? "알 수 없는 오류"}'),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
+                                  AppBanner.show(scaffoldContext, '1차 승인 실패: ${purchaseProvider.error ?? "알 수 없는 오류"}', type: BannerType.error);
                                 }
                               }
                             }
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4CAF50),
+                            backgroundColor: AppColors.success,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(
                                 ResponsiveUtils.spacing(context, 8),
@@ -1857,10 +1657,8 @@ return;
                           ),
                           child: Text(
                             '1차 승인',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
+                            style: AppTextStyles.inputLabel(context).copyWith(
                               color: Colors.white,
-                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -1942,12 +1740,7 @@ return;
                                       // 제목
                                       Text(
                                         '최종 승인',
-                                        style: ResponsiveUtils.getTextStyle(
-                                          context,
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                          color: const Color(0xFF1C1C1E),
-                                        ),
+                                        style: AppTextStyles.sectionTitle(context),
                                       ),
                                       SizedBox(
                                         height: ResponsiveUtils.spacing(
@@ -1959,11 +1752,7 @@ return;
                                       // 설명
                                       Text(
                                         '발주를 최종 승인하시겠습니까?',
-                                        style: ResponsiveUtils.getTextStyle(
-                                          context,
-                                          fontSize: 14,
-                                          color: const Color(0xFF8E8E93),
-                                        ),
+                                        style: AppTextStyles.emptyState(context),
                                       ),
                                       SizedBox(
                                         height: ResponsiveUtils.spacing(
@@ -1979,7 +1768,7 @@ return;
                                           ResponsiveUtils.spacing(context, 16),
                                         ),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFF8F9FA),
+                                          color: AppColors.backgroundSecondary,
                                           borderRadius: BorderRadius.circular(
                                             ResponsiveUtils.spacing(
                                               context,
@@ -2064,21 +1853,15 @@ return;
                                                         ),
                                                       ),
                                                   side: const BorderSide(
-                                                    color: Color(0xFFE0E0E0),
+                                                    color: AppColors.border,
                                                   ),
                                                 ),
                                               ),
                                               child: Text(
                                                 '취소',
                                                 style:
-                                                    ResponsiveUtils.getTextStyle(
-                                                      context,
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color: const Color(
-                                                        0xFF8E8E93,
-                                                      ),
+                                                    AppTextStyles.sectionSubtitle(context).copyWith(
+                                                      color: AppColors.textTertiary,
                                                     ),
                                               ),
                                             ),
@@ -2117,11 +1900,7 @@ return;
                                               child: Text(
                                                 '최종 승인',
                                                 style:
-                                                    ResponsiveUtils.getTextStyle(
-                                                      context,
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                          FontWeight.w600,
+                                                    AppTextStyles.sectionSubtitle(context).copyWith(
                                                       color: Colors.white,
                                                     ),
                                               ),
@@ -2164,7 +1943,7 @@ return;
                                     barrierDismissible: false,
                                     builder: (dialogContext) => Dialog(
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(20),
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Container(
                                         padding: const EdgeInsets.all(24),
@@ -2187,19 +1966,13 @@ return;
                                             const SizedBox(height: 16),
                                             Text(
                                               '최종 승인 완료',
-                                              style: ResponsiveUtils.getTextStyle(
-                                                context,
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                              ),
+                                              style: AppTextStyles.cardTitle(context),
                                             ),
                                             const SizedBox(height: 8),
                                             Text(
                                               '발주번호: ${group.purchaseOrderNumber}',
-                                              style: ResponsiveUtils.getTextStyle(
-                                                context,
-                                                fontSize: 14,
-                                                color: Colors.grey[600],
+                                              style: AppTextStyles.emptyState(context).copyWith(
+                                                color: AppColors.textSecondary,
                                               ),
                                             ),
                                             const SizedBox(height: 20),
@@ -2219,10 +1992,8 @@ return;
                                               ),
                                               child: Text(
                                                 '확인',
-                                                style: ResponsiveUtils.getTextStyle(
-                                                  context,
+                                                style: AppTextStyles.sectionSubtitle(context).copyWith(
                                                   color: Colors.white,
-                                                  fontSize: 16,
                                                 ),
                                               ),
                                             ),
@@ -2237,12 +2008,7 @@ return;
                                     employee: userProvider.employee,
                                   );
                                 } else {
-                                  ScaffoldMessenger.of(scaffoldContext).showSnackBar(
-                                    SnackBar(
-                                      content: Text('최종 승인 실패: ${purchaseProvider.error ?? "알 수 없는 오류"}'),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
+                                  AppBanner.show(scaffoldContext, '최종 승인 실패: ${purchaseProvider.error ?? "알 수 없는 오류"}', type: BannerType.error);
                                 }
                               }
                             }
@@ -2261,10 +2027,8 @@ return;
                           ),
                           child: Text(
                             '최종 승인',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
+                            style: AppTextStyles.inputLabel(context).copyWith(
                               color: Colors.white,
-                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -2292,7 +2056,7 @@ return;
                             );
                           },
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFFFF3B30)),
+                            side: BorderSide(color: AppColors.error),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(
                                 ResponsiveUtils.spacing(context, 8),
@@ -2305,10 +2069,8 @@ return;
                           ),
                           child: Text(
                             '반려',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              color: const Color(0xFFFF3B30),
-                              fontSize: 14,
+                            style: AppTextStyles.inputLabel(context).copyWith(
+                              color: AppColors.error,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -2329,67 +2091,50 @@ return;
     final headerItem = group.headerItem;
 
     // payment_category에 따른 색상 설정
-    final Color categoryBgColor;
     final Color categoryTextColor;
     if (group.paymentCategory == '발주') {
-      categoryBgColor = const Color(0xFFE8F5E9);
-      categoryTextColor = const Color(0xFF4CAF50);
+      categoryTextColor = AppColors.success;
     } else {
-      categoryBgColor = const Color(0xFFE3F2FD);
-      categoryTextColor = const Color(0xFF1976D2);
+      categoryTextColor = AppColors.biztrip;
     }
 
     // 승인 상태에 따른 색상 설정
-    final Color statusBgColor;
     final Color statusTextColor;
     String statusLabel;
 
     if (group.finalManagerStatus == 'approved') {
-      statusBgColor = const Color(0xFFE8F5E9);
-      statusTextColor = const Color(0xFF388E3C);
+      statusTextColor = AppColors.success;
       statusLabel = '최종승인';
     } else if (group.finalManagerStatus == 'rejected') {
-      statusBgColor = const Color(0xFFFFEBEE);
-      statusTextColor = const Color(0xFFC62828);
+      statusTextColor = AppColors.error;
       statusLabel = '최종반려';
     } else if (group.middleManagerStatus == 'approved') {
-      statusBgColor = const Color(0xFFE8F5E9);
-      statusTextColor = const Color(0xFF388E3C);
+      statusTextColor = AppColors.success;
       statusLabel = '1차승인';
     } else if (group.middleManagerStatus == 'rejected') {
-      statusBgColor = const Color(0xFFFFEBEE);
-      statusTextColor = const Color(0xFFC62828);
+      statusTextColor = AppColors.error;
       statusLabel = '1차반려';
     } else {
-      statusBgColor = const Color(0xFFF2F3F5);
-      statusTextColor = const Color(0xFF8E8E93);
+      statusTextColor = AppColors.textTertiary;
       statusLabel = '처리완료';
     }
 
     // 선진행 여부에 따른 카드 배경색 설정
     final bool isPreProgress = group.progressType == '선진행';
     final Color cardBackgroundColor = isPreProgress 
-        ? const Color(0xFFFFEBEE)  // 연붉은색
+        ? AppColors.errorLight  // 연붉은색
         : Colors.white;
 
     return Container(
-      margin: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 16)),
       decoration: BoxDecoration(
         color: cardBackgroundColor,
-        borderRadius: BorderRadius.circular(
-          ResponsiveUtils.spacing(context, 14),
+        border: Border(
+          bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
+          left: isPreProgress ? BorderSide(color: AppColors.error, width: 3) : BorderSide.none,
         ),
-        boxShadow: AppShadows.cardShadow,
-        // 선진행일 때 테두리 추가
-        border: isPreProgress 
-            ? Border.all(color: const Color(0xFFFFCDD2), width: 1.5)
-            : null,
       ),
       child: InkWell(
         onTap: () => _showOrderDetails(context, group),
-        borderRadius: BorderRadius.circular(
-          ResponsiveUtils.spacing(context, 14),
-        ),
         child: Padding(
           padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 18)),
           child: Column(
@@ -2400,62 +2145,24 @@ return;
                 children: [
                   Icon(
                     Icons.task_alt,
-                    color: const Color(0xFF8E8E93),
+                    color: AppColors.textTertiary,
                     size: ResponsiveUtils.iconSize(context, 22),
                   ),
                   SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                   Expanded(
                     child: Text(
                       group.purchaseOrderNumber,
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+                      style: AppTextStyles.sectionSubtitle(context),
                     ),
                   ),
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: ResponsiveUtils.spacing(context, 10),
-                      vertical: ResponsiveUtils.spacing(context, 4),
-                    ),
-                    decoration: BoxDecoration(
-                      color: categoryBgColor,
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveUtils.spacing(context, 8),
-                      ),
-                    ),
-                    child: Text(
-                      group.paymentCategory ?? '',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 14,
-                        color: categoryTextColor,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                  StatusChip(
+                    label: group.paymentCategory ?? '',
+                    color: categoryTextColor,
                   ),
                   SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: ResponsiveUtils.spacing(context, 10),
-                      vertical: ResponsiveUtils.spacing(context, 4),
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusBgColor,
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveUtils.spacing(context, 8),
-                      ),
-                    ),
-                    child: Text(
-                      statusLabel,
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 14,
-                        color: statusTextColor,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                  StatusChip(
+                    label: statusLabel,
+                    color: statusTextColor,
                   ),
                 ],
               ),
@@ -2468,32 +2175,24 @@ return;
                   Icon(
                     Icons.person_outline,
                     size: ResponsiveUtils.iconSize(context, 16),
-                    color: const Color(0xFF8E8E93),
+                    color: AppColors.textTertiary,
                   ),
                   SizedBox(width: ResponsiveUtils.spacing(context, 4)),
                   Text(
                     group.requesterName,
-                    style: ResponsiveUtils.getTextStyle(
-                      context,
-                      fontSize: 14,
-                      color: const Color(0xFF1C1C1E),
-                    ),
+                    style: AppTextStyles.tableCellSub(context),
                   ),
                   SizedBox(width: ResponsiveUtils.spacing(context, 16)),
                   Icon(
                     Icons.business,
                     size: ResponsiveUtils.iconSize(context, 16),
-                    color: const Color(0xFF8E8E93),
+                    color: AppColors.textTertiary,
                   ),
                   SizedBox(width: ResponsiveUtils.spacing(context, 4)),
                   Expanded(
                     child: Text(
                       group.vendorName,
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 14,
-                        color: const Color(0xFF1C1C1E),
-                      ),
+                      style: AppTextStyles.tableCellSub(context),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -2506,7 +2205,7 @@ return;
               Container(
                 padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 10)),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8F9FA),
+                  color: AppColors.backgroundSecondary,
                   borderRadius: BorderRadius.circular(
                     ResponsiveUtils.spacing(context, 8),
                   ),
@@ -2518,10 +2217,8 @@ return;
                       headerItem.itemName.isNotEmpty
                           ? headerItem.itemName
                           : '품목명 없음',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
+                      style: AppTextStyles.inputLabel(context).copyWith(
                         fontWeight: FontWeight.w600,
-                        fontSize: 14,
                       ),
                     ),
                     if (group.additionalItemCount > 0) ...[
@@ -2539,9 +2236,7 @@ return;
                         ),
                         child: Text(
                           '외 ${group.additionalItemCount}개 품목',
-                          style: ResponsiveUtils.getTextStyle(
-                            context,
-                            fontSize: 12,
+                          style: AppTextStyles.tableHeader(context).copyWith(
                             color: AppColors.primary,
                             fontWeight: FontWeight.bold,
                           ),
@@ -2563,18 +2258,11 @@ return;
                     children: [
                       Text(
                         '총 금액',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 12,
-                          color: const Color(0xFF8E8E93),
-                        ),
+                        style: AppTextStyles.tableHeader(context),
                       ),
                       Text(
                         '₩${currencyFormat.format(group.totalAmount)}',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                        style: AppTextStyles.cardTitle(context).copyWith(
                           color: AppColors.primary,
                         ),
                       ),
@@ -2593,10 +2281,10 @@ return;
                               vertical: ResponsiveUtils.spacing(context, 6),
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFFF5F5),
+                              color: AppColors.errorLight,
                               borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 6)),
                               border: Border.all(
-                                color: const Color(0xFFFFE4E1),
+                                color: AppColors.errorLight,
                                 width: 1,
                               ),
                             ),
@@ -2606,17 +2294,12 @@ return;
                                 Icon(
                                   Icons.delete_sweep_outlined,
                                   size: ResponsiveUtils.iconSize(context, 14),
-                                  color: const Color(0xFFDC3545),
+                                  color: AppColors.error,
                                 ),
                                 SizedBox(width: ResponsiveUtils.spacing(context, 4)),
                                 Text(
                                   '전체삭제',
-                                  style: ResponsiveUtils.getTextStyle(
-                                    context,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFFDC3545),
-                                  ),
+                                  style: AppTextStyles.chipSmall(context, color: AppColors.error),
                                 ),
                               ],
                             ),
@@ -2626,11 +2309,7 @@ return;
                       ],
                       Text(
                         '오늘 처리됨',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 12,
-                          color: const Color(0xFF8E8E93),
-                        ),
+                        style: AppTextStyles.tableHeader(context),
                       ),
                     ],
                   ),
@@ -2671,12 +2350,12 @@ return;
                 width: ResponsiveUtils.spacing(context, 60),
                 height: ResponsiveUtils.spacing(context, 60),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF3B30).withValues(alpha: 0.102),
+                  color: AppColors.error.withValues(alpha: 0.102),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.block_outlined,
-                  color: const Color(0xFFFF3B30),
+                  color: AppColors.error,
                   size: ResponsiveUtils.iconSize(context, 32),
                 ),
               ),
@@ -2685,23 +2364,14 @@ return;
               // 제목
               Text(
                 '반려 확인',
-                style: ResponsiveUtils.getTextStyle(
-                  context,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF1C1C1E),
-                ),
+                style: AppTextStyles.sectionTitle(context),
               ),
               SizedBox(height: ResponsiveUtils.spacing(context, 8)),
 
               // 설명
               Text(
                 '이 발주를 반려하시겠습니까?',
-                style: ResponsiveUtils.getTextStyle(
-                  context,
-                  fontSize: 14,
-                  color: const Color(0xFF8E8E93),
-                ),
+                style: AppTextStyles.emptyState(context),
               ),
               SizedBox(height: ResponsiveUtils.spacing(context, 20)),
 
@@ -2710,7 +2380,7 @@ return;
                 width: double.infinity,
                 padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8F9FA),
+                  color: AppColors.backgroundSecondary,
                   borderRadius: BorderRadius.circular(
                     ResponsiveUtils.spacing(context, 12),
                   ),
@@ -2752,16 +2422,13 @@ return;
                           borderRadius: BorderRadius.circular(
                             ResponsiveUtils.spacing(context, 12),
                           ),
-                          side: const BorderSide(color: Color(0xFFE0E0E0)),
+                          side: const BorderSide(color: AppColors.border),
                         ),
                       ),
                       child: Text(
                         '취소',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF8E8E93),
+                        style: AppTextStyles.sectionSubtitle(context).copyWith(
+                          color: AppColors.textTertiary,
                         ),
                       ),
                     ),
@@ -2787,9 +2454,7 @@ return;
                         if (success && dialogContext.mounted) {
                           Navigator.of(dialogContext).pop();
                           if (scaffoldContext.mounted) {
-                            ScaffoldMessenger.of(scaffoldContext).showSnackBar(
-                              const SnackBar(content: Text('반려 처리되었습니다')),
-                            );
+                            AppBanner.show(scaffoldContext, '반려 처리되었습니다', type: BannerType.success);
                             await purchaseProvider.fetchPendingPurchases(
                               employee: userProvider.employee,
                             );
@@ -2797,7 +2462,7 @@ return;
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF3B30),
+                        backgroundColor: AppColors.error,
                         padding: EdgeInsets.symmetric(
                           vertical: ResponsiveUtils.spacing(context, 14),
                         ),
@@ -2809,10 +2474,7 @@ return;
                       ),
                       child: Text(
                         '반려',
-                        style: ResponsiveUtils.getTextStyle(
-                          context,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                        style: AppTextStyles.sectionSubtitle(context).copyWith(
                           color: Colors.white,
                         ),
                       ),
@@ -2846,7 +2508,8 @@ return;
                 ),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.borderLight, width: 0.5),
                   boxShadow: AppShadows.strongShadow,
                 ),
                 child: Column(
@@ -2860,7 +2523,7 @@ return;
                         gradient: LinearGradient(
                           colors: [
                             AppColors.primary,
-                            AppColors.primary.withOpacity(0.8),
+                            AppColors.primary.withValues(alpha: 0.8),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -2880,10 +2543,7 @@ return;
                           SizedBox(width: ResponsiveUtils.spacing(context, 12)),
                           Text(
                             '기간 선택',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
+                            style: AppTextStyles.cardTitle(context).copyWith(
                               color: Colors.white,
                             ),
                           ),
@@ -2903,30 +2563,22 @@ return;
                               width: double.infinity,
                               padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF8F9FA),
+                                color: AppColors.backgroundSecondary,
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: const Color(0xFFE5E7EB)),
+                                border: Border.all(color: AppColors.border),
                               ),
                               child: Column(
                                 children: [
                                   Text(
                                     '선택된 기간',
-                                    style: ResponsiveUtils.getTextStyle(
-                                      context,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: const Color(0xFF6B7280),
-                                    ),
+                                    style: AppTextStyles.inputLabel(context),
                                   ),
                                   SizedBox(height: ResponsiveUtils.spacing(context, 8)),
                                   Text(
                                     tempStartDate != null && tempEndDate != null
                                         ? '${DateFormat('yyyy년 M월 d일').format(tempStartDate!)} - ${DateFormat('yyyy년 M월 d일').format(tempEndDate!)}'
                                         : '기간을 선택해주세요',
-                                    style: ResponsiveUtils.getTextStyle(
-                                      context,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
+                                    style: AppTextStyles.sectionSubtitle(context).copyWith(
                                       color: AppColors.primary,
                                     ),
                                     textAlign: TextAlign.center,
@@ -3019,7 +2671,7 @@ return;
                       padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
                       decoration: const BoxDecoration(
                         border: Border(
-                          top: BorderSide(color: Color(0xFFE5E7EB)),
+                          top: BorderSide(color: AppColors.border),
                         ),
                       ),
                       child: Row(
@@ -3033,16 +2685,13 @@ return;
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  side: const BorderSide(color: Color(0xFFE0E0E0)),
+                                  side: const BorderSide(color: AppColors.border),
                                 ),
                               ),
                               child: Text(
                                 '취소',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF6B7280),
+                                style: AppTextStyles.sectionSubtitle(context).copyWith(
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
                             ),
@@ -3066,10 +2715,7 @@ return;
                               ),
                               child: Text(
                                 '적용',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
+                                style: AppTextStyles.sectionSubtitle(context).copyWith(
                                   color: Colors.white,
                                 ),
                               ),
@@ -3119,11 +2765,9 @@ return;
       children: [
         Text(
           label,
-          style: ResponsiveUtils.getTextStyle(
-            context,
-            fontSize: 14,
+          style: AppTextStyles.inputLabel(context).copyWith(
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF374151),
+            color: AppColors.gray800,
           ),
         ),
         SizedBox(height: ResponsiveUtils.spacing(context, 8)),
@@ -3157,7 +2801,7 @@ return;
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: selectedDate != null ? AppColors.primary : const Color(0xFFE5E7EB),
+                color: selectedDate != null ? AppColors.primary : AppColors.border,
                 width: selectedDate != null ? 2 : 1,
               ),
             ),
@@ -3165,7 +2809,7 @@ return;
               children: [
                 Icon(
                   Icons.calendar_today,
-                  color: selectedDate != null ? AppColors.primary : const Color(0xFF9CA3AF),
+                  color: selectedDate != null ? AppColors.primary : AppColors.gray400,
                   size: ResponsiveUtils.iconSize(context, 20),
                 ),
                 SizedBox(width: ResponsiveUtils.spacing(context, 12)),
@@ -3173,13 +2817,11 @@ return;
                   selectedDate != null
                       ? DateFormat('yyyy년 M월 d일 (E)', 'ko_KR').format(selectedDate)
                       : '날짜를 선택해주세요',
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontSize: 16,
+                  style: AppTextStyles.sectionSubtitle(context).copyWith(
                     fontWeight: FontWeight.w500,
                     color: selectedDate != null
-                        ? const Color(0xFF111827)
-                        : const Color(0xFF9CA3AF),
+                        ? AppColors.textPrimary
+                        : AppColors.gray400,
                   ),
                 ),
               ],
@@ -3199,7 +2841,7 @@ return;
     return TextButton(
       onPressed: onPressed,
       style: TextButton.styleFrom(
-        backgroundColor: const Color(0xFFF3F4F6),
+        backgroundColor: AppColors.backgroundSecondary,
         foregroundColor: AppColors.primary,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
@@ -3211,10 +2853,7 @@ return;
       ),
       child: Text(
         label,
-        style: ResponsiveUtils.getTextStyle(
-          context,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
+        style: AppTextStyles.inputLabel(context).copyWith(
           color: AppColors.primary,
         ),
       ),
@@ -3265,19 +2904,17 @@ return;
   }) async {
     if (!_isAppAdmin()) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('권한이 없습니다. app_admin만 수정 가능합니다.')),
-        );
+        AppBanner.show(context, '권한이 없습니다. app_admin만 수정 가능합니다.', type: BannerType.warning);
       }
       return;
     }
 
     try {
       final supabase = Supabase.instance.client;
-      
+
       // 총액 계산
       final totalAmount = quantity * unitPrice;
-      
+
       await supabase.from('purchase_request_items').update({
         'item_name': itemName,
         'specification': specification,
@@ -3288,18 +2925,14 @@ return;
       }).eq('id', itemId);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('품목이 수정되었습니다')),
-        );
+        AppBanner.show(context, '품목이 수정되었습니다', type: BannerType.success);
       }
 
       // 데이터 새로고침
       await _refreshCompletedData();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('품목 수정 중 오류가 발생했습니다')),
-        );
+        AppBanner.show(context, '품목 수정 중 오류가 발생했습니다', type: BannerType.error);
       }
     }
   }
@@ -3308,22 +2941,18 @@ return;
   Future<void> _deletePurchaseItem(int itemId, String orderNumber) async {
     if (!_isAppAdmin()) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('권한이 없습니다. app_admin만 삭제 가능합니다.')),
-        );
+        AppBanner.show(context, '권한이 없습니다. app_admin만 삭제 가능합니다.', type: BannerType.warning);
       }
       return;
     }
 
     try {
       final supabase = Supabase.instance.client;
-      
+
       await supabase.from('purchase_request_items').delete().eq('id', itemId);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('품목이 삭제되었습니다')),
-        );
+        AppBanner.show(context, '품목이 삭제되었습니다', type: BannerType.success);
       }
 
       // 해당 발주의 남은 품목 확인
@@ -3344,9 +2973,7 @@ return;
       await _refreshCompletedData();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('품목 삭제 중 오류가 발생했습니다')),
-        );
+        AppBanner.show(context, '품목 삭제 중 오류가 발생했습니다', type: BannerType.error);
       }
     }
   }
@@ -3368,9 +2995,7 @@ return;
   // 수정 다이얼로그
   void _showEditDialog(dynamic item) {
     if (!_isAppAdmin()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('권한이 없습니다. app_admin만 수정 가능합니다.')),
-      );
+      AppBanner.show(context, '권한이 없습니다. app_admin만 수정 가능합니다.', type: BannerType.warning);
       return;
     }
 
@@ -3393,7 +3018,8 @@ return;
           width: ResponsiveUtils.spacing(context, 400),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
+            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+            border: Border.all(color: AppColors.borderLight, width: 0.5),
             boxShadow: AppShadows.strongShadow,
           ),
           child: Column(
@@ -3404,10 +3030,10 @@ return;
                 width: double.infinity,
                 padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 24)),
                 decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
+                  color: AppColors.primary,
                   borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(ResponsiveUtils.spacing(context, 20)),
-                    topRight: Radius.circular(ResponsiveUtils.spacing(context, 20)),
+                    topLeft: Radius.circular(ResponsiveUtils.spacing(context, 12)),
+                    topRight: Radius.circular(ResponsiveUtils.spacing(context, 12)),
                   ),
                 ),
                 child: Row(
@@ -3431,19 +3057,14 @@ return;
                         children: [
                           Text(
                             '품목 수정',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
+                            style: AppTextStyles.sectionTitle(context).copyWith(
                               color: Colors.white,
                             ),
                           ),
                           SizedBox(height: ResponsiveUtils.spacing(context, 2)),
                           Text(
                             '품목 정보를 수정합니다',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 14,
+                            style: AppTextStyles.emptyState(context).copyWith(
                               color: Colors.white.withValues(alpha: 0.9),
                             ),
                           ),
@@ -3510,10 +3131,8 @@ return;
                             keyboardType: TextInputType.number,
                             suffix: Text(
                               '개',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 14,
-                                color: Colors.grey[600],
+                              style: AppTextStyles.inputLabel(context).copyWith(
+                                color: AppColors.textSecondary,
                               ),
                             ),
                           ),
@@ -3532,10 +3151,8 @@ return;
                             keyboardType: TextInputType.number,
                             suffix: Text(
                               '원',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 14,
-                                color: Colors.grey[600],
+                              style: AppTextStyles.inputLabel(context).copyWith(
+                                color: AppColors.textSecondary,
                               ),
                             ),
                           ),
@@ -3554,7 +3171,7 @@ return;
                             height: ResponsiveUtils.spacing(context, 48),
                             decoration: BoxDecoration(
                               border: Border.all(
-                                color: Colors.grey[300]!,
+                                color: AppColors.gray300,
                                 width: 1.5,
                               ),
                               borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
@@ -3562,18 +3179,14 @@ return;
                             child: TextButton(
                               onPressed: () => Navigator.of(context).pop(),
                               style: TextButton.styleFrom(
-                                foregroundColor: Colors.grey[700],
+                                foregroundColor: AppColors.gray700,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                                 ),
                               ),
                               child: Text(
                                 '취소',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                style: AppTextStyles.sectionSubtitle(context),
                               ),
                             ),
                           ),
@@ -3586,9 +3199,9 @@ return;
                           child: Container(
                             height: ResponsiveUtils.spacing(context, 48),
                             decoration: BoxDecoration(
-                              gradient: AppColors.primaryGradient,
+                              color: AppColors.primary,
                               borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-                              boxShadow: AppShadows.buttonShadow,
+                              boxShadow: AppShadows.smShadow,
                             ),
                             child: ElevatedButton(
                               onPressed: () async {
@@ -3598,53 +3211,17 @@ return;
                                 final unitPrice = double.tryParse(unitPriceController.text) ?? 0.0;
 
                                 if (itemName.isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Row(
-                                        children: [
-                                          Icon(Icons.error_outline, color: Colors.white),
-                                          SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                                          Text('품목명을 입력하세요'),
-                                        ],
-                                      ),
-                                      backgroundColor: Colors.red[600],
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
-                                  );
+                                  AppBanner.show(context, '품목명을 입력하세요', type: BannerType.error);
                                   return;
                                 }
 
                                 if (quantity <= 0) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Row(
-                                        children: [
-                                          Icon(Icons.error_outline, color: Colors.white),
-                                          SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                                          Text('올바른 수량을 입력하세요'),
-                                        ],
-                                      ),
-                                      backgroundColor: Colors.red[600],
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
-                                  );
+                                  AppBanner.show(context, '올바른 수량을 입력하세요', type: BannerType.error);
                                   return;
                                 }
 
                                 if (unitPrice < 0) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Row(
-                                        children: [
-                                          Icon(Icons.error_outline, color: Colors.white),
-                                          SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                                          Text('올바른 단가를 입력하세요'),
-                                        ],
-                                      ),
-                                      backgroundColor: Colors.red[600],
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
-                                  );
+                                  AppBanner.show(context, '올바른 단가를 입력하세요', type: BannerType.error);
                                   return;
                                 }
 
@@ -3675,11 +3252,7 @@ return;
                                   SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                                   Text(
                                     '수정 완료',
-                                    style: ResponsiveUtils.getTextStyle(
-                                      context,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    style: AppTextStyles.sectionSubtitle(context),
                                   ),
                                 ],
                               ),
@@ -3722,20 +3295,16 @@ return;
             SizedBox(width: ResponsiveUtils.spacing(context, 6)),
             Text(
               label,
-              style: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 14,
+              style: AppTextStyles.inputLabel(context).copyWith(
                 fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
+                color: AppColors.gray700,
               ),
             ),
             if (required)
               Text(
                 ' *',
-                style: ResponsiveUtils.getTextStyle(
-                  context,
-                  fontSize: 14,
-                  color: Colors.red,
+                style: AppTextStyles.emptyState(context).copyWith(
+                  color: AppColors.error,
                 ),
               ),
           ],
@@ -3743,27 +3312,25 @@ return;
         SizedBox(height: ResponsiveUtils.spacing(context, 8)),
         Container(
           decoration: BoxDecoration(
-            color: Colors.grey[50],
+            color: AppColors.gray50,
             borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
             border: Border.all(
-              color: Colors.grey[200]!,
+              color: AppColors.gray200,
               width: 1.5,
             ),
           ),
           child: TextField(
             controller: controller,
             keyboardType: keyboardType,
-            style: ResponsiveUtils.getTextStyle(
-              context,
-              fontSize: 16,
-              color: Colors.grey[800],
+            style: AppTextStyles.sectionSubtitle(context).copyWith(
+              fontWeight: FontWeight.w400,
+              color: AppColors.gray800,
             ),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: ResponsiveUtils.getTextStyle(
-                context,
-                fontSize: 16,
-                color: Colors.grey[400],
+              hintStyle: AppTextStyles.sectionSubtitle(context).copyWith(
+                fontWeight: FontWeight.w400,
+                color: AppColors.gray400,
               ),
               suffixIcon: suffix != null
                   ? Padding(
@@ -3804,9 +3371,7 @@ return;
   // 삭제 확인 다이얼로그
   void _showDeleteDialog(dynamic item, String orderNumber) {
     if (!_isAppAdmin()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('권한이 없습니다. app_admin만 삭제 가능합니다.')),
-      );
+      AppBanner.show(context, '권한이 없습니다. app_admin만 삭제 가능합니다.', type: BannerType.warning);
       return;
     }
 
@@ -3820,7 +3385,8 @@ return;
           width: ResponsiveUtils.spacing(context, 360),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
+            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+            border: Border.all(color: AppColors.borderLight, width: 0.5),
             boxShadow: AppShadows.strongShadow,
           ),
           child: Column(
@@ -3831,14 +3397,14 @@ return;
                 width: double.infinity,
                 padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 24)),
                 decoration: BoxDecoration(
-                  color: Colors.red[50],
+                  color: AppColors.errorLight,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(ResponsiveUtils.spacing(context, 20)),
                     topRight: Radius.circular(ResponsiveUtils.spacing(context, 20)),
                   ),
                   border: Border(
                     bottom: BorderSide(
-                      color: Colors.red[100]!,
+                      color: AppColors.errorLight,
                       width: 1,
                     ),
                   ),
@@ -3848,12 +3414,12 @@ return;
                     Container(
                       padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
                       decoration: BoxDecoration(
-                        color: Colors.red[100],
+                        color: AppColors.errorLight,
                         borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                       ),
                       child: Icon(
                         Icons.warning_outlined,
-                        color: Colors.red[700],
+                        color: AppColors.error,
                         size: ResponsiveUtils.iconSize(context, 28),
                       ),
                     ),
@@ -3864,20 +3430,15 @@ return;
                         children: [
                           Text(
                             '품목 삭제',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.red[700],
+                            style: AppTextStyles.sectionTitle(context).copyWith(
+                              color: AppColors.error,
                             ),
                           ),
                           SizedBox(height: ResponsiveUtils.spacing(context, 4)),
                           Text(
                             '삭제된 데이터는 복구할 수 없습니다',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 14,
-                              color: Colors.red[600],
+                            style: AppTextStyles.emptyState(context).copyWith(
+                              color: AppColors.error,
                             ),
                           ),
                         ],
@@ -3897,10 +3458,10 @@ return;
                       width: double.infinity,
                       padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
                       decoration: BoxDecoration(
-                        color: Colors.grey[50],
+                        color: AppColors.gray50,
                         borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                         border: Border.all(
-                          color: Colors.grey[200]!,
+                          color: AppColors.gray200,
                           width: 1,
                         ),
                       ),
@@ -3912,16 +3473,14 @@ return;
                               Icon(
                                 Icons.inventory_2_outlined,
                                 size: ResponsiveUtils.iconSize(context, 18),
-                                color: Colors.grey[600],
+                                color: AppColors.textSecondary,
                               ),
                               SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                               Text(
                                 '삭제할 품목',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontSize: 14,
+                                style: AppTextStyles.inputLabel(context).copyWith(
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.grey[700],
+                                  color: AppColors.gray700,
                                 ),
                               ),
                             ],
@@ -3929,31 +3488,25 @@ return;
                           SizedBox(height: ResponsiveUtils.spacing(context, 12)),
                           Text(
                             item.itemName,
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 16,
+                            style: AppTextStyles.sectionSubtitle(context).copyWith(
                               fontWeight: FontWeight.bold,
-                              color: Colors.grey[800],
+                              color: AppColors.gray800,
                             ),
                           ),
                           if (item.specification.isNotEmpty) ...[
                             SizedBox(height: ResponsiveUtils.spacing(context, 4)),
                             Text(
                               '규격: ${item.specification}',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 14,
-                                color: Colors.grey[600],
+                              style: AppTextStyles.inputLabel(context).copyWith(
+                                color: AppColors.textSecondary,
                               ),
                             ),
                           ],
                           SizedBox(height: ResponsiveUtils.spacing(context, 4)),
                           Text(
                             '수량: ${item.quantity}개 | 단가: ${item.unitPriceValue.toStringAsFixed(0)}원',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 14,
-                              color: Colors.grey[600],
+                            style: AppTextStyles.inputLabel(context).copyWith(
+                              color: AppColors.textSecondary,
                             ),
                           ),
                         ],
@@ -3965,11 +3518,8 @@ return;
                     // 확인 메시지
                     Text(
                       '정말로 이 품목을 삭제하시겠습니까?',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey[800],
+                      style: AppTextStyles.sectionSubtitle(context).copyWith(
+                        color: AppColors.gray800,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -3979,10 +3529,10 @@ return;
                     Container(
                       padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
                       decoration: BoxDecoration(
-                        color: Colors.red[50],
+                        color: AppColors.errorLight,
                         borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                         border: Border.all(
-                          color: Colors.red[200]!,
+                          color: AppColors.errorLight,
                           width: 1,
                         ),
                       ),
@@ -3991,16 +3541,14 @@ return;
                           Icon(
                             Icons.info_outline,
                             size: ResponsiveUtils.iconSize(context, 16),
-                            color: Colors.red[600],
+                            color: AppColors.error,
                           ),
                           SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                           Expanded(
                             child: Text(
                               '삭제된 데이터는 되돌릴 수 없습니다',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 13,
-                                color: Colors.red[600],
+                              style: AppTextStyles.cardCaption(context).copyWith(
+                                color: AppColors.error,
                               ),
                             ),
                           ),
@@ -4019,7 +3567,7 @@ return;
                             height: ResponsiveUtils.spacing(context, 48),
                             decoration: BoxDecoration(
                               border: Border.all(
-                                color: Colors.grey[300]!,
+                                color: AppColors.gray300,
                                 width: 1.5,
                               ),
                               borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
@@ -4027,18 +3575,14 @@ return;
                             child: TextButton(
                               onPressed: () => Navigator.of(context).pop(),
                               style: TextButton.styleFrom(
-                                foregroundColor: Colors.grey[700],
+                                foregroundColor: AppColors.gray700,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                                 ),
                               ),
                               child: Text(
                                 '취소',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                style: AppTextStyles.sectionSubtitle(context),
                               ),
                             ),
                           ),
@@ -4051,19 +3595,9 @@ return;
                           child: Container(
                             height: ResponsiveUtils.spacing(context, 48),
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [Colors.red[600]!, Colors.red[700]!],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
+                              color: AppColors.error,
                               borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.red.withValues(alpha: 0.3),
-                                  blurRadius: 6,
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
+                              boxShadow: AppShadows.smShadow,
                             ),
                             child: ElevatedButton(
                               onPressed: () async {
@@ -4088,11 +3622,7 @@ return;
                                   SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                                   Text(
                                     '삭제하기',
-                                    style: ResponsiveUtils.getTextStyle(
-                                      context,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    style: AppTextStyles.sectionSubtitle(context),
                                   ),
                                 ],
                               ),
@@ -4114,9 +3644,7 @@ return;
   // 발주 전체 삭제 확인 다이얼로그
   void _showBulkDeleteOrderDialog(PurchaseOrderGroup group) {
     if (!_isAppAdmin()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('권한이 없습니다. app_admin만 삭제 가능합니다.')),
-      );
+      AppBanner.show(context, '권한이 없습니다. app_admin만 삭제 가능합니다.', type: BannerType.warning);
       return;
     }
 
@@ -4130,7 +3658,8 @@ return;
           width: ResponsiveUtils.spacing(context, 400),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
+            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+            border: Border.all(color: AppColors.borderLight, width: 0.5),
             boxShadow: AppShadows.strongShadow,
           ),
           child: Column(
@@ -4141,14 +3670,14 @@ return;
                 width: double.infinity,
                 padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 24)),
                 decoration: BoxDecoration(
-                  color: Colors.red[50],
+                  color: AppColors.errorLight,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(ResponsiveUtils.spacing(context, 20)),
                     topRight: Radius.circular(ResponsiveUtils.spacing(context, 20)),
                   ),
                   border: Border(
                     bottom: BorderSide(
-                      color: Colors.red[100]!,
+                      color: AppColors.errorLight,
                       width: 1,
                     ),
                   ),
@@ -4158,12 +3687,12 @@ return;
                     Container(
                       padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
                       decoration: BoxDecoration(
-                        color: Colors.red[100],
+                        color: AppColors.errorLight,
                         borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                       ),
                       child: Icon(
                         Icons.delete_sweep_outlined,
-                        color: Colors.red[700],
+                        color: AppColors.error,
                         size: ResponsiveUtils.iconSize(context, 32),
                       ),
                     ),
@@ -4174,20 +3703,15 @@ return;
                         children: [
                           Text(
                             '발주 전체 삭제',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.red[700],
+                            style: AppTextStyles.sectionTitle(context).copyWith(
+                              color: AppColors.error,
                             ),
                           ),
                           SizedBox(height: ResponsiveUtils.spacing(context, 4)),
                           Text(
                             '발주의 모든 품목이 삭제됩니다',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 14,
-                              color: Colors.red[600],
+                            style: AppTextStyles.emptyState(context).copyWith(
+                              color: AppColors.error,
                             ),
                           ),
                         ],
@@ -4207,10 +3731,10 @@ return;
                       width: double.infinity,
                       padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
                       decoration: BoxDecoration(
-                        color: Colors.grey[50],
+                        color: AppColors.gray50,
                         borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                         border: Border.all(
-                          color: Colors.grey[200]!,
+                          color: AppColors.gray200,
                           width: 1,
                         ),
                       ),
@@ -4222,16 +3746,14 @@ return;
                               Icon(
                                 Icons.receipt_outlined,
                                 size: ResponsiveUtils.iconSize(context, 18),
-                                color: Colors.grey[600],
+                                color: AppColors.textSecondary,
                               ),
                               SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                               Text(
                                 '삭제할 발주',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontSize: 14,
+                                style: AppTextStyles.inputLabel(context).copyWith(
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.grey[700],
+                                  color: AppColors.gray700,
                                 ),
                               ),
                             ],
@@ -4239,29 +3761,23 @@ return;
                           SizedBox(height: ResponsiveUtils.spacing(context, 12)),
                           Text(
                             group.purchaseOrderNumber,
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 16,
+                            style: AppTextStyles.sectionSubtitle(context).copyWith(
                               fontWeight: FontWeight.bold,
-                              color: Colors.grey[800],
+                              color: AppColors.gray800,
                             ),
                           ),
                           SizedBox(height: ResponsiveUtils.spacing(context, 4)),
                           Text(
                             '업체: ${group.vendorName}',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 14,
-                              color: Colors.grey[600],
+                            style: AppTextStyles.inputLabel(context).copyWith(
+                              color: AppColors.textSecondary,
                             ),
                           ),
                           SizedBox(height: ResponsiveUtils.spacing(context, 4)),
                           Text(
                             '품목 수: ${group.items.length}개 | 총액: ₩${currencyFormat.format(group.totalAmount)}',
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 14,
-                              color: Colors.grey[600],
+                            style: AppTextStyles.inputLabel(context).copyWith(
+                              color: AppColors.textSecondary,
                             ),
                           ),
                         ],
@@ -4273,11 +3789,8 @@ return;
                     // 확인 메시지
                     Text(
                       '이 발주의 모든 품목을 삭제하시겠습니까?',
-                      style: ResponsiveUtils.getTextStyle(
-                        context,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey[800],
+                      style: AppTextStyles.sectionSubtitle(context).copyWith(
+                        color: AppColors.gray800,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -4287,10 +3800,10 @@ return;
                     Container(
                       padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
                       decoration: BoxDecoration(
-                        color: Colors.red[50],
+                        color: AppColors.errorLight,
                         borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                         border: Border.all(
-                          color: Colors.red[200]!,
+                          color: AppColors.errorLight,
                           width: 1,
                         ),
                       ),
@@ -4299,16 +3812,14 @@ return;
                           Icon(
                             Icons.warning_outlined,
                             size: ResponsiveUtils.iconSize(context, 16),
-                            color: Colors.red[600],
+                            color: AppColors.error,
                           ),
                           SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                           Expanded(
                             child: Text(
                               '발주 헤더와 모든 품목이 영구적으로 삭제됩니다',
-                              style: ResponsiveUtils.getTextStyle(
-                                context,
-                                fontSize: 13,
-                                color: Colors.red[600],
+                              style: AppTextStyles.cardCaption(context).copyWith(
+                                color: AppColors.error,
                               ),
                             ),
                           ),
@@ -4327,7 +3838,7 @@ return;
                             height: ResponsiveUtils.spacing(context, 48),
                             decoration: BoxDecoration(
                               border: Border.all(
-                                color: Colors.grey[300]!,
+                                color: AppColors.gray300,
                                 width: 1.5,
                               ),
                               borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
@@ -4335,18 +3846,14 @@ return;
                             child: TextButton(
                               onPressed: () => Navigator.of(context).pop(),
                               style: TextButton.styleFrom(
-                                foregroundColor: Colors.grey[700],
+                                foregroundColor: AppColors.gray700,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                                 ),
                               ),
                               child: Text(
                                 '취소',
-                                style: ResponsiveUtils.getTextStyle(
-                                  context,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                style: AppTextStyles.sectionSubtitle(context),
                               ),
                             ),
                           ),
@@ -4359,19 +3866,9 @@ return;
                           child: Container(
                             height: ResponsiveUtils.spacing(context, 48),
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [Colors.red[600]!, Colors.red[700]!],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
+                              color: AppColors.error,
                               borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.red.withValues(alpha: 0.3),
-                                  blurRadius: 6,
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
+                              boxShadow: AppShadows.smShadow,
                             ),
                             child: ElevatedButton(
                               onPressed: () async {
@@ -4396,11 +3893,7 @@ return;
                                   SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                                   Text(
                                     '전체삭제',
-                                    style: ResponsiveUtils.getTextStyle(
-                                      context,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    style: AppTextStyles.sectionSubtitle(context),
                                   ),
                                 ],
                               ),
@@ -4423,9 +3916,7 @@ return;
   Future<void> _deleteBulkPurchaseOrder(PurchaseOrderGroup group) async {
     if (!_isAppAdmin()) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('권한이 없습니다. app_admin만 삭제 가능합니다.')),
-        );
+        AppBanner.show(context, '권한이 없습니다. app_admin만 삭제 가능합니다.', type: BannerType.warning);
       }
       return;
     }
@@ -4448,19 +3939,7 @@ return;
           .eq('purchase_order_number', group.purchaseOrderNumber);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle_outline, color: Colors.white),
-                SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                Text('발주 "${group.purchaseOrderNumber}"가 완전히 삭제되었습니다'),
-              ],
-            ),
-            backgroundColor: Colors.green[600],
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppBanner.show(context, '발주 "${group.purchaseOrderNumber}"가 완전히 삭제되었습니다', type: BannerType.success);
 
         // 데이터 새로고침
         final userProvider = Provider.of<UserProvider>(context, listen: false);
@@ -4473,19 +3952,7 @@ return;
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.error_outline, color: Colors.white),
-                SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                Expanded(child: Text('삭제 중 오류가 발생했습니다: $e')),
-              ],
-            ),
-            backgroundColor: Colors.red[600],
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppBanner.show(context, '삭제 중 오류가 발생했습니다: $e', type: BannerType.error);
       }
     }
   }
