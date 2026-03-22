@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
+import '../utils/user_role_helper.dart';
 import '../screens/main_tab.dart';
 import '../screens/notification/notification_center_screen.dart';
 
@@ -443,12 +444,12 @@ class NotificationService {
             if (user != null) {
               final response = await Supabase.instance.client
                   .from('employees')
-                  .select('attendance_role')
+                  .select('roles, attendance_role')
                   .eq('email', user.email!)
                   .single();
 
               final List<dynamic> attendanceRoles =
-                  (response['attendance_role'] as List<dynamic>?) ?? [];
+                  UserRoleHelper.getRoles(response);
 
               // 승인 권한이 있는 역할 확인
               final approvalRoles = [
@@ -539,24 +540,15 @@ class NotificationService {
             if (user != null) {
               final response = await Supabase.instance.client
                   .from('employees')
-                  .select('purchase_role')
+                  .select('roles, purchase_role')
                   .eq('email', user.email!)
                   .single();
 
               final List<dynamic> purchaseRoles =
-                  (response['purchase_role'] as List<dynamic>?) ?? [];
+                  UserRoleHelper.getRoles(response);
 
               // 발주 승인 권한이 있는 역할 확인
-              final approvalRoles = [
-                'middle_manager',
-                'raw_material_manager',
-                'consumable_manager',
-                'app_admin',
-              ];
-
-              final hasApprovalRole = purchaseRoles.any(
-                (role) => approvalRoles.contains(role),
-              );
+              final hasApprovalRole = UserRoleHelper.hasPurchaseApprovalAuth(purchaseRoles);
 
               if (hasApprovalRole) {
                 // 발주 승인 권한이 있는 사용자는 승인관리 탭(index 2)으로 이동 - 발주승인 탭(1)

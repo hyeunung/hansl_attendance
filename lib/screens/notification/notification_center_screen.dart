@@ -6,6 +6,7 @@ import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import '../../widgets/shared/flat_section.dart';
+import '../../utils/user_role_helper.dart';
 import '../main_tab.dart';
 
 class NotificationCenterScreen extends StatefulWidget {
@@ -390,19 +391,9 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
       case 'leave_request':
       case 'business_trip':
         // 연차/출장 승인 권한 확인
-        final attendanceRoles =
-            (employeeData?['attendance_role'] as List<dynamic>?) ?? [];
-        final hasApprovalRole = attendanceRoles.any(
-          (role) => [
-            'admin',
-            'superadmin',
-            '개발3팀_manager',
-            'CAD_manager',
-            '개발팀_manager',
-            '경영지원팀_manager',
-            '연구소_manager',
-          ].contains(role),
-        );
+        final leaveRoles = UserRoleHelper.getRoles(employeeData);
+        final hasApprovalRole = UserRoleHelper.isAdminOrSuper(leaveRoles) ||
+            UserRoleHelper.isAnyManager(leaveRoles);
 
         if (hasApprovalRole) {
           // MainTab에 employee 정보 전달
@@ -428,31 +419,12 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
       case 'purchase_approval':
       case 'final_approval_request':
         // 발주 승인 권한 확인
-        final attendanceRoles =
-            (employeeData?['attendance_role'] as List<dynamic>?) ?? [];
-        final purchaseRoles =
-            (employeeData?['purchase_role'] as List<dynamic>?) ?? [];
+        final purchaseNotifRoles = UserRoleHelper.getRoles(employeeData);
 
-        final hasAttendanceApproval = attendanceRoles.any(
-          (role) => [
-            'admin',
-            'superadmin',
-            '개발3팀_manager',
-            'CAD_manager',
-            '개발팀_manager',
-            '경영지원팀_manager',
-            '연구소_manager',
-          ].contains(role),
-        );
+        final hasAttendanceApproval = UserRoleHelper.isAdminOrSuper(purchaseNotifRoles) ||
+            UserRoleHelper.isAnyManager(purchaseNotifRoles);
 
-        final hasPurchaseApproval = purchaseRoles.any(
-          (role) => [
-            'middle_manager',
-            'raw_material_manager',
-            'consumable_manager',
-            'app_admin',
-          ].contains(role),
-        );
+        final hasPurchaseApproval = UserRoleHelper.hasPurchaseApprovalAuth(purchaseNotifRoles);
 
         if (hasAttendanceApproval && hasPurchaseApproval) {
           Navigator.of(context).pushReplacement(

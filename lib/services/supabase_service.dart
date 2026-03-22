@@ -43,6 +43,7 @@ class SupabaseService {
 
     return {
       'department': roleData['department'],
+      'roles': roleData['roles'],
       'attendance_role': roleData['attendance_role'],
       'purchase_role': roleData['purchase_role'],
     };

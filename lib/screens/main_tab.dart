@@ -197,20 +197,19 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
       final employee = userProvider.employee;
       if (employee == null) return;
       
-      final attendanceRoles = employee['attendance_role'] as List<dynamic>? ?? [];
-      final purchaseRoles = employee['purchase_role'] as List<dynamic>? ?? [];
-      
+      final roles = UserRoleHelper.getRoles(employee);
+
       // 연차/출장 승인 권한이 있으면 미리 로드
-      if (UserRoleHelper.isAnyManager(attendanceRoles) || 
-          UserRoleHelper.isSuperAdmin(attendanceRoles) ||
-          UserRoleHelper.isAdmin(attendanceRoles)) {
+      if (UserRoleHelper.isAnyManager(roles) ||
+          UserRoleHelper.isSuperAdmin(roles) ||
+          UserRoleHelper.isAdmin(roles)) {
         leaveProvider.fetchAllLeaves(forceRefresh: false).catchError((e) {
           // 실패해도 UI에 영향 없음
         });
       }
       
       // 발주 승인 권한이 있으면 미리 로드
-      if (UserRoleHelper.hasPurchaseApprovalAuth(purchaseRoles)) {
+      if (UserRoleHelper.hasPurchaseApprovalAuth(roles)) {
         final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
         purchaseProvider.fetchPendingPurchases(employee: employee).catchError((e) {
           // 실패해도 UI에 영향 없음
@@ -302,17 +301,12 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final employee = userProvider.employee;
     // Debug print removed
-final List<dynamic> attendanceRoles =
-        (employee?['attendance_role'] as List<dynamic>?) ?? [];
-    final List<dynamic> purchaseRoles =
-        (employee?['purchase_role'] as List<dynamic>?) ?? [];
-    
+final roles = UserRoleHelper.getRoles(employee);
+
     // 직원 유형 확인 (알바, 계약직, 정직원)
     final position = employee?['position'] as String?;
     final isPartTimeOrContract = position == '알바' || position == '계약직';
-    
-    // Debug print removed
-// Debug print removed
+
 // 승인관리 탭을 볼 수 있는 역할 확인
     final approvalRoles = [
       'admin',
@@ -324,23 +318,20 @@ final List<dynamic> attendanceRoles =
       '연구소_manager',
     ];
 
-    final showApprovalTab = attendanceRoles.any(
+    final showApprovalTab = roles.any(
       (role) => approvalRoles.contains(role),
     );
-    
+
     // lead buyer 권한 확인
-    final isLeadBuyer = UserRoleHelper.isPureLeadBuyer(purchaseRoles);
-    
-    // 영수증 탭 접근 권한 확인 (app_admin, hr, lead_buyer)
+    final isLeadBuyer = UserRoleHelper.isPureLeadBuyer(roles);
+
+    // 영수증 탭 접근 권한 확인 (관리자, hr, lead_buyer)
     // 알바, 계약직은 영수증 탭 접근 불가
     final canAccessReceipts = !isPartTimeOrContract && (
-      UserRoleHelper.isAppAdmin(purchaseRoles) ||
-      purchaseRoles.contains('hr') ||
-      UserRoleHelper.isLeadBuyer(purchaseRoles)
+      UserRoleHelper.isAppAdmin(roles) ||
+      roles.contains('hr') ||
+      UserRoleHelper.isLeadBuyer(roles)
     );
-
-    // 디버깅 정보 출력
-    // Debug code removed
 
     setState(() {
       if (isPartTimeOrContract) {
@@ -423,11 +414,8 @@ final List<dynamic> attendanceRoles =
 
   Widget _buildMainContent(UserProvider userProvider) {
     final employee = userProvider.employee;
-    final List<dynamic> attendanceRoles =
-        (employee?['attendance_role'] as List<dynamic>?) ?? [];
-    final List<dynamic> purchaseRoles =
-        (employee?['purchase_role'] as List<dynamic>?) ?? [];
-    
+    final roles = UserRoleHelper.getRoles(employee);
+
     // 직원 유형 확인 (알바, 계약직, 정직원)
     final position = employee?['position'] as String?;
     final isPartTimeOrContract = position == '알바' || position == '계약직';
@@ -441,19 +429,19 @@ final List<dynamic> attendanceRoles =
       '경영지원팀_manager',
     ];
 
-    final showApprovalTab = attendanceRoles.any(
+    final showApprovalTab = roles.any(
       (role) => approvalRoles.contains(role),
     );
-    
+
     // lead buyer 권한 확인
-    final isLeadBuyer = UserRoleHelper.isPureLeadBuyer(purchaseRoles);
-    
-    // 영수증 탭 접근 권한 확인 (app_admin, hr, lead_buyer)
+    final isLeadBuyer = UserRoleHelper.isPureLeadBuyer(roles);
+
+    // 영수증 탭 접근 권한 확인 (관리자, hr, lead_buyer)
     // 알바, 계약직은 영수증 탭 접근 불가
     final canAccessReceipts = !isPartTimeOrContract && (
-      UserRoleHelper.isAppAdmin(purchaseRoles) ||
-      purchaseRoles.contains('hr') ||
-      UserRoleHelper.isLeadBuyer(purchaseRoles)
+      UserRoleHelper.isAppAdmin(roles) ||
+      roles.contains('hr') ||
+      UserRoleHelper.isLeadBuyer(roles)
     );
 
     final List<BottomNavigationBarItem> items = [];
