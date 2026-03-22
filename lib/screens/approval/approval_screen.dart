@@ -279,18 +279,10 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     super.build(context); // AutomaticKeepAliveClientMixin 필수
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final employee = userProvider.employee;
-    final attendanceRoles =
-        employee?['attendance_role'] as List<dynamic>? ?? [];
-    final purchaseRoles = employee?['purchase_role'] as List<dynamic>? ?? [];
+    final roles = UserRoleHelper.getRoles(employee);
 
-    // purchase_role에 따른 발주 승인 권한 확인
-
-    final bool hasPurchaseApproval =
-        purchaseRoles.contains('middle_manager') ||
-        purchaseRoles.contains('final_approver') ||
-        purchaseRoles.contains('raw_material_manager') ||
-        purchaseRoles.contains('consumable_manager') ||
-        purchaseRoles.contains('app_admin');
+    // roles에 따른 발주 승인 권한 확인
+    final bool hasPurchaseApproval = UserRoleHelper.hasPurchaseApprovalAuth(roles);
 
 
     // 탭 개수 조정 (초기화 시점과 다른 경우)
@@ -342,17 +334,15 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       });
     }
 
-    // attendance_role에 따른 권한 확인
-    final bool isAdmin = attendanceRoles.contains('admin');
-    final bool isSuperAdmin = attendanceRoles.contains('superadmin');
-    final bool isAdminOrSuper = isAdmin || isSuperAdmin;
-    final bool isDev3Manager = attendanceRoles.contains('개발3팀_manager');
-    final bool isCadManager = attendanceRoles.contains(
-      'CAD_manager',
-    ); // 대문자로 수정!
-    final bool isDevManager = attendanceRoles.contains('개발팀_manager');
-    final bool isSupportManager = attendanceRoles.contains('경영지원팀_manager');
-    final bool isLabManager = attendanceRoles.contains('연구소_manager');
+    // roles에 따른 권한 확인
+    final bool isAdmin = UserRoleHelper.isAdmin(roles);
+    final bool isSuperAdmin = UserRoleHelper.isSuperAdmin(roles);
+    final bool isAdminOrSuper = UserRoleHelper.isAdminOrSuper(roles);
+    final bool isDev3Manager = UserRoleHelper.isDev3Manager(roles);
+    final bool isCadManager = UserRoleHelper.isCadManager(roles);
+    final bool isDevManager = UserRoleHelper.isDevManager(roles);
+    final bool isSupportManager = UserRoleHelper.isSupportManager(roles);
+    final bool isLabManager = UserRoleHelper.isLabManager(roles);
     final bool isManager =
         isDev3Manager ||
         isCadManager ||
@@ -364,7 +354,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     // 연차 승인 권한 업데이트
     _hasLeaveApprovalAuth = hasApprovalRole;
 
-    // attendance_role에 따른 승인 가능 부서 매핑
+    // roles에 따른 승인 가능 부서 매핑
     final List<String> approvalDepartments = [];
     if (isAdminOrSuper) {
       // admin/superadmin은 모든 부서 승인 가능
@@ -385,7 +375,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       if (isLabManager) approvalDepartments.add('연구소');
     }
 
-    // 매니저 타입 확인용 attendance_role 리스트
+    // 매니저 타입 확인용 roles 리스트
     final List<String> managerRoles = [
       '개발3팀_manager',
       'CAD_manager',
@@ -394,9 +384,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       '연구소_manager',
     ];
     // UserRoleHelper 사용하여 역할 체크
-    final bool isAppAdmin = UserRoleHelper.isAppAdmin(purchaseRoles);
-    final bool isPureLeadBuyer = UserRoleHelper.isPureLeadBuyer(purchaseRoles);
-    final bool isRegularEmployee = UserRoleHelper.isRegularEmployee(purchaseRoles) && !hasApprovalRole;
+    final bool isAppAdmin = UserRoleHelper.isAppAdmin(roles);
+    final bool isPureLeadBuyer = UserRoleHelper.isPureLeadBuyer(roles);
+    final bool isRegularEmployee = UserRoleHelper.isRegularEmployee(roles) && !hasApprovalRole;
     
     // PurchaseProvider 가져오기 (일반 직원의 입고대기 개수 표시를 위해)
     final purchaseProvider = Provider.of<PurchaseProvider>(context);
@@ -474,19 +464,17 @@ class _ApprovalScreenState extends State<ApprovalScreen>
           List<Map<String, dynamic>> allLeaves = provider.allLeaves;
 
 
-          // attendance_role에 따른 필터링
+          // roles에 따른 필터링
           if (hasApprovalRole) {
 
-            if (attendanceRoles.contains('superadmin')) {
+            if (isSuperAdmin) {
               // SuperAdmin: 모든 직원의 신청 표시 (필터링 없음)
-            } else if (attendanceRoles.contains('admin')) {
+            } else if (isAdmin) {
               // Admin: superadmin을 제외한 모든 신청 표시
               allLeaves = allLeaves.where((l) {
                 final emp = l['employees'];
-                final leaveAttendanceRoles = emp is Map
-                    ? (emp['attendance_role'] as List<dynamic>? ?? [])
-                    : [];
-                return !leaveAttendanceRoles.contains('superadmin');
+                final leaveRoles = UserRoleHelper.getRoles(emp is Map<String, dynamic> ? emp : null);
+                return !UserRoleHelper.isSuperAdmin(leaveRoles);
               }).toList();
             } else if (isManager) {
               // Manager: 해당 부서의 일반 직원만 표시 (매니저 제외, 자신 포함)
@@ -494,9 +482,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                 final emp = l['employees'];
                 final leaveDept = emp is Map ? emp['department'] : null;
                 final leaveEmail = l['user_email'] ?? '';
-                final leaveAttendanceRoles = emp is Map
-                    ? (emp['attendance_role'] as List<dynamic>? ?? [])
-                    : [];
+                final leaveRoles = UserRoleHelper.getRoles(emp is Map<String, dynamic> ? emp : null);
 
 
                 // 자신의 연차는 제외 (스스로 승인 불가)
@@ -505,18 +491,18 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                 }
 
                 // superadmin의 연차는 제외 (부서 매니저가 승인 불가)
-                if (leaveAttendanceRoles.contains('superadmin')) {
+                if (UserRoleHelper.isSuperAdmin(leaveRoles)) {
                   return false;
                 }
 
                 // admin의 연차도 제외 (부서 매니저가 승인 불가)
-                if (leaveAttendanceRoles.contains('admin')) {
+                if (UserRoleHelper.isAdmin(leaveRoles)) {
                   return false;
                 }
 
                 // 다른 매니저의 연차는 제외 (매니저끼리 승인 불가)
                 final hasManagerRole = managerRoles.any(
-                  (role) => leaveAttendanceRoles.contains(role),
+                  (role) => leaveRoles.contains(role),
                 );
                 if (hasManagerRole) {
                   return false;
@@ -546,8 +532,8 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             final pendingOrders = purchaseProvider.pendingOrders;
             
             // 권한에 따른 필터링
-            if (purchaseRoles.contains('app_admin') || purchaseRoles.contains('lead buyer')) {
-              // app_admin, lead buyer: 모든 대기 발주
+            if (UserRoleHelper.isLeadBuyer(roles)) {
+              // 관리자, lead buyer: 모든 대기 발주
               pendingApprovalCount = pendingOrders.length;
             } else {
               // 기타 권한: 본인이 신청한 발주만
@@ -605,7 +591,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                   ),
                   child: Row(
                     children: [
-                      // 연차/출장 탭 (attendance_role 권한이 있는 경우만 표시)
+                      // 연차/출장 탭 (승인 권한이 있는 경우만 표시)
                       if (_hasLeaveApprovalAuth)
                       Expanded(
                         child: GestureDetector(
@@ -1235,16 +1221,10 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                           final l = pending[index];
                                           // superadmin의 연차는 superadmin만 승인 가능
                                           final emp = l['employees'];
-                                          final leaveAttendanceRoles =
-                                              emp is Map
-                                              ? (emp['attendance_role']
-                                                        as List<dynamic>? ??
-                                                    [])
-                                              : [];
+                                          final leaveRoles = UserRoleHelper.getRoles(
+                                              emp is Map<String, dynamic> ? emp : null);
                                           final isLeaveSuperAdmin =
-                                              leaveAttendanceRoles.contains(
-                                                'superadmin',
-                                              );
+                                              UserRoleHelper.isSuperAdmin(leaveRoles);
 
                                           // 승인 가능 여부 판단
                                           bool canApprove = false;
@@ -1482,8 +1462,8 @@ class _ApprovalScreenState extends State<ApprovalScreen>
           if (!showButtons && status != 'pending') ...[
             Consumer<UserProvider>(
               builder: (context, userProvider, child) {
-                final attendanceRoles = userProvider.employee?['attendance_role'] as List<dynamic>? ?? [];
-                if (UserRoleHelper.isSuperAdmin(attendanceRoles)) {
+                final viewerRoles = UserRoleHelper.getRoles(userProvider.employee);
+                if (UserRoleHelper.isSuperAdmin(viewerRoles)) {
                   return Column(
                     children: [
                       if (l['approved_by'] != null && l['approved_by'].isNotEmpty)

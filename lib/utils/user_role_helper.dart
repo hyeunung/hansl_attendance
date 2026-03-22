@@ -1,18 +1,18 @@
 /// 사용자 역할 관리를 위한 유틸리티 클래스
 /// 모든 역할 체크 로직을 중앙화하여 관리
+///
+/// [1차 마이그레이션] roles 통합 칼럼 우선 + purchase_role/attendance_role fallback
 class UserRoleHelper {
-  // ============== Purchase Roles ==============
+  // ============== Role Constants ==============
   static const String LEAD_BUYER = 'lead buyer';
   static const String APP_ADMIN = 'app_admin';
+  static const String SUPERADMIN = 'superadmin';
   static const String MIDDLE_MANAGER = 'middle_manager';
   static const String FINAL_APPROVER = 'final_approver';
   static const String RAW_MATERIAL_MANAGER = 'raw_material_manager';
   static const String CONSUMABLE_MANAGER = 'consumable_manager';
   static const String HR = 'hr';
-
-  // ============== Attendance Roles ==============
   static const String ADMIN = 'admin';
-  static const String SUPERADMIN = 'superadmin';
   static const String SUPERVISOR = 'supervisor';
   static const String DEV3_MANAGER = '개발3팀_manager';
   static const String CAD_MANAGER = 'CAD_manager';
@@ -20,22 +20,40 @@ class UserRoleHelper {
   static const String SUPPORT_MANAGER = '경영지원팀_manager';
   static const String LAB_MANAGER = '연구소_manager';
 
-  // ============== Purchase Role Checks ==============
-  
-  /// app_admin 여부 확인
+  // ============== 통합 역할 추출 ==============
+
+  /// employee Map에서 통합 역할 리스트를 추출
+  /// roles 칼럼 우선, 없으면 purchase_role + attendance_role fallback
+  static List<dynamic> getRoles(Map<String, dynamic>? employee) {
+    if (employee == null) return [];
+
+    // 1순위: roles 통합 칼럼
+    final roles = employee['roles'];
+    if (roles != null && roles is List && roles.isNotEmpty) {
+      return roles;
+    }
+
+    // 2순위: 구형 칼럼 합산 (fallback)
+    final purchase = parseRoles(employee['purchase_role']);
+    final attendance = parseRoles(employee['attendance_role']);
+    return <dynamic>{...purchase, ...attendance}.toList();
+  }
+
+  // ============== Role Checks ==============
+
+  /// superadmin/app_admin 여부 확인 (둘 다 체크하여 하위호환 보장)
   static bool isAppAdmin(List<dynamic>? roles) {
     if (roles == null) return false;
-    return roles.contains(APP_ADMIN);
+    return roles.contains(SUPERADMIN) || roles.contains(APP_ADMIN);
   }
 
-  /// lead buyer 여부 확인 (app_admin 포함)
+  /// lead buyer 여부 확인 (superadmin 포함)
   static bool isLeadBuyer(List<dynamic>? roles) {
     if (roles == null) return false;
-    // app_admin이면 모든 권한 가짐
-    return roles.contains(LEAD_BUYER) || roles.contains(APP_ADMIN);
+    return roles.contains(LEAD_BUYER) || isAppAdmin(roles);
   }
 
-  /// lead buyer 또는 app_admin 여부 (순수 lead buyer 체크용)
+  /// 순수 lead buyer 체크 (superadmin 제외)
   static bool isPureLeadBuyer(List<dynamic>? roles) {
     if (roles == null) return false;
     return roles.contains(LEAD_BUYER);
@@ -74,7 +92,7 @@ class UserRoleHelper {
   /// 일반 직원 여부 확인 (특별 권한 없는 직원)
   static bool isRegularEmployee(List<dynamic>? roles) {
     if (roles == null) return true;
-    return !roles.contains(APP_ADMIN) &&
+    return !isAppAdmin(roles) &&
            !roles.contains(MIDDLE_MANAGER) &&
            !roles.contains(FINAL_APPROVER) &&
            !roles.contains(LEAD_BUYER) &&
@@ -84,7 +102,7 @@ class UserRoleHelper {
   /// 구매현황 조회 권한 여부
   static bool canViewPurchaseStatus(List<dynamic>? roles) {
     if (roles == null) return false;
-    return roles.contains(LEAD_BUYER) || roles.contains(APP_ADMIN);
+    return roles.contains(LEAD_BUYER) || isAppAdmin(roles);
   }
 
   /// 발주 승인 권한 여부
@@ -94,13 +112,13 @@ class UserRoleHelper {
            roles.contains(FINAL_APPROVER) ||
            roles.contains(RAW_MATERIAL_MANAGER) ||
            roles.contains(CONSUMABLE_MANAGER) ||
-           roles.contains(APP_ADMIN);
+           isAppAdmin(roles);
   }
 
   /// 최종 승인 권한이 있는 역할인지 확인
   static bool canFinalApprove(List<dynamic>? roles) {
     if (roles == null) return false;
-    return roles.contains(FINAL_APPROVER) || roles.contains(APP_ADMIN);
+    return roles.contains(FINAL_APPROVER) || isAppAdmin(roles);
   }
 
   /// 발주 카테고리 관리 권한 확인
@@ -116,7 +134,7 @@ class UserRoleHelper {
   }
 
   // ============== Attendance Role Checks ==============
-  
+
   /// admin 여부 확인
   static bool isAdmin(List<dynamic>? roles) {
     if (roles == null) return false;
@@ -126,13 +144,13 @@ class UserRoleHelper {
   /// superadmin 여부 확인
   static bool isSuperAdmin(List<dynamic>? roles) {
     if (roles == null) return false;
-    return roles.contains(SUPERADMIN);
+    return roles.contains(SUPERADMIN) || roles.contains(APP_ADMIN);
   }
 
   /// admin 또는 superadmin 여부
   static bool isAdminOrSuper(List<dynamic>? roles) {
     if (roles == null) return false;
-    return roles.contains(ADMIN) || roles.contains(SUPERADMIN);
+    return roles.contains(ADMIN) || isSuperAdmin(roles);
   }
 
   /// supervisor 여부 확인
@@ -178,38 +196,35 @@ class UserRoleHelper {
   }
 
   // ============== Tab Count Calculation ==============
-  
-  /// ApprovalScreen 탭 개수 계산
-  static int calculateApprovalTabCount({
-    required List<dynamic>? purchaseRoles,
-    required List<dynamic>? attendanceRoles,
-  }) {
+
+  /// ApprovalScreen 탭 개수 계산 (통합 roles 사용)
+  static int calculateApprovalTabCount(List<dynamic>? roles) {
     // lead buyer인 경우: 구매현황 + 입고현황 = 2개
-    if (isLeadBuyer(purchaseRoles)) {
+    if (isLeadBuyer(roles)) {
       return 2;
     }
-    
+
     // 일반 직원인 경우: 입고대기만 = 1개
-    if (isRegularEmployee(purchaseRoles)) {
+    if (isRegularEmployee(roles)) {
       return 1;
     }
-    
+
     // 그 외의 경우
     int tabCount = 2; // 기본: 연차/출장 + 입고대기
-    
-    if (hasPurchaseApprovalAuth(purchaseRoles)) {
+
+    if (hasPurchaseApprovalAuth(roles)) {
       tabCount++; // 발주승인 탭 추가
     }
-    
-    if (canViewPurchaseStatus(purchaseRoles)) {
+
+    if (canViewPurchaseStatus(roles)) {
       tabCount++; // 구매대기 탭 추가
     }
-    
+
     return tabCount;
   }
 
   // ============== Pending Count Calculation ==============
-  
+
   /// 발주 대기 건수 계산용 역할 필터
   static Map<String, bool> getPurchaseCountRoles(List<dynamic>? roles) {
     return {
@@ -223,7 +238,7 @@ class UserRoleHelper {
   }
 
   // ============== Utility Methods ==============
-  
+
   /// 역할 리스트를 안전하게 파싱
   static List<dynamic> parseRoles(dynamic roles) {
     if (roles == null) return [];
@@ -237,6 +252,8 @@ class UserRoleHelper {
     switch (role) {
       case APP_ADMIN:
         return '앱 관리자';
+      case SUPERADMIN:
+        return '최고 관리자';
       case LEAD_BUYER:
         return '구매 담당자';
       case MIDDLE_MANAGER:
@@ -251,8 +268,6 @@ class UserRoleHelper {
         return 'HR 담당자';
       case ADMIN:
         return '관리자';
-      case SUPERADMIN:
-        return '최고 관리자';
       case SUPERVISOR:
         return '감독자';
       default:
@@ -260,28 +275,21 @@ class UserRoleHelper {
     }
   }
 
-  /// 사용자가 가진 모든 권한을 문자열로 표시
-  static String getRolesDescription({
-    List<dynamic>? purchaseRoles,
-    List<dynamic>? attendanceRoles,
-  }) {
+  /// 사용자가 가진 모든 권한을 문자열로 표시 (통합 roles 사용)
+  static String getRolesDescription(List<dynamic>? roles) {
     final List<String> descriptions = [];
-    
-    // Purchase roles
-    if (isAppAdmin(purchaseRoles)) descriptions.add('앱 관리자');
-    if (isPureLeadBuyer(purchaseRoles)) descriptions.add('구매 담당자');
-    if (isMiddleManager(purchaseRoles)) descriptions.add('중간 관리자');
-    if (isFinalApprover(purchaseRoles)) descriptions.add('최종 승인자');
-    if (isRawMaterialManager(purchaseRoles)) descriptions.add('원자재 관리자');
-    if (isConsumableManager(purchaseRoles)) descriptions.add('소모품 관리자');
-    if (isHr(purchaseRoles)) descriptions.add('HR 담당자');
-    
-    // Attendance roles
-    if (isSuperAdmin(attendanceRoles)) descriptions.add('최고 관리자');
-    else if (isAdmin(attendanceRoles)) descriptions.add('관리자');
-    if (isSupervisor(attendanceRoles)) descriptions.add('감독자');
-    if (isAnyManager(attendanceRoles)) descriptions.add('부서 매니저');
-    
+
+    if (isAppAdmin(roles)) descriptions.add('최고 관리자');
+    if (isPureLeadBuyer(roles)) descriptions.add('구매 담당자');
+    if (isMiddleManager(roles)) descriptions.add('중간 관리자');
+    if (isFinalApprover(roles)) descriptions.add('최종 승인자');
+    if (isRawMaterialManager(roles)) descriptions.add('원자재 관리자');
+    if (isConsumableManager(roles)) descriptions.add('소모품 관리자');
+    if (isHr(roles)) descriptions.add('HR 담당자');
+    if (!isAppAdmin(roles) && isAdmin(roles)) descriptions.add('관리자');
+    if (isSupervisor(roles)) descriptions.add('감독자');
+    if (isAnyManager(roles)) descriptions.add('부서 매니저');
+
     return descriptions.isEmpty ? '일반 직원' : descriptions.join(', ');
   }
 }

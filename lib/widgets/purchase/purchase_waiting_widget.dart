@@ -113,7 +113,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final employee = userProvider.employee;
-      final purchaseRoles = employee?['purchase_role'] as List<dynamic>? ?? [];
+      final purchaseRoles = UserRoleHelper.getRoles(employee);
       final userName = employee?['name'] as String? ?? '';
       
       // UserRoleHelper 사용하여 권한 체크
@@ -333,7 +333,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
   Widget _buildCompleteAllButton(List<Map<String, dynamic>> items) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final employee = userProvider.employee;
-    final purchaseRoles = employee?['purchase_role'] as List<dynamic>? ?? [];
+    final purchaseRoles = UserRoleHelper.getRoles(employee);
     final currentUserName = employee?['name'] as String? ?? '';
     
     // 권한 체크: app_admin, lead_buyer, 또는 본인 요청한 것만 전체완료 가능

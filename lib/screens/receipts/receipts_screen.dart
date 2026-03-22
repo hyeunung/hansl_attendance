@@ -796,8 +796,8 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
 
     return Consumer<UserProvider>(
       builder: (context, userProvider, child) {
-        final purchaseRole = userProvider.employee?['purchase_role'];
-        final canDelete = UserRoleHelper.isAppAdmin(purchaseRole);
+        final roles = UserRoleHelper.getRoles(userProvider.employee);
+        final canDelete = UserRoleHelper.isAppAdmin(roles);
 
         final content = _buildReceiptRow(receipt, uploadedAt);
 
@@ -1226,12 +1226,12 @@ class _ReceiptDetailScreenState extends State<_ReceiptDetailScreen> {
             _buildInfoRow('메모', widget.receipt['memo'] ?? '없음'),
             _buildInfoRow('업로드 일시', _formatDateTime(widget.receipt['uploaded_at'])),
             
-            // 등록인 정보는 app_admin만 표시
+            // 등록인 정보는 관리자만 표시
             Consumer<UserProvider>(
               builder: (context, userProvider, child) {
-                final purchaseRole = userProvider.employee?['purchase_role'];
-                
-                if (UserRoleHelper.isAppAdmin(purchaseRole)) {
+                final roles = UserRoleHelper.getRoles(userProvider.employee);
+
+                if (UserRoleHelper.isAppAdmin(roles)) {
                   return _buildInfoRow('등록인', widget.receipt['uploaded_by_name'] ?? '');
                 }
                 return const SizedBox.shrink();

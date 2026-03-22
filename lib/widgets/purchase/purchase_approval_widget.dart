@@ -469,7 +469,7 @@ return;
                                     ],
                                   ),
                                 ],
-                                // 수정/삭제 버튼 (app_admin만 표시)
+                                // 수정/삭제 버튼 (관리자만 표시)
                                 if (_isAppAdmin()) ...[
                                   SizedBox(height: ResponsiveUtils.spacing(context, 12)),
                                   Row(
@@ -597,8 +597,7 @@ return;
     super.build(context); // AutomaticKeepAliveClientMixin 필수
     return Consumer2<PurchaseProvider, UserProvider>(
       builder: (context, purchaseProvider, userProvider, _) {
-        final purchaseRoles =
-            userProvider.employee?['purchase_role'] as List<dynamic>? ?? [];
+        final purchaseRoles = UserRoleHelper.getRoles(userProvider.employee);
 
         // 사용자 역할에 따른 대기 개수 계산 (현재 사용되지 않음)
 
@@ -738,7 +737,7 @@ return;
               ),
             ),
 
-            // app_admin인 경우 세부 개수 표시 (현재 사용되지 않음)
+            // 관리자인 경우 세부 개수 표시 (현재 사용되지 않음)
 
             // TabBarView
             Expanded(
@@ -761,8 +760,7 @@ return;
   Widget _buildPendingTab() {
     return Consumer2<PurchaseProvider, UserProvider>(
       builder: (context, purchaseProvider, userProvider, _) {
-        final purchaseRoles =
-            userProvider.employee?['purchase_role'] as List<dynamic>? ?? [];
+        final purchaseRoles = UserRoleHelper.getRoles(userProvider.employee);
 
         if (purchaseProvider.isLoading) {
           return const Center(
@@ -2271,7 +2269,7 @@ return;
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      // app_admin만 전체삭제 버튼 표시
+                      // 관리자만 전체삭제 버튼 표시
                       if (_isAppAdmin()) ...[
                         GestureDetector(
                           onTap: () => _showBulkDeleteOrderDialog(group),
@@ -2882,16 +2880,16 @@ return;
   }
 
   // ===============================================
-  // CRUD 기능 (app_admin 전용)
+  // CRUD 기능 (관리자 전용)
   // ===============================================
 
-  // app_admin 권한 체크 함수
+  // 관리자 권한 체크 함수
   bool _isAppAdmin() {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final employee = userProvider.employee;
-    final purchaseRoles = employee?['purchase_role'] as List<dynamic>? ?? [];
-    
-    return UserRoleHelper.isAppAdmin(purchaseRoles);
+    final roles = UserRoleHelper.getRoles(employee);
+
+    return UserRoleHelper.isAppAdmin(roles);
   }
 
   // 품목 수정 함수
@@ -2904,7 +2902,7 @@ return;
   }) async {
     if (!_isAppAdmin()) {
       if (mounted) {
-        AppBanner.show(context, '권한이 없습니다. app_admin만 수정 가능합니다.', type: BannerType.warning);
+        AppBanner.show(context, '권한이 없습니다. 관리자만 수정 가능합니다.', type: BannerType.warning);
       }
       return;
     }
@@ -2941,7 +2939,7 @@ return;
   Future<void> _deletePurchaseItem(int itemId, String orderNumber) async {
     if (!_isAppAdmin()) {
       if (mounted) {
-        AppBanner.show(context, '권한이 없습니다. app_admin만 삭제 가능합니다.', type: BannerType.warning);
+        AppBanner.show(context, '권한이 없습니다. 관리자만 삭제 가능합니다.', type: BannerType.warning);
       }
       return;
     }
@@ -2995,7 +2993,7 @@ return;
   // 수정 다이얼로그
   void _showEditDialog(dynamic item) {
     if (!_isAppAdmin()) {
-      AppBanner.show(context, '권한이 없습니다. app_admin만 수정 가능합니다.', type: BannerType.warning);
+      AppBanner.show(context, '권한이 없습니다. 관리자만 수정 가능합니다.', type: BannerType.warning);
       return;
     }
 
@@ -3371,7 +3369,7 @@ return;
   // 삭제 확인 다이얼로그
   void _showDeleteDialog(dynamic item, String orderNumber) {
     if (!_isAppAdmin()) {
-      AppBanner.show(context, '권한이 없습니다. app_admin만 삭제 가능합니다.', type: BannerType.warning);
+      AppBanner.show(context, '권한이 없습니다. 관리자만 삭제 가능합니다.', type: BannerType.warning);
       return;
     }
 
@@ -3644,7 +3642,7 @@ return;
   // 발주 전체 삭제 확인 다이얼로그
   void _showBulkDeleteOrderDialog(PurchaseOrderGroup group) {
     if (!_isAppAdmin()) {
-      AppBanner.show(context, '권한이 없습니다. app_admin만 삭제 가능합니다.', type: BannerType.warning);
+      AppBanner.show(context, '권한이 없습니다. 관리자만 삭제 가능합니다.', type: BannerType.warning);
       return;
     }
 
@@ -3916,7 +3914,7 @@ return;
   Future<void> _deleteBulkPurchaseOrder(PurchaseOrderGroup group) async {
     if (!_isAppAdmin()) {
       if (mounted) {
-        AppBanner.show(context, '권한이 없습니다. app_admin만 삭제 가능합니다.', type: BannerType.warning);
+        AppBanner.show(context, '권한이 없습니다. 관리자만 삭제 가능합니다.', type: BannerType.warning);
       }
       return;
     }

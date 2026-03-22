@@ -371,7 +371,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       final employee = userProvider.employee;
       final userName = employee?['name'] as String? ?? '';
       final userDepartment = employee?['department'] as String? ?? '';
-      final purchaseRoles = employee?['purchase_role'] as List<dynamic>? ?? [];
+      final purchaseRoles = UserRoleHelper.getRoles(employee);
       
       // app_admin의 경우 기본값을 "전체"로 설정
       if (UserRoleHelper.isAppAdmin(purchaseRoles)) {
@@ -527,7 +527,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final employee = userProvider.employee;
-      final purchaseRoles = employee?['purchase_role'] as List<dynamic>? ?? [];
+      final purchaseRoles = UserRoleHelper.getRoles(employee);
       final userName = employee?['name'] as String? ?? '';
       
       // UserRoleHelper로 권한 체크
@@ -665,7 +665,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final employee = userProvider.employee;
       final currentUserId = employee?['id'];
-      final purchaseRoles = employee?['purchase_role'] as List<dynamic>? ?? [];
+      final purchaseRoles = UserRoleHelper.getRoles(employee);
       final userName = employee?['name'] as String? ?? '';
       
       // 권한 체크: app_admin, pure lead buyer, 또는 본인 요청자만 가능
@@ -762,7 +762,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final employee = userProvider.employee;
       final currentUserId = employee?['id'];
-      final purchaseRoles = employee?['purchase_role'] as List<dynamic>? ?? [];
+      final purchaseRoles = UserRoleHelper.getRoles(employee);
       final userName = employee?['name'] as String? ?? '';
       
       // 권한 체크: app_admin, pure lead buyer, 또는 본인 요청자만 가능
@@ -1209,7 +1209,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
           
           final userProvider = Provider.of<UserProvider>(context, listen: false);
           final employee = userProvider.employee;
-          final purchaseRoles = employee?['purchase_role'] as List<dynamic>? ?? [];
+          final purchaseRoles = UserRoleHelper.getRoles(employee);
           final userName = employee?['name'] as String? ?? '';
           
           // 입고완료 버튼 표시 여부
@@ -1719,7 +1719,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
   Widget _buildCompleteAllButton(List<Map<String, dynamic>> items) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final employee = userProvider.employee;
-    final purchaseRoles = employee?['purchase_role'] as List<dynamic>? ?? [];
+    final purchaseRoles = UserRoleHelper.getRoles(employee);
     final currentUserName = employee?['name'] as String? ?? '';
     
     // 권한 체크: app_admin, lead_buyer, 또는 본인 요청한 것만 전체완료 가능
@@ -1779,7 +1779,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
   Widget _buildEditRequestButton(BuildContext context, String orderNumber, Map<String, dynamic> firstItem) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final employee = userProvider.employee;
-    final purchaseRoles = employee?['purchase_role'] as List<dynamic>? ?? [];
+    final purchaseRoles = UserRoleHelper.getRoles(employee);
     final currentUserName = employee?['name'] as String? ?? '';
     final requesterName = firstItem['requester_name'] as String? ?? '';
     
@@ -2069,13 +2069,13 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
     }
   }
 
-  // app_admin 직접 수정 버튼 빌드
+  // 관리자 직접 수정 버튼 빌드
   Widget _buildAdminEditButton(BuildContext context, String orderNumber, List<Map<String, dynamic>> items) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final employee = userProvider.employee;
-    final purchaseRole = employee?['purchase_role'] as List<dynamic>? ?? [];
+    final purchaseRole = UserRoleHelper.getRoles(employee);
     
-    // app_admin만 직접 수정 가능
+    // 관리자만 직접 수정 가능
     if (!UserRoleHelper.isAppAdmin(purchaseRole)) {
       return const SizedBox.shrink();
     }

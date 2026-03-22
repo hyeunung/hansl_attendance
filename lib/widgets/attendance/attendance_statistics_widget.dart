@@ -6,6 +6,7 @@ import '../../theme/app_text_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../utils/responsive_utils.dart';
 import '../shared/flat_section.dart';
+import '../../utils/user_role_helper.dart';
 
 class AttendanceStatisticsWidget extends StatefulWidget {
   final Function(bool isNonWorkingDay)? onWorkingDayStatusChanged;
@@ -262,10 +263,8 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
-    final attendanceRole = userProvider.employee?['attendance_role'];
-    final hasManagerRole = attendanceRole != null &&
-        attendanceRole is List &&
-        (attendanceRole).isNotEmpty;
+    final roles = UserRoleHelper.getRoles(userProvider.employee);
+    final hasManagerRole = roles.isNotEmpty;
 
     if (_isLoading) {
       return Container(

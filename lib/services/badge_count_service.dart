@@ -29,32 +29,31 @@ class BadgeCountService {
       // 사용자 정보 가져오기
       final employee = await _supabase
           .from('employees')
-          .select('*, attendance_role, purchase_role')
+          .select('*, roles, attendance_role, purchase_role')
           .eq('email', user.email!)
           .single();
 
       int totalCount = 0;
       
-      // 역할 파싱
-      final attendanceRoles = (employee['attendance_role'] as List<dynamic>?) ?? [];
-      final purchaseRoles = UserRoleHelper.parseRoles(employee['purchase_role']);
-      
+      // 통합 역할 추출
+      final roles = UserRoleHelper.getRoles(employee);
+
       // ========== 권한 판별 ==========
       // 연차/출장 승인 권한(부서장 + admin/superadmin)
-      final canApproveLeave = UserRoleHelper.isAnyManager(attendanceRoles) ||
-          UserRoleHelper.isAdminOrSuper(attendanceRoles);
+      final canApproveLeave = UserRoleHelper.isAnyManager(roles) ||
+          UserRoleHelper.isAdminOrSuper(roles);
 
       // 발주 승인 권한(요구사항: middle_manager/raw_material_manager/consumable_manager만)
-      final isMiddleManager = UserRoleHelper.isMiddleManager(purchaseRoles);
+      final isMiddleManager = UserRoleHelper.isMiddleManager(roles);
       // 최종 승인 권한(카테고리)은 final_approver 포함 여부까지 함께 봐야 함
-      final canManageRawMaterial = UserRoleHelper.canManageRawMaterial(purchaseRoles);
-      final canManageConsumable = UserRoleHelper.canManageConsumable(purchaseRoles);
+      final canManageRawMaterial = UserRoleHelper.canManageRawMaterial(roles);
+      final canManageConsumable = UserRoleHelper.canManageConsumable(roles);
 
       // 구매대기 배지(요구사항: lead_buyer만)
-      final isPureLeadBuyer = UserRoleHelper.isPureLeadBuyer(purchaseRoles);
+      final isPureLeadBuyer = UserRoleHelper.isPureLeadBuyer(roles);
 
-      // 문의 배지(요구사항: app_admin만)
-      final isAppAdmin = UserRoleHelper.isAppAdmin(purchaseRoles);
+      // 문의 배지(요구사항: superadmin만)
+      final isAppAdmin = UserRoleHelper.isAppAdmin(roles);
       
 
       // 1) 연차/출장 승인대기

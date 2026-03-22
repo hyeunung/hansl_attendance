@@ -103,15 +103,14 @@ class InquiryService {
 
       final response = await _supabase
           .from('employees')
-          .select('purchase_role')
+          .select('roles, purchase_role')
           .eq('email', user.email!)
           .maybeSingle();
 
       if (response == null) return false;
-      final purchaseRole = response['purchase_role'];
+      final roles = UserRoleHelper.getRoles(response);
 
-      // UserRoleHelper를 사용하여 app_admin 권한 확인
-      return UserRoleHelper.isAppAdmin(purchaseRole);
+      return UserRoleHelper.isAppAdmin(roles);
     } catch (e) {
       // Debug code removed
       return false;
