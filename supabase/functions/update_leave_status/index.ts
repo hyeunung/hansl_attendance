@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     // 사용자의 관리자 권한 확인
     const { data: employee, error: empError } = await supabase
       .from('employees')
-      .select('attendance_role, department')
+      .select('roles, department')
       .eq('email', userEmail)
       .single()
 
@@ -59,10 +59,10 @@ Deno.serve(async (req) => {
       throw new Error('권한을 확인할 수 없습니다.')
     }
 
-    const attendanceRoles = employee.attendance_role || []
-    const isSuperAdmin = attendanceRoles.includes('superadmin')
-    const isAdmin = attendanceRoles.includes('admin')
-    const isManager = attendanceRoles.some(role => role.endsWith('_manager'))
+    const userRoles = employee.roles || []
+    const isSuperAdmin = userRoles.includes('superadmin')
+    const isAdmin = userRoles.includes('admin')
+    const isManager = userRoles.some(role => role.endsWith('_manager'))
 
     if (!isSuperAdmin && !isAdmin && !isManager) {
       throw new Error('승인/반려 권한이 없습니다.')
@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
     // 신청자의 권한도 확인
     const { data: requesterData, error: requesterError } = await supabase
       .from('employees')
-      .select('attendance_role')
+      .select('roles')
       .eq('email', leaveData.user_email)
       .single()
 
@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
       throw new Error('신청자 정보를 찾을 수 없습니다.')
     }
 
-    const requesterRoles = requesterData.attendance_role || []
+    const requesterRoles = requesterData.roles || []
     const isRequesterSuperAdmin = requesterRoles.includes('superadmin')
 
     // 권한별 승인 가능 범위 체크
@@ -168,19 +168,19 @@ Deno.serve(async (req) => {
       let hasPermission = false
 
       // 각 부서 매니저별 권한 체크
-      if (attendanceRoles.includes('개발팀_manager')) {
+      if (userRoles.includes('개발팀_manager')) {
         hasPermission = ['개발1팀', '개발2팀'].includes(targetDepartment)
-      } else if (attendanceRoles.includes('개발3팀_manager')) {
+      } else if (userRoles.includes('개발3팀_manager')) {
         hasPermission = targetDepartment === '개발3팀'
-      } else if (attendanceRoles.includes('CAD_manager')) {
+      } else if (userRoles.includes('CAD_manager')) {
         hasPermission = targetDepartment === 'CAD'
-      } else if (attendanceRoles.includes('연구소_manager')) {
+      } else if (userRoles.includes('연구소_manager')) {
         hasPermission = targetDepartment === '연구소'
-      } else if (attendanceRoles.includes('경영지원팀_manager')) {
+      } else if (userRoles.includes('경영지원팀_manager')) {
         hasPermission = targetDepartment === '경영지원팀'
-      } else if (attendanceRoles.includes('기획팀_manager')) {
+      } else if (userRoles.includes('기획팀_manager')) {
         hasPermission = targetDepartment === '기획팀'
-      } else if (attendanceRoles.includes('영업팀_manager')) {
+      } else if (userRoles.includes('영업팀_manager')) {
         hasPermission = targetDepartment === '영업팀'
       }
 

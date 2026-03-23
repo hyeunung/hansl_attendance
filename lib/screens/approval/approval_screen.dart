@@ -151,7 +151,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             });
 
         // 발주 데이터 비동기 로드 (모든 역할에서 필요 - 구매대기/입고대기 표시를 위해)
-        // app_admin, lead buyer, 발주승인권한자, 일반직원 모두 각자 볼 수 있는 데이터가 필요
+        // superadmin, lead buyer, 발주승인권한자, 일반직원 모두 각자 볼 수 있는 데이터가 필요
         purchaseProvider
             .fetchPendingPurchases(employee: userProvider.employee)
             .then((_) {
@@ -391,10 +391,10 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     // PurchaseProvider 가져오기 (일반 직원의 입고대기 개수 표시를 위해)
     final purchaseProvider = Provider.of<PurchaseProvider>(context);
     
-    // 타이틀 결정 (app_admin 최우선, 일반 직원의 경우 입고대기 개수 포함)
+    // 타이틀 결정 (superadmin 최우선, 일반 직원의 경우 입고대기 개수 포함)
     String appBarTitle = '승인 관리';
     if (isAppAdmin) {
-      // app_admin은 항상 '승인 관리'
+      // superadmin은 항상 '승인 관리'
       appBarTitle = '승인 관리';
     } else if (isRegularEmployee) {
       // 일반 직원은 입고대기 개수를 제목에 표시
@@ -785,7 +785,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                           ),
                         ),
                       ),
-                    // 구매대기 탭 (lead buyer와 app_admin만 표시)
+                    // 구매대기 탭 (lead buyer와 superadmin만 표시)
                     if (isAppAdmin || isPureLeadBuyer)
                       Expanded(
                       child: GestureDetector(

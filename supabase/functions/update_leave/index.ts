@@ -41,7 +41,7 @@ serve(async (req) => {
     // 관리자 권한 확인 및 이름 조회
     const { data: employee, error: empError } = await supabase
       .from('employees')
-      .select('attendance_role, purchase_role, name')
+      .select('roles, name')
       .eq('email', user.email)
       .single();
 
@@ -49,10 +49,10 @@ serve(async (req) => {
       throw new Error('직원 정보를 찾을 수 없습니다');
     }
 
-    // attendance_role에서 관리자 권한 확인
-    const hasAdminRole = employee.attendance_role?.includes('admin') || 
-                        employee.attendance_role?.includes('manager') ||
-                        employee.attendance_role?.includes('superadmin');
+    // roles에서 관리자 권한 확인
+    const hasAdminRole = employee.roles?.includes('admin') ||
+                        employee.roles?.includes('manager') ||
+                        employee.roles?.includes('superadmin');
 
     if (!hasAdminRole) {
       throw new Error('권한이 없습니다');

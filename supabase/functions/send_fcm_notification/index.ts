@@ -291,10 +291,10 @@ async function getRoleTokens(supabase, role, excludeEmail) {
     console.log(`🔍 [DB 조회] ${role} 역할의 직원 조회 시작`);
     console.log(`   제외 이메일: ${excludeEmail || 'none'}`);
     
-    // attendance_role 배열에서 역할 확인 (role 컬럼은 존재하지 않음)
+    // roles 통합 칼럼에서 역할 확인
     let query = supabase.from('employees')
       .select('email, name, fcm_token')
-      .contains('attendance_role', [role])
+      .contains('roles', [role])
       .not('fcm_token', 'is', null);
     // 제외할 이메일이 있는 경우
     if (excludeEmail) {
@@ -440,7 +440,7 @@ async function getPurchaseRoleTokens(supabase, roles, excludeEmail) {
   try {
     console.log('📦 [구매 알림] 대상 역할:', roles);
     // 역할에 해당하는 직원들 조회
-    let query = supabase.from('employees').select('email, name, fcm_token, purchase_role').not('fcm_token', 'is', null);
+    let query = supabase.from('employees').select('email, name, fcm_token, roles').not('fcm_token', 'is', null);
     // 제외할 이메일이 있는 경우
     if (excludeEmail) {
       query = query.neq('email', excludeEmail);
@@ -456,16 +456,16 @@ async function getPurchaseRoleTokens(supabase, roles, excludeEmail) {
     const tokens = [];
     const emails = [];
     const processedEmails = new Set();
-    // 각 직원의 purchase_role 확인
+    // 각 직원의 roles 확인
     for (const emp of employees){
-      if (!emp.purchase_role || !Array.isArray(emp.purchase_role)) continue;
+      if (!emp.roles || !Array.isArray(emp.roles)) continue;
       // 직원이 요청된 역할 중 하나라도 가지고 있는지 확인
-      const hasRequiredRole = roles.some((role)=>emp.purchase_role.includes(role));
+      const hasRequiredRole = roles.some((role)=>emp.roles.includes(role));
       if (hasRequiredRole && emp.fcm_token && !processedEmails.has(emp.email)) {
         tokens.push(emp.fcm_token);
         emails.push(emp.email);
         processedEmails.add(emp.email);
-        console.log(`  ✅ ${emp.name}(${emp.email}) - 역할: ${emp.purchase_role.join(', ')}`);
+        console.log(`  ✅ ${emp.name}(${emp.email}) - 역할: ${emp.roles.join(', ')}`);
       }
     }
     console.log(`📦 [구매 알림] 총 ${tokens.length}명에게 전송 예정`);
@@ -559,10 +559,10 @@ Deno.serve(async (req)=>{
     // 구매 관련 알림 처리
     if (type === 'purchase_requests') {  // s 있음!
       console.log('📦 [구매 알림] 신규 구매 요청 처리');
-      // 신규 구매 요청은 middle_manager와 app_admin에게 전송
+      // 신규 구매 요청은 middle_manager와 superadmin에게 전송
       const result = await getPurchaseRoleTokens(supabase, [
         'middle_manager',
-        'app_admin'
+        'superadmin'
       ]);
       targetTokens = result.tokens;
       targetEmails = result.emails;
@@ -581,8 +581,8 @@ Deno.serve(async (req)=>{
       if (middle_manager_status === 'approved' && status === 'pending') {
         // 1차 승인 완료 -> 카테고리에 따른 최종 승인자에게
         let targetRoles = [
-          'app_admin'
-        ] // app_admin은 항상 포함
+          'superadmin'
+        ] // superadmin은 항상 포함
         ;
         if (payment_category === '발주') {
           targetRoles.push('raw_material_manager');
@@ -671,10 +671,10 @@ Deno.serve(async (req)=>{
     } else if (type === 'transaction_statement_extracted') {
       console.log('🟠 [거래명세서 알림] 확인필요(extracted) 처리');
 
-      // 확인필요 알림은 lead buyer + app_admin에게 전송
+      // 확인필요 알림은 lead buyer + superadmin에게 전송
       const result = await getPurchaseRoleTokens(supabase, [
         'lead buyer',
-        'app_admin'
+        'superadmin'
       ]);
       targetTokens = result.tokens;
       targetEmails = result.emails;
@@ -711,13 +711,13 @@ Deno.serve(async (req)=>{
         status: 'extracted'
       };
     } else if (type === 'admin') {
-      // 연차/출장 관리자 알림 - attendance_role 기반
-      console.log('📋 [연차/출장 알림] attendance_role 기반 관리자 조회');
-      
+      // 연차/출장 관리자 알림 - roles 기반
+      console.log('📋 [연차/출장 알림] roles 기반 관리자 조회');
+
       // requester_department가 있으면 해당 부서 매니저 + superadmin
-      // 없으면 모든 attendance_role 관리자
+      // 없으면 모든 roles 관리자
       let query = supabase.from('employees')
-        .select('email, name, fcm_token, attendance_role, department')
+        .select('email, name, fcm_token, roles, department')
         .not('fcm_token', 'is', null);
       
       const { data: employees, error } = await query;
@@ -732,17 +732,17 @@ Deno.serve(async (req)=>{
         const processedEmails = new Set();
         
         for (const emp of employees) {
-          if (!emp.attendance_role || !Array.isArray(emp.attendance_role)) continue;
+          if (!emp.roles || !Array.isArray(emp.roles)) continue;
           
           let shouldNotify = false;
           
           // superadmin은 항상 알림
-          if (emp.attendance_role.includes('superadmin')) {
+          if (emp.roles.includes('superadmin')) {
             shouldNotify = true;
             console.log(`  ✅ SuperAdmin: ${emp.name} (${emp.email})`);
           }
           // admin은 제외 (문서에 명시됨)
-          else if (emp.attendance_role.includes('admin')) {
+          else if (emp.roles.includes('admin')) {
             console.log(`  ⏭️ Admin 제외: ${emp.name} (${emp.email})`);
             continue;
           }
@@ -759,7 +759,7 @@ Deno.serve(async (req)=>{
             };
             
             const requiredRole = departmentManagerRoles[requester_department];
-            if (requiredRole && emp.attendance_role.includes(requiredRole)) {
+            if (requiredRole && emp.roles.includes(requiredRole)) {
               shouldNotify = true;
               console.log(`  ✅ 부서 매니저: ${emp.name} (${emp.email}) - ${requiredRole}`);
             }

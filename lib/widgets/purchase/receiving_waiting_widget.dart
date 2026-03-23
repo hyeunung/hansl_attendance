@@ -373,7 +373,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       final userDepartment = employee?['department'] as String? ?? '';
       final purchaseRoles = UserRoleHelper.getRoles(employee);
       
-      // app_admin의 경우 기본값을 "전체"로 설정
+      // superadmin의 경우 기본값을 "전체"로 설정
       if (UserRoleHelper.isAppAdmin(purchaseRoles)) {
         _safeSetState(() {
           _selectedDepartment = '전체';
@@ -540,7 +540,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       final isCeo = purchaseRoles.contains('ceo');
       
       // 권한별 필터:
-      // - app_admin: 전체 보기
+      // - superadmin: 전체 보기
       // - final_approver + raw_material_manager: '발주' 카테고리만
       // - final_approver + consumable_manager: '구매 요청' 카테고리만
       // - final_approver (세부권한 없음): 전체 보기
@@ -668,7 +668,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       final purchaseRoles = UserRoleHelper.getRoles(employee);
       final userName = employee?['name'] as String? ?? '';
       
-      // 권한 체크: app_admin, pure lead buyer, 또는 본인 요청자만 가능
+      // 권한 체크: superadmin, pure lead buyer, 또는 본인 요청자만 가능
       bool canComplete = false;
       
       if (UserRoleHelper.isAppAdmin(purchaseRoles) || 
@@ -765,7 +765,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       final purchaseRoles = UserRoleHelper.getRoles(employee);
       final userName = employee?['name'] as String? ?? '';
       
-      // 권한 체크: app_admin, pure lead buyer, 또는 본인 요청자만 가능
+      // 권한 체크: superadmin, pure lead buyer, 또는 본인 요청자만 가능
       bool canComplete = false;
       
       if (UserRoleHelper.isAppAdmin(purchaseRoles) || 
@@ -1276,7 +1276,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                       ),
                                       // 수정요청 버튼 (요청자 본인만 표시)
                                       _buildEditRequestButton(context, orderNumber, firstItem),
-                                      // app_admin 직접 수정 버튼
+                                      // superadmin 직접 수정 버튼
                                       _buildAdminEditButton(context, orderNumber, items),
                                     ],
                                   ),
@@ -1722,7 +1722,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
     final purchaseRoles = UserRoleHelper.getRoles(employee);
     final currentUserName = employee?['name'] as String? ?? '';
     
-    // 권한 체크: app_admin, lead_buyer, 또는 본인 요청한 것만 전체완료 가능
+    // 권한 체크: superadmin, lead_buyer, 또는 본인 요청한 것만 전체완료 가능
     final canComplete = UserRoleHelper.isAppAdmin(purchaseRoles) || 
                        UserRoleHelper.isPureLeadBuyer(purchaseRoles) ||
                        (items.isNotEmpty && items.first['requester_name'] == currentUserName);
@@ -2119,7 +2119,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
     );
   }
 
-  // app_admin 직접 수정 다이얼로그 표시
+  // superadmin 직접 수정 다이얼로그 표시
   void _showAdminEditDialog(BuildContext context, String orderNumber, List<Map<String, dynamic>> items) {
     final firstItem = items.isNotEmpty ? items.first : {};
     
@@ -3072,7 +3072,7 @@ class _PriceChangeRow {
   final TextEditingController controller = TextEditingController();
 }
 
-// app_admin 수정 다이얼로그
+// superadmin 수정 다이얼로그
 class AdminEditDialog extends StatefulWidget {
   final String orderNumber;
   final List<Map<String, dynamic>> items;

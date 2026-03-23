@@ -444,7 +444,7 @@ class NotificationService {
             if (user != null) {
               final response = await Supabase.instance.client
                   .from('employees')
-                  .select('roles, attendance_role')
+                  .select('roles')
                   .eq('email', user.email!)
                   .single();
 
@@ -540,7 +540,7 @@ class NotificationService {
             if (user != null) {
               final response = await Supabase.instance.client
                   .from('employees')
-                  .select('roles, purchase_role')
+                  .select('roles')
                   .eq('email', user.email!)
                   .single();
 

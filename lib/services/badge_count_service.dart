@@ -29,7 +29,7 @@ class BadgeCountService {
       // 사용자 정보 가져오기
       final employee = await _supabase
           .from('employees')
-          .select('*, roles, attendance_role, purchase_role')
+          .select('*')
           .eq('email', user.email!)
           .single();
 
@@ -78,7 +78,7 @@ class BadgeCountService {
         totalCount += purchaseWaitingCount;
       }
 
-      // 4) 문의 미처리(app_admin)
+      // 4) 문의 미처리(superadmin)
       if (isAppAdmin) {
         final inquiryCount = await _getUnprocessedInquiryCount();
         totalCount += inquiryCount;
@@ -102,7 +102,7 @@ class BadgeCountService {
     }
   }
 
-  /// 연차/출장 미승인 건수 조회 (SuperAdmin, app_admin용)
+  /// 연차/출장 미승인 건수 조회 (SuperAdmin, superadmin용)
   static Future<int> _getPendingLeaveCount() async {
     try {
       // leave 테이블 pending 건수
@@ -138,7 +138,7 @@ class BadgeCountService {
       // 승인 화면(PurchaseProvider.fetchPendingPurchases)과 동일한 조건 + 발주번호 단위 중복제거
       List<Map<String, dynamic>> rows = [];
 
-      // 요구사항: middle_manager는 app_admin 여부와 관계없이 1차 승인 대기만 카운트
+      // 요구사항: middle_manager는 superadmin 여부와 관계없이 1차 승인 대기만 카운트
       if (isMiddleManager) {
         final response = await _supabase
             .from('purchase_requests')

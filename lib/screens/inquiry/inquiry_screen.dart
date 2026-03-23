@@ -52,7 +52,7 @@ class _ItemAddRow {
 
 /// 문의하기 화면
 /// - 일반 직원: 문의 작성 + 내 문의 내역
-/// - app_admin: 모든 문의 내역 + 답변/상태 변경
+/// - superadmin: 모든 문의 내역 + 답변/상태 변경
 class InquiryScreen extends StatefulWidget {
   const InquiryScreen({super.key});
 
@@ -158,7 +158,7 @@ class _InquiryScreenState extends State<InquiryScreen>
             // 업데이트 후 재정렬
             _sortInquiries();
 
-            // app_admin이 아닌 모든 사용자: 문의가 resolved 상태가 되면 알림
+            // superadmin이 아닌 모든 사용자: 문의가 resolved 상태가 되면 알림
             if (!_isAdmin && 
                 updatedInquiry['status'] == 'resolved' &&
                 previousInquiry['status'] != 'resolved') {
