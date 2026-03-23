@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
     // 관리자 권한 확인
     const { data: currentEmployee, error: empError } = await supabase
       .from('employees')
-      .select('email, attendance_role')
+      .select('email, roles')
       .eq('email', user.email)
       .single();
 
@@ -76,9 +76,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    const isAdmin = currentEmployee.attendance_role && 
-                   Array.isArray(currentEmployee.attendance_role) && 
-                   currentEmployee.attendance_role.includes('admin');
+    const isAdmin = currentEmployee.roles && 
+                   Array.isArray(currentEmployee.roles) && 
+                   currentEmployee.roles.includes('admin');
 
     if (!isAdmin) {
       return new Response(

@@ -1,11 +1,10 @@
 /// 사용자 역할 관리를 위한 유틸리티 클래스
 /// 모든 역할 체크 로직을 중앙화하여 관리
 ///
-/// [1차 마이그레이션] roles 통합 칼럼 우선 + purchase_role/attendance_role fallback
+/// [2차 마이그레이션 완료] roles 통합 칼럼만 사용
 class UserRoleHelper {
   // ============== Role Constants ==============
   static const String LEAD_BUYER = 'lead buyer';
-  static const String APP_ADMIN = 'app_admin';
   static const String SUPERADMIN = 'superadmin';
   static const String MIDDLE_MANAGER = 'middle_manager';
   static const String FINAL_APPROVER = 'final_approver';
@@ -22,29 +21,18 @@ class UserRoleHelper {
 
   // ============== 통합 역할 추출 ==============
 
-  /// employee Map에서 통합 역할 리스트를 추출
-  /// roles 칼럼 우선, 없으면 purchase_role + attendance_role fallback
+  /// employee Map에서 통합 역할 리스트를 추출 (roles 칼럼 사용)
   static List<dynamic> getRoles(Map<String, dynamic>? employee) {
     if (employee == null) return [];
-
-    // 1순위: roles 통합 칼럼
-    final roles = employee['roles'];
-    if (roles != null && roles is List && roles.isNotEmpty) {
-      return roles;
-    }
-
-    // 2순위: 구형 칼럼 합산 (fallback)
-    final purchase = parseRoles(employee['purchase_role']);
-    final attendance = parseRoles(employee['attendance_role']);
-    return <dynamic>{...purchase, ...attendance}.toList();
+    return parseRoles(employee['roles']);
   }
 
   // ============== Role Checks ==============
 
-  /// superadmin/app_admin 여부 확인 (둘 다 체크하여 하위호환 보장)
+  /// superadmin 여부 확인
   static bool isAppAdmin(List<dynamic>? roles) {
     if (roles == null) return false;
-    return roles.contains(SUPERADMIN) || roles.contains(APP_ADMIN);
+    return roles.contains(SUPERADMIN);
   }
 
   /// lead buyer 여부 확인 (superadmin 포함)
@@ -144,7 +132,7 @@ class UserRoleHelper {
   /// superadmin 여부 확인
   static bool isSuperAdmin(List<dynamic>? roles) {
     if (roles == null) return false;
-    return roles.contains(SUPERADMIN) || roles.contains(APP_ADMIN);
+    return roles.contains(SUPERADMIN);
   }
 
   /// admin 또는 superadmin 여부
@@ -250,8 +238,6 @@ class UserRoleHelper {
   /// 역할 이름을 한글로 변환
   static String getRoleDisplayName(String role) {
     switch (role) {
-      case APP_ADMIN:
-        return '앱 관리자';
       case SUPERADMIN:
         return '최고 관리자';
       case LEAD_BUYER:

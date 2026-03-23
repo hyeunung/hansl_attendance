@@ -400,10 +400,10 @@ final userName = employee['name'] as String;
 #### 3. Permission-based Display Rules
 ```dart
 // 📌 입고대기 탭 - 권한별 표시 규칙
-if (UserRoleHelper.isAppAdmin(purchaseRole)) {
-  // app_admin: 모든 입고대기 항목 표시
+if (UserRoleHelper.isAppAdmin(roles)) {
+  // superadmin: 모든 입고대기 항목 표시
   return allPendingReceipts;
-} else if (UserRoleHelper.isFinalApprover(purchaseRole)) {
+} else if (UserRoleHelper.isFinalApprover(roles)) {
   // final_approver: 카테고리별 권한에 따라 표시
   return categoryFilteredReceipts;
 } else {
@@ -415,8 +415,8 @@ if (UserRoleHelper.isAppAdmin(purchaseRole)) {
 // 📌 입고완료 버튼 표시 규칙
 final currentUserName = userProvider.employee?['name'];
 final requesterName = purchase['requester_name'];
-if (UserRoleHelper.isAppAdmin(purchaseRole) || 
-    UserRoleHelper.isPureLeadBuyer(purchaseRole) ||
+if (UserRoleHelper.isAppAdmin(roles) ||
+    UserRoleHelper.isPureLeadBuyer(roles) ||
     currentUserName == requesterName) {  // 본인 것만 처리 가능
   // 입고완료 버튼 표시
 }
@@ -427,21 +427,21 @@ if (UserRoleHelper.isAppAdmin(purchaseRole) ||
 // 📌 권한 체크는 항상 UserRoleHelper 사용
 import '../../utils/user_role_helper.dart';
 
-// Purchase roles (구매 관련 권한) - 구매/발주/입고 관련
-UserRoleHelper.isAppAdmin(purchaseRole)      // 모든 권한
-UserRoleHelper.isPureLeadBuyer(purchaseRole) // lead buyer만
-UserRoleHelper.isMiddleManager(purchaseRole) // 1차 승인자
-UserRoleHelper.isFinalApprover(purchaseRole) // 최종 승인자
+// 통합 roles 칼럼 사용 (purchase_role/attendance_role 삭제됨)
+final roles = UserRoleHelper.getRoles(employee);
 
-// Attendance roles (근태/연차 관련 권한) - 연차/출장 승인 관련
-UserRoleHelper.isSuperAdmin(attendanceRole)  // 최고 관리자
-UserRoleHelper.isAdmin(attendanceRole)       // 관리자
-UserRoleHelper.isAnyManager(attendanceRole)  // 부서 매니저
+// 구매 관련 권한 체크
+UserRoleHelper.isAppAdmin(roles)      // superadmin (모든 권한)
+UserRoleHelper.isPureLeadBuyer(roles) // lead buyer만
+UserRoleHelper.isMiddleManager(roles) // 1차 승인자
+UserRoleHelper.isFinalApprover(roles) // 최종 승인자
 
-// ⚠️ IMPORTANT: 역할 시스템 분리
-// - 연차/출장 승인: attendance_role만 확인 (purchase_role 무관)
-// - 구매/발주 승인: purchase_role만 확인 (attendance_role 무관)
-// - 두 시스템은 완전히 독립적으로 운영됨
+// 근태/연차 관련 권한 체크
+UserRoleHelper.isSuperAdmin(roles)  // superadmin (최고 관리자)
+UserRoleHelper.isAdmin(roles)       // 관리자
+UserRoleHelper.isAnyManager(roles)  // 부서 매니저
+
+// ⚠️ roles 통합 칼럼 하나로 모든 권한 관리 (v4.0.1 2차 마이그레이션 완료)
 ```
 
 #### 5. Standard Field Names by Table
@@ -450,8 +450,7 @@ UserRoleHelper.isAnyManager(attendanceRole)  // 부서 매니저
 // employees 테이블
 - email: 사용자 이메일 (PRIMARY KEY)
 - name: 사용자 이름
-- purchase_role: 구매 권한 배열
-- attendance_role: 근태 권한 배열
+- roles: 통합 권한 배열 (superadmin, lead buyer, middle_manager, final_approver, admin, hr 등)
 
 // purchase_requests 테이블
 - requester_name: 요청자 이름 (NOT email!)
@@ -516,19 +515,20 @@ final time = DateTime.parse(dbDateTime); // 시간대 고려 안함
 ## User Role Management (중요)
 - **UserRoleHelper 클래스 사용**: `lib/utils/user_role_helper.dart`에 모든 역할 체크 로직 중앙화
 - **역할 체크시 반드시 UserRoleHelper 메서드 사용**
-  - `UserRoleHelper.isAppAdmin(roles)` - app_admin 확인
-  - `UserRoleHelper.isLeadBuyer(roles)` - lead buyer 확인 (app_admin 제외)
+  - `UserRoleHelper.isAppAdmin(roles)` - superadmin 확인
+  - `UserRoleHelper.isLeadBuyer(roles)` - lead buyer 확인 (superadmin 포함)
   - `UserRoleHelper.isRegularEmployee(roles)` - 일반 직원 확인
   - `UserRoleHelper.hasPurchaseApprovalAuth(roles)` - 발주 승인 권한 확인
-  - `UserRoleHelper.hasAnyPurchaseRole(roles)` - 발주 관련 역할 확인
   - `UserRoleHelper.isMiddleManager(roles)` - 중간 관리자 확인
   - `UserRoleHelper.isFinalApprover(roles)` - 최종 승인자 확인
-- **절대 직접 문자열로 역할 체크하지 말 것**: `roles.contains('app_admin')` ❌
+  - `UserRoleHelper.isAnyManager(roles)` - 부서 매니저 확인
+  - `UserRoleHelper.isSuperAdmin(roles)` - superadmin 확인
+- **절대 직접 문자열로 역할 체크하지 말 것**: `roles.contains('superadmin')` ❌
 - **UserRoleHelper를 다시 생성하지 말 것**: 이미 존재함
-- **🚨 두 가지 독립적인 역할 시스템**:
-  - **attendance_role**: 연차/출장 승인, 근태 관리용
-  - **purchase_role**: 구매/발주/입고 관리용
-  - 두 시스템은 완전히 독립적 - 서로 영향 없음
+- **🚨 통합 roles 칼럼 사용** (v4.0.1 2차 마이그레이션 완료):
+  - `employees.roles` 칼럼 하나로 모든 권한 관리
+  - 구형 `purchase_role`, `attendance_role` 칼럼은 삭제됨
+  - `app_admin` 역할명은 `superadmin`으로 변경됨
 
 ## Code Quality Standards (2025년 1월 25일 기준)
 - **Flutter Analyze**: 0 warnings 유지
@@ -837,7 +837,7 @@ cat hansl-attendance-firebase-adminsdk.json | jq .  // JSON 파싱 되면 정상
 ### UserRoleHelper 패턴 (중앙화된 역할 관리)
 ```dart
 // ❌ WRONG - 직접 문자열로 역할 체크
-if (roles.contains('app_admin') || roles.contains('lead_buyer')) { ... }
+if (roles.contains('superadmin') || roles.contains('lead_buyer')) { ... }
 if (purchaseRoles.any((r) => r == 'middle_manager')) { ... }
 
 // ✅ CORRECT - UserRoleHelper 사용
@@ -992,7 +992,7 @@ Future<void> _sendPurchaseApprovalNotification({
 ```dart
 // Before: 직접 역할 체크
 final isLeadBuyer = purchaseRoles.contains('lead buyer') && 
-                    !purchaseRoles.contains('app_admin');
+                    !purchaseRoles.contains('superadmin');
 
 // After: UserRoleHelper 사용
 final isLeadBuyer = UserRoleHelper.isPureLeadBuyer(purchaseRoles);

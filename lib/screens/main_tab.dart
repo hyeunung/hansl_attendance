@@ -329,7 +329,7 @@ final roles = UserRoleHelper.getRoles(employee);
     // 알바, 계약직은 영수증 탭 접근 불가
     final canAccessReceipts = !isPartTimeOrContract && (
       UserRoleHelper.isAppAdmin(roles) ||
-      roles.contains('hr') ||
+      UserRoleHelper.isHr(roles) ||
       UserRoleHelper.isLeadBuyer(roles)
     );
 
@@ -440,7 +440,7 @@ final roles = UserRoleHelper.getRoles(employee);
     // 알바, 계약직은 영수증 탭 접근 불가
     final canAccessReceipts = !isPartTimeOrContract && (
       UserRoleHelper.isAppAdmin(roles) ||
-      roles.contains('hr') ||
+      UserRoleHelper.isHr(roles) ||
       UserRoleHelper.isLeadBuyer(roles)
     );
 
@@ -583,7 +583,7 @@ final roles = UserRoleHelper.getRoles(employee);
 
       // 영수증 탭 접근 권한이 있는 경우만 표시
       if (canAccessReceipts) {
-        // 5번째 탭: 영수증 관리 (app_admin, hr, lead_buyer)
+        // 5번째 탭: 영수증 관리 (superadmin, hr, lead_buyer)
         items.add(
           BottomNavigationBarItem(
             icon: Padding(

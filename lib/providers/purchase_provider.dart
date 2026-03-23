@@ -530,14 +530,14 @@ class PurchaseProvider extends ChangeNotifier {
             _consumablePendingCount;
       } else {
         _totalPendingCount = 0;
-        if (purchaseRole.contains('middle_manager')) {
+        if (UserRoleHelper.isMiddleManager(purchaseRole)) {
           _totalPendingCount += _middleManagerPendingCount;
         }
-        if (purchaseRole.contains('final_approver')) {
-          if (purchaseRole.contains('raw_material_manager')) {
+        if (UserRoleHelper.isFinalApprover(purchaseRole)) {
+          if (UserRoleHelper.isRawMaterialManager(purchaseRole)) {
             _totalPendingCount += _rawMaterialPendingCount;
           }
-          if (purchaseRole.contains('consumable_manager')) {
+          if (UserRoleHelper.isConsumableManager(purchaseRole)) {
             _totalPendingCount += _consumablePendingCount;
           }
         }

@@ -141,7 +141,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
       // 권한에 따른 필터링
       // final_approver + raw_material_manager는 구매대기 탭에서 데이터 없음 (발주만 관리)
       // final_approver + consumable_manager는 '구매 요청' 카테고리 조회 가능
-      // lead buyer, app_admin은 모든 구매 요청 조회 가능
+      // lead buyer, superadmin은 모든 구매 요청 조회 가능
       if (!isAppAdmin && !isLeadBuyer && !(isFinalApprover && isConsumableManager)) {
         // 일반 직원: 본인 것만 조회
         query = query.eq('requester_name', userName);
@@ -336,7 +336,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
     final purchaseRoles = UserRoleHelper.getRoles(employee);
     final currentUserName = employee?['name'] as String? ?? '';
     
-    // 권한 체크: app_admin, lead_buyer, 또는 본인 요청한 것만 전체완료 가능
+    // 권한 체크: superadmin, lead_buyer, 또는 본인 요청한 것만 전체완료 가능
     final canComplete = UserRoleHelper.isAppAdmin(purchaseRoles) || 
                        UserRoleHelper.isLeadBuyer(purchaseRoles) ||
                        (items.isNotEmpty && items.first['requester_name'] == currentUserName);

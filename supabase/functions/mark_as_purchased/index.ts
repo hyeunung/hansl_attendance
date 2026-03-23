@@ -50,7 +50,7 @@ serve(async (req) => {
     // Check user's purchase role using service client
     const { data: employee, error: employeeError } = await supabaseServiceClient
       .from('employees')
-      .select('purchase_role')
+      .select('roles')
       .eq('email', user.email)
       .single()
 
@@ -58,10 +58,10 @@ serve(async (req) => {
       throw new Error('직원 정보를 찾을 수 없습니다')
     }
 
-    // Verify permission: must have 'lead_buyer' or 'app_admin' role
-    const purchaseRoles = employee.purchase_role || []
-    const hasPermission = purchaseRoles.includes('lead_buyer') || 
-                          purchaseRoles.includes('app_admin')
+    // Verify permission: must have 'lead_buyer' or 'superadmin' role
+    const roles = employee.roles || []
+    const hasPermission = roles.includes('lead_buyer') ||
+                          roles.includes('superadmin')
 
     if (!hasPermission) {
       throw new Error('구매 완료 처리 권한이 없습니다')

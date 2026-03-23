@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     // 직원 정보 조회
     const { data: employees, error: empError } = await supabase
       .from('employees')
-      .select('id, email, name, department, attendance_role, purchase_role')
+      .select('id, email, name, department, roles')
 
     if (empError) {
       throw empError
@@ -46,8 +46,7 @@ Deno.serve(async (req) => {
         name: leave.name || '알 수 없음',
         email: leave.user_email,
         department: null,
-        attendance_role: null,
-        purchase_role: null
+        roles: null
       }
 
       return {
@@ -77,8 +76,7 @@ Deno.serve(async (req) => {
         name: requester?.name || '알 수 없음',
         email: requesterEmail,
         department: bt.request_department,
-        attendance_role: null,
-        purchase_role: null
+        roles: null
       }
 
       // companions jsonb → 출장자 배열 변환

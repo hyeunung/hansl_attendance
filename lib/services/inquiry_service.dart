@@ -83,7 +83,7 @@ class SupportInquiryMessage {
 
 /// 문의하기 서비스
 /// - 일반 직원: 문의 작성 및 본인 문의 조회
-/// - app_admin: 모든 문의 조회 및 답변/상태 변경
+/// - superadmin: 모든 문의 조회 및 답변/상태 변경
 class InquiryService {
   
   final _supabase = Supabase.instance.client;
@@ -95,7 +95,7 @@ class InquiryService {
     return List.generate(length, (_) => chars[rnd.nextInt(chars.length)]).join();
   }
 
-  /// 사용자 권한 확인 (app_admin 여부)
+  /// 사용자 권한 확인 (superadmin 여부)
   Future<bool> isAppAdmin() async {
     try {
       final user = _supabase.auth.currentUser;
@@ -103,7 +103,7 @@ class InquiryService {
 
       final response = await _supabase
           .from('employees')
-          .select('roles, purchase_role')
+          .select('roles')
           .eq('email', user.email!)
           .maybeSingle();
 
@@ -133,7 +133,7 @@ class InquiryService {
     bool includeInitialMessage = false,
   }) async {
     try {
-      // app_admin은 문의 생성 불가
+      // superadmin은 문의 생성 불가
       if (await isAppAdmin()) {
         return {
           'success': false,

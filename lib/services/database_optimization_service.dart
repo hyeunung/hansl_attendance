@@ -78,7 +78,7 @@ class DatabaseOptimizationService
           _recordQueryStart('getEmployeeRole');
           final response = await client
               .from('employees')
-              .select('department, roles, attendance_role, purchase_role')
+              .select('department, roles')
               .eq('id', userId)
               .single();
           _recordQueryEnd('getEmployeeRole', true);
@@ -254,7 +254,7 @@ class DatabaseOptimizationService
     // Single query to get all employee data
     final employeeData = await client
         .from('employees')
-        .select('email, name, department, roles, attendance_role, purchase_role')
+        .select('email, name, department, roles')
         .inFilter('email', emails.toList());
 
     // Create lookup map
@@ -278,7 +278,6 @@ class DatabaseOptimizationService
               'email': userEmail,
               'department': null,
               'roles': null,
-              'attendance_role': null,
             };
       }
     }

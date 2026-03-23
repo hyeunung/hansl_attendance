@@ -31,7 +31,7 @@ serve(async (req) => {
     // 사용자 정보 가져오기
     const { data: employee, error: employeeError } = await supabase
       .from('employees')
-      .select('name, email, purchase_role')
+      .select('name, email, roles')
       .eq('id', user.id)
       .single()
 
@@ -40,9 +40,9 @@ serve(async (req) => {
     }
 
     // 권한 확인
-    const purchaseRoles = employee.purchase_role || []
-    const hasPermission = purchaseRoles.includes('app_admin') || 
-                          purchaseRoles.includes('lead_buyer')
+    const roles = employee.roles || []
+    const hasPermission = roles.includes('superadmin') ||
+                          roles.includes('lead_buyer')
 
     // 요청 데이터 파싱
     const { itemId, requestId } = await req.json()

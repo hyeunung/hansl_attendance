@@ -122,7 +122,7 @@ class LeaveService {
       // 2. employees 데이터 조회
       final employeesResponse = await _client
           .from('employees')
-          .select('id, email, name, department, roles, attendance_role');
+          .select('id, email, name, department, roles');
 
       final List<Map<String, dynamic>> employeesList =
           (employeesResponse as List).cast<Map<String, dynamic>>();
@@ -148,7 +148,6 @@ class LeaveService {
             'email': userEmail ?? '',
             'department': null,
             'roles': null,
-            'attendance_role': null,
           };
         }
       }
@@ -198,7 +197,6 @@ class LeaveService {
               'email': requesterEmail,
               'department': bt['request_department'],
               'roles': null,
-              'attendance_role': null,
             },
           });
         }
