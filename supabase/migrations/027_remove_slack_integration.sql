@@ -2,10 +2,16 @@
 -- 슬랙 관련 모든 기능 제거
 
 -- 1. 슬랙 관련 트리거 제거
-DROP TRIGGER IF EXISTS final_managers_approval_notify_trigger ON purchase_requests;
-DROP TRIGGER IF EXISTS trigger_lead_buyer_notification_unified ON purchase_requests;
-DROP TRIGGER IF EXISTS trigger_purchase_request_payment_notification ON purchase_requests;
-DROP TRIGGER IF EXISTS payment_completion_trigger ON purchase_requests;
+DO $$
+BEGIN
+  IF to_regclass('public.purchase_requests') IS NOT NULL THEN
+    EXECUTE 'DROP TRIGGER IF EXISTS final_managers_approval_notify_trigger ON public.purchase_requests';
+    EXECUTE 'DROP TRIGGER IF EXISTS trigger_lead_buyer_notification_unified ON public.purchase_requests';
+    EXECUTE 'DROP TRIGGER IF EXISTS trigger_purchase_request_payment_notification ON public.purchase_requests';
+    EXECUTE 'DROP TRIGGER IF EXISTS payment_completion_trigger ON public.purchase_requests';
+  END IF;
+END
+$$;
 
 -- 2. 슬랙 관련 함수 제거 (CASCADE 추가)
 DROP FUNCTION IF EXISTS process_middle_manager_notification_delayed(UUID) CASCADE;
@@ -61,7 +67,13 @@ DROP FUNCTION IF EXISTS http_post_wrapper(TEXT, JSONB, TEXT);
 DROP FUNCTION IF EXISTS notify_purchase_status_change() CASCADE;
 
 -- 8. 관련 트리거 제거 (CASCADE로 인해 이미 제거되었을 수 있음)
-DROP TRIGGER IF EXISTS trigger_notify_purchase_status ON purchase_requests;
+DO $$
+BEGIN
+  IF to_regclass('public.purchase_requests') IS NOT NULL THEN
+    EXECUTE 'DROP TRIGGER IF EXISTS trigger_notify_purchase_status ON public.purchase_requests';
+  END IF;
+END
+$$;
 
 -- 완료 메시지
 DO $$

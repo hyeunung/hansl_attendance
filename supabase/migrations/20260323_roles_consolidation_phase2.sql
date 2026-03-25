@@ -1,6 +1,6 @@
 -- ================================================================
 -- 2차 마이그레이션: roles 통합 칼럼 완전 전환
--- purchase_role/attendance_role → roles, app_admin → superadmin
+-- 통합 권한 체계(roles/superadmin)로 전환
 -- ================================================================
 
 -- ============================================================
@@ -123,7 +123,7 @@ CREATE POLICY "monthly_attendance_select_admin" ON monthly_attendance FOR SELECT
 -- 2. 트리거 함수 업데이트
 -- ============================================================
 
--- 2-1. notify_purchase_status_change() — purchase_role → roles, app_admin → superadmin
+-- 2-1. notify_purchase_status_change() — 통합 권한 체계 반영
 CREATE OR REPLACE FUNCTION notify_purchase_status_change()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -454,7 +454,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 COMMENT ON FUNCTION notify_purchase_status_change() IS '발주/구매 요청의 모든 상태 변경 알림을 처리하는 통합 함수 (roles 통합 칼럼 사용)';
 
--- 2-2. notify_inquiry_status_change() — app_admin → superadmin, roles 통합
+-- 2-2. notify_inquiry_status_change() — 통합 권한 체계 반영
 CREATE OR REPLACE FUNCTION notify_inquiry_status_change()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -511,7 +511,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 2-3. notify_new_inquiry_to_admins() — app_admin → superadmin, roles 통합
+-- 2-3. notify_new_inquiry_to_admins() — 통합 권한 체계 반영
 CREATE OR REPLACE FUNCTION notify_new_inquiry_to_admins()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -569,7 +569,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ============================================================
--- 3. 웹앱 RLS 정책 업데이트 (purchase_role → roles, app_admin → superadmin)
+-- 3. 웹앱 RLS 정책 업데이트 (통합 권한 체계)
 -- ============================================================
 
 -- 3-1. leave 테이블 (공가 제한 정책)
@@ -728,7 +728,7 @@ END $$;
 -- 4. 웹앱 트리거 함수 업데이트
 -- ============================================================
 
--- 4-1. handle_support_inquiry_message_insert() — app_admin → superadmin, purchase_role → roles
+-- 4-1. handle_support_inquiry_message_insert() — 통합 권한 체계 반영
 CREATE OR REPLACE FUNCTION public.handle_support_inquiry_message_insert()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -831,7 +831,7 @@ EXCEPTION
 END;
 $$;
 
--- 4-2. resolve_inquiry() — app_admin → superadmin, purchase_role → roles
+-- 4-2. resolve_inquiry() — 통합 권한 체계 반영
 CREATE OR REPLACE FUNCTION public.resolve_inquiry(p_inquiry_id BIGINT)
 RETURNS void
 LANGUAGE plpgsql
@@ -963,21 +963,11 @@ END;
 $$;
 
 -- ============================================================
--- 5. v_is_app_admin 뷰 업데이트 (purchase_role → roles, app_admin → superadmin)
--- ============================================================
-CREATE OR REPLACE VIEW public.v_is_app_admin AS
-SELECT
-  id AS employee_id,
-  email,
-  ('superadmin' = ANY(COALESCE(roles, ARRAY[]::text[]))) AS is_app_admin
-FROM public.employees;
-
--- ============================================================
--- 5.5. attendance_role/purchase_role 의존 RLS 정책 업데이트 (칼럼 삭제 전 필수)
+-- 5. RLS 정책 업데이트
 -- ============================================================
 DROP POLICY IF EXISTS attendance_update_policy ON attendance_records;
 CREATE POLICY attendance_update_policy ON attendance_records FOR UPDATE USING (
-  employee_id IN (SELECT id FROM employees WHERE email = auth.email())
+  employee_id IN (SELECT id::text FROM employees WHERE email = auth.email())
   OR EXISTS (SELECT 1 FROM employees e WHERE e.email = auth.email() AND 'admin' = ANY(COALESCE(e.roles, ARRAY[]::text[])))
 );
 
@@ -1000,12 +990,6 @@ CREATE POLICY leave_update_policy ON "leave" FOR UPDATE USING (
 );
 
 -- ============================================================
--- 6. 구형 칼럼 삭제
--- ============================================================
-ALTER TABLE employees DROP COLUMN IF EXISTS purchase_role;
-ALTER TABLE employees DROP COLUMN IF EXISTS attendance_role;
-
--- ============================================================
 -- 완료 메시지
 -- ============================================================
-SELECT '2차 마이그레이션 완료: roles 통합 칼럼 전환, purchase_role/attendance_role 삭제' as message;
+SELECT '2차 마이그레이션 완료: 통합 권한 체계 적용' as message;

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -23,6 +24,7 @@ class CardReceiptUploadScreen extends StatefulWidget {
 
 class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
   List<Map<String, dynamic>> _cardUsages = [];
+  List<Map<String, dynamic>> _vendors = [];
   bool _isLoading = true;
   final double rValue = 14;
 
@@ -30,6 +32,7 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
   void initState() {
     super.initState();
     _loadCardUsages();
+    _loadVendors();
   }
 
   Future<void> _loadCardUsages() async {
@@ -48,6 +51,20 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  Future<void> _loadVendors() async {
+    try {
+      final data = await Supabase.instance.client
+          .from('vendors')
+          .select('id, vendor_name')
+          .order('vendor_name');
+      if (mounted) {
+        setState(() {
+          _vendors = List<Map<String, dynamic>>.from(data);
+        });
+      }
+    } catch (_) {}
   }
 
   @override
@@ -222,7 +239,7 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
                   ),
                   SizedBox(width: ResponsiveUtils.spacing(context, 6)),
                   Text(
-                    '업로드된 영수증: ${receipts.length}건',
+                    '업로드된 영수증: ${receipts.map((r) => r['receipt_url']).toSet().length}건',
                     style: AppTextStyles.inputLabel(context).copyWith(
                       color: AppColors.success,
                     ),
@@ -277,19 +294,18 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
 
   Future<void> _showUploadDialog(Map<String, dynamic> cardUsage) async {
     final merchantController = TextEditingController();
-    final itemController = TextEditingController();
-    final quantityController = TextEditingController(text: '1');
-    final unitPriceController = TextEditingController();
-    final amountController = TextEditingController();
-    final remarkController = TextEditingController();
     XFile? selectedImage;
+    // 다중 품목 리스트
+    List<Map<String, TextEditingController>> itemRows = [
+      _createItemRow(),
+    ];
 
-    void calcTotal(StateSetter setModalState) {
-      final qty = int.tryParse(quantityController.text) ?? 0;
-      final price = int.tryParse(unitPriceController.text.replaceAll(',', '')) ?? 0;
+    void calcTotal(int idx, StateSetter setModalState) {
+      final qty = int.tryParse(itemRows[idx]['quantity']!.text) ?? 0;
+      final price = int.tryParse(itemRows[idx]['unit_price']!.text.replaceAll(',', '')) ?? 0;
       if (qty > 0 && price > 0) {
         setModalState(() {
-          amountController.text = (qty * price).toString();
+          itemRows[idx]['total_amount']!.text = (qty * price).toString();
         });
       }
     }
@@ -396,57 +412,81 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
                       ),
                     ],
                     SizedBox(height: ResponsiveUtils.spacing(context, 16)),
-                    _buildInputField(
-                      controller: merchantController,
-                      label: '사용처',
-                      hint: '예: 커피숍, 주유소',
-                    ),
-                    SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-                    _buildInputField(
-                      controller: itemController,
-                      label: '상세내역/품명',
-                      hint: '예: 점심식사, 주유',
-                    ),
-                    SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-                    // 수량 + 단가 (가로 배치)
+
+                    // 사용처 (업체 검색 + 직접 입력)
+                    _buildMerchantField(merchantController, setModalState),
+
+                    SizedBox(height: ResponsiveUtils.spacing(context, 16)),
+
+                    // 품목 목록 헤더
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(
-                          child: _buildInputField(
-                            controller: quantityController,
-                            label: '수량',
-                            hint: '1',
-                            keyboardType: TextInputType.number,
-                            onChanged: (_) => calcTotal(setModalState),
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              '품목 목록',
+                              style: AppTextStyles.buttonPrimary(context).copyWith(
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: ResponsiveUtils.spacing(context, 8),
+                                vertical: ResponsiveUtils.spacing(context, 2),
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.info.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(
+                                  ResponsiveUtils.spacing(context, 10),
+                                ),
+                              ),
+                              child: Text(
+                                '${itemRows.length}개',
+                                style: AppTextStyles.cardBody(context).copyWith(
+                                  color: AppColors.info,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        SizedBox(width: ResponsiveUtils.spacing(context, 12)),
-                        Expanded(
-                          child: _buildInputField(
-                            controller: unitPriceController,
-                            label: '단가',
-                            hint: '예: 10000',
-                            suffix: '원',
-                            keyboardType: TextInputType.number,
-                            onChanged: (_) => calcTotal(setModalState),
-                          ),
+                        TextButton.icon(
+                          onPressed: () {
+                            setModalState(() {
+                              itemRows.add(_createItemRow());
+                            });
+                          },
+                          icon: Icon(Icons.add, size: ResponsiveUtils.iconSize(context, 16)),
+                          label: Text('추가', style: AppTextStyles.cardBody(context).copyWith(color: AppColors.info)),
+                          style: TextButton.styleFrom(foregroundColor: AppColors.info),
                         ),
                       ],
                     ),
-                    SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-                    _buildInputField(
-                      controller: amountController,
-                      label: '합계',
-                      hint: '예: 15000',
-                      suffix: '원',
-                      keyboardType: TextInputType.number,
-                    ),
-                    SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-                    _buildInputField(
-                      controller: remarkController,
-                      label: '비고',
-                      hint: '선택사항',
-                    ),
+                    SizedBox(height: ResponsiveUtils.spacing(context, 8)),
+
+                    // 품목 행들
+                    ...itemRows.asMap().entries.map((entry) {
+                      final idx = entry.key;
+                      final row = entry.value;
+                      return _buildItemCard(
+                        idx: idx,
+                        row: row,
+                        totalItems: itemRows.length,
+                        setModalState: setModalState,
+                        calcTotal: () => calcTotal(idx, setModalState),
+                        onDelete: () {
+                          setModalState(() {
+                            for (final c in row.values) {
+                              c.dispose();
+                            }
+                            itemRows.removeAt(idx);
+                          });
+                        },
+                      );
+                    }),
+
                     SizedBox(height: ResponsiveUtils.spacing(context, 24)),
                     SizedBox(
                       width: double.infinity,
@@ -486,15 +526,278 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
 
     if (result != true || selectedImage == null) return;
 
+    // 필수 검증: 사용처, 첫번째 비고(사용이유), 최소 1개 품목
+    final merchant = merchantController.text.trim();
+    if (merchant.isEmpty) {
+      if (mounted) AppBanner.show(context, '사용처는 필수입니다.', type: BannerType.error);
+      return;
+    }
+    if (itemRows.isEmpty || itemRows[0]['remark']!.text.trim().isEmpty) {
+      if (mounted) AppBanner.show(context, '첫번째 품목의 비고(사용이유)는 필수입니다.', type: BannerType.error);
+      return;
+    }
+
+    // 유효한 품목 필터링 (품명 + 합계 필수)
+    final validItems = <Map<String, dynamic>>[];
+    for (final row in itemRows) {
+      final itemName = row['item_name']!.text.trim();
+      final totalAmount = row['total_amount']!.text.trim().replaceAll(',', '');
+      if (itemName.isNotEmpty && totalAmount.isNotEmpty) {
+        validItems.add({
+          'item_name': itemName,
+          'specification': row['specification']!.text.trim(),
+          'quantity': int.tryParse(row['quantity']!.text.trim()) ?? 1,
+          'unit_price': int.tryParse(row['unit_price']!.text.trim().replaceAll(',', '')) ?? 0,
+          'total_amount': int.tryParse(totalAmount) ?? 0,
+          'remark': row['remark']!.text.trim(),
+        });
+      }
+    }
+
+    if (validItems.isEmpty) {
+      if (mounted) AppBanner.show(context, '최소 1개 품목의 품명과 합계를 입력해주세요.', type: BannerType.error);
+      return;
+    }
+
     await _uploadReceipt(
       cardUsageId: cardUsage['id'].toString(),
       imagePath: selectedImage!.path,
-      merchantName: merchantController.text.trim(),
-      itemName: itemController.text.trim(),
-      quantity: quantityController.text.trim(),
-      unitPrice: unitPriceController.text.trim().replaceAll(',', ''),
-      totalAmount: amountController.text.trim().replaceAll(',', ''),
-      remark: remarkController.text.trim(),
+      merchantName: merchant,
+      items: validItems,
+    );
+
+    // dispose controllers
+    merchantController.dispose();
+    for (final row in itemRows) {
+      for (final c in row.values) {
+        c.dispose();
+      }
+    }
+  }
+
+  Map<String, TextEditingController> _createItemRow() {
+    return {
+      'item_name': TextEditingController(),
+      'specification': TextEditingController(),
+      'quantity': TextEditingController(text: '1'),
+      'unit_price': TextEditingController(),
+      'total_amount': TextEditingController(),
+      'remark': TextEditingController(),
+    };
+  }
+
+  Widget _buildMerchantField(TextEditingController controller, StateSetter setModalState) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        RichText(
+          text: TextSpan(
+            text: '사용처(업체) ',
+            style: AppTextStyles.inputLabel(context).copyWith(color: AppColors.textSecondary),
+            children: const [TextSpan(text: '*', style: TextStyle(color: Colors.red))],
+          ),
+        ),
+        SizedBox(height: ResponsiveUtils.spacing(context, 6)),
+        Autocomplete<String>(
+          optionsBuilder: (TextEditingValue textEditingValue) {
+            if (textEditingValue.text.isEmpty) return const Iterable.empty();
+            final query = textEditingValue.text.toLowerCase();
+            return _vendors
+                .map((v) => v['vendor_name'] as String)
+                .where((name) => name.toLowerCase().contains(query));
+          },
+          onSelected: (String selection) {
+            controller.text = selection;
+          },
+          fieldViewBuilder: (context, textController, focusNode, onFieldSubmitted) {
+            // sync with our controller
+            textController.addListener(() {
+              controller.text = textController.text;
+            });
+            return TextField(
+              controller: textController,
+              focusNode: focusNode,
+              style: AppTextStyles.sectionSubtitle(context).copyWith(fontWeight: FontWeight.w400),
+              decoration: InputDecoration(
+                hintText: '업체 검색 또는 직접 입력',
+                hintStyle: AppTextStyles.cardBody(context).copyWith(color: AppColors.gray400),
+                filled: true,
+                fillColor: AppColors.backgroundSecondary,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 10)),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: ResponsiveUtils.spacing(context, 16),
+                  vertical: ResponsiveUtils.spacing(context, 14),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildItemCard({
+    required int idx,
+    required Map<String, TextEditingController> row,
+    required int totalItems,
+    required StateSetter setModalState,
+    required VoidCallback calcTotal,
+    required VoidCallback onDelete,
+  }) {
+    return Container(
+      margin: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 10)),
+      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 14)),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundSecondary,
+        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 10)),
+        border: Border.all(color: AppColors.gray400.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 헤더 (번호 + 삭제)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '품목 ${idx + 1}',
+                style: AppTextStyles.inputLabel(context).copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              if (totalItems > 1)
+                GestureDetector(
+                  onTap: onDelete,
+                  child: Icon(Icons.close, size: ResponsiveUtils.iconSize(context, 18), color: AppColors.error),
+                ),
+            ],
+          ),
+          SizedBox(height: ResponsiveUtils.spacing(context, 10)),
+          // 품목명 + 규격
+          Row(
+            children: [
+              Expanded(
+                child: _buildCompactField(
+                  controller: row['item_name']!,
+                  label: '품목명 *',
+                  hint: '입력',
+                ),
+              ),
+              SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+              Expanded(
+                child: _buildCompactField(
+                  controller: row['specification']!,
+                  label: '규격',
+                  hint: '입력',
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: ResponsiveUtils.spacing(context, 8)),
+          // 수량 + 단가 + 합계
+          Row(
+            children: [
+              Expanded(
+                flex: 1,
+                child: _buildCompactField(
+                  controller: row['quantity']!,
+                  label: '수량',
+                  hint: '1',
+                  keyboardType: TextInputType.number,
+                  onChanged: (_) => calcTotal(),
+                ),
+              ),
+              SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+              Expanded(
+                flex: 2,
+                child: _buildCompactField(
+                  controller: row['unit_price']!,
+                  label: '단가',
+                  hint: '0',
+                  suffix: '원',
+                  keyboardType: TextInputType.number,
+                  onChanged: (_) => calcTotal(),
+                ),
+              ),
+              SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+              Expanded(
+                flex: 2,
+                child: _buildCompactField(
+                  controller: row['total_amount']!,
+                  label: '합계 *',
+                  hint: '0',
+                  suffix: '원',
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: ResponsiveUtils.spacing(context, 8)),
+          // 비고(사용이유)
+          _buildCompactField(
+            controller: row['remark']!,
+            label: idx == 0 ? '비고(사용이유) *' : '비고',
+            hint: idx == 0 ? '사용이유' : '선택사항',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompactField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    String? suffix,
+    TextInputType? keyboardType,
+    ValueChanged<String>? onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.cardBody(context).copyWith(
+            color: AppColors.textTertiary,
+            fontSize: 11,
+          ),
+        ),
+        SizedBox(height: ResponsiveUtils.spacing(context, 4)),
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          onChanged: onChanged,
+          style: AppTextStyles.cardBody(context).copyWith(fontWeight: FontWeight.w400),
+          decoration: InputDecoration(
+            hintText: hint,
+            suffixText: suffix,
+            hintStyle: AppTextStyles.cardBody(context).copyWith(color: AppColors.gray400, fontSize: 12),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+              borderSide: BorderSide(color: AppColors.gray400.withValues(alpha: 0.5)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+              borderSide: BorderSide(color: AppColors.gray400.withValues(alpha: 0.5)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+              borderSide: BorderSide(color: AppColors.info),
+            ),
+            isDense: true,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: ResponsiveUtils.spacing(context, 12),
+              vertical: ResponsiveUtils.spacing(context, 10),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -543,56 +846,11 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
     );
   }
 
-  Widget _buildInputField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    String? suffix,
-    TextInputType? keyboardType,
-    ValueChanged<String>? onChanged,
-  }) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      onChanged: onChanged,
-      style: AppTextStyles.sectionSubtitle(context).copyWith(
-        fontWeight: FontWeight.w400,
-      ),
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        suffixText: suffix,
-        labelStyle: AppTextStyles.emptyState(context).copyWith(
-          color: AppColors.textTertiary,
-        ),
-        hintStyle: AppTextStyles.cardBody(context).copyWith(
-          color: AppColors.gray400,
-        ),
-        filled: true,
-        fillColor: AppColors.backgroundSecondary,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(
-            ResponsiveUtils.spacing(context, 10),
-          ),
-          borderSide: BorderSide.none,
-        ),
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: ResponsiveUtils.spacing(context, 16),
-          vertical: ResponsiveUtils.spacing(context, 14),
-        ),
-      ),
-    );
-  }
-
   Future<void> _uploadReceipt({
     required String cardUsageId,
     required String imagePath,
     required String merchantName,
-    required String itemName,
-    required String quantity,
-    required String unitPrice,
-    required String totalAmount,
-    required String remark,
+    required List<Map<String, dynamic>> items,
   }) async {
     showDialog(
       context: context,
@@ -618,20 +876,8 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
         contentType: MediaType('image', 'jpeg'),
       ));
       request.fields['card_usage_id'] = cardUsageId;
-      request.fields['merchant_name'] =
-          merchantName.isNotEmpty ? merchantName : '미입력';
-      request.fields['item_name'] =
-          itemName.isNotEmpty ? itemName : '미입력';
-      request.fields['quantity'] =
-          quantity.isNotEmpty ? quantity : '1';
-      if (unitPrice.isNotEmpty) {
-        request.fields['unit_price'] = unitPrice;
-      }
-      request.fields['total_amount'] =
-          totalAmount.isNotEmpty ? totalAmount : '0';
-      if (remark.isNotEmpty) {
-        request.fields['remark'] = remark;
-      }
+      request.fields['merchant_name'] = merchantName;
+      request.fields['items'] = jsonEncode(items);
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
@@ -640,7 +886,7 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
 
       if (response.statusCode == 200) {
         if (mounted) {
-          AppBanner.show(context, '영수증이 업로드되었습니다.', type: BannerType.success);
+          AppBanner.show(context, '영수증이 업로드되었습니다. (${items.length}개 품목)', type: BannerType.success);
         }
         await _loadCardUsages();
       } else {

@@ -10,5 +10,5 @@ ON public.attendance_records (user_email, date);
 UPDATE public.attendance_records ar
 SET user_email = e.email
 FROM public.employees e
-WHERE e.id = ar.employee_id
+WHERE e.id::text = ar.employee_id
   AND ar.user_email IS NULL;
