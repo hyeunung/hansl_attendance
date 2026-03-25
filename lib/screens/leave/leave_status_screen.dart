@@ -63,10 +63,6 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final provider = Provider.of<LeaveProvider>(context, listen: false);
-    final hasData = provider.myLeaves.isNotEmpty ||
-        provider.todayLeaves.isNotEmpty ||
-        provider.allLeaves.isNotEmpty;
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       appBar: AppBar(
@@ -76,17 +72,16 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
         centerTitle: true,
         title: AppBarTitle('연차/출장 대시보드'),
       ),
-      body: OptimizedConsumer<LeaveProvider>(
-        componentKey: 'leave_status_main',
-        throttleDuration: const Duration(milliseconds: 200),
-        shouldRebuild: (provider) =>
-            !provider.isLoading && provider.error == null,
+      body: Consumer<LeaveProvider>(
         builder: (context, provider, _) {
-          if (provider.error != null) {
+          if (provider.error != null && !provider.isLoading && provider.myLeaves.isEmpty) {
             return Center(child: Text('에러: ${provider.error}'));
           }
 
-          final showLoading = provider.isLoading && !hasData;
+          final hasAnyData = provider.myLeaves.isNotEmpty ||
+              provider.todayLeaves.isNotEmpty ||
+              provider.allLeaves.isNotEmpty;
+          final showLoading = provider.isLoading && !hasAnyData;
 
           if (showLoading) {
             return const Center(child: CircularProgressIndicator());

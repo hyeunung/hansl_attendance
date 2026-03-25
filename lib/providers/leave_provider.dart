@@ -263,6 +263,7 @@ class LeaveProvider extends ChangeNotifier
         _batchUpdate(() {
           myLeaves = newLeaves!;
           isLoading = false;
+          error = null;
         });
 
         // 출장일수 계산 (동행자 포함) - myLeaves 업데이트 후에 계산
@@ -735,7 +736,7 @@ class LeaveProvider extends ChangeNotifier
         'end_date': endDate.toIso8601String().substring(0, 10),
         'reason': reason,
         'status': 'pending',
-        'created_at': DateTime.now().toIso8601String(),
+        'created_at': DateTime.now().toUtc().toIso8601String(),
       };
       
       // 출장인 경우 reason 파싱하여 별도 필드에 저장
@@ -830,8 +831,9 @@ class LeaveProvider extends ChangeNotifier
       notifyListeners();
       
       _updateLoadingState(false, null);
-    } catch (e) {
+    } catch (e, stackTrace) {
       _updateLoadingState(false, e.toString());
+      Error.throwWithStackTrace(e, stackTrace);
     }
   }
 

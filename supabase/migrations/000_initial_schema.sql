@@ -16,8 +16,7 @@ CREATE TABLE IF NOT EXISTS employees (
   remaining_annual_leave INTEGER DEFAULT 15,
   used_annual_leave INTEGER DEFAULT 0,
   annual_leave_granted INTEGER DEFAULT 0,
-  attendance_role TEXT[],
-  purchase_role TEXT[],
+  roles TEXT[],
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

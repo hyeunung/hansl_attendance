@@ -114,7 +114,14 @@ GRANT EXECUTE ON FUNCTION public.handle_new_user() TO service_role;
 -- 6. 코멘트 추가
 -- ====================================================================
 COMMENT ON FUNCTION public.handle_new_user() IS 'auth.users에 새 사용자가 생성될 때 employees 테이블에 자동으로 레코드를 생성하는 함수';
-COMMENT ON TRIGGER on_auth_user_created ON auth.users IS '회원가입 시 employees 테이블 자동 생성 트리거';
+DO $$
+BEGIN
+  COMMENT ON TRIGGER on_auth_user_created ON auth.users IS '회원가입 시 employees 테이블 자동 생성 트리거';
+EXCEPTION
+  WHEN insufficient_privilege THEN
+    NULL;
+END
+$$;
 COMMENT ON COLUMN employees.auth_user_id IS 'auth.users.id와 매핑되는 UUID. 회원가입 시 자동 설정됨';
 
 
