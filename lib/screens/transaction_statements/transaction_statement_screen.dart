@@ -2,8 +2,11 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_pdfview/flutter_pdfview.dart';
+import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../providers/user_provider.dart';
@@ -1094,6 +1097,16 @@ class _TransactionStatementScreenState
 
   // ── 리스트 행 ───────────────────────────────────────
 
+  void _viewStatement(TransactionStatementSummary statement) {
+    if (statement.imageUrl.isEmpty) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => _StatementImageViewer(statement: statement),
+      ),
+    );
+  }
+
   Widget _buildStatementRow(TransactionStatementSummary statement) {
     final statusStyle = _statusStyle(statement.status);
     final modeStyle = _modeStyle(statement.statementMode);
@@ -1102,7 +1115,11 @@ class _TransactionStatementScreenState
     final grandTotal = _formatAmount(statement.grandTotal);
     final uploaderName = statement.uploaderName ?? '-';
 
-    return Container(
+    return Material(
+      color: Colors.white,
+      child: InkWell(
+      onTap: () => _viewStatement(statement),
+      child: Container(
       padding: EdgeInsets.symmetric(
         horizontal: ResponsiveUtils.spacing(context, 16),
         vertical: ResponsiveUtils.spacing(context, 12),
@@ -1159,6 +1176,8 @@ class _TransactionStatementScreenState
           ),
         ],
       ),
+    ),
+    ),
     );
   }
 
@@ -1292,4 +1311,258 @@ class _ModeStyle {
     required this.backgroundColor,
     required this.foregroundColor,
   });
+}
+
+// ── 거래명세서 원본 이미지 뷰어 ─────────────────────────────
+
+class _StatementImageViewer extends StatefulWidget {
+  final TransactionStatementSummary statement;
+
+  const _StatementImageViewer({required this.statement});
+
+  @override
+  State<_StatementImageViewer> createState() => _StatementImageViewerState();
+}
+
+class _StatementImageViewerState extends State<_StatementImageViewer> {
+  bool _isPdf = false;
+  bool _isLoading = true;
+  String? _pdfPath;
+  String? _errorMessage;
+  int _totalPages = 0;
+  int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    final url = widget.statement.imageUrl.toLowerCase();
+    _isPdf = url.endsWith('.pdf') || url.contains('.pdf');
+    if (_isPdf) {
+      _downloadPdf();
+    } else {
+      _isLoading = false;
+    }
+  }
+
+  Future<void> _downloadPdf() async {
+    try {
+      final response = await http.get(Uri.parse(widget.statement.imageUrl));
+      if (response.statusCode != 200) {
+        setState(() {
+          _errorMessage = 'PDF 다운로드 실패 (${response.statusCode})';
+          _isLoading = false;
+        });
+        return;
+      }
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/statement_${widget.statement.id}.pdf');
+      await file.writeAsBytes(response.bodyBytes);
+      if (mounted) {
+        setState(() {
+          _pdfPath = file.path;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'PDF를 불러올 수 없습니다';
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _isPdf ? Colors.white : Colors.black,
+      appBar: AppBar(
+        title: Text(
+          widget.statement.vendorName ?? widget.statement.fileName ?? '거래명세서',
+          style: TextStyle(
+            color: _isPdf ? AppColors.textPrimary : Colors.white,
+            fontSize: 16,
+          ),
+        ),
+        backgroundColor: _isPdf ? Colors.white : Colors.black,
+        surfaceTintColor: _isPdf ? Colors.white : Colors.black,
+        foregroundColor: _isPdf ? AppColors.textPrimary : Colors.white,
+        elevation: 0,
+        actions: [
+          if (_isPdf && _totalPages > 0)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: Text(
+                  '${_currentPage + 1} / $_totalPages',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: () => _showInfoSheet(context),
+            tooltip: '상세정보',
+          ),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error_outline, size: 64, color: AppColors.gray400),
+                      const SizedBox(height: 16),
+                      Text(
+                        _errorMessage!,
+                        style: TextStyle(color: AppColors.gray400, fontSize: 14),
+                      ),
+                    ],
+                  ),
+                )
+              : _isPdf
+                  ? _buildPdfView()
+                  : _buildImageView(),
+    );
+  }
+
+  Widget _buildPdfView() {
+    if (_pdfPath == null) return const SizedBox.shrink();
+    return PDFView(
+      filePath: _pdfPath!,
+      enableSwipe: true,
+      swipeHorizontal: false,
+      autoSpacing: true,
+      pageFling: true,
+      fitPolicy: FitPolicy.WIDTH,
+      onRender: (pages) {
+        if (mounted) {
+          setState(() => _totalPages = pages ?? 0);
+        }
+      },
+      onPageChanged: (page, total) {
+        if (mounted && page != null) {
+          setState(() => _currentPage = page);
+        }
+      },
+      onError: (error) {
+        if (mounted) {
+          setState(() => _errorMessage = 'PDF 렌더링 실패');
+        }
+      },
+    );
+  }
+
+  Widget _buildImageView() {
+    return InteractiveViewer(
+      minScale: 0.5,
+      maxScale: 4.0,
+      child: Center(
+        child: Image.network(
+          widget.statement.imageUrl,
+          fit: BoxFit.contain,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null,
+                color: Colors.white,
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) => Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.broken_image, size: 64, color: AppColors.gray400),
+              const SizedBox(height: 16),
+              Text(
+                '이미지를 불러올 수 없습니다',
+                style: TextStyle(color: AppColors.gray400, fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showInfoSheet(BuildContext context) {
+    final dateFormat = DateFormat('yyyy. MM. dd. HH:mm');
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      backgroundColor: Colors.white,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.gray200,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            _infoRow(context, '거래처', widget.statement.vendorName ?? '-'),
+            _infoRow(context, '합계금액', widget.statement.grandTotal != null
+                ? '${NumberFormat('#,##0').format(widget.statement.grandTotal)}원'
+                : '-'),
+            _infoRow(context, '종류', widget.statement.statementMode == 'receipt'
+                ? '입고수량'
+                : widget.statement.statementMode == 'monthly'
+                    ? '월말결제'
+                    : '거래명세서'),
+            _infoRow(context, '상태', widget.statement.status),
+            _infoRow(context, '업로드일', dateFormat.format(widget.statement.uploadedAt)),
+            _infoRow(context, '등록자', widget.statement.uploaderName ?? '-'),
+            if (widget.statement.confirmedByName != null)
+              _infoRow(context, '확인자', widget.statement.confirmedByName!),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _infoRow(BuildContext context, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: AppTextStyles.inputLabel(context).copyWith(
+                fontWeight: FontWeight.w600,
+                color: AppColors.gray400,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: AppTextStyles.sectionSubtitle(context).copyWith(
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

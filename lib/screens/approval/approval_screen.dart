@@ -1414,7 +1414,22 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     final status = l['status'];
     // 출장 필드 (신규 컬럼 우선, 과거 데이터 호환용 fallback 포함)
     final place = (l['place'] ?? l['destination'] ?? '').toString();
-    final transport = (l['transport'] ?? '').toString();
+    final transportRaw = (l['transport'] ?? '').toString();
+    final vehicleName = (l['vehicle_name'] ?? '').toString();
+    final vehicleInfo = (l['requested_vehicle_info'] ?? '').toString();
+    final tripCode = (l['trip_code'] ?? '').toString();
+    final projectName = (l['project_name'] ?? '').toString();
+    // 교통수단 표시 텍스트 생성
+    String transport = '';
+    if (transportRaw == 'company_vehicle') {
+      transport = vehicleName.isNotEmpty ? vehicleName : '법인차량';
+    } else if (transportRaw == 'personal_vehicle') {
+      transport = '개인차량';
+    } else if (transportRaw == 'public_transport') {
+      transport = '대중교통';
+    } else if (transportRaw.isNotEmpty) {
+      transport = transportRaw;
+    }
     final travelersList =
         (l['출장자'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
     final travelersText = travelersList.where((e) => e.trim().isNotEmpty).join(', ');
@@ -1439,9 +1454,25 @@ class _ApprovalScreenState extends State<ApprovalScreen>
               ),
               SizedBox(width: ResponsiveUtils.spacing(context, 8)),
               Expanded(
-                child: Text(
-                  name,
-                  style: AppTextStyles.cardTitle(context),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      name,
+                      style: AppTextStyles.cardTitle(context),
+                    ),
+                    const SizedBox(width: 8),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 1),
+                      child: Text(
+                        createdAt,
+                        style: AppTextStyles.compactLabel(context).copyWith(
+                          fontSize: ResponsiveUtils.fontSize(context, 11),
+                          color: AppColors.gray300,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               StatusChip(label: typeLabel, color: typeTextColor),
@@ -1451,13 +1482,18 @@ class _ApprovalScreenState extends State<ApprovalScreen>
           ),
           SizedBox(height: ResponsiveUtils.spacing(context, 14)),
           // 상세 정보
+          if (isBiztrip && tripCode.isNotEmpty)
+            _infoRow(Icons.confirmation_number, '출장번호', tripCode),
           _infoRow(Icons.date_range, '기간', period),
+          if (isBiztrip && (projectName.isNotEmpty || place.isNotEmpty))
+            _infoRow(Icons.work_outline, '프로젝트', [
+              if (place.isNotEmpty) place,
+              if (projectName.isNotEmpty) projectName,
+            ].join(' / ')),
           if (isBiztrip && travelersText.isNotEmpty)
             _infoRow(Icons.group, '출장자', travelersText),
-          if (isBiztrip && place.isNotEmpty) _infoRow(Icons.place, '목적지', place),
           if (isBiztrip && transport.isNotEmpty)
             _infoRow(Icons.directions_car, '교통수단', transport),
-          _infoRow(Icons.calendar_today, '신청일', createdAt),
           // 최종 승인자 정보 표시 (처리완료 탭에서만 + superadmin만)
           if (!showButtons && status != 'pending') ...[
             Consumer<UserProvider>(

@@ -47,11 +47,19 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
 
       if (userEmail == null) return;
 
+      // 역할에 따른 조회 범위 결정
+      final employee = userProvider.employee;
+      final roles = UserRoleHelper.getRoles(employee);
+      final canViewAll = UserRoleHelper.isAppAdmin(roles) || UserRoleHelper.isLeadBuyer(roles);
+
       // 1단계: purchase_receipts 기본 데이터 조회 (OCR 컬럼은 별도 테이블)
-      final data = await _supabase
+      // superadmin, lead_buyer: 전체 조회 / 그 외(hr 등): 본인 업로드분만
+      final query = _supabase
           .from('purchase_receipts')
-          .select('id, receipt_image_url, file_name, file_size, uploaded_by, uploaded_by_name, uploaded_at, memo, is_printed, printed_at, printed_by, printed_by_name, group_id')
-          .order('uploaded_at', ascending: false);
+          .select('id, receipt_image_url, file_name, file_size, uploaded_by, uploaded_by_name, uploaded_at, memo, is_printed, printed_at, printed_by, printed_by_name, group_id');
+      final data = canViewAll
+          ? await query.order('uploaded_at', ascending: false)
+          : await query.eq('uploaded_by', userEmail).order('uploaded_at', ascending: false);
 
       final baseReceipts = List<Map<String, dynamic>>.from(data);
 
@@ -1132,34 +1140,34 @@ class _ReceiptDetailScreenState extends State<_ReceiptDetailScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.receipt['file_name'] ?? 'Receipt'),
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.print),
-            onPressed: () => _printReceipt(context),
-            tooltip: '인쇄',
-          ),
-        ],
+  /// 영수증 상세정보 바텀시트
+  void _showInfoSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+      backgroundColor: Colors.white,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            
-            // 인쇄 완료 상태 표시 (인쇄 완료 시)
+            // 핸들바
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.gray200,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            // 인쇄 완료 상태 표시
             if (_isPrinted)
               Container(
-                margin: const EdgeInsets.only(bottom: 20),
-                padding: const EdgeInsets.all(16),
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: AppColors.success.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
@@ -1167,14 +1175,14 @@ class _ReceiptDetailScreenState extends State<_ReceiptDetailScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.check_circle, color: AppColors.success, size: 24),
-                    const SizedBox(width: 12),
+                    const Icon(Icons.check_circle, color: AppColors.success, size: 20),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '✅ 인쇄 완료',
+                            '인쇄 완료',
                             style: AppTextStyles.sectionSubtitle(context).copyWith(
                               color: AppColors.success,
                             ),
@@ -1187,59 +1195,87 @@ class _ReceiptDetailScreenState extends State<_ReceiptDetailScreen> {
                                 color: AppColors.success,
                               ),
                             ),
-                          if (widget.receipt['printed_at'] != null)
-                            Text(
-                              _formatDateTime(widget.receipt['printed_at']),
-                              style: AppTextStyles.compactLabel(context).copyWith(
-                                fontSize: ResponsiveUtils.fontSize(context, 12),
-                                color: AppColors.success,
-                              ),
-                            ),
                         ],
                       ),
                     ),
                   ],
                 ),
               ),
-            
-            // 영수증 이미지
-            Center(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  widget.receipt['receipt_image_url'],
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    width: 200,
-                    height: 200,
-                    color: AppColors.gray200,
-                    child: const Icon(Icons.error, size: 50),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            
-            // 영수증 정보
             _buildInfoRow('파일명', widget.receipt['file_name'] ?? ''),
-            // 카테고리 정보 제거됨
             _buildInfoRow('메모', widget.receipt['memo'] ?? '없음'),
             _buildInfoRow('업로드 일시', _formatDateTime(widget.receipt['uploaded_at'])),
-            
-            // 등록인 정보는 관리자만 표시
             Consumer<UserProvider>(
               builder: (context, userProvider, child) {
                 final roles = UserRoleHelper.getRoles(userProvider.employee);
-
                 if (UserRoleHelper.isAppAdmin(roles)) {
                   return _buildInfoRow('등록인', widget.receipt['uploaded_by_name'] ?? '');
                 }
                 return const SizedBox.shrink();
               },
             ),
-            
             _buildInfoRow('파일 크기', _formatFileSize(widget.receipt['file_size'])),
           ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: Text(
+          widget.receipt['ocr_merchant_name'] as String? ?? widget.receipt['file_name'] ?? '영수증',
+          style: const TextStyle(color: Colors.white, fontSize: 16),
+        ),
+        backgroundColor: Colors.black,
+        surfaceTintColor: Colors.black,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: () => _showInfoSheet(context),
+            tooltip: '상세정보',
+          ),
+          IconButton(
+            icon: const Icon(Icons.print),
+            onPressed: () => _printReceipt(context),
+            tooltip: '인쇄',
+          ),
+        ],
+      ),
+      body: InteractiveViewer(
+        minScale: 0.5,
+        maxScale: 4.0,
+        child: Center(
+          child: Image.network(
+            widget.receipt['receipt_image_url'],
+            fit: BoxFit.contain,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                      : null,
+                  color: Colors.white,
+                ),
+              );
+            },
+            errorBuilder: (context, error, stackTrace) => Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.broken_image, size: 64, color: AppColors.gray400),
+                const SizedBox(height: 16),
+                Text(
+                  '이미지를 불러올 수 없습니다',
+                  style: TextStyle(color: AppColors.gray400, fontSize: 14),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
