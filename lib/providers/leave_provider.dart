@@ -19,6 +19,7 @@ class LeaveProvider extends ChangeNotifier
 
   List<Map<String, dynamic>> myLeaves = [];
   List<Map<String, dynamic>> todayLeaves = [];
+  List<Map<String, dynamic>> tomorrowLeaves = [];
   List<Map<String, dynamic>> allLeaves = []; // 승인 화면용 - 모든 상태 포함
   List<Map<String, dynamic>> approvedLeavesForCalendar = []; // 달력용 - 승인된 것만
   List<Map<String, dynamic>> _allLeavesRaw = []; // 그룹화 전 원본 데이터
@@ -327,6 +328,43 @@ class LeaveProvider extends ChangeNotifier
     } catch (e) {
       _updateLoadingState(false, e.toString());
       // Debug print removed
+    }
+  }
+
+  Future<void> fetchTomorrowLeaves({bool forceRefresh = false}) async {
+    try {
+      final tomorrow = DateTime.now().add(const Duration(days: 1));
+      final dateStr = tomorrow.toIso8601String().substring(0, 10);
+      final cacheKey = '${_todayLeavesCacheKey}tomorrow_$dateStr';
+
+      final newLeaves = await _cache
+          .getOrFetch<List<Map<String, dynamic>>>(
+            key: cacheKey,
+            fallback: () => _requestUtils.dedupedRequest(
+              key: 'fetch_tomorrow_leaves_$dateStr',
+              request: () => _service.fetchTodayLeavesRaw(tomorrow),
+            ),
+            ttl: const Duration(minutes: 10),
+            usePersistentCache: true,
+            useMemoryCache: true,
+            fromJson: (json) => List<Map<String, dynamic>>.from(json['leaves']),
+            toJson: (data) => {
+              'leaves': data,
+              'timestamp': DateTime.now().toIso8601String(),
+            },
+          );
+
+      if (newLeaves != null && !_isLeavesEqual(tomorrowLeaves, newLeaves)) {
+        _batchUpdate(() {
+          tomorrowLeaves = newLeaves;
+        });
+      }
+
+      if (forceRefresh) {
+        await _cache.invalidate(cacheKey);
+      }
+    } catch (_) {
+      // 내일 데이터 실패해도 무시
     }
   }
 

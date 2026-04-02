@@ -14,6 +14,7 @@ import '../../widgets/attendance/attendance_action_buttons.dart';
 import '../../widgets/attendance/attendance_statistics_widget.dart';
 import '../../widgets/attendance/personal_late_statistics.dart';
 import '../../widgets/attendance/today_absence_widget.dart';
+import '../../widgets/attendance/tomorrow_absence_widget.dart';
 import '../notification/notification_center_screen.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 
@@ -253,6 +254,9 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
 
                       // 오늘의 근태현황 (연차/출장/공가)
                       const TodayAbsenceWidget(),
+
+                      // 내일의 근태현황 (연차/출장/공가)
+                      const TomorrowAbsenceWidget(),
 
                       // 하단 여백
                       SizedBox(height: ResponsiveUtils.spacing(context, 20)),

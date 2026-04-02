@@ -15,7 +15,7 @@ import flutter_local_notifications
      
     // iOS 10+ 알림 권한 설정
     if #available(iOS 10.0, *) {
-      UNUserNotificationCenter.current().delegate = self as? UNUserNotificationCenterDelegate
+      UNUserNotificationCenter.current().delegate = self as UNUserNotificationCenterDelegate
     }
     
     GeneratedPluginRegistrant.register(with: self)
