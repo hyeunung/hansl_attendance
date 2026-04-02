@@ -96,11 +96,12 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
           .select('*')
           .eq('date', todayStr);
 
-      // 재직자 이메일 조회 (is_active = true)
+      // 재직자 이메일 조회 (is_active = true, 아르바이트 제외)
       final activeEmployees = await _supabase
           .from('employees')
           .select('email')
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .neq('position', '아르바이트');
       final activeEmails = activeEmployees
           .map((e) => e['email']?.toString().toLowerCase())
           .where((email) => email != null)

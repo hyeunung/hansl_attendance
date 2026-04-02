@@ -18,6 +18,7 @@ interface Employee {
   email: string;
   name: string;
   department: string;
+  position: string;
 }
 
 interface LeaveRecord {
@@ -66,11 +67,12 @@ async function createDailyAttendanceRecords() {
     
     const isHoliday = holidays && holidays.length > 0
 
-    // 4. 재직자만 조회 (is_active = true)
+    // 4. 재직자만 조회 (is_active = true, 아르바이트 제외)
     const { data: employees, error: employeesError } = await supabase
       .from('employees')
-      .select('id, email, name, department')
+      .select('id, email, name, department, position')
       .eq('is_active', true)
+      .neq('position', '아르바이트')
     
     if (employeesError) {
       throw new Error(`Failed to fetch employees: ${employeesError.message}`)
