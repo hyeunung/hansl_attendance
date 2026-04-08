@@ -355,26 +355,46 @@ class _AnnualLeaveRequestScreenOptimizedState
       for (final type in typesToProcess) {
         final selectedDates = _selectedDatesMap[type]!.toList()..sort();
 
-        // 연속된 날짜들을 구간으로 묶기
-        List<List<DateTime>> ranges = _groupConsecutiveDates(selectedDates);
+        final isHalfDay = type == LeaveType.halfAm || type == LeaveType.halfPm;
 
-        // 각 구간별 요청을 Future 리스트에 추가
-        for (final range in ranges) {
-          requestFutures.add(
-            leaveProvider
-                .requestLeave(
-                  userEmail: userEmail!,
-                  type: type.dbValue,
-                  startDate: range.first,
-                  endDate: range.last,
-                  reason: sanitizedMemo,
-                )
-                .catchError((e) {
-                  // Debug code removed
-                  hasError = true;
-                  return Future.value();
-                }),
-          );
+        if (isHalfDay) {
+          // 반차는 날짜별로 각각 1건씩 생성 (0.5일 × N일)
+          for (final date in selectedDates) {
+            requestFutures.add(
+              leaveProvider
+                  .requestLeave(
+                    userEmail: userEmail!,
+                    type: type.dbValue,
+                    startDate: date,
+                    endDate: date,
+                    reason: sanitizedMemo,
+                  )
+                  .catchError((e) {
+                    hasError = true;
+                    return Future.value();
+                  }),
+            );
+          }
+        } else {
+          // 연차/공가 등은 연속된 날짜들을 구간으로 묶기
+          List<List<DateTime>> ranges = _groupConsecutiveDates(selectedDates);
+
+          for (final range in ranges) {
+            requestFutures.add(
+              leaveProvider
+                  .requestLeave(
+                    userEmail: userEmail!,
+                    type: type.dbValue,
+                    startDate: range.first,
+                    endDate: range.last,
+                    reason: sanitizedMemo,
+                  )
+                  .catchError((e) {
+                    hasError = true;
+                    return Future.value();
+                  }),
+            );
+          }
         }
       }
 

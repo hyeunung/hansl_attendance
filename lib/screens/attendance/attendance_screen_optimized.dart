@@ -11,10 +11,10 @@ import '../../utils/responsive_utils.dart';
 import '../../services/timer_manager.dart';
 import '../../services/ui_optimization_service.dart';
 import '../../widgets/attendance/attendance_action_buttons.dart';
-import '../../widgets/attendance/attendance_statistics_widget.dart';
 import '../../widgets/attendance/personal_late_statistics.dart';
 import '../../widgets/attendance/today_absence_widget.dart';
 import '../../widgets/attendance/tomorrow_absence_widget.dart';
+import '../../widgets/attendance/today_vehicle_widget.dart';
 import '../notification/notification_center_screen.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 
@@ -240,11 +240,11 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
                           child: AttendanceActionButtons(onShowBanner: _showBanner),
                         ),
 
-                      // 지각 현황 배너
+                      // 지각/미출근 현황 배너
                       const PersonalLateStatistics(),
 
-                      // 출근 현황 통계 (플랫 테이블)
-                      AttendanceStatisticsWidget(
+                      // 금일 차량 현황
+                      TodayVehicleWidget(
                         onWorkingDayStatusChanged: (isNonWorkingDay) {
                           setState(() {
                             _isNonWorkingDay = isNonWorkingDay;

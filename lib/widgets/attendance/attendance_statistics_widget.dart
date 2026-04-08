@@ -162,15 +162,28 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
           continue;
         }
 
+        // attendance_records의 status가 출장/연차/공가인 경우도 제외
+        // (business_trips 테이블 출장자는 leaveEmails에 없을 수 있음)
+        if (status == '출장' || status == '연차' || status == '공가') {
+          continue;
+        }
+
         // 오후반차는 휴가로 카운트
         if (status == '오후반차') {
+          continue;
+        }
+
+        // 오전반차인데 아직 출근 안 한 경우
+        if (status == '오전반차' && clockIn == null) {
+          absent++;
+          absentList.add({'name': name, 'isHalfAm': true});
           continue;
         }
 
         // 미출근 체크
         if (clockIn == null || status == '미출근') {
           absent++;
-          absentList.add({'name': name});
+          absentList.add({'name': name, 'isHalfAm': false});
           continue;
         }
 
@@ -224,19 +237,24 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
         }
       }
 
-      // 반차 카운트
-      int halfDayCount = 0;
+      // attendance_records 기반 휴가/출장/반차 카운트
+      int leaveFromRecords = 0;
       for (var record in attendanceRecords) {
+        final email = record['user_email']?.toString().toLowerCase();
         final status = record['status']?.toString();
-        if (status == '오전반차' && record['clock_in'] == null) {
-          halfDayCount++;
+        if (email == null || !activeEmails.contains(email)) continue;
+
+        if (status == '출장' || status == '연차' || status == '공가') {
+          leaveFromRecords++;
+        } else if (status == '오전반차' && record['clock_in'] == null) {
+          leaveFromRecords++;
         } else if (status == '오후반차') {
-          halfDayCount++;
+          leaveFromRecords++;
         }
       }
 
       // 전체 인원은 정상 + 지각 + 미출근 + 연차/출장의 합
-      final actualLeaveCount = todayLeaves.length + halfDayCount;
+      final actualLeaveCount = leaveFromRecords;
       final actualTotalCount = normal + late + absent + actualLeaveCount;
 
       if (!mounted) return;
@@ -334,14 +352,20 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
               isExpanded: _absentExpanded,
               onTap: () => setState(() => _absentExpanded = !_absentExpanded),
               children: [
-                ..._absentEmployees.map((emp) => FlatTableRow(
-                  cells: [
-                    Text(emp['name'] ?? '-', style: AppTextStyles.tableCell(context)),
-                    Text('—', textAlign: TextAlign.center, style: AppTextStyles.tableCellSub(context)),
-                  ],
-                  flexValues: const [3, 2],
-                  trailing: StatusChip(label: '미출근', color: AppColors.warning),
-                )),
+                ..._absentEmployees.map((emp) {
+                  final isHalfAm = emp['isHalfAm'] == true;
+                  return FlatTableRow(
+                    cells: [
+                      Text(emp['name'] ?? '-', style: AppTextStyles.tableCell(context)),
+                      Text('—', textAlign: TextAlign.center, style: AppTextStyles.tableCellSub(context)),
+                    ],
+                    flexValues: const [3, 2],
+                    trailing: StatusChip(
+                      label: isHalfAm ? '미출근-오전반차' : '미출근',
+                      color: isHalfAm ? AppColors.info : AppColors.warning,
+                    ),
+                  );
+                }),
               ],
             ),
         ],
