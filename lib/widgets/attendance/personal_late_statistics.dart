@@ -10,10 +10,10 @@ class PersonalLateStatistics extends StatefulWidget {
   const PersonalLateStatistics({super.key});
 
   @override
-  State<PersonalLateStatistics> createState() => _PersonalLateStatisticsState();
+  State<PersonalLateStatistics> createState() => PersonalLateStatisticsState();
 }
 
-class _PersonalLateStatisticsState extends State<PersonalLateStatistics> {
+class PersonalLateStatisticsState extends State<PersonalLateStatistics> {
   final _supabase = Supabase.instance.client;
   int _monthlyLateCount = 0;
   int _yearlyLateCount = 0;
@@ -24,6 +24,8 @@ class _PersonalLateStatisticsState extends State<PersonalLateStatistics> {
     super.initState();
     _loadLateStatistics();
   }
+
+  Future<void> refresh() => _loadLateStatistics();
 
   Future<void> _loadLateStatistics() async {
     try {

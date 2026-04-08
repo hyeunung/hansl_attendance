@@ -17,6 +17,7 @@ import '../../widgets/attendance/tomorrow_absence_widget.dart';
 import '../../widgets/attendance/today_vehicle_widget.dart';
 import '../notification/notification_center_screen.dart';
 import '../../widgets/common/notification_banner_widget.dart';
+import '../../providers/leave_provider.dart';
 
 class AttendanceScreenOptimized extends StatefulWidget {
   final bool autoShowCheckIn;
@@ -39,6 +40,8 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
         TimerManagementMixin,
         UIOptimizationMixin {
   bool _isNonWorkingDay = false;
+  final _vehicleKey = GlobalKey<TodayVehicleWidgetState>();
+  final _lateStatsKey = GlobalKey<PersonalLateStatisticsState>();
 
   // UI update frequency optimization
   // Android needs longer intervals to prevent flickering
@@ -223,7 +226,14 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: () async {
-                    await attendanceProvider.forceRefreshAll();
+                    final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
+                    await Future.wait([
+                      attendanceProvider.forceRefreshAll(),
+                      _vehicleKey.currentState?.refresh() ?? Future.value(),
+                      _lateStatsKey.currentState?.refresh() ?? Future.value(),
+                      leaveProvider.fetchTodayLeaves(DateTime.now()),
+                      leaveProvider.fetchTomorrowLeaves(),
+                    ]);
                     _showBanner('새로고침 완료');
                   },
                   child: ListView(
@@ -241,10 +251,11 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
                         ),
 
                       // 지각/미출근 현황 배너
-                      const PersonalLateStatistics(),
+                      PersonalLateStatistics(key: _lateStatsKey),
 
                       // 금일 차량 현황
                       TodayVehicleWidget(
+                        key: _vehicleKey,
                         onWorkingDayStatusChanged: (isNonWorkingDay) {
                           setState(() {
                             _isNonWorkingDay = isNonWorkingDay;

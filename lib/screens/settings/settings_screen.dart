@@ -115,7 +115,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       });
     } catch (e) {
       setState(() {
-        _appVersion = '앱 버전 4.1.2';
+        _appVersion = '앱 버전 4.1.3';
       });
     }
   }
@@ -437,6 +437,7 @@ class _SettingsScreenState extends State<SettingsScreen>
 
                 await Future.wait([
                   attendanceProvider.forceRefreshAll(),
+                  _loadInquiryBadgeCount(),
                   if (userProvider.email != null) ...[
                     leaveProvider.fetchAllLeaves(forceRefresh: true),
                     leaveProvider.fetchMyLeaves(

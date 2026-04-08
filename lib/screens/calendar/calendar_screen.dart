@@ -123,9 +123,10 @@ class _CalendarScreenState extends State<CalendarScreen>
               : RefreshIndicator(
                   onRefresh: () async {
                     // 달력 데이터 새로고침
-                    await provider.fetchApprovedLeavesForCalendar(
-                      forceRefresh: true,
-                    );
+                    await Future.wait([
+                      provider.fetchApprovedLeavesForCalendar(forceRefresh: true),
+                      provider.fetchHolidays(forceRefresh: true),
+                    ]);
                     if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
                   },
                   child: ListView(

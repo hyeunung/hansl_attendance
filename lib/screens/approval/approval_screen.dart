@@ -1151,11 +1151,11 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                               // 대기중 탭
                               RefreshIndicator(
                                 onRefresh: () async {
-                                  // 승인 대기 데이터 새로고침
-                                  await Provider.of<LeaveProvider>(
-                                    context,
-                                    listen: false,
-                                  ).fetchAllLeaves(forceRefresh: true);
+                                  final userProv = Provider.of<UserProvider>(context, listen: false);
+                                  await Future.wait([
+                                    Provider.of<LeaveProvider>(context, listen: false).fetchAllLeaves(forceRefresh: true),
+                                    Provider.of<PurchaseProvider>(context, listen: false).fetchPendingPurchases(employee: userProv.employee),
+                                  ]);
                                   if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
                                 },
                                 child: pending.isEmpty
@@ -1249,11 +1249,11 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                               // 처리완료 탭
                               RefreshIndicator(
                                 onRefresh: () async {
-                                  // 승인 대기 데이터 새로고침
-                                  await Provider.of<LeaveProvider>(
-                                    context,
-                                    listen: false,
-                                  ).fetchAllLeaves(forceRefresh: true);
+                                  final userProv = Provider.of<UserProvider>(context, listen: false);
+                                  await Future.wait([
+                                    Provider.of<LeaveProvider>(context, listen: false).fetchAllLeaves(forceRefresh: true),
+                                    Provider.of<PurchaseProvider>(context, listen: false).fetchPendingPurchases(employee: userProv.employee),
+                                  ]);
                                   if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
                                 },
                                 child: thisMonthDone.isEmpty
