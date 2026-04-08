@@ -17,6 +17,7 @@ import '../../services/badge_cache_service.dart';
 import '../../utils/user_role_helper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../widgets/common/notification_banner_widget.dart';
+import '../../providers/attendance_provider.dart';
 
 class ApprovalScreen extends StatefulWidget {
   final int? initialMainTab; // 0: 연차/출장, 1: 발주승인, 2: 구매대기, 3: 입고대기
@@ -1750,6 +1751,14 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                 l['id'],
                                 'approved',
                               );
+                            }
+
+                            // 오전반차 승인 시 출근 현황 리프레시
+                            if (type == 'half_am' && context.mounted) {
+                              try {
+                                final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
+                                await attendanceProvider.forceRefreshAll();
+                              } catch (_) {}
                             }
                           }
                         }

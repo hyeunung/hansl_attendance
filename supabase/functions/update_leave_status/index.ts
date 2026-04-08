@@ -222,6 +222,50 @@ Deno.serve(async (req) => {
     }
 
 
+    // 오전반차 승인 시 attendance_records 상태 업데이트
+    if (status === 'approved' && leaveData.type === 'half_am') {
+      try {
+        const kstNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+        const startDate = leaveData.start_date
+        const endDate = leaveData.end_date
+
+        // 해당 기간의 attendance_records 조회
+        const { data: attendanceRecords, error: attError } = await supabase
+          .from('attendance_records')
+          .select('id, date, clock_in, status')
+          .eq('user_email', leaveData.user_email)
+          .gte('date', startDate)
+          .lte('date', endDate)
+
+        if (!attError && attendanceRecords) {
+          for (const record of attendanceRecords) {
+            const clockIn = record.clock_in
+            let newStatus: string
+
+            if (clockIn == null) {
+              // 아직 출근 안 함 → 오전반차
+              newStatus = '오전반차'
+            } else {
+              // 출근했으면 13:30 기준으로 지각/정상 재판정
+              const [h, m] = clockIn.split(':').map(Number)
+              const isLate = h > 13 || (h === 13 && m > 30)
+              newStatus = isLate ? '지각' : '정상 출근'
+            }
+
+            // 기존 상태와 다를 때만 업데이트
+            if (record.status !== newStatus) {
+              await supabase
+                .from('attendance_records')
+                .update({ status: newStatus, updated_at: new Date().toISOString() })
+                .eq('id', record.id)
+            }
+          }
+        }
+      } catch (attUpdateErr) {
+        console.warn('오전반차 attendance_records 업데이트 실패 (승인은 정상 처리됨):', attUpdateErr)
+      }
+    }
+
     // 신청자에게 승인/반려 결과 알림은 이제 DB 트리거에서 자동으로 처리됨
     // leave_status_change_notification_trigger가 상태 변경 시 알림 발송
 

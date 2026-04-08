@@ -152,7 +152,7 @@ async function createDailyAttendanceRecords() {
     }
 
     // 6. 각 직원에 대해 출근 기록 생성
-    const force8amNames = new Set<string>(['정영수', '황연순']);
+    const autoClockInNames = new Set<string>(['정영수', '황연순', '최창열']);
     const attendanceRecords = employees.map((employee: Employee) => {
       const leave = leaveMap.get(employee.email)
       const companionType = companionEmailMap.get(employee.email) // 동행자 출장 체크
@@ -188,10 +188,14 @@ async function createDailyAttendanceRecords() {
       } else if (companionType === 'biztrip') {
         // 동행자 출장 처리
         status = '출장'
-      } else if (force8amNames.has(employee.name)) {
-        // 휴가가 아닌 평일, 특정 인원은 08:00 고정 기록
-        clockIn = '08:00:00'
-        status = '출근'  // DB 상태값과 일치하도록 수정
+      } else if (autoClockInNames.has(employee.name)) {
+        // 휴가가 아닌 평일, 특정 인원은 08:00~08:15 랜덤 출근 기록 (초 포함)
+        const randomMinutes = Math.floor(Math.random() * 16)
+        const randomSeconds = Math.floor(Math.random() * 60)
+        const m = String(randomMinutes).padStart(2, '0')
+        const s = String(randomSeconds).padStart(2, '0')
+        clockIn = `08:${m}:${s}`
+        status = '정상 출근'
       } else {
         // 평일이고 휴가도 없고 특정 인원도 아닌 경우
         status = '출근 전'

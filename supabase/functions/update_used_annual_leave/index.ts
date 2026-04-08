@@ -224,7 +224,10 @@ async function updateEmployeeUsedLeave(
         const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
         totalUsed += days;
       } else if (leave.type === 'half_am' || leave.type === 'half_pm') {
-        totalUsed += 0.5;
+        const startDate = new Date(leave.start_date);
+        const endDate = new Date(leave.end_date);
+        const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        totalUsed += 0.5 * days;
       }
     }
   }

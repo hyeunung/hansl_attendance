@@ -45,7 +45,8 @@ serve(async (req) => {
     if (action === 'clockIn') {
       // 오늘의 연차 정보 확인 (오전반차 체크)
       let hasHalfAm = false;
-      
+      let employeePosition: string | null = null;
+
       try {
         // employeeId로 직원 이메일, 직급 조회
         const { data: employee, error: empError } = await supabase
@@ -53,8 +54,10 @@ serve(async (req) => {
           .select('email, position')
           .eq('id', employeeId)
           .single();
-        
+
         if (employee && !empError) {
+          employeePosition = employee.position ?? null;
+
           // 오늘 승인된 오전반차가 있는지 확인
           const { data: leaves, error: leaveError } = await supabase
             .from('leave')
@@ -64,7 +67,7 @@ serve(async (req) => {
             .eq('type', 'half_am')
             .lte('start_date', today)
             .gte('end_date', today);
-          
+
           if (leaves && leaves.length > 0) {
             hasHalfAm = true;
           }
@@ -83,7 +86,7 @@ serve(async (req) => {
             isLate = true; // 13:30 이후는 지각
             message = '오전반차 출근 시간(13:30)을 초과했습니다.';
           }
-        } else if (employee?.position === '아르바이트') {
+        } else if (employeePosition === '아르바이트') {
           // 아르바이트: 9:00까지 정상출근, 9:01부터 지각
           if (currentHour > 9 || (currentHour === 9 && currentMinute > 0)) {
             isLate = true; // 9:00 초과는 지각
@@ -126,7 +129,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: false,
-        isValid: true, // 오류 시에도 일단 허용
+        isValid: false, // 오류 시 클라이언트 폴백으로 지각 판정하도록
         isLate: false,
         message: '시간 검증 서버 오류',
         error: error.message,
