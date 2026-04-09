@@ -11,10 +11,10 @@ import '../../utils/responsive_utils.dart';
 import '../../services/timer_manager.dart';
 import '../../services/ui_optimization_service.dart';
 import '../../widgets/attendance/attendance_action_buttons.dart';
-import '../../widgets/attendance/personal_late_statistics.dart';
 import '../../widgets/attendance/today_absence_widget.dart';
 import '../../widgets/attendance/tomorrow_absence_widget.dart';
 import '../../widgets/attendance/today_vehicle_widget.dart';
+import '../../widgets/attendance/absent_late_widget.dart';
 import '../notification/notification_center_screen.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import '../../providers/leave_provider.dart';
@@ -41,7 +41,7 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
         UIOptimizationMixin {
   bool _isNonWorkingDay = false;
   final _vehicleKey = GlobalKey<TodayVehicleWidgetState>();
-  final _lateStatsKey = GlobalKey<PersonalLateStatisticsState>();
+  final _absentLateKey = GlobalKey<AbsentLateWidgetState>();
 
   // UI update frequency optimization
   // Android needs longer intervals to prevent flickering
@@ -230,7 +230,7 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
                     await Future.wait([
                       attendanceProvider.forceRefreshAll(),
                       _vehicleKey.currentState?.refresh() ?? Future.value(),
-                      _lateStatsKey.currentState?.refresh() ?? Future.value(),
+                      _absentLateKey.currentState?.refresh() ?? Future.value(),
                       leaveProvider.fetchTodayLeaves(DateTime.now()),
                       leaveProvider.fetchTomorrowLeaves(),
                     ]);
@@ -250,8 +250,8 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
                           child: AttendanceActionButtons(onShowBanner: _showBanner),
                         ),
 
-                      // 지각/미출근 현황 배너
-                      PersonalLateStatistics(key: _lateStatsKey),
+                      // 미출근/지각자 (드롭다운)
+                      AbsentLateWidget(key: _absentLateKey),
 
                       // 금일 차량 현황
                       TodayVehicleWidget(
