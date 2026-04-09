@@ -38,6 +38,8 @@ class _SettingsScreenState extends State<SettingsScreen>
   int _inquiryBadgeCount = 0;
   bool _isAdmin = false;
   dynamic _realtimeSubscription;
+  bool _isLeaveExpanded = false;
+  bool _isLateExpanded = true;
 
   @override
   void initState() {
@@ -115,7 +117,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       });
     } catch (e) {
       setState(() {
-        _appVersion = '앱 버전 4.1.3';
+        _appVersion = '앱 버전 4.1.4';
       });
     }
   }
@@ -189,6 +191,23 @@ class _SettingsScreenState extends State<SettingsScreen>
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildStatTableRow(BuildContext context, String label, String value, Color valueColor) {
+    return FlatTableRow(
+      cells: [
+        Text(label, style: AppTextStyles.cardBody(context)),
+        Text(
+          value,
+          textAlign: TextAlign.end,
+          style: AppTextStyles.cardBody(context).copyWith(
+            fontWeight: FontWeight.w600,
+            color: valueColor,
+          ),
+        ),
+      ],
+      flexValues: const [1, 1],
     );
   }
 
@@ -507,26 +526,50 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                   const Divider(height: 0.5, thickness: 0.5, color: AppColors.borderLight),
 
-                  // 연차 현황 섹션
-                  FlatSectionHeader(title: '연차 현황'),
-                  FlatStatGrid(
-                    items: [
-                      FlatStatItem(
-                        label: '총 연차',
-                        value: '$totalAnnual',
-                        color: AppColors.primaryLight,
+                  // 연차 현황 섹션 (토글)
+                  FlatToggleSection(
+                    title: '연차 현황',
+                    icon: Icons.event_available,
+                    color: AppColors.primary,
+                    isExpanded: _isLeaveExpanded,
+                    onTap: () => setState(() => _isLeaveExpanded = !_isLeaveExpanded),
+                    children: [
+                      FlatTableColumnHeader(
+                        columns: const [
+                          FlatColumn(label: '항목', flex: 1),
+                          FlatColumn(label: '일수', flex: 1, align: TextAlign.end),
+                        ],
                       ),
-                      FlatStatItem(
-                        label: '소모 연차',
-                        value: '$usedAnnual',
-                        color: AppColors.primaryLight,
-                      ),
-                      FlatStatItem(
-                        label: '잔여',
-                        value: '$remainAnnual',
-                        color: AppColors.primaryLight,
-                      ),
+                      _buildStatTableRow(context, '총 연차', '$totalAnnual일', AppColors.textPrimary),
+                      _buildStatTableRow(context, '소모 연차', '$usedAnnual일', AppColors.textPrimary),
+                      _buildStatTableRow(context, '잔여 연차', '$remainAnnual일', remainAnnual <= 0 ? AppColors.error : AppColors.primary),
                     ],
+                  ),
+
+                  // 지각 현황 섹션 (토글, 기본 펼침)
+                  Builder(
+                    builder: (context) {
+                      final attendanceProvider = Provider.of<AttendanceProvider>(context);
+                      final monthlyLate = attendanceProvider.monthlyLateCount;
+                      final yearlyLate = attendanceProvider.yearlyLateCount;
+                      return FlatToggleSection(
+                        title: '지각 현황',
+                        icon: Icons.warning_amber_rounded,
+                        color: AppColors.error,
+                        isExpanded: _isLateExpanded,
+                        onTap: () => setState(() => _isLateExpanded = !_isLateExpanded),
+                        children: [
+                          FlatTableColumnHeader(
+                            columns: const [
+                              FlatColumn(label: '기간', flex: 1),
+                              FlatColumn(label: '횟수', flex: 1, align: TextAlign.end),
+                            ],
+                          ),
+                          _buildStatTableRow(context, '이번 달', '$monthlyLate회', monthlyLate > 0 ? AppColors.error : AppColors.textPrimary),
+                          _buildStatTableRow(context, '올해', '$yearlyLate회', yearlyLate > 0 ? AppColors.error : AppColors.textPrimary),
+                        ],
+                      );
+                    },
                   ),
 
                   // 앱 설정 섹션
