@@ -533,7 +533,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             final pendingOrders = purchaseProvider.pendingOrders;
             
             // 권한에 따른 필터링
-            if (UserRoleHelper.isLeadBuyer(roles)) {
+            if (UserRoleHelper.isLeadBuyer(roles) || UserRoleHelper.isFinalApprover(roles)) {
               // 관리자, lead buyer: 모든 대기 발주
               pendingApprovalCount = pendingOrders.length;
             } else {
