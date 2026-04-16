@@ -642,6 +642,9 @@ class AttendanceProvider extends ChangeNotifier
       }
     });
 
+    // 로컬 상태를 즉시 UI에 반영 (디바운스 타이머 충돌 방지)
+    notifyListeners();
+
     // DB에서 최신 상태를 다시 불러와서 UI 업데이트
     await _initToday();
   }
@@ -885,6 +888,9 @@ class AttendanceProvider extends ChangeNotifier
         }
       }
     });
+
+    // 로컬 상태를 즉시 UI에 반영 (디바운스 타이머 충돌 방지)
+    notifyListeners();
   }
 
   void _startOptimizedTimers() {
