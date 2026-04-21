@@ -77,6 +77,12 @@ class UserRoleHelper {
     return roles.contains(HR);
   }
 
+  /// 전체 근태 관리 권한 여부 (hr 또는 superadmin)
+  static bool canManageAttendance(List<dynamic>? roles) {
+    if (roles == null) return false;
+    return isAppAdmin(roles) || isHr(roles);
+  }
+
   /// 일반 직원 여부 확인 (특별 권한 없는 직원)
   static bool isRegularEmployee(List<dynamic>? roles) {
     if (roles == null) return true;

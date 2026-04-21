@@ -20,6 +20,8 @@ import '../../providers/attendance_provider.dart';
 import '../../services/badge_count_service.dart';
 import '../../widgets/shared/flat_section.dart';
 import '../../widgets/common/notification_banner_widget.dart';
+import '../../utils/user_role_helper.dart';
+import '../admin/admin_attendance_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -571,6 +573,27 @@ class _SettingsScreenState extends State<SettingsScreen>
                       );
                     },
                   ),
+
+                  // 관리자 전용 섹션 (HR / SuperAdmin)
+                  if (UserRoleHelper.canManageAttendance(
+                      UserRoleHelper.getRoles(employee))) ...[
+                    FlatSectionHeader(title: '관리자 전용'),
+                    FlatListTile(
+                      title: '전체 근태 관리',
+                      leading: Icon(
+                        Icons.admin_panel_settings,
+                        size: ResponsiveUtils.iconSize(context, 20),
+                        color: AppColors.primary,
+                      ),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const AdminAttendanceScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
 
                   // 앱 설정 섹션
                   FlatSectionHeader(title: '앱 설정'),
