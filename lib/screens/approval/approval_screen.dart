@@ -364,7 +364,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
         '개발2팀',
         '개발3팀',
         'CAD',
-        '경영지원팀',
+        '경영팀',
         '연구소',
         '개발팀',
       ]);
@@ -372,7 +372,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       if (isDev3Manager) approvalDepartments.add('개발3팀');
       if (isCadManager) approvalDepartments.add('CAD');
       if (isDevManager) approvalDepartments.addAll(['개발1팀', '개발2팀']);
-      if (isSupportManager) approvalDepartments.add('경영지원팀');
+      if (isSupportManager) approvalDepartments.add('경영팀');
       if (isLabManager) approvalDepartments.add('연구소');
     }
 
@@ -381,7 +381,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       '개발3팀_manager',
       'CAD_manager',
       '개발팀_manager',
-      '경영지원팀_manager',
+      '경영팀_manager',
       '연구소_manager',
     ];
     // UserRoleHelper 사용하여 역할 체크
