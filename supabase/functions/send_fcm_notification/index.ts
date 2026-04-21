@@ -733,9 +733,9 @@ Deno.serve(async (req)=>{
         
         for (const emp of employees) {
           if (!emp.roles || !Array.isArray(emp.roles)) continue;
-          
+
           let shouldNotify = false;
-          
+
           // superadmin은 항상 알림
           if (emp.roles.includes('superadmin')) {
             shouldNotify = true;
@@ -754,17 +754,17 @@ Deno.serve(async (req)=>{
               '개발2팀': '개발팀_manager',
               '개발3팀': '개발3팀_manager',
               '연구소': '연구소_manager',
-              '경영지원팀': '경영지원팀_manager',
+              '경영팀': '경영팀_manager',
               'CAD': 'CAD_manager'
             };
-            
+
             const requiredRole = departmentManagerRoles[requester_department];
             if (requiredRole && emp.roles.includes(requiredRole)) {
               shouldNotify = true;
               console.log(`  ✅ 부서 매니저: ${emp.name} (${emp.email}) - ${requiredRole}`);
             }
           }
-          
+
           if (shouldNotify && emp.fcm_token && !processedEmails.has(emp.email)) {
             tokens.push(emp.fcm_token);
             emails.push(emp.email);

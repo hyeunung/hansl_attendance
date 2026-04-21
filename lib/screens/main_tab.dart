@@ -314,7 +314,7 @@ final roles = UserRoleHelper.getRoles(employee);
       '개발3팀_manager',
       'CAD_manager',
       '개발팀_manager',
-      '경영지원팀_manager',
+      '경영팀_manager',
       '연구소_manager',
     ];
 
@@ -426,7 +426,7 @@ final roles = UserRoleHelper.getRoles(employee);
       '개발3팀_manager',
       'CAD_manager',
       '개발팀_manager',
-      '경영지원팀_manager',
+      '경영팀_manager',
     ];
 
     final showApprovalTab = roles.any(

@@ -16,7 +16,7 @@ class UserRoleHelper {
   static const String DEV3_MANAGER = '개발3팀_manager';
   static const String CAD_MANAGER = 'CAD_manager';
   static const String DEV_MANAGER = '개발팀_manager';
-  static const String SUPPORT_MANAGER = '경영지원팀_manager';
+  static const String SUPPORT_MANAGER = '경영팀_manager';
   static const String LAB_MANAGER = '연구소_manager';
 
   // ============== 통합 역할 추출 ==============

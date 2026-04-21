@@ -176,8 +176,8 @@ Deno.serve(async (req) => {
         hasPermission = targetDepartment === 'CAD'
       } else if (userRoles.includes('연구소_manager')) {
         hasPermission = targetDepartment === '연구소'
-      } else if (userRoles.includes('경영지원팀_manager')) {
-        hasPermission = targetDepartment === '경영지원팀'
+      } else if (userRoles.includes('경영팀_manager')) {
+        hasPermission = targetDepartment === '경영팀'
       } else if (userRoles.includes('기획팀_manager')) {
         hasPermission = targetDepartment === '기획팀'
       } else if (userRoles.includes('영업팀_manager')) {
