@@ -170,8 +170,8 @@ async function createDailyAttendanceRecords() {
             break
           case 'half_am':
             status = '오전반차'
-            // 오전반차는 13:30까지 출근 가능하도록 설정
-            clockIn = '13:30:00'  // 기본값으로 오후 1:30 설정
+            // 오전반차도 직접 출근 버튼을 눌러야 함 (회사 근처에서 13:30까지)
+            // 미출근 시 update_half_am_status 함수가 13:30에 '미출근'으로 변경
             break
           case 'half_pm':
             status = '오후반차'
