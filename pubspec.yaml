@@ -3,7 +3,7 @@ description: "HANSL - 회사, 팀, 조직 누구나 사용할 수 있는 출퇴�
 
 publish_to: 'none' 
 
-version: 4.1.7+282
+version: 4.1.9+285
 
 environment:
   sdk: ^3.8.0
@@ -39,6 +39,8 @@ dependencies:
   printing: ^5.12.0
   pdf: ^3.10.8
 
+  http_parser: any
+  path: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

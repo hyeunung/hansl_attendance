@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'attendance/attendance_screen_router.dart';
 import 'leave/leave_status_screen.dart';
@@ -474,6 +473,29 @@ final roles = UserRoleHelper.getRoles(employee);
       ),
     );
 
+    final leaveProvider = Provider.of<LeaveProvider>(context);
+    final purchaseProvider = Provider.of<PurchaseProvider>(context);
+
+    // 승인관리 대기 합계 (연차/출장 대기 + 발주 승인대기)
+    int totalApprovalCount = 0;
+    if (showApprovalTab || UserRoleHelper.hasPurchaseApprovalAuth(roles)) {
+      totalApprovalCount = leaveProvider.allPendingCount + purchaseProvider.totalPendingCount;
+    }
+
+    Widget buildApprovalIcon(int currentIndex, int itemIndex) {
+      final icon = Icon(
+        Icons.check_circle,
+        color: currentIndex == itemIndex ? AppColors.primary : AppColors.gray400,
+      );
+      if (totalApprovalCount > 0) {
+        return Badge(
+          label: Text('$totalApprovalCount'),
+          child: icon,
+        );
+      }
+      return icon;
+    }
+
     // 알바, 계약직인 경우: 근무기록, 연차/출장, 대시보드(승인관리), 달력, 설정만 표시
     if (isPartTimeOrContract) {
       // 3번째 탭: 대시보드(승인관리)
@@ -481,10 +503,7 @@ final roles = UserRoleHelper.getRoles(employee);
         BottomNavigationBarItem(
           icon: Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Icon(
-              Icons.check_circle,
-              color: _currentIndex == 2 ? AppColors.primary : AppColors.gray400,
-            ),
+            child: buildApprovalIcon(_currentIndex, 2),
           ),
           label: '',
         ),
@@ -544,10 +563,7 @@ final roles = UserRoleHelper.getRoles(employee);
           BottomNavigationBarItem(
             icon: Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Icon(
-                Icons.check_circle,
-                color: _currentIndex == 2 ? AppColors.primary : AppColors.gray400,
-              ),
+              child: buildApprovalIcon(_currentIndex, 2),
             ),
             label: '',
           ),
@@ -557,10 +573,7 @@ final roles = UserRoleHelper.getRoles(employee);
           BottomNavigationBarItem(
             icon: Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Icon(
-                Icons.check_circle,
-                color: _currentIndex == 2 ? AppColors.primary : AppColors.gray400,
-              ),
+              child: buildApprovalIcon(_currentIndex, 2),
             ),
             label: '',
           ),

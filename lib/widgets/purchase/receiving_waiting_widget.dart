@@ -102,7 +102,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '요청 수량 ${requestedQty}개',
+                    '요청 수량 $requestedQty개',
                     style: AppTextStyles.tableHeader(context).copyWith(
                       color: AppColors.gray400,
                     ),
@@ -528,16 +528,11 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final employee = userProvider.employee;
       final purchaseRoles = UserRoleHelper.getRoles(employee);
-      final userName = employee?['name'] as String? ?? '';
       
       // UserRoleHelper로 권한 체크
-      final isAppAdmin = UserRoleHelper.isAppAdmin(purchaseRoles);
-      final isMiddleManager = UserRoleHelper.isMiddleManager(purchaseRoles);
       final isFinalApprover = UserRoleHelper.isFinalApprover(purchaseRoles);
       final isRawMaterialManager = UserRoleHelper.isRawMaterialManager(purchaseRoles);
       final isConsumableManager = UserRoleHelper.isConsumableManager(purchaseRoles);
-      final isHr = UserRoleHelper.isHr(purchaseRoles);
-      final isCeo = purchaseRoles.contains('ceo');
       
       // 권한별 필터:
       // - superadmin: 전체 보기
@@ -547,9 +542,6 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       // - middle_manager, ceo, hr: 전체 보기
       // - lead buyer: 본인 요청 건만
       // - 그 외: 본인 요청 건만
-      final hasFullAccess = isAppAdmin || isMiddleManager || isCeo || isHr ||
-                           (isFinalApprover && !isRawMaterialManager && !isConsumableManager);
-      
       // 입고대기: 미입고 AND (선진행 OR 최종승인) AND 아직 입고완료되지 않은 항목들만
       var query = _supabase
           .from('purchase_requests')
@@ -1632,7 +1624,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                     ],
                   ),
                   Text(
-                    '${percentage}% (${receivedItems}/${totalItems})',
+                    '$percentage% ($receivedItems/$totalItems)',
                     style: AppTextStyles.inputLabel(context).copyWith(
                       fontWeight: FontWeight.w600,
                       color: AppColors.primary,
@@ -1673,7 +1665,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                         ),
                         SizedBox(width: ResponsiveUtils.spacing(context, 6)),
                         Text(
-                          '대기: ${pendingItems}건',
+                          '대기: $pendingItems건',
                           style: AppTextStyles.tableHeader(context).copyWith(
                             color: AppColors.primary,
                           ),
@@ -1695,7 +1687,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                         ),
                         SizedBox(width: ResponsiveUtils.spacing(context, 6)),
                         Text(
-                          '완료: ${receivedItems}건',
+                          '완료: $receivedItems건',
                           style: AppTextStyles.tableHeader(context).copyWith(
                             color: AppColors.primary,
                           ),
@@ -1756,10 +1748,6 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
         if (canComplete && percentage < 100)
           ElevatedButton(
             onPressed: () => _completeAllReceiving(items),
-            child: Text(
-              '전체입고완료',
-              style: AppTextStyles.chipLabel(context, color: Colors.white),
-            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.info,
               padding: EdgeInsets.symmetric(
@@ -1769,6 +1757,10 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
               ),
+            ),
+            child: Text(
+              '전체입고완료',
+              style: AppTextStyles.chipLabel(context, color: Colors.white),
             ),
           ),
       ],
@@ -1937,7 +1929,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
         final name = item['item_name'] ?? '';
         final spec = item['specification'] ?? '-';
         final qty = item['quantity'] ?? 0;
-        return '- $line. $name ($spec) ${qty}개';
+        return '- $line. $name ($spec) $qty개';
       }).join('\n');
 
       final purchaseInfoText = '발주번호: $orderNumber\n'
@@ -2121,7 +2113,6 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
 
   // superadmin 직접 수정 다이얼로그 표시
   void _showAdminEditDialog(BuildContext context, String orderNumber, List<Map<String, dynamic>> items) {
-    final firstItem = items.isNotEmpty ? items.first : {};
     
     showDialog(
       context: context,
@@ -2351,14 +2342,6 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
     }
   }
 
-  String _getSelectedTypeLabel() {
-    final match = _typeOptions.firstWhere(
-      (option) => option['value'] == _selectedType,
-      orElse: () => const {'value': '', 'label': ''},
-    );
-    return match['label'] ?? '';
-  }
-
   List<DropdownMenuItem<String>> _buildTypeItems() {
     return _typeOptions.map((option) {
       return DropdownMenuItem<String>(
@@ -2565,7 +2548,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
               _buildSectionTitle('문의 유형 *', Icons.category_outlined),
               SizedBox(height: ResponsiveUtils.spacing(context, 12)),
               DropdownButtonFormField<String>(
-                value: _selectedType,
+                initialValue: _selectedType,
                 items: _buildTypeItems(),
                 onChanged: _isSubmitting
                     ? null
@@ -2757,7 +2740,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             DropdownButtonFormField<int>(
-                              value: row.itemIndex,
+                              initialValue: row.itemIndex,
                               items: _itemOptions,
                               onChanged: _isSubmitting
                                   ? null
@@ -2863,7 +2846,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             DropdownButtonFormField<int>(
-                              value: row.itemIndex,
+                              initialValue: row.itemIndex,
                               items: _itemOptions,
                               onChanged: _isSubmitting
                                   ? null
@@ -2886,7 +2869,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                             ),
                             SizedBox(height: ResponsiveUtils.spacing(context, 8)),
                             DropdownButtonFormField<String>(
-                              value: row.changeType,
+                              initialValue: row.changeType,
                               items: const [
                                 DropdownMenuItem(value: 'unit_price', child: Text('단가 변경')),
                                 DropdownMenuItem(value: 'amount', child: Text('합계 변경')),
@@ -3115,7 +3098,9 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
   void dispose() {
     _vendorController.dispose();
     for (final controllers in _itemControllers) {
-      controllers.values.forEach((controller) => controller.dispose());
+      for (var controller in controllers.values) {
+        controller.dispose();
+      }
     }
     super.dispose();
   }
@@ -3161,7 +3146,9 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
     // 변경 감지 리스너 추가
     _vendorController.addListener(_onFieldChanged);
     for (final controllers in _itemControllers) {
-      controllers.values.forEach((controller) => controller.addListener(_onFieldChanged));
+      for (var controller in controllers.values) {
+        controller.addListener(_onFieldChanged);
+      }
     }
   }
 
@@ -3651,7 +3638,6 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
   }
 
   Widget _buildItemCard(int index) {
-    final item = widget.items[index];
     final controllers = _itemControllers[index];
     
     return Container(

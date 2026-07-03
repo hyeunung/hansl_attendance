@@ -7,6 +7,7 @@ import '../../utils/responsive_utils.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import '../../widgets/optimized_widgets.dart';
 import '../../widgets/shared/flat_section.dart';
+import '../../widgets/leave/business_trip_modification_dialog.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -544,7 +545,7 @@ class _CalendarScreenState extends State<CalendarScreen>
       }
     }
 
-    return Container(
+    final Widget tile = Container(
       padding: EdgeInsets.symmetric(
         horizontal: ResponsiveUtils.spacing(context, 16),
         vertical: ResponsiveUtils.spacing(context, 12),
@@ -612,7 +613,21 @@ class _CalendarScreenState extends State<CalendarScreen>
             if (e['transport'] != null && e['transport'].toString().isNotEmpty) ...[
               SizedBox(height: ResponsiveUtils.spacing(context, 2)),
               Text(
-                '차량 : ${e['transport']}',
+                '차량 : ${() {
+                  final t = e['transport'].toString();
+                  if (t == 'company_vehicle') {
+                    final vehicleInfo = e['requested_vehicle_info']?.toString() ?? '';
+                    final vehicleName = e['vehicle_name']?.toString() ?? '';
+                    if (vehicleInfo.isNotEmpty) return vehicleInfo;
+                    if (vehicleName.isNotEmpty) return vehicleName;
+                    return '법인차량';
+                  } else if (t == 'personal_vehicle' || t == 'private_car') {
+                    return '개인차량';
+                  } else if (t == 'public_transport') {
+                    return '대중교통';
+                  }
+                  return t;
+                }()}',
                 style: AppTextStyles.listSubtitle(context),
               ),
             ],
@@ -628,5 +643,15 @@ class _CalendarScreenState extends State<CalendarScreen>
         ],
       ),
     );
+
+    if (isBiztrip && e['business_trip_id'] != null) {
+      return InkWell(
+        onTap: () {
+          BusinessTripModificationDialog.show(context, e);
+        },
+        child: tile,
+      );
+    }
+    return tile;
   }
 }

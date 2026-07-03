@@ -557,10 +557,10 @@ class AttendanceProvider extends ChangeNotifier
         // 오전반차인 경우 특별 처리
         String newStatus;
         if (record['status'] == '오전반차') {
-          // 오전반차 직원의 지각 판단: 13:30 기준
+          // 오전반차 직원의 지각 판단: 13:45 기준
           final hour = now.hour;
           final minute = now.minute;
-          final halfAmLate = hour > 13 || (hour == 13 && minute > 30);
+          final halfAmLate = hour > 13 || (hour == 13 && minute > 45);
           newStatus = halfAmLate ? '지각' : '정상 출근';
         } else {
           // 기존 로직 유지 (일반 직원 8:30 기준)

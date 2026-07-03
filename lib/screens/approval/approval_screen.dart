@@ -522,7 +522,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
           }
 
           final pending = allLeaves
-              .where((l) => l['status'] == 'pending')
+              .where((l) => l['status'] == 'pending' || l['modification_status'] == 'extension_pending')
               .toList();
 
           // 발주승인 탭 뱃지 계산
@@ -553,11 +553,11 @@ class _ApprovalScreenState extends State<ApprovalScreen>
           if (isAdminOrSuper) {
             // Admin/SuperAdmin: 전체 직원의 처리완료 건을 보여줌
             done = provider.allLeaves
-                .where((l) => l['status'] != 'pending')
+                .where((l) => l['status'] != 'pending' && l['modification_status'] != 'extension_pending')
                 .toList();
           } else {
             // Manager: 현재 필터링된 데이터에서만 처리완료 건 표시
-            done = allLeaves.where((l) => l['status'] != 'pending').toList();
+            done = allLeaves.where((l) => l['status'] != 'pending' && l['modification_status'] != 'extension_pending').toList();
           }
 
           final now = DateTime.now();
@@ -1363,6 +1363,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     final type = l['type'];
     String typeLabel;
     Color typeTextColor;
+    final isExtensionPending = l['modification_status'] == 'extension_pending';
     switch (type) {
       case 'annual':
         typeLabel = '연차';
@@ -1383,8 +1384,8 @@ class _ApprovalScreenState extends State<ApprovalScreen>
         typeTextColor = AppColors.gray600;
         break;
       case 'biztrip':
-        typeLabel = '출장';
-        typeTextColor = AppColors.purple;
+        typeLabel = isExtensionPending ? '출장연장' : '출장';
+        typeTextColor = isExtensionPending ? Colors.deepPurple : AppColors.purple;
         break;
       default:
         typeLabel = '연차';
@@ -1399,7 +1400,12 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     // 그룹화된 항목 처리
     final int groupedCount = l['grouped_count'] ?? 1;
     String period;
-    if (groupedCount > 1) {
+    if (isExtensionPending) {
+      final reqEnd = DateTime.parse(l['requested_end_date'] ?? l['end_date']);
+      final reqDays = reqEnd.difference(start).inDays + 1;
+      period =
+          '${DateFormat('yyyy.MM.dd').format(start)} ~ ${DateFormat('yyyy.MM.dd').format(end)} ($days일)\n➔ 연장요청: ~ ${DateFormat('yyyy.MM.dd').format(reqEnd)} ($reqDays일)';
+    } else if (groupedCount > 1) {
       // 그룹화된 항목: "연속 N건" 표시
       period =
           '${DateFormat('yyyy.MM.dd').format(start)} ~ ${DateFormat('yyyy.MM.dd').format(end)} (연속 $groupedCount건, $days일)';
@@ -1411,13 +1417,16 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     final createdAt = DateFormat(
       'yyyy.MM.dd',
     ).format(DateTime.parse(l['created_at']));
-    final reason = l['reason'] ?? '-';
+    
+    String reason = l['reason'] ?? '-';
+    if (isExtensionPending) {
+      reason = '[연장 사유] ${l['modification_reason'] ?? '-'}\n[최초 사유] ${l['reason'] ?? '-'}';
+    }
     final status = l['status'];
     // 출장 필드 (신규 컬럼 우선, 과거 데이터 호환용 fallback 포함)
     final place = (l['place'] ?? l['destination'] ?? '').toString();
     final transportRaw = (l['transport'] ?? '').toString();
     final vehicleName = (l['vehicle_name'] ?? '').toString();
-    final vehicleInfo = (l['requested_vehicle_info'] ?? '').toString();
     final tripCode = (l['trip_code'] ?? '').toString();
     final projectName = (l['project_name'] ?? '').toString();
     // 교통수단 표시 텍스트 생성
@@ -1665,6 +1674,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                             await provider.updateBusinessTripStatus(
                               l['business_trip_id'] ?? l['id'],
                               'rejected',
+                              isModification: l['modification_status'] == 'extension_pending',
                             );
                           } else {
                             // 그룹화된 항목이면 모든 ID에 대해 처리 (첫 번째만 알림)
@@ -1733,6 +1743,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                             await provider.updateBusinessTripStatus(
                               l['business_trip_id'] ?? l['id'],
                               'approved',
+                              isModification: l['modification_status'] == 'extension_pending',
                             );
                           } else {
                             // 그룹화된 항목이면 모든 ID에 대해 처리 (첫 번째만 알림)

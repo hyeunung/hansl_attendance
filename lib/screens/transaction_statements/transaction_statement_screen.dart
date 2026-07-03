@@ -1081,6 +1081,7 @@ class _TransactionStatementScreenState
         key: _uploadFabKey,
         onPressed: _showUploadOptionsMenu,
         backgroundColor: AppColors.primary,
+        heroTag: null,
         child: _isUploading
             ? const SizedBox(
                 width: 16,

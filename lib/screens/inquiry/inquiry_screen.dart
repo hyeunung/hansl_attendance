@@ -17,31 +17,20 @@ import 'package:image_picker/image_picker.dart';
 import 'inquiry_detail_sheet.dart';
 
 class _QuantityChangeRow {
-  _QuantityChangeRow({this.itemId, this.newQuantity = ''});
+  _QuantityChangeRow();
   String? itemId;
   String newQuantity;
 }
 
 class _PriceChangeRow {
-  _PriceChangeRow({
-    this.itemId,
-    this.changeType = 'unit_price',
-    this.newValue = '',
-  });
+  _PriceChangeRow();
   String? itemId;
   String changeType;
   String newValue;
 }
 
 class _ItemAddRow {
-  _ItemAddRow({
-    this.itemName = '',
-    this.specification = '',
-    this.quantity = '',
-    this.unit = 'EA',
-    this.unitPrice = '',
-    this.remark = '',
-  });
+  _ItemAddRow();
   String itemName;
   String specification;
   String quantity;
@@ -448,7 +437,7 @@ class _InquiryScreenState extends State<InquiryScreen>
         final amount = quantity * unitPrice;
         summaryLines.add(
           '${row.itemName.trim()} (${row.specification.trim().isEmpty ? '-' : row.specification.trim()}) '
-          '${quantity}${row.unit.trim().isEmpty ? 'EA' : row.unit.trim()} × ${numberFormat.format(unitPrice)} = ${numberFormat.format(amount)}',
+          '$quantity${row.unit.trim().isEmpty ? 'EA' : row.unit.trim()} × ${numberFormat.format(unitPrice)} = ${numberFormat.format(amount)}',
         );
       }
 
@@ -470,7 +459,7 @@ class _InquiryScreenState extends State<InquiryScreen>
               final name = item['item_name'] ?? '';
               final spec = item['specification'] ?? '-';
               final qty = item['quantity'] ?? 0;
-              return '- $line. $name ($spec) ${qty}개';
+              return '- $line. $name ($spec) $qty개';
             },
           )
           .join('\n');
@@ -773,7 +762,7 @@ class _InquiryScreenState extends State<InquiryScreen>
               return Padding(
                 padding: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 4)),
                 child: Text(
-                  '$line. $name ($spec) ${qty}개',
+                  '$line. $name ($spec) $qty개',
                   style: AppTextStyles.tableHeader(context).copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -1386,7 +1375,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                             builder: (context, constraints) {
                               final isNarrow = constraints.maxWidth < 360;
                               final dropdown = DropdownButtonFormField<String>(
-                                value: row.itemId,
+                                initialValue: row.itemId,
                                 isExpanded: true,
                                 selectedItemBuilder: (_) => itemLabels
                                     .map(
@@ -1528,7 +1517,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                           child: Column(
                             children: [
                               DropdownButtonFormField<String>(
-                                value: row.itemId,
+                                initialValue: row.itemId,
                                 isExpanded: true,
                                 selectedItemBuilder: (_) => itemLabels
                                     .map(
@@ -1567,7 +1556,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                                 builder: (context, constraints) {
                                   final isNarrow = constraints.maxWidth < 360;
                                   final changeTypeField = DropdownButtonFormField<String>(
-                                    value: row.changeType,
+                                    initialValue: row.changeType,
                                     isExpanded: true,
                                     items: const [
                                       DropdownMenuItem(
