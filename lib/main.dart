@@ -92,19 +92,6 @@ void main() async {
 }
 
 
-// 나머지 서비스 초기화 (릴리즈 모드용)
-Future<void> _initializeOtherServices() async {
-  try {
-    await NotificationService.initialize();
-    await SecureStorageService.migrateFromSharedPreferences();
-    PurchaseNotificationListener.startListening();
-    await PerformanceInitialization.initialize();
-    await FeatureFlagService().initialize();
-  } catch (e) {
-    // Other service initialization failed
-  }
-}
-
 
 
 class HanslApp extends StatefulWidget {

@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
     }
 
     // 요청 데이터 파싱
-    const { id, status, is_business_trip, rejection_reason } = await req.json()
+    const { id, status, is_business_trip, rejection_reason, is_modification } = await req.json()
 
     if (!id || !status) {
       throw new Error('필수 파라미터가 누락되었습니다.')
@@ -74,14 +74,47 @@ Deno.serve(async (req) => {
       // business_trip_id에서 숫자만 추출 (bt_123 → 123)
       const btId = typeof id === 'string' ? parseInt(id.replace('bt_', '')) : id
 
-      const updateData: any = { approval_status: status }
-      if (status === 'approved') {
-        const { data: approverData } = await supabase
-          .from('employees').select('id').eq('email', userEmail).single()
-        if (approverData) updateData.approved_by = approverData.id
-        updateData.approved_at = new Date().toISOString()
-      } else if (status === 'rejected') {
-        updateData.rejection_reason = rejection_reason || null
+      // 출장 정보 조회 (연장/조기복귀 여부 확인 및 알림용 데이터 획득)
+      const { data: tripData, error: fetchError } = await supabase
+        .from('business_trips')
+        .select('requester_id, requested_end_date, modification_status, trip_code')
+        .eq('id', btId)
+        .single()
+
+      if (fetchError || !tripData) {
+        console.error('출장 정보 조회 실패:', fetchError)
+        throw new Error('출장 정보를 찾을 수 없습니다.')
+      }
+
+      let updateData: any = {}
+
+      if (is_modification) {
+        if (status === 'approved') {
+          const { data: approverData } = await supabase
+            .from('employees').select('id').eq('email', userEmail).single()
+          
+          updateData = {
+            trip_end_date: tripData.requested_end_date,
+            modification_status: tripData.modification_status === 'extension_pending' ? 'extension_approved' : 'early_return_approved',
+            modification_approved_by: approverData?.id || null,
+            modification_approved_at: new Date().toISOString()
+          }
+        } else if (status === 'rejected') {
+          updateData = {
+            modification_status: 'modification_rejected',
+            modification_rejected_reason: rejection_reason || null
+          }
+        }
+      } else {
+        updateData = { approval_status: status }
+        if (status === 'approved') {
+          const { data: approverData } = await supabase
+            .from('employees').select('id').eq('email', userEmail).single()
+          if (approverData) updateData.approved_by = approverData.id
+          updateData.approved_at = new Date().toISOString()
+        } else if (status === 'rejected') {
+          updateData.rejection_reason = rejection_reason || null
+        }
       }
 
       const { data: updateResult, error: updateError } = await supabase
@@ -93,6 +126,40 @@ Deno.serve(async (req) => {
       if (updateError) {
         console.error('Business trip 업데이트 실패:', updateError)
         throw updateError
+      }
+
+      // 일정 변경(연장/조기복귀) 승인/반려 시 신청자에게 알림 발송
+      if (is_modification && tripData.requester_id) {
+        try {
+          const { data: requester } = await supabase
+            .from('employees')
+            .select('email, name')
+            .eq('id', tripData.requester_id)
+            .single()
+
+          if (requester?.email) {
+            const modLabel = tripData.modification_status === 'extension_pending' ? '연장' : '조기 복귀'
+            const title = status === 'approved' ? `✅ 출장 ${modLabel} 승인` : `❌ 출장 ${modLabel} 반려`
+            const body = status === 'approved'
+              ? `${requester.name}님의 출장 ${modLabel} 신청이 승인되었습니다. (${tripData.trip_code})`
+              : `${requester.name}님의 출장 ${modLabel} 신청이 반려되었습니다. 사유: ${rejection_reason || '없음'} (${tripData.trip_code})`
+
+            await supabase.functions.invoke('send_fcm_notification', {
+              body: {
+                type: 'user',
+                targetEmail: requester.email,
+                title: title,
+                body: body,
+                data: {
+                  trip_code: tripData.trip_code,
+                  status: status
+                }
+              }
+            })
+          }
+        } catch (notificationErr) {
+          console.warn('출장 변경 알림 발송 실패:', notificationErr)
+        }
       }
 
       return new Response(

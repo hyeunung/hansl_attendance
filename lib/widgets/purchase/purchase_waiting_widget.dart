@@ -246,7 +246,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                     ],
                   ),
                   Text(
-                    '${percentage}% (${completedItems}/${totalItems})',
+                    '$percentage% ($completedItems/$totalItems)',
                     style: AppTextStyles.inputLabel(context).copyWith(
                       fontWeight: FontWeight.w600,
                       color: AppColors.warning,
@@ -287,7 +287,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                         ),
                         SizedBox(width: ResponsiveUtils.spacing(context, 6)),
                         Text(
-                          '대기: ${pendingItems}건',
+                          '대기: $pendingItems건',
                           style: AppTextStyles.tableHeader(context).copyWith(
                             color: AppColors.gray700,
                           ),
@@ -309,7 +309,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                         ),
                         SizedBox(width: ResponsiveUtils.spacing(context, 6)),
                         Text(
-                          '완료: ${completedItems}건',
+                          '완료: $completedItems건',
                           style: AppTextStyles.tableHeader(context).copyWith(
                             color: AppColors.gray700,
                           ),
@@ -372,10 +372,6 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
         if (canComplete && percentage < 100)
           ElevatedButton(
             onPressed: () => _completeAllPayment(items),
-            child: Text(
-              '전체구매완료',
-              style: AppTextStyles.chipLabel(context, color: Colors.white),
-            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.info,
               padding: EdgeInsets.symmetric(
@@ -385,6 +381,10 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
               ),
+            ),
+            child: Text(
+              '전체구매완료',
+              style: AppTextStyles.chipLabel(context, color: Colors.white),
             ),
           ),
       ],

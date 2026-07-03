@@ -196,6 +196,14 @@ class LeaveService {
             'updated_at': bt['updated_at'],
             'trip_code': bt['trip_code'],
             'is_business_trip': true,
+            'modification_status': bt['modification_status'],
+            'requested_end_date': bt['requested_end_date'],
+            'original_end_date': bt['original_end_date'],
+            'modification_reason': bt['modification_reason'],
+            'modification_rejected_reason': bt['modification_rejected_reason'],
+            'companions': bt['companions'],
+            'requester_id': bt['requester_id'],
+            'request_department': bt['request_department'],
             'employees': employeesMap[requesterEmail] ?? {
               'name': requesterName,
               'email': requesterEmail,
@@ -280,6 +288,14 @@ class LeaveService {
           'trip_code': bt['trip_code'],
           'rejection_reason': bt['rejection_reason'],
           'is_business_trip': true,
+          'modification_status': bt['modification_status'],
+          'requested_end_date': bt['requested_end_date'],
+          'original_end_date': bt['original_end_date'],
+          'modification_reason': bt['modification_reason'],
+          'modification_rejected_reason': bt['modification_rejected_reason'],
+          'companions': bt['companions'],
+          'requester_id': bt['requester_id'],
+          'request_department': bt['request_department'],
         });
       }
     }
@@ -301,7 +317,7 @@ class LeaveService {
   }
 
   /// business_trips 테이블 승인/반려
-  Future<void> updateBusinessTripStatus(dynamic id, String status, {String? rejectionReason}) async {
+  Future<void> updateBusinessTripStatus(dynamic id, String status, {String? rejectionReason, bool isModification = false}) async {
     try {
       final response = await _client.functions.invoke(
         'update_leave_status',
@@ -310,6 +326,7 @@ class LeaveService {
           'status': status,
           'is_business_trip': true,
           'rejection_reason': rejectionReason,
+          'is_modification': isModification,
         },
       );
 
@@ -386,6 +403,7 @@ class LeaveService {
       // 요청자 행 추가
       result.add({
         'id': 'bt_${bt['id']}',
+        'business_trip_id': bt['id'],
         'user_email': requesterEmail,
         'name': requesterName,
         'type': 'biztrip',
@@ -395,6 +413,18 @@ class LeaveService {
         'place': destination,
         'status': 'approved',
         'is_business_trip': true,
+        'trip_code': bt['trip_code'],
+        'transport': bt['transport_type'],
+        'vehicle_name': bt['vehicle_name'],
+        'requested_vehicle_info': bt['requested_vehicle_info'],
+        'original_end_date': bt['original_end_date'],
+        'requested_end_date': bt['requested_end_date'],
+        'modification_status': bt['modification_status'],
+        'modification_reason': bt['modification_reason'],
+        'modification_rejected_reason': bt['modification_rejected_reason'],
+        'companions': bt['companions'],
+        'requester_id': bt['requester_id'],
+        'request_department': bt['request_department'],
       });
 
       // 동행자 각각 개별 행으로 추가 (is_companion 플래그로 구분)
@@ -403,6 +433,7 @@ class LeaveService {
           if (c is Map && c['name'] != null) {
             result.add({
               'id': 'bt_${bt['id']}_${c['id'] ?? c['name']}',
+              'business_trip_id': bt['id'],
               'user_email': '',
               'name': c['name'].toString(),
               'type': 'biztrip',
@@ -413,6 +444,18 @@ class LeaveService {
               'status': 'approved',
               'is_business_trip': true,
               'is_companion': true,
+              'trip_code': bt['trip_code'],
+              'transport': bt['transport_type'],
+              'vehicle_name': bt['vehicle_name'],
+              'requested_vehicle_info': bt['requested_vehicle_info'],
+              'original_end_date': bt['original_end_date'],
+              'requested_end_date': bt['requested_end_date'],
+              'modification_status': bt['modification_status'],
+              'modification_reason': bt['modification_reason'],
+              'modification_rejected_reason': bt['modification_rejected_reason'],
+              'companions': bt['companions'],
+              'requester_id': bt['requester_id'],
+              'request_department': bt['request_department'],
             });
           }
         }
@@ -450,6 +493,123 @@ class LeaveService {
       return data;
     } catch (e) {
       // Debug code removed
+      rethrow;
+    }
+  }
+
+  /// 출장 변경(연장) 신청
+  Future<void> requestBusinessTripModification({
+    required int businessTripId,
+    required String requestedEndDate,
+    required String reason,
+    required String originalEndDate,
+    required String requesterName,
+    required String tripCode,
+    required String requestDepartment,
+  }) async {
+    try {
+      // 1. 출장 테이블 업데이트 (연장 대기 상태)
+      await _client.from('business_trips').update({
+        'modification_status': 'extension_pending',
+        'requested_end_date': requestedEndDate,
+        'modification_reason': reason,
+        'original_end_date': originalEndDate,
+        'modification_requested_at': DateTime.now().toUtc().toIso8601String(),
+      }).eq('id', businessTripId);
+
+      // 2. FCM 알림 전송 (관리자들에게 승인 요청)
+      try {
+        await _client.functions.invoke('send_fcm_notification', body: {
+          'type': 'admin',
+          'requester_department': requestDepartment,
+          'title': '📋 출장 연장 승인 요청',
+          'body': '$requesterName님이 출장 연장을 신청했습니다. 결재를 확인해주세요. (출장코드: $tripCode)',
+          'data': {
+            'trip_code': tripCode,
+            'status': 'extension_pending',
+          }
+        });
+      } catch (_) {}
+
+      final dbOptim = DatabaseOptimizationService.instance;
+      await dbOptim.invalidateCache(patterns: ['leave']);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// 출장 조기 복귀 즉시 처리
+  Future<void> immediateEarlyReturn({
+    required int businessTripId,
+    required String originalEndDate,
+    required String requesterName,
+    required String tripCode,
+    required String requestDepartment,
+    String? currentUserId,
+    dynamic linkedVehicleId,
+    List<dynamic>? linkedCardIds,
+  }) async {
+    try {
+      final todayStr = DateTime.now().toIso8601String().substring(0, 10);
+
+      // 1. 출장 테이블 업데이트 (즉시 조기복귀 완료 상태)
+      await _client.from('business_trips').update({
+        'trip_end_date': todayStr,
+        'modification_status': 'early_return_approved',
+        'original_end_date': originalEndDate,
+        'modification_approved_at': DateTime.now().toUtc().toIso8601String(),
+        'modification_approved_by': currentUserId,
+        'modification_reason': '조기 복귀',
+      }).eq('id', businessTripId);
+
+      // 2. 차량 반납 처리
+      if (linkedVehicleId != null) {
+        await _client.from('vehicle_requests').update({
+          'approval_status': 'returned',
+        }).eq('id', linkedVehicleId);
+      }
+
+      // 3. 법인카드 종료일 단축
+      if (linkedCardIds != null && linkedCardIds.isNotEmpty) {
+        await _client.from('card_usages').update({
+          'usage_date_end': todayStr,
+        }).inFilter('id', linkedCardIds);
+      }
+
+      // 4. FCM 알림 전송 (관리자들에게 완료 보고)
+      try {
+        await _client.functions.invoke('send_fcm_notification', body: {
+          'type': 'admin',
+          'requester_department': requestDepartment,
+          'title': '🏃 출장 조기 복귀 완료',
+          'body': '$requesterName님이 출장에서 조기 복귀했습니다. (차량 반납 완료, 출장코드: $tripCode)',
+          'data': {
+            'trip_code': tripCode,
+            'status': 'early_return',
+          }
+        });
+      } catch (_) {}
+
+      final dbOptim = DatabaseOptimizationService.instance;
+      await dbOptim.invalidateCache(patterns: ['leave']);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// 출장 변경 신청 취소
+  Future<void> cancelBusinessTripModification(int businessTripId) async {
+    try {
+      await _client.from('business_trips').update({
+        'modification_status': null,
+        'requested_end_date': null,
+        'modification_reason': null,
+        'modification_requested_at': null,
+      }).eq('id', businessTripId);
+
+      final dbOptim = DatabaseOptimizationService.instance;
+      await dbOptim.invalidateCache(patterns: ['leave']);
+    } catch (e) {
       rethrow;
     }
   }
