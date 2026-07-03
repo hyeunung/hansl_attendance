@@ -69,7 +69,7 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
       // 주말 또는 공휴일인 경우 특별 처리
       if (isWeekend || isHoliday) {
         String dayType;
-        if (isWeekend && isHoliday && holiday != null) {
+        if (isWeekend && isHoliday) {
           dayType = holiday['name'] as String; // 공휴일 이름 우선
         } else if (isWeekend) {
           dayType = today.weekday == 6 ? '토요일' : '일요일';
@@ -197,13 +197,13 @@ class _AttendanceStatisticsWidgetState extends State<AttendanceStatisticsWidget>
             'time': clockIn.toString(),
           });
         } else if (status == '오전반차' && clockIn != null) {
-          // 오전반차 후 출근 시간 체크
+          // 오전반차 후 출근 시간 체크 (13:45 기준)
           try {
             final timeParts = clockIn.toString().split(':');
             final hour = int.tryParse(timeParts[0]) ?? 0;
             final minute = int.tryParse(timeParts[1]) ?? 0;
 
-            if (hour > 13 || (hour == 13 && minute > 30)) {
+            if (hour > 13 || (hour == 13 && minute > 45)) {
               late++;
               lateList.add({
                 'name': name,

@@ -113,11 +113,11 @@ class BadgeCountService {
           .not('type', 'eq', 'biztrip_migrated')
           .count();
 
-      // business_trips 테이블 pending 건수
+      // business_trips 테이블 pending 건수 (최초 pending + 연장 extension_pending)
       final btResponse = await _supabase
           .from('business_trips')
           .select()
-          .eq('approval_status', 'pending')
+          .or('approval_status.eq.pending,modification_status.eq.extension_pending')
           .count();
 
       return leaveResponse.count + btResponse.count;

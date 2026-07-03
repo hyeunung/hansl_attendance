@@ -240,7 +240,7 @@ class ReceiptUploadService {
       });
 
       return publicUrl;
-    } catch (e, stackTrace) {
+    } catch (e) {
       rethrow;
     }
   }
@@ -323,7 +323,7 @@ class ReceiptUploadService {
     final ss = now.second.toString().padLeft(2, '0');
     final ms = now.millisecond.toString().padLeft(3, '0');
 
-    return 'rec$yy$mm$dd$hh$min$ss$ms\_$randomSuffix';
+    return 'rec$yy$mm$dd$hh$min$ss${ms}_$randomSuffix';
   }
 
   /// 영수증 선택 다이얼로그 (독립적 업로드용)

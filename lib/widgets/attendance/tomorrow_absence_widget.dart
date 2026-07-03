@@ -4,6 +4,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
 import '../../providers/leave_provider.dart';
 import '../shared/flat_section.dart';
+import '../leave/business_trip_modification_dialog.dart';
 
 /// 내일의 근태현황 - 내일 회사에 없는 사람 (연차, 출장, 공가)
 class TomorrowAbsenceWidget extends StatefulWidget {
@@ -123,7 +124,7 @@ class _TomorrowAbsenceWidgetState extends State<TomorrowAbsenceWidget> {
     final detail = _detailText(l);
     final isCompanion = l['is_companion'] == true;
 
-    return FlatTableRow(
+    final Widget rowWidget = FlatTableRow(
       cells: [
         Row(
           children: [
@@ -162,5 +163,16 @@ class _TomorrowAbsenceWidgetState extends State<TomorrowAbsenceWidget> {
       ],
       flexValues: const [2, 2, 3],
     );
+
+    final String lowerType = (type ?? '').toLowerCase().replaceAll('_', '');
+    if ((lowerType == 'biztrip' || lowerType == 'businesstrip') && l['business_trip_id'] != null) {
+      return InkWell(
+        onTap: () {
+          BusinessTripModificationDialog.show(context, l);
+        },
+        child: rowWidget,
+      );
+    }
+    return rowWidget;
   }
 }

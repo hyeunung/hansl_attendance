@@ -18,10 +18,6 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
     await Firebase.initializeApp();
 
-    final title = message.notification?.title ?? '새 알림';
-    final body = message.notification?.body ?? '';
-    final type = message.data['type'] ?? 'unknown';
-
     if (kDebugMode) {
       // Debug code removed
     }
@@ -322,10 +318,6 @@ class NotificationService {
   /// 로컬 알림 표시 (포그라운드용)
   static Future<void> _showLocalNotification(RemoteMessage message) async {
     try {
-      final title = message.notification?.title ?? '새 알림';
-      final body = message.notification?.body ?? '';
-      final type = message.data['type'] ?? 'unknown';
-
       if (kDebugMode) {
         // Debug code removed
         // Debug code removed
@@ -416,8 +408,6 @@ class NotificationService {
     try {
       // 알림 타입에 따라 적절한 화면으로 이동
       String? type = message.data['type'];
-      String? requesterEmail = message.data['requester_email'];
-      String? requesterName = message.data['requester_name'];
 
       final context = navigatorKey.currentContext;
       if (context == null) {
@@ -649,16 +639,6 @@ class NotificationService {
   /// 알림 이벤트 로깅 (분석용)
   static void _logNotificationEvent(String eventType, RemoteMessage message) {
     try {
-      final eventData = {
-        'event_type': eventType,
-        'notification_type': message.data['type'],
-        'timestamp': DateTime.now().toIso8601String(),
-        'message_id': message.messageId,
-        'title': message.notification?.title,
-      };
-      if (kDebugMode) {
-        // Debug code removed
-      }
       // TODO: 실제 분석 서버로 로그 전송 구현
     } catch (e) {
       if (kDebugMode) {

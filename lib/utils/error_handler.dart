@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../theme/app_text_theme.dart';
 import '../widgets/common/notification_banner_widget.dart';
 
 /// 전역 에러 처리 유틸리티

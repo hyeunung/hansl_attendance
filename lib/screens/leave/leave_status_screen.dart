@@ -10,6 +10,7 @@ import '../../utils/responsive_utils.dart';
 import '../../services/ui_optimization_service.dart';
 import '../../widgets/shared/flat_section.dart';
 import '../../widgets/common/notification_banner_widget.dart';
+import '../../widgets/leave/business_trip_modification_dialog.dart';
 
 class LeaveStatusScreen extends StatefulWidget {
   const LeaveStatusScreen({super.key});
@@ -304,7 +305,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
         ? AppColors.warning
         : AppColors.late_;
 
-    return FlatTableRow(
+    final Widget tile = FlatTableRow(
       cells: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -372,6 +373,16 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
       ),
       trailingWidth: 110,
     );
+
+    if (l['type'] == 'biztrip' && l['business_trip_id'] != null) {
+      return InkWell(
+        onTap: () {
+          BusinessTripModificationDialog.show(context, l);
+        },
+        child: tile,
+      );
+    }
+    return tile;
   }
 
   List<Widget> _recentLeaveRows(List<Map<String, dynamic>> leaves) {

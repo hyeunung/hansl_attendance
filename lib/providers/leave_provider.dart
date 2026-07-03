@@ -9,7 +9,6 @@ import '../services/async_operation_manager.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter/foundation.dart';
 
 class LeaveProvider extends ChangeNotifier
     with TimerManagementMixin, AsyncOperationMixin {
@@ -60,7 +59,7 @@ class LeaveProvider extends ChangeNotifier
 
   // 전체 승인 대기 중 신청 개수 (관리자용)
   int get allPendingCount =>
-      allLeaves.where((l) => l['status'] == 'pending').length;
+      allLeaves.where((l) => l['status'] == 'pending' || l['modification_status'] == 'extension_pending').length;
 
   // 대기 중 신청 개수 (대시보드용 - 권한에 따라 다르게 표시)
   int get pendingCount {
@@ -578,14 +577,12 @@ class LeaveProvider extends ChangeNotifier
             .eq('status', '출장');
 
         final Set<String> biztripDates = {};
-        if (attendanceRecords != null) {
-          for (final record in attendanceRecords) {
-            if (record['date'] != null) {
-              biztripDates.add(record['date'] as String);
-            }
+        for (final record in attendanceRecords) {
+          if (record['date'] != null) {
+            biztripDates.add(record['date'] as String);
           }
         }
-
+      
         // myLeaves 출장 기간 날짜 수집
         final Set<String> tripDates = {};
         for (final l in leavesToCheck) {
@@ -880,9 +877,15 @@ class LeaveProvider extends ChangeNotifier
     dynamic id,
     String status, {
     String? rejectionReason,
+    bool isModification = false,
   }) async {
     try {
-      await _service.updateBusinessTripStatus(id, status, rejectionReason: rejectionReason);
+      await _service.updateBusinessTripStatus(
+        id,
+        status,
+        rejectionReason: rejectionReason,
+        isModification: isModification,
+      );
 
       // 캐시 무효화 및 데이터 새로고침
       await _cache.invalidate(_allLeavesCacheKey);
