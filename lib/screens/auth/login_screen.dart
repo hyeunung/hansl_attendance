@@ -746,7 +746,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       const SizedBox(height: 14),
                       // 직원 유형 선택
                       DropdownButtonFormField<String>(
-                        value: _selectedPosition,
+                        initialValue: _selectedPosition,
                         isExpanded: true,
                         icon: const Icon(
                           Icons.keyboard_arrow_down_rounded,

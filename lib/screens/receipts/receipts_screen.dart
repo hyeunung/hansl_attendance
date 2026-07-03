@@ -754,6 +754,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
         key: _uploadFabKey,
         onPressed: _showUploadOptionsMenu,
         backgroundColor: AppColors.primary,
+        heroTag: null,
         child: const Icon(Icons.upload, color: Colors.white, size: 20),
       ),
     );

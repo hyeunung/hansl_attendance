@@ -597,8 +597,6 @@ return;
     super.build(context); // AutomaticKeepAliveClientMixin 필수
     return Consumer2<PurchaseProvider, UserProvider>(
       builder: (context, purchaseProvider, userProvider, _) {
-        final purchaseRoles = UserRoleHelper.getRoles(userProvider.employee);
-
         // 사용자 역할에 따른 대기 개수 계산 (현재 사용되지 않음)
 
         return Column(
@@ -1545,22 +1543,29 @@ return;
                             if (confirmed == true && context.mounted) {
                               // BuildContext 저장
                               final scaffoldContext = context;
+                              BuildContext? loadingContext;
                               
                               // 로딩 다이얼로그 표시
                               showDialog(
                                 context: scaffoldContext,
                                 barrierDismissible: false,
-                                builder: (dialogContext) => const Center(
-                                  child: CircularProgressIndicator(),
-                                ),
+                                builder: (dialogContext) {
+                                  loadingContext = dialogContext;
+                                  return const Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                },
                               );
                               
-                              final success = await purchaseProvider
-                                  .approveMiddle(group.purchaseOrderNumber);
-                              
-                              // 로딩 다이얼로그 닫기
-                              if (scaffoldContext.mounted) {
-                                Navigator.of(scaffoldContext).pop();
+                              bool success = false;
+                              try {
+                                success = await purchaseProvider
+                                    .approveMiddle(group.purchaseOrderNumber);
+                              } finally {
+                                // 로딩 다이얼로그 닫기
+                                if (loadingContext != null && loadingContext!.mounted) {
+                                  Navigator.of(loadingContext!).pop();
+                                }
                               }
                               
                               if (scaffoldContext.mounted) {
@@ -1915,22 +1920,29 @@ return;
                             if (confirmed == true && context.mounted) {
                               // BuildContext 저장
                               final scaffoldContext = context;
+                              BuildContext? loadingContext;
                               
                               // 로딩 다이얼로그 표시
                               showDialog(
                                 context: scaffoldContext,
                                 barrierDismissible: false,
-                                builder: (dialogContext) => const Center(
-                                  child: CircularProgressIndicator(),
-                                ),
+                                builder: (dialogContext) {
+                                  loadingContext = dialogContext;
+                                  return const Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                },
                               );
                               
-                              final success = await purchaseProvider
-                                  .approveFinal(group.purchaseOrderNumber);
-                              
-                              // 로딩 다이얼로그 닫기
-                              if (scaffoldContext.mounted) {
-                                Navigator.of(scaffoldContext).pop();
+                              bool success = false;
+                              try {
+                                success = await purchaseProvider
+                                    .approveFinal(group.purchaseOrderNumber);
+                              } finally {
+                                // 로딩 다이얼로그 닫기
+                                if (loadingContext != null && loadingContext!.mounted) {
+                                  Navigator.of(loadingContext!).pop();
+                                }
                               }
                               
                               if (scaffoldContext.mounted) {

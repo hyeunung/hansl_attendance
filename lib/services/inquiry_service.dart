@@ -998,17 +998,6 @@ class InquiryService {
     }
   }
 
-  /// 읽은 문의 목록 가져오기
-  Future<Set<int>> _getReadInquiries() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final readList = prefs.getStringList('read_inquiries') ?? [];
-      return readList.map((id) => int.tryParse(id) ?? 0).toSet();
-    } catch (e) {
-      return {};
-    }
-  }
-
   /// 문의 삭제 (본인 문의는 언제든 삭제 가능)
   Future<Map<String, dynamic>> deleteInquiry(int inquiryId) async {
     try {
