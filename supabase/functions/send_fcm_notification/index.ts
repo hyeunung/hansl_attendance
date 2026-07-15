@@ -566,9 +566,13 @@ Deno.serve(async (req)=>{
       ]);
       targetTokens = result.tokens;
       targetEmails = result.emails;
-      if (!title) title = '📦 새로운 구매 요청';
+      if (!title) title = payment_category === '현장 결제' ? '💳 현장 카드사용 등록' : '📦 새로운 구매 요청';
       if (!body) {
-        body = purchase_order_number ? `${requester_name}님이 ${payment_category} 요청(${purchase_order_number})을 등록했습니다.` : `${requester_name}님이 새로운 구매 요청을 등록했습니다.`;
+        if (payment_category === '현장 결제') {
+          body = purchase_order_number ? `${requester_name}님이 현장 카드사용 내역을 등록하였습니다. (${purchase_order_number})` : `${requester_name}님이 현장 카드사용 내역을 등록하였습니다.`;
+        } else {
+          body = purchase_order_number ? `${requester_name}님이 ${payment_category} 요청(${purchase_order_number})을 등록했습니다.` : `${requester_name}님이 새로운 구매 요청을 등록했습니다.`;
+        }
       }
     } else if (type === 'purchase_status_change') {
       console.log('🔄 [구매 알림] 구매 상태 변경 처리');
