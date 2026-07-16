@@ -329,6 +329,9 @@ class NotificationService {
       // 알림 수신 이벤트 로깅
       _logNotificationEvent('received_foreground', message);
 
+      final title = message.notification?.title ?? '새 알림';
+      final body = message.notification?.body ?? '';
+
       // Android 알림 채널 설정
       const androidDetails = AndroidNotificationDetails(
         'hansl_channel', // 채널 ID
