@@ -553,13 +553,17 @@ final time = DateTime.parse(dbDateTime); // 시간대 고려 안함
 #### Step 1: Version Update Across All Files
 ```bash
 # Update version in all platform-specific files
-# 1. pubspec.yaml
+# 1. pubspec.yaml (source of truth)
 version: [NEW_VERSION]+[BUILD_NUMBER]  # e.g., 3.1.0+245
 
-# 2. iOS Xcode project settings (for Xcode archive compatibility)
-# File: ios/Runner.xcodeproj/project.pbxproj
-MARKETING_VERSION = [VERSION];        # e.g., 3.1.0
-CURRENT_PROJECT_VERSION = [BUILD];    # e.g., 245
+# 2. iOS Xcode project settings — ios/Runner.xcodeproj/project.pbxproj now references
+#    $(FLUTTER_BUILD_NAME) / $(FLUTTER_BUILD_NUMBER) variables (no hardcoded values to edit).
+#    These variables resolve from ios/Flutter/Generated.xcconfig, which is NOT regenerated
+#    by `flutter build apk`/`appbundle` — only by an iOS-targeting flutter command.
+#    🚨 반드시 pubspec.yaml 버전을 바꾼 직후 아래 명령으로 Generated.xcconfig를 갱신할 것.
+#    빠뜨리면 pubspec은 새 버전인데 Xcode Archive에는 이전 버전이 표시됨(직접 겪은 문제).
+flutter build ios --release --no-codesign --config-only
+# 갱신 확인: ios/Flutter/Generated.xcconfig 의 FLUTTER_BUILD_NAME / FLUTTER_BUILD_NUMBER
 
 # 3. Settings screen fallback version
 # File: lib/screens/settings/settings_screen.dart
@@ -661,13 +665,13 @@ git diff                         # Review changes
 git log --oneline -n 5           # Check recent commits for style
 
 # Add all version update files and create commit with current version
-git add pubspec.yaml ios/Runner.xcodeproj/project.pbxproj lib/screens/settings/settings_screen.dart
+# ios/Flutter/Generated.xcconfig is gitignored (regenerated locally) — do not add it
+git add pubspec.yaml lib/screens/settings/settings_screen.dart
 
 git commit -m "$(cat <<'EOF'
 chore: 버전 [CURRENT_VERSION] 업데이트
 
-- pubspec.yaml: version [CURRENT_VERSION]+[BUILD_NUMBER]
-- iOS 프로젝트: MARKETING_VERSION [CURRENT_VERSION], CURRENT_PROJECT_VERSION [BUILD_NUMBER]
+- pubspec.yaml: version [CURRENT_VERSION]+[BUILD_NUMBER] (iOS는 $(FLUTTER_BUILD_NAME)/$(FLUTTER_BUILD_NUMBER) 변수로 이 값을 그대로 상속)
 - 설정 화면: 폴백 버전 표시 [CURRENT_VERSION] 업데이트
 - APK/AAB 빌드 완료 및 Google Drive 업로드 완료
 
@@ -721,21 +725,25 @@ echo "- ✅ 원격 저장소 푸시 완료"
 
 #### 🎯 Files That Must Be Updated for Version Changes
 1. **pubspec.yaml** - Main version source (Flutter uses this)
-2. **ios/Runner.xcodeproj/project.pbxproj** - iOS version (MARKETING_VERSION & CURRENT_PROJECT_VERSION)
+2. **ios/Flutter/Generated.xcconfig** - Xcode가 실제로 읽는 파일. `ios/Runner.xcodeproj/project.pbxproj`는 하드코딩 값이 아니라 `$(FLUTTER_BUILD_NAME)`/`$(FLUTTER_BUILD_NUMBER)` 변수를 참조하며, 이 값은 pubspec.yaml이 아니라 Generated.xcconfig에서 옴. **`flutter build apk`/`appbundle`로는 이 파일이 갱신되지 않음** — iOS 대상 커맨드를 돌려야 함:
+   ```bash
+   flutter build ios --release --no-codesign --config-only   # 컴파일 없이 설정만 빠르게 갱신
+   ```
+   빠뜨리면 pubspec.yaml은 새 버전인데 Xcode Archive에는 이전 버전이 표시됨 (실제로 겪은 문제, 2026-07-16).
 3. **lib/screens/settings/settings_screen.dart** - Fallback version display
 4. **android/app/build.gradle.kts** - Already references Flutter version automatically
 
 #### ⚠️ Critical Version Update Rules
-- **Always update ALL 4 files** - pubspec.yaml, iOS project, settings fallback, Android auto-inherits
+- **Always update pubspec.yaml + regenerate Generated.xcconfig + settings fallback** - Android/iOS 둘 다 pubspec.yaml에서 상속하지만, iOS는 `--config-only` 빌드를 한 번 돌려야 그 값이 실제로 반영됨
 - **🚨 MANDATORY: Git Branch Name Sync** - 버전 변경 시 브랜치 이름도 반드시 동기화 (main-v3.1.4 형태)
-- **Xcode Archive Compatibility** - iOS project settings must match pubspec.yaml exactly
+- **Xcode Archive Compatibility** - `flutter build ios --release --no-codesign --config-only` 실행 후 Generated.xcconfig의 FLUTTER_BUILD_NAME/FLUTTER_BUILD_NUMBER로 확인
 - **Build & Test** - Always build both APK and AAB after version update
 - **Automatic Upload** - Both files automatically uploaded to Google Drive
 - **Verification** - Confirm version appears correctly in built APK/AAB
 
 #### 📋 Version Update Checklist
 - [ ] Update pubspec.yaml version
-- [ ] Update iOS Xcode project MARKETING_VERSION & CURRENT_PROJECT_VERSION (6 locations each)
+- [ ] 🚨 `flutter build ios --release --no-codesign --config-only` 실행하여 Generated.xcconfig 갱신 (Xcode Archive용, 필수)
 - [ ] Update settings screen fallback version
 - [ ] 🚨 **Git Branch Name Update** (main-v[VERSION] 형태로 동기화)
 - [ ] Build APK and AAB
