@@ -12,15 +12,15 @@ const corsHeaders = {
 async function getFirebaseAccessToken() {
   try {
     console.log('🔑 [DEBUG] Firebase 접근 토큰 요청 시작');
-    
+
     // 환경변수에서 가져오기 (원래대로 복원)
     console.log('🔍 [DEBUG] 환경변수 확인 시작');
     const serviceAccountJson = Deno.env.get('FIREBASE_SERVICE_ACCOUNT_JSON');
-    
+
     console.log('🔍 [DEBUG] 환경변수 확인:');
     console.log(`   FIREBASE_SERVICE_ACCOUNT_JSON 존재: ${!!serviceAccountJson}`);
     console.log(`   길이: ${serviceAccountJson ? serviceAccountJson.length : 0}`);
-    
+
     if (!serviceAccountJson) {
       console.error('❌ [ERROR] FIREBASE_SERVICE_ACCOUNT_JSON 환경변수가 없습니다');
       console.log('🔍 [DEBUG] 사용 가능한 환경변수들:');
@@ -31,9 +31,9 @@ async function getFirebaseAccessToken() {
       }
       throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON not found in environment variables');
     }
-    
+
     console.log('✅ [DEBUG] 환경변수 존재 확인 완료');
-    
+
     // JSON 파싱 단계
     console.log('🔍 [DEBUG] JSON 파싱 시작');
     let serviceAccount;
@@ -44,7 +44,7 @@ async function getFirebaseAccessToken() {
       console.error('❌ [ERROR] JSON 파싱 실패:', parseError);
       throw new Error(`Failed to parse service account JSON: ${parseError.message}`);
     }
-    
+
     console.log(`📋 [DEBUG] 서비스 계정 로드 완료: ${serviceAccount.client_email}`);
     console.log(`   프로젝트 ID: ${serviceAccount.project_id}`);
     console.log(`   Private Key 존재: ${!!serviceAccount.private_key}`);
@@ -63,45 +63,45 @@ async function getFirebaseAccessToken() {
       iat: now,
       exp: now + 3600
     };
-    
+
     console.log('📋 [DEBUG] JWT Payload:', JSON.stringify(payload, null, 2));
-    
+
     // Private Key 처리
     console.log('🔍 [DEBUG] Private Key 처리 시작');
     let privateKeyPem = serviceAccount.private_key;
-    
+
     console.log('🔍 [DEBUG] Private Key 분석:');
     console.log(`   원본 길이: ${privateKeyPem.length}`);
-    console.log(`   이스케이프된 \\n 포함: ${privateKeyPem.includes('\\n')}`);
+    console.log(`   이스케이프된 \\\\n 포함: ${privateKeyPem.includes('\\\\n')}`);
     console.log(`   실제 newline 포함: ${privateKeyPem.includes('\n')}`);
     console.log(`   시작 부분: ${privateKeyPem.substring(0, 30)}...`);
-    
+
     // 이중 이스케이프된 newline 처리 (DB에서 가져온 경우)
-    if (privateKeyPem.includes('\\\\n')) {
+    if (privateKeyPem.includes('\\\\\\\\n')) {
       console.log('🔄 [DEBUG] Converting double-escaped newlines');
-      privateKeyPem = privateKeyPem.replace(/\\\\n/g, '\n');
+      privateKeyPem = privateKeyPem.replace(/\\\\\\\\n/g, '\n');
       console.log(`   변환 후 길이: ${privateKeyPem.length}`);
-    } else if (privateKeyPem.includes('\\n') && !privateKeyPem.includes('\n')) {
+    } else if (privateKeyPem.includes('\\\\n') && !privateKeyPem.includes('\n')) {
       console.log('🔄 [DEBUG] Converting single-escaped newlines');
-      privateKeyPem = privateKeyPem.replace(/\\n/g, '\n');
+      privateKeyPem = privateKeyPem.replace(/\\\\n/g, '\n');
       console.log(`   변환 후 길이: ${privateKeyPem.length}`);
     } else {
       console.log('✅ [DEBUG] Private key already has real newlines');
     }
-    
+
     // PEM 형식에서 base64 부분만 추출
     const pemContents = privateKeyPem
       .replace('-----BEGIN PRIVATE KEY-----', '')
       .replace('-----END PRIVATE KEY-----', '')
       .replace(/\s/g, '');
-    
+
     // base64를 ArrayBuffer로 변환
     const binaryDer = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
-    
+
     // crypto.subtle.importKey 사용
     console.log('🔑 [DEBUG] Private Key import 시작');
     console.log(`   binaryDer 길이: ${binaryDer.length}`);
-    
+
     let key;
     try {
       key = await crypto.subtle.importKey(
@@ -119,14 +119,14 @@ async function getFirebaseAccessToken() {
       console.error('❌ [ERROR] Private key import 실패:', importError);
       throw new Error(`Failed to import private key: ${importError.message}`);
     }
-    
+
     // JWT 생성 - djwt 라이브러리 사용
     console.log('🔐 [DEBUG] Creating JWT with djwt library');
     let jwt;
     try {
       // djwt의 create 함수 사용
       jwt = await create(header, payload, key);
-      
+
       console.log('✅ [DEBUG] JWT 생성 완료 (djwt)');
       console.log(`   JWT 길이: ${jwt.length}`);
       console.log(`   JWT 첫 50자: ${jwt.substring(0, 50)}...`);
@@ -136,7 +136,7 @@ async function getFirebaseAccessToken() {
       console.error('❌ [ERROR] JWT 생성 실패:', jwtError);
       throw new Error(`Failed to create JWT: ${jwtError.message}`);
     }
-      
+
     // Google OAuth2 토큰 요청
     console.log('🌐 [DEBUG] Google OAuth2 토큰 요청 시작');
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -149,10 +149,10 @@ async function getFirebaseAccessToken() {
         assertion: jwt
       })
     });
-    
+
     console.log(`🔍 [DEBUG] OAuth2 응답 상태: ${tokenResponse.status}`);
     console.log(`🔍 [DEBUG] OAuth2 응답 헤더:`, Object.fromEntries(tokenResponse.headers.entries()));
-    
+
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
       console.error('❌ [ERROR] OAuth2 토큰 요청 실패:', errorText);
@@ -160,14 +160,14 @@ async function getFirebaseAccessToken() {
       console.error('🔍 [DEBUG] Response headers:', Object.fromEntries(tokenResponse.headers.entries()));
       throw new Error(`Failed to get access token: ${tokenResponse.status} - ${errorText}`);
     }
-    
+
     console.log('✅ [DEBUG] OAuth2 응답 성공, JSON 파싱 시작');
     const tokenData = await tokenResponse.json();
     console.log('✅ [DEBUG] OAuth2 토큰 획득 성공');
     console.log(`   Access Token 존재: ${!!tokenData.access_token}`);
     console.log(`   Access Token 길이: ${tokenData.access_token ? tokenData.access_token.length : 0}`);
     console.log(`   만료 시간: ${tokenData.expires_in}초`);
-    
+
     return {
       accessToken: tokenData.access_token,
       projectId: serviceAccount.project_id
@@ -205,10 +205,10 @@ async function sendFCMMessage(accessToken, fcmToken, title, body, data = {}, ema
     if (!projectId) {
       throw new Error('Project ID not provided');
     }
-    
+
     // 줄바꿈 이스케이프를 실제 개행으로 변환
     const normalizedBody = (body || '').replace(/\\n/g, '\n');
-    
+
     // FCM data 필드는 모든 값이 문자열이어야 함
     const stringData = {};
     for (const [key, value] of Object.entries(data)) {
@@ -216,7 +216,7 @@ async function sendFCMMessage(accessToken, fcmToken, title, body, data = {}, ema
         stringData[key] = typeof value === 'string' ? value : JSON.stringify(value);
       }
     }
-    
+
     const message = {
       message: {
         token: fcmToken,
@@ -290,7 +290,7 @@ async function getRoleTokens(supabase, role, excludeEmail) {
   try {
     console.log(`🔍 [DB 조회] ${role} 역할의 직원 조회 시작`);
     console.log(`   제외 이메일: ${excludeEmail || 'none'}`);
-    
+
     // roles 통합 칼럼에서 역할 확인
     let query = supabase.from('employees')
       .select('email, name, fcm_token')
@@ -300,10 +300,10 @@ async function getRoleTokens(supabase, role, excludeEmail) {
     if (excludeEmail) {
       query = query.neq('email', excludeEmail);
     }
-    
+
     console.log('🔍 [DB 조회] 쿼리 실행 중...');
     const { data: employees, error } = await query;
-    
+
     if (error) {
       console.error('❌ [ERROR] 직원 조회 실패:', error);
       console.error('   Error details:', JSON.stringify(error, null, 2));
@@ -312,17 +312,17 @@ async function getRoleTokens(supabase, role, excludeEmail) {
         emails: []
       };
     }
-    
+
     console.log(`✅ [DB 조회] ${employees.length}명의 직원 조회 완료`);
     console.log('🔍 [DB 조회] 조회된 직원들:');
     employees.forEach((emp, index) => {
       console.log(`   ${index + 1}. ${emp.name} (${emp.email}): ${emp.fcm_token ? '토큰 있음' : '토큰 없음'}`);
     });
-    
+
     const tokens = employees.map((emp)=>emp.fcm_token).filter(Boolean);
     const emails = employees.map((emp)=>emp.email).filter(Boolean);
     console.log(`📊 [DB 조회] 최종 결과: ${tokens.length}개 토큰, ${emails.length}개 이메일`);
-    
+
     return {
       tokens,
       emails
@@ -507,24 +507,24 @@ Deno.serve(async (req)=>{
     console.log('🔍 [DEBUG] Supabase 환경변수 확인 시작');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    
+
     console.log(`   SUPABASE_URL 존재: ${!!supabaseUrl}`);
     console.log(`   SUPABASE_URL: ${supabaseUrl || '없음'}`);
     console.log(`   SUPABASE_SERVICE_ROLE_KEY 존재: ${!!supabaseServiceKey}`);
     console.log(`   SUPABASE_SERVICE_ROLE_KEY 길이: ${supabaseServiceKey ? supabaseServiceKey.length : 0}`);
-    
+
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error('❌ [ERROR] Supabase 환경변수 누락');
       throw new Error('Missing Supabase environment variables');
     }
-    
+
     // Supabase 클라이언트 초기화
     console.log('🔍 [DEBUG] Supabase 클라이언트 초기화 시작');
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     console.log('✅ [DEBUG] Supabase 클라이언트 초기화 완료');
     // 요청 파싱
     const requestData = await req.json();
-    let { type, title, body, data = {}, requester_department, requester_name, user_email, fcm_tokens, is_manager_request, skip_db_notification, purchase_order_number, vendor_name, payment_category, status, middle_manager_status, progress_type, targetEmail, notificationType } = requestData;
+    let { type, title, body, data = {}, requester_department, requester_name, user_email, fcm_tokens, is_manager_request, skip_db_notification, purchase_order_number, vendor_name, payment_category, status, middle_manager_status, progress_type, targetEmail, notificationType, teams, individuals } = requestData;
     // Firebase Access Token 획득 (실패해도 계속 진행)
     let accessToken = null;
     let projectId = null;
@@ -542,7 +542,7 @@ Deno.serve(async (req)=>{
       console.error('   Error name:', error?.name);
       console.error('   Error message:', error?.message);
       console.error('   Error stack:', error?.stack);
-      
+
       // 환경변수 직접 확인
       console.log('🔍 [DEBUG] 환경변수 직접 확인:');
       const envVars = Deno.env.toObject();
@@ -551,7 +551,7 @@ Deno.serve(async (req)=>{
           console.log(`   ${key}: ${value ? '설정됨 (길이: ' + value.length + ')' : '없음'}`);
         }
       }
-      
+
       // Firebase 오류가 있어도 계속 진행
     }
     let targetTokens = [];
@@ -566,13 +566,9 @@ Deno.serve(async (req)=>{
       ]);
       targetTokens = result.tokens;
       targetEmails = result.emails;
-      if (!title) title = payment_category === '현장 결제' ? '💳 현장 카드사용 등록' : '📦 새로운 구매 요청';
+      if (!title) title = '📦 새로운 구매 요청';
       if (!body) {
-        if (payment_category === '현장 결제') {
-          body = purchase_order_number ? `${requester_name}님이 현장 카드사용 내역을 등록하였습니다. (${purchase_order_number})` : `${requester_name}님이 현장 카드사용 내역을 등록하였습니다.`;
-        } else {
-          body = purchase_order_number ? `${requester_name}님이 ${payment_category} 요청(${purchase_order_number})을 등록했습니다.` : `${requester_name}님이 새로운 구매 요청을 등록했습니다.`;
-        }
+        body = purchase_order_number ? `${requester_name}님이 ${payment_category} 요청(${purchase_order_number})을 등록했습니다.` : `${requester_name}님이 새로운 구매 요청을 등록했습니다.`;
       }
     } else if (type === 'purchase_status_change') {
       console.log('🔄 [구매 알림] 구매 상태 변경 처리');
@@ -612,7 +608,7 @@ Deno.serve(async (req)=>{
         // 최종 승인 처리
         const requesterEmail = await getRequesterEmail(supabase, requester_name);
         const userToken = requesterEmail ? await getUserToken(supabase, requesterEmail) : null;
-        
+
         // 카테고리와 progress_type에 따라 알림 처리
         if (payment_category === '구매 요청' || payment_category === '구매요청') {
           // 구매 요청의 경우 - lead buyer에게만 알림
@@ -621,7 +617,7 @@ Deno.serve(async (req)=>{
           ]);
           targetTokens = leadBuyerResult.tokens;
           targetEmails = leadBuyerResult.emails;
-          
+
           if (progress_type === '선진행') {
             if (!title) title = '🚀 선진행 구매 요청';
             if (!body) body = `${requester_name}님의 선진행 ${payment_category}(${purchase_order_number})이 등록되었습니다. 구매 진행 부탁드립니다.`;
@@ -673,28 +669,35 @@ Deno.serve(async (req)=>{
         if (!body) body = `${requester_name}님의 ${payment_category}(${purchase_order_number})이 반려되었습니다.`;
       }
     } else if (type === 'transaction_statement_extracted') {
-      console.log('🟠 [거래명세서 알림] 확인필요(extracted) 처리');
-
-      // 확인필요 알림은 lead buyer + superadmin에게 전송
-      const result = await getPurchaseRoleTokens(supabase, [
-        'lead buyer',
-        'superadmin'
-      ]);
-      targetTokens = result.tokens;
-      targetEmails = result.emails;
+      console.log('🟠 [거래명세서 알림] 등록자에게 추출 완료 알림');
 
       const dataMap = data && typeof data === 'object' ? data : {};
       const uploaderName = dataMap['uploaded_by_name'] ||
         dataMap['uploader_name'] ||
         requester_name ||
         '알 수 없음';
+      const uploaderEmail = dataMap['uploaded_by_email'] || '';
       const vendorName = dataMap['vendor_name'] || dataMap['vendorName'] || '';
       const grandTotal = dataMap['grand_total'] || dataMap['grandTotal'] || '';
 
-      if (!title) title = '🟠 거래명세서 확인 필요';
+      // 등록자에게만 알림 전송
+      if (uploaderEmail) {
+        const userToken = await getUserToken(supabase, uploaderEmail);
+        if (userToken) {
+          targetTokens = [userToken];
+          targetEmails = [uploaderEmail];
+          console.log(`  ✅ 등록자에게 알림: ${uploaderName} (${uploaderEmail})`);
+        } else {
+          console.log(`  ❌ 등록자 FCM 토큰 없음: ${uploaderName} (${uploaderEmail})`);
+        }
+      } else {
+        console.log('  ❌ 등록자 이메일 정보 없음');
+      }
+
+      if (!title) title = '✅ 거래명세서 추출 완료';
       if (!body) {
         const parts = [];
-        parts.push(`${uploaderName}님이 거래명세서를 등록했습니다.`);
+        parts.push('거래명세서 추출이 완료되었습니다. 입고수량 체크 바랍니다.');
         if (vendorName) parts.push(`거래처: ${vendorName}`);
         if (grandTotal) {
           const formatted = Number(grandTotal).toLocaleString('ko-KR');
@@ -709,10 +712,185 @@ Deno.serve(async (req)=>{
         statement_id: dataMap['statement_id'] || dataMap['statementId'] || '',
         image_url: dataMap['image_url'] || dataMap['imageUrl'] || '',
         uploaded_by_name: uploaderName,
+        uploaded_by_email: uploaderEmail,
         uploaded_at: dataMap['uploaded_at'] || dataMap['uploadedAt'] || '',
         vendor_name: vendorName,
         grand_total: grandTotal,
         status: 'extracted'
+      };
+    } else if (type === 'transaction_statement_quantities_matched') {
+      console.log('✅ [거래명세서 알림] 수량체크 완료 → lead buyer에게 알림');
+
+      const dataMap = data && typeof data === 'object' ? data : {};
+      const uploaderName = dataMap['uploaded_by_name'] || '알 수 없음';
+      const vendorName = dataMap['vendor_name'] || '';
+      const grandTotal = dataMap['grand_total'] || '';
+      const statementCode = dataMap['statement_code'] || '';
+
+      // lead buyer에게 알림 전송
+      const result = await getPurchaseRoleTokens(supabase, ['lead buyer']);
+      targetTokens = result.tokens;
+      targetEmails = result.emails;
+
+      if (!title) title = '📋 거래명세서 수량체크 완료';
+      if (!body) {
+        const parts = [];
+        parts.push('수량체크가 완료되었습니다. 해당 거래명세서의 금액 체크 바랍니다.');
+        if (vendorName) parts.push(`거래처: ${vendorName}`);
+        if (grandTotal) {
+          const formatted = Number(grandTotal).toLocaleString('ko-KR');
+          parts.push(`금액: ₩${formatted}`);
+        }
+        body = parts.join('\n');
+      }
+
+      data = {
+        ...dataMap,
+        type: 'transaction_statement_quantities_matched',
+        statement_id: dataMap['statement_id'] || '',
+        vendor_name: vendorName,
+        grand_total: grandTotal,
+        statement_code: statementCode,
+        uploaded_by_name: uploaderName
+      };
+    } else if (type === 'business_trip_approved') {
+      console.log('✈️ [출장 알림] 출장 승인 → 요청자에게 카드 수령 알림');
+
+      const dataMap = data && typeof data === 'object' ? data : {};
+      const requesterEmail = dataMap['requester_email'] || '';
+      const tripCode = dataMap['trip_code'] || '';
+      const cardNumber = dataMap['card_number'] || '';
+
+      if (requesterEmail) {
+        const userToken = await getUserToken(supabase, requesterEmail);
+        if (userToken) {
+          targetTokens = [userToken];
+          targetEmails = [requesterEmail];
+          console.log(`  ✅ 요청자에게 알림: ${requesterEmail}`);
+        } else {
+          console.log(`  ❌ 요청자 FCM 토큰 없음: ${requesterEmail}`);
+        }
+      }
+
+      if (!title) title = '✈️ 출장 승인 완료';
+      if (!body) {
+        const parts = ['출장 신청이 승인되었습니다.'];
+        if (cardNumber) parts.push(`카드(${cardNumber})를 수령해 주세요.`);
+        if (tripCode) parts.push(`출장번호: ${tripCode}`);
+        body = parts.join('\n');
+      }
+
+      data = {
+        ...dataMap,
+        type: 'business_trip_approved',
+      };
+    } else if (type === 'card_usage_approved') {
+      console.log('💳 [카드 알림] 카드 사용 승인 → 요청자에게 알림');
+
+      const dataMap = data && typeof data === 'object' ? data : {};
+      const requesterEmail = dataMap['requester_email'] || '';
+      const cardNumber = dataMap['card_number'] || '';
+      const usageCategory = dataMap['usage_category'] || '';
+
+      if (requesterEmail) {
+        const userToken = await getUserToken(supabase, requesterEmail);
+        if (userToken) {
+          targetTokens = [userToken];
+          targetEmails = [requesterEmail];
+          console.log(`  ✅ 요청자에게 알림: ${requesterEmail}`);
+        } else {
+          console.log(`  ❌ 요청자 FCM 토큰 없음: ${requesterEmail}`);
+        }
+      }
+
+      if (!title) title = '💳 카드 사용 승인 완료';
+      if (!body) {
+        const parts = ['카드 사용 요청이 승인되었습니다.'];
+        if (cardNumber) parts.push(`카드: ${cardNumber}`);
+        if (usageCategory) parts.push(`용도: ${usageCategory}`);
+        body = parts.join('\n');
+      }
+
+      data = {
+        ...dataMap,
+        type: 'card_usage_approved',
+      };
+    } else if (type === 'ai_service_reviewed') {
+      console.log('🤖 [AI 서비스 신청서 알림] 검토완료 -> admin에게 알림');
+      const result = await getPurchaseRoleTokens(supabase, ['admin']);
+      targetTokens = result.tokens;
+      targetEmails = result.emails;
+    } else if (type === 'new_vendor_inquiry') {
+      // 업체등록 요청 문의 접수 → lead buyer + superadmin에게 알림
+      console.log('🏢 [업체등록 요청 알림] 신규 업체 등록 요청 → lead buyer, superadmin에게 알림');
+
+      const dataMap = data && typeof data === 'object' ? data : {};
+      const requesterName = dataMap['requester_name'] || '';
+      const vendorName = dataMap['vendor_name'] || '';
+
+      const result = await getPurchaseRoleTokens(supabase, ['lead buyer', 'superadmin']);
+      targetTokens = result.tokens;
+      targetEmails = result.emails;
+
+      if (!title) title = '🏢 신규 업체 등록 요청';
+      if (!body) {
+        const parts = [];
+        parts.push(`${requesterName || '직원'}님이 업체 등록을 요청했습니다.`);
+        if (vendorName) parts.push(`업체명: ${vendorName}`);
+        body = parts.join('\n');
+      }
+
+      data = {
+        ...dataMap,
+        type: 'new_vendor_inquiry'
+      };
+    } else if (type === 'vendor_edit_inquiry') {
+      // 기존업체 수정 요청 문의 접수 → lead buyer + superadmin에게 알림
+      console.log('✏️ [기존업체 수정 요청 알림] lead buyer, superadmin에게 알림');
+
+      const dataMap = data && typeof data === 'object' ? data : {};
+      const requesterName = dataMap['requester_name'] || '';
+      const vendorName = dataMap['vendor_name'] || '';
+
+      const result = await getPurchaseRoleTokens(supabase, ['lead buyer', 'superadmin']);
+      targetTokens = result.tokens;
+      targetEmails = result.emails;
+
+      if (!title) title = '✏️ 기존업체 수정 요청';
+      if (!body) {
+        const parts = [];
+        parts.push(`${requesterName || '직원'}님이 업체 정보 수정을 요청했습니다.`);
+        if (vendorName) parts.push(`업체명: ${vendorName}`);
+        body = parts.join('\n');
+      }
+
+      data = {
+        ...dataMap,
+        type: 'vendor_edit_inquiry'
+      };
+    } else if (type === 'shipping_edit_inquiry') {
+      // 택배 주소록 수정 요청 문의 접수 → lead buyer + superadmin에게 알림
+      console.log('📦 [택배 주소록 수정 요청 알림] lead buyer, superadmin에게 알림');
+
+      const dataMap = data && typeof data === 'object' ? data : {};
+      const requesterName = dataMap['requester_name'] || '';
+      const companyName = dataMap['company_name'] || '';
+
+      const result = await getPurchaseRoleTokens(supabase, ['lead buyer', 'superadmin']);
+      targetTokens = result.tokens;
+      targetEmails = result.emails;
+
+      if (!title) title = '📦 택배 주소록 수정 요청';
+      if (!body) {
+        const parts = [];
+        parts.push(`${requesterName || '직원'}님이 택배 주소록 수정을 요청했습니다.`);
+        if (companyName) parts.push(`업체명: ${companyName}`);
+        body = parts.join('\n');
+      }
+
+      data = {
+        ...dataMap,
+        type: 'shipping_edit_inquiry'
       };
     } else if (type === 'admin') {
       // 연차/출장 관리자 알림 - roles 기반
@@ -723,9 +901,9 @@ Deno.serve(async (req)=>{
       let query = supabase.from('employees')
         .select('email, name, fcm_token, roles, department')
         .not('fcm_token', 'is', null);
-      
+
       const { data: employees, error } = await query;
-      
+
       if (error) {
         console.error('Error fetching employees for admin notification:', error);
         targetTokens = [];
@@ -734,7 +912,7 @@ Deno.serve(async (req)=>{
         const tokens = [];
         const emails = [];
         const processedEmails = new Set();
-        
+
         for (const emp of employees) {
           if (!emp.roles || !Array.isArray(emp.roles)) continue;
 
@@ -775,11 +953,87 @@ Deno.serve(async (req)=>{
             processedEmails.add(emp.email);
           }
         }
-        
+
         targetTokens = tokens;
         targetEmails = emails;
         console.log(`📊 [연차/출장 알림] 총 ${tokens.length}명에게 전송 예정`);
       }
+    } else if (type === 'production_teams') {
+      // 제작현황: 팀 배열(CM팀/생산팀/CAD/연구소) + 개인 배열 기반 발송
+      console.log('🏭 [제작현황 알림] 대상 팀:', teams, '개인:', individuals);
+      const teamList = Array.isArray(teams) ? teams : [];
+      const individualList = Array.isArray(individuals) ? individuals : [];
+      // 팀 단위 알림에서 제외할 인원 (개인 지정 발송은 유지)
+      const PRODUCTION_TEAM_EXCLUDES = new Set(['hyun-woong.jeong@hansl.com', 'hee-seung.kim@hansl.com']);
+      const tokens = [];
+      const emails = [];
+      const processedEmails = new Set();
+
+      for (const team of teamList) {
+        const result = (team === 'CAD' || team === '연구소')
+          ? await getDepartmentTokens(supabase, team)
+          : await getRoleTokens(supabase, team);
+        result.emails.forEach((email, idx) => {
+          if (!processedEmails.has(email) && !PRODUCTION_TEAM_EXCLUDES.has(email)) {
+            tokens.push(result.tokens[idx]);
+            emails.push(email);
+            processedEmails.add(email);
+          }
+        });
+      }
+
+      for (const email of individualList) {
+        if (processedEmails.has(email)) continue;
+        const userToken = await getUserToken(supabase, email);
+        if (userToken) {
+          tokens.push(userToken);
+          emails.push(email);
+          processedEmails.add(email);
+        }
+      }
+
+      // 사용자별 수신 설정(employees.notification_preferences.production_teams) 필터링
+      // 항목 키: 신규 등록은 'production_new_row', 완료 이벤트는 data.field 값
+      // (설정에 키가 없으면 기본 수신, 조회 실패 시에도 기존대로 전원 발송)
+      const prodDataMap = data && typeof data === 'object' ? data : {};
+      const prefKey = prodDataMap['type'] === 'production_new_row'
+        ? 'production_new_row'
+        : (prodDataMap['field'] || null);
+      if (prefKey && emails.length > 0) {
+        const { data: prefRows, error: prefError } = await supabase
+          .from('employees')
+          .select('email, notification_preferences')
+          .in('email', emails);
+        if (prefError) {
+          console.error('❌ [제작현황 알림] 수신 설정 조회 실패(필터 없이 발송):', prefError);
+        } else {
+          const optedOut = new Set(
+            (prefRows || [])
+              .filter((row) => row.notification_preferences?.production_teams?.[prefKey] === false)
+              .map((row) => row.email)
+          );
+          if (optedOut.size > 0) {
+            const filteredTokens = [];
+            const filteredEmails = [];
+            emails.forEach((email, idx) => {
+              if (optedOut.has(email)) {
+                console.log(`  🔕 수신 거부(${prefKey}): ${email}`);
+              } else {
+                filteredTokens.push(tokens[idx]);
+                filteredEmails.push(email);
+              }
+            });
+            tokens.length = 0;
+            tokens.push(...filteredTokens);
+            emails.length = 0;
+            emails.push(...filteredEmails);
+          }
+        }
+      }
+
+      targetTokens = tokens;
+      targetEmails = emails;
+      console.log(`📊 [제작현황 알림] 총 ${tokens.length}명에게 전송 예정`);
     } else if (type === 'manager') {
       // 부서 관리자 메시지 처리
       if (is_manager_request && requester_department) {
@@ -842,7 +1096,7 @@ Deno.serve(async (req)=>{
     console.log(`📤 [FCM 전송] 시작 - 토큰 수: ${targetTokens.length}`);
     console.log(`   Access Token 존재: ${!!accessToken}`);
     console.log(`   Project ID: ${projectId}`);
-    
+
     if (accessToken && projectId && targetTokens.length > 0) {
       console.log('🚀 [FCM 전송] Firebase 토큰과 프로젝트 ID 확인됨, 전송 시작');
       const results = await Promise.all(targetTokens.map((token, index)=>sendFCMMessage(accessToken, token, title || '', body || '', data, targetEmails[index], projectId)));

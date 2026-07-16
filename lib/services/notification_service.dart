@@ -360,6 +360,9 @@ class NotificationService {
       final notificationId =
           message.messageId?.hashCode ?? DateTime.now().millisecondsSinceEpoch;
 
+      final title = message.notification?.title ?? '';
+      final body = message.notification?.body ?? '';
+
       // 로컬 알림 표시
       await _localNotifications.show(
         notificationId,

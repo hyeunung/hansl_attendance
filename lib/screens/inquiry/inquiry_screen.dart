@@ -19,24 +19,24 @@ import 'inquiry_detail_sheet.dart';
 class _QuantityChangeRow {
   _QuantityChangeRow();
   String? itemId;
-  String newQuantity;
+  String newQuantity = '';
 }
 
 class _PriceChangeRow {
   _PriceChangeRow();
   String? itemId;
-  String changeType;
-  String newValue;
+  String changeType = '';
+  String newValue = '';
 }
 
 class _ItemAddRow {
   _ItemAddRow();
-  String itemName;
-  String specification;
-  String quantity;
-  String unit;
-  String unitPrice;
-  String remark;
+  String itemName = '';
+  String specification = '';
+  String quantity = '';
+  String unit = '';
+  String unitPrice = '';
+  String remark = '';
 }
 
 /// 문의하기 화면

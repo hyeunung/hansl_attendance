@@ -22,6 +22,7 @@ import '../../widgets/shared/flat_section.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import '../../utils/user_role_helper.dart';
 import '../admin/admin_attendance_screen.dart';
+import 'notification_settings_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -119,7 +120,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       });
     } catch (e) {
       setState(() {
-        _appVersion = '앱 버전 4.1.8';
+        _appVersion = '앱 버전 4.2.0+286';
       });
     }
   }
@@ -597,6 +598,21 @@ class _SettingsScreenState extends State<SettingsScreen>
 
                   // 앱 설정 섹션
                   FlatSectionHeader(title: '앱 설정'),
+                  FlatListTile(
+                    title: '푸시 알림',
+                    leading: Icon(
+                      Icons.notifications_outlined,
+                      size: ResponsiveUtils.iconSize(context, 20),
+                      color: AppColors.warning,
+                    ),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const NotificationSettingsScreen(),
+                        ),
+                      );
+                    },
+                  ),
                   FlatListTile(
                     title: '폰트 크기',
                     value: _fontSize,
