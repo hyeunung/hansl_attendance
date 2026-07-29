@@ -531,8 +531,10 @@ class InquiryService {
   }
 
   /// 실시간 문의 업데이트 구독 (답변 알림용)
+  /// [channelKey]: 화면별 채널 분리용 접미사 (동일 채널명 중복 구독 방지)
   RealtimeChannel? subscribeToInquiryUpdates({
     required Function(Map<String, dynamic>) onUpdate,
+    String channelKey = '',
   }) {
     try {
       final user = _supabase.auth.currentUser;
@@ -545,7 +547,7 @@ class InquiryService {
 
       // 일반 사용자는 본인 문의만, 관리자는 모든 문의 구독
       return _supabase
-          .channel('inquiry_updates_${user.id}')
+          .channel('inquiry_updates_${user.id}$channelKey')
           .onPostgresChanges(
             event: PostgresChangeEvent.insert,
             schema: 'public',
@@ -593,6 +595,7 @@ class InquiryService {
   /// - type in (inquiry_message, inquiry_resolved, inquiry_response)
   RealtimeChannel? subscribeToInquiryNotificationUpdates({
     required Function() onUpdate,
+    String channelKey = '',
   }) {
     try {
       final user = _supabase.auth.currentUser;
@@ -600,7 +603,7 @@ class InquiryService {
       if (email == null || email.isEmpty) return null;
 
       return _supabase
-          .channel('inquiry_notifications_$email')
+          .channel('inquiry_notifications_$email$channelKey')
           .onPostgresChanges(
             event: PostgresChangeEvent.insert,
             schema: 'public',

@@ -21,6 +21,7 @@ import '../utils/responsive_utils.dart';
 import '../utils/user_role_helper.dart';
 import '../services/notification_service.dart';
 import '../services/badge_count_service.dart';
+import '../services/inquiry_service.dart';
 import '../widgets/common/notification_banner_widget.dart';
 
 // KeepAlive 위젯 정의
@@ -70,6 +71,12 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
   late PageController _pageController;
   List<Widget>? _screens; // nullable로 변경
   bool _isInitialized = false; // 초기화 완료 여부 추가
+
+  // 설정 탭 문의 배지 (관리자: 미처리 문의, 일반: 미확인 답변)
+  final InquiryService _inquiryService = InquiryService();
+  int _inquiryBadgeCount = 0;
+  bool _isInquiryAdmin = false;
+  RealtimeChannel? _inquiryBadgeChannel;
 
   @override
   void initState() {
@@ -147,12 +154,61 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
         // Badge service error - silently fail
       }
 
+      // 설정 탭 문의 배지 초기화 및 실시간 구독 설정
+      try {
+        await _initInquiryBadge();
+      } catch (e) {
+        // Badge service error - silently fail
+      }
+
       // 승인관리 데이터 미리 로드 (배지 즉시 표시를 위해)
       Future.delayed(const Duration(seconds: 1), () {
         if (mounted) {
           _preloadApprovalData();
         }
       });
+    }
+  }
+
+  Future<void> _initInquiryBadge() async {
+    await _loadInquiryBadgeCount();
+    _setupInquiryBadgeSubscription();
+  }
+
+  /// 문의 배지 카운트 로드 (설정 화면 메뉴 배지와 동일 기준)
+  Future<void> _loadInquiryBadgeCount() async {
+    _isInquiryAdmin = await _inquiryService.isAppAdmin();
+
+    final count = _isInquiryAdmin
+        ? await _inquiryService.getUnprocessedCount()
+        : await _inquiryService.getUnreadResponseCount();
+
+    if (mounted && count != _inquiryBadgeCount) {
+      setState(() {
+        _inquiryBadgeCount = count;
+      });
+    }
+  }
+
+  /// 문의 배지 실시간 구독 (SettingsScreen 구독과 채널 분리)
+  void _setupInquiryBadgeSubscription() {
+    if (_inquiryBadgeChannel != null) {
+      _inquiryService.unsubscribe(_inquiryBadgeChannel);
+      _inquiryBadgeChannel = null;
+    }
+
+    if (_isInquiryAdmin) {
+      // 관리자: 미처리 문의(support_inquires) 변화 감지
+      _inquiryBadgeChannel = _inquiryService.subscribeToInquiryUpdates(
+        onUpdate: (_) => _loadInquiryBadgeCount(),
+        channelKey: '_main_tab',
+      );
+    } else {
+      // 일반 사용자: notifications(inquiry_message/inquiry_resolved) 변화 감지
+      _inquiryBadgeChannel = _inquiryService.subscribeToInquiryNotificationUpdates(
+        onUpdate: () => _loadInquiryBadgeCount(),
+        channelKey: '_main_tab',
+      );
     }
   }
 
@@ -268,6 +324,10 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    if (_inquiryBadgeChannel != null) {
+      _inquiryService.unsubscribe(_inquiryBadgeChannel);
+      _inquiryBadgeChannel = null;
+    }
     _pageController.dispose();
     super.dispose();
   }
@@ -496,6 +556,20 @@ final roles = UserRoleHelper.getRoles(employee);
       return icon;
     }
 
+    Widget buildSettingsIcon(int currentIndex, int itemIndex) {
+      final icon = Icon(
+        Icons.settings,
+        color: currentIndex == itemIndex ? AppColors.primary : AppColors.gray400,
+      );
+      if (_inquiryBadgeCount > 0) {
+        return Badge(
+          label: Text('$_inquiryBadgeCount'),
+          child: icon,
+        );
+      }
+      return icon;
+    }
+
     // 알바, 계약직인 경우: 근무기록, 연차/출장, 대시보드(승인관리), 달력, 설정만 표시
     if (isPartTimeOrContract) {
       // 3번째 탭: 대시보드(승인관리)
@@ -544,12 +618,7 @@ final roles = UserRoleHelper.getRoles(employee);
         BottomNavigationBarItem(
           icon: Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Icon(
-              Icons.settings,
-              color: _currentIndex == 5
-                  ? AppColors.primary
-                  : AppColors.gray400,
-            ),
+            child: buildSettingsIcon(_currentIndex, 5),
           ),
           label: '',
         ),
@@ -632,12 +701,7 @@ final roles = UserRoleHelper.getRoles(employee);
           BottomNavigationBarItem(
             icon: Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Icon(
-                Icons.settings,
-                color: _currentIndex == 6
-                    ? AppColors.primary
-                    : AppColors.gray400,
-              ),
+              child: buildSettingsIcon(_currentIndex, 6),
             ),
             label: '',
           ),
@@ -665,12 +729,7 @@ final roles = UserRoleHelper.getRoles(employee);
           BottomNavigationBarItem(
             icon: Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Icon(
-                Icons.settings,
-                color: _currentIndex == 5
-                    ? AppColors.primary
-                    : AppColors.gray400,
-              ),
+              child: buildSettingsIcon(_currentIndex, 5),
             ),
             label: '',
           ),
