@@ -120,7 +120,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       });
     } catch (e) {
       setState(() {
-        _appVersion = '앱 버전 4.2.0+286';
+        _appVersion = '앱 버전 4.2.1+287';
       });
     }
   }
@@ -194,6 +194,53 @@ class _SettingsScreenState extends State<SettingsScreen>
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildInquiryTile(BuildContext context) {
+    return FlatListTile(
+      title: _isAdmin ? '문의 관리' : '문의하기',
+      value: _isAdmin
+          ? (_inquiryBadgeCount > 0
+              ? '미처리 $_inquiryBadgeCount건'
+              : '처리 완료')
+          : null,
+      leading: Icon(
+        Icons.support_agent,
+        size: ResponsiveUtils.iconSize(context, 20),
+        color: AppColors.success,
+      ),
+      trailing: _inquiryBadgeCount > 0
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: ResponsiveUtils.spacing(context, 22),
+                  height: ResponsiveUtils.spacing(context, 22),
+                  decoration: const BoxDecoration(
+                    color: AppColors.error,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      _inquiryBadgeCount.toString(),
+                      style: AppTextStyles.tableHeader(context).copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: ResponsiveUtils.spacing(context, 4)),
+                Icon(
+                  Icons.chevron_right,
+                  size: 20,
+                  color: AppColors.textTertiary,
+                ),
+              ],
+            )
+          : null,
+      onTap: _showInquiryDialog,
     );
   }
 
@@ -594,6 +641,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                         );
                       },
                     ),
+                    if (_isAdmin) _buildInquiryTile(context),
                   ],
 
                   // 앱 설정 섹션
@@ -623,50 +671,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                     onTap: _showFontSizeDialog,
                   ),
-                  FlatListTile(
-                    title: _isAdmin ? '문의 관리' : '문의하기',
-                    value: _isAdmin
-                        ? (_inquiryBadgeCount > 0
-                            ? '미처리 $_inquiryBadgeCount건'
-                            : '처리 완료')
-                        : null,
-                    leading: Icon(
-                      Icons.support_agent,
-                      size: ResponsiveUtils.iconSize(context, 20),
-                      color: AppColors.success,
-                    ),
-                    trailing: _inquiryBadgeCount > 0
-                        ? Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: ResponsiveUtils.spacing(context, 22),
-                                height: ResponsiveUtils.spacing(context, 22),
-                                decoration: const BoxDecoration(
-                                  color: AppColors.error,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    _inquiryBadgeCount.toString(),
-                                    style: AppTextStyles.tableHeader(context).copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: ResponsiveUtils.spacing(context, 4)),
-                              Icon(
-                                Icons.chevron_right,
-                                size: 20,
-                                color: AppColors.textTertiary,
-                              ),
-                            ],
-                          )
-                        : null,
-                    onTap: _showInquiryDialog,
-                  ),
+                  if (!_isAdmin) _buildInquiryTile(context),
                 ],
               ),
             ),
