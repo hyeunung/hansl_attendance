@@ -11,6 +11,7 @@ import '../../utils/responsive_utils.dart';
 import '../../services/timer_manager.dart';
 import '../../services/ui_optimization_service.dart';
 import '../../widgets/attendance/attendance_action_buttons.dart';
+import '../../widgets/attendance/personal_late_statistics.dart';
 import '../../widgets/attendance/today_absence_widget.dart';
 import '../../widgets/attendance/tomorrow_absence_widget.dart';
 import '../../widgets/attendance/today_vehicle_widget.dart';
@@ -42,6 +43,7 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
   bool _isNonWorkingDay = false;
   final _vehicleKey = GlobalKey<TodayVehicleWidgetState>();
   final _absentLateKey = GlobalKey<AbsentLateWidgetState>();
+  final _myLateKey = GlobalKey<PersonalLateStatisticsState>();
 
   // UI update frequency optimization
   // Android needs longer intervals to prevent flickering
@@ -231,6 +233,7 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
                       attendanceProvider.forceRefreshAll(),
                       _vehicleKey.currentState?.refresh() ?? Future.value(),
                       _absentLateKey.currentState?.refresh() ?? Future.value(),
+                      _myLateKey.currentState?.refresh() ?? Future.value(),
                       leaveProvider.fetchTodayLeaves(DateTime.now()),
                       leaveProvider.fetchTomorrowLeaves(),
                     ]);
@@ -249,6 +252,9 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
                           ),
                           child: AttendanceActionButtons(onShowBanner: _showBanner),
                         ),
+
+                      // 나의 지각 현황 (이번 달/올해) — 지각이 있을 때만 표시
+                      PersonalLateStatistics(key: _myLateKey),
 
                       // 미출근/지각자 (드롭다운)
                       AbsentLateWidget(key: _absentLateKey),
