@@ -566,9 +566,13 @@ Deno.serve(async (req)=>{
       ]);
       targetTokens = result.tokens;
       targetEmails = result.emails;
-      if (!title) title = '📦 새로운 구매 요청';
+      if (!title) title = payment_category === '현장 결제' ? '💳 현장 카드사용 등록' : '📦 새로운 구매 요청';
       if (!body) {
-        body = purchase_order_number ? `${requester_name}님이 ${payment_category} 요청(${purchase_order_number})을 등록했습니다.` : `${requester_name}님이 새로운 구매 요청을 등록했습니다.`;
+        if (payment_category === '현장 결제') {
+          body = purchase_order_number ? `${requester_name}님이 현장 카드사용 내역을 등록하였습니다. (${purchase_order_number})` : `${requester_name}님이 현장 카드사용 내역을 등록하였습니다.`;
+        } else {
+          body = purchase_order_number ? `${requester_name}님이 ${payment_category} 요청(${purchase_order_number})을 등록했습니다.` : `${requester_name}님이 새로운 구매 요청을 등록했습니다.`;
+        }
       }
     } else if (type === 'purchase_status_change') {
       console.log('🔄 [구매 알림] 구매 상태 변경 처리');
@@ -785,12 +789,122 @@ Deno.serve(async (req)=>{
         type: 'business_trip_approved',
       };
     } else if (type === 'card_usage_approved') {
-      console.log('💳 [카드 알림] 카드 사용 승인 → 요청자에게 알림');
+      console.log('💳 [카드 알림] 카드 사용 승인 → 요청자 + lead buyer에게 알림');
 
       const dataMap = data && typeof data === 'object' ? data : {};
       const requesterEmail = dataMap['requester_email'] || '';
+      const requesterName = dataMap['requester_name'] || '';
       const cardNumber = dataMap['card_number'] || '';
       const usageCategory = dataMap['usage_category'] || '';
+
+      const tokens = [];
+      const emails = [];
+      const processedEmails = new Set();
+
+      if (requesterEmail) {
+        const userToken = await getUserToken(supabase, requesterEmail);
+        if (userToken) {
+          tokens.push(userToken);
+          emails.push(requesterEmail);
+          processedEmails.add(requesterEmail);
+          console.log(`  ✅ 요청자에게 알림: ${requesterEmail}`);
+        } else {
+          console.log(`  ❌ 요청자 FCM 토큰 없음: ${requesterEmail}`);
+        }
+      }
+
+      // lead buyer에게도 승인 완료 알림 (요청자와 중복 시 제외)
+      const leadBuyerResult = await getPurchaseRoleTokens(supabase, ['lead buyer']);
+      leadBuyerResult.emails.forEach((email, idx) => {
+        if (!processedEmails.has(email)) {
+          tokens.push(leadBuyerResult.tokens[idx]);
+          emails.push(email);
+          processedEmails.add(email);
+          console.log(`  ✅ lead buyer에게 알림: ${email}`);
+        }
+      });
+
+      targetTokens = tokens;
+      targetEmails = emails;
+
+      if (!title) title = '✅ 카드 사용 승인 완료';
+      if (!body) {
+        const parts = [`${requesterName ? requesterName + '님의 ' : ''}카드 사용 요청이 승인되었습니다.`];
+        if (cardNumber) parts.push(`카드: ${cardNumber}`);
+        if (usageCategory) parts.push(`용도: ${usageCategory}`);
+        body = parts.join('\n');
+      }
+
+      data = {
+        ...dataMap,
+        type: 'card_usage_approved',
+      };
+    } else if (type === 'card_usage_requested') {
+      console.log('💳 [카드 알림] 신규 카드 사용 요청 → superadmin, hr, admin에게 알림');
+
+      const dataMap = data && typeof data === 'object' ? data : {};
+      const requesterName = dataMap['requester_name'] || '';
+      const requesterEmail = dataMap['requester_email'] || '';
+      const cardNumber = dataMap['card_number'] || '';
+      const usageCategory = dataMap['usage_category'] || '';
+
+      // 요청자 본인이 담당자 역할이어도 자기 요청 알림은 제외
+      const result = await getPurchaseRoleTokens(supabase, ['superadmin', 'hr', 'admin'], requesterEmail || undefined);
+      targetTokens = result.tokens;
+      targetEmails = result.emails;
+
+      if (!title) title = '💳 새 카드 사용 요청';
+      if (!body) {
+        const parts = [`${requesterName || '직원'}님이 카드 사용을 요청했습니다.`];
+        if (cardNumber) parts.push(`카드: ${cardNumber}`);
+        if (usageCategory) parts.push(`용도: ${usageCategory}`);
+        body = parts.join('\n');
+      }
+
+      data = {
+        ...dataMap,
+        type: 'card_usage_requested',
+      };
+    } else if (type === 'vehicle_requested') {
+      console.log('🚗 [차량 알림] 신규 차량 사용 요청 → superadmin, admin에게 알림');
+
+      const dataMap = data && typeof data === 'object' ? data : {};
+      const requesterName = dataMap['requester_name'] || '';
+      const requesterEmail = dataMap['requester_email'] || '';
+      const vehicleInfo = dataMap['vehicle_info'] || '';
+      const purpose = dataMap['purpose'] || '';
+      const vehicleCode = dataMap['vehicle_code'] || '';
+      const cardNumbers = dataMap['card_numbers'] || '';
+
+      // 요청자 본인이 담당자 역할이어도 자기 요청 알림은 제외
+      const result = await getPurchaseRoleTokens(supabase, ['superadmin', 'admin'], requesterEmail || undefined);
+      targetTokens = result.tokens;
+      targetEmails = result.emails;
+
+      if (!title) title = '🚗 새 차량 사용 요청';
+      if (!body) {
+        const parts = [`${requesterName || '직원'}님이 차량 사용을 요청했습니다.`];
+        if (vehicleInfo) parts.push(`차량: ${vehicleInfo}`);
+        if (purpose) parts.push(`목적: ${purpose}`);
+        if (cardNumbers) parts.push(`카드: ${cardNumbers}`);
+        if (vehicleCode) parts.push(`요청번호: ${vehicleCode}`);
+        body = parts.join('\n');
+      }
+
+      data = {
+        ...dataMap,
+        type: 'vehicle_requested',
+      };
+    } else if (type === 'vehicle_approved') {
+      console.log('🚗 [차량 알림] 차량 사용 승인 → 요청자에게 알림');
+
+      const dataMap = data && typeof data === 'object' ? data : {};
+      const requesterName = dataMap['requester_name'] || '';
+      const requesterEmail = dataMap['requester_email'] || '';
+      const vehicleInfo = dataMap['vehicle_info'] || '';
+      const purpose = dataMap['purpose'] || '';
+      const vehicleCode = dataMap['vehicle_code'] || '';
+      const cardNumbers = dataMap['card_numbers'] || '';
 
       if (requesterEmail) {
         const userToken = await getUserToken(supabase, requesterEmail);
@@ -803,17 +917,19 @@ Deno.serve(async (req)=>{
         }
       }
 
-      if (!title) title = '💳 카드 사용 승인 완료';
+      if (!title) title = '✅ 차량 사용 승인 완료';
       if (!body) {
-        const parts = ['카드 사용 요청이 승인되었습니다.'];
-        if (cardNumber) parts.push(`카드: ${cardNumber}`);
-        if (usageCategory) parts.push(`용도: ${usageCategory}`);
+        const parts = [`${requesterName ? requesterName + '님의 ' : ''}차량 사용 요청이 승인되었습니다.`];
+        if (vehicleInfo) parts.push(`차량: ${vehicleInfo}`);
+        if (purpose) parts.push(`목적: ${purpose}`);
+        if (cardNumbers) parts.push(`카드(${cardNumbers})를 수령해 주세요.`);
+        if (vehicleCode) parts.push(`요청번호: ${vehicleCode}`);
         body = parts.join('\n');
       }
 
       data = {
         ...dataMap,
-        type: 'card_usage_approved',
+        type: 'vehicle_approved',
       };
     } else if (type === 'ai_service_reviewed') {
       console.log('🤖 [AI 서비스 신청서 알림] 검토완료 -> admin에게 알림');
