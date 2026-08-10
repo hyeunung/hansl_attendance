@@ -471,11 +471,14 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             if (isSuperAdmin) {
               // SuperAdmin: 모든 직원의 신청 표시 (필터링 없음)
             } else if (isAdmin) {
-              // Admin: superadmin을 제외한 모든 신청 표시
+              // Admin: superadmin 및 스마트팜 부서(superadmin 전용 승인)를 제외한 모든 신청 표시
               allLeaves = allLeaves.where((l) {
                 final emp = l['employees'];
                 final leaveRoles = UserRoleHelper.getRoles(emp is Map<String, dynamic> ? emp : null);
-                return !UserRoleHelper.isSuperAdmin(leaveRoles);
+                if (UserRoleHelper.isSuperAdmin(leaveRoles)) return false;
+                final leaveDept = emp is Map ? emp['department'] : null;
+                if (leaveDept == '스마트팜') return false;
+                return true;
               }).toList();
             } else if (isManager) {
               // Manager: 해당 부서의 일반 직원만 표시 (매니저 제외, 자신 포함)
