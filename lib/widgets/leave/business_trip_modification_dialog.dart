@@ -132,6 +132,29 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
     final String modificationStatus = widget.tripData['modification_status'] ?? '';
     final String requestedEndDateStr = widget.tripData['requested_end_date'] ?? '';
 
+    // 차량/법인카드 표시 텍스트
+    final String transportRaw = (widget.tripData['transport'] ?? '').toString();
+    final String vehicleName = (widget.tripData['vehicle_name'] ??
+            widget.tripData['requested_vehicle_info'] ??
+            '')
+        .toString();
+    String vehicleText = '';
+    if (transportRaw == 'company_vehicle') {
+      vehicleText = vehicleName.isNotEmpty ? vehicleName : '법인차량';
+    } else if (transportRaw == 'personal_vehicle') {
+      vehicleText = '개인차량';
+    } else if (transportRaw == 'public_transport') {
+      vehicleText = '대중교통';
+    } else if (vehicleName.isNotEmpty) {
+      vehicleText = vehicleName;
+    }
+    final String cardText =
+        (widget.tripData['requested_card_number'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .where((e) => e.trim().isNotEmpty)
+                .join(', ') ??
+            '';
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 8,
@@ -187,6 +210,10 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
                         _infoRow('출장 기간', '$startDateStr ~ $endDateStr'),
                         if (widget.tripData['original_end_date'] != null)
                           _infoRow('최초 종료일', originalEndDateStr),
+                        if (vehicleText.isNotEmpty)
+                          _infoRow('차량', vehicleText),
+                        if (cardText.isNotEmpty)
+                          _infoRow('법인카드', cardText),
                         if (modificationStatus == 'extension_pending') ...[
                           const SizedBox(height: 4),
                           Container(

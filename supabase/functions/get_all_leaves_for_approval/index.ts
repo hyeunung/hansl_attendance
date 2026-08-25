@@ -96,6 +96,8 @@ Deno.serve(async (req) => {
         transport: bt.transport_type,
         vehicle_name: bt.vehicle_name,
         requested_vehicle_info: bt.requested_vehicle_info,
+        request_corporate_card: bt.request_corporate_card,
+        requested_card_number: bt.requested_card_number,
         project_name: bt.project_name,
         '출장자': allTravelers,
         status: bt.approval_status === 'completed' ? 'approved' : bt.approval_status,

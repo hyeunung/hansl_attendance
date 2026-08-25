@@ -1527,7 +1527,8 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     // 출장 필드 (신규 컬럼 우선, 과거 데이터 호환용 fallback 포함)
     final place = (l['place'] ?? l['destination'] ?? '').toString();
     final transportRaw = (l['transport'] ?? '').toString();
-    final vehicleName = (l['vehicle_name'] ?? '').toString();
+    final vehicleName =
+        (l['vehicle_name'] ?? l['requested_vehicle_info'] ?? '').toString();
     final tripCode = (l['trip_code'] ?? '').toString();
     final projectName = (l['project_name'] ?? '').toString();
     // 교통수단 표시 텍스트 생성
@@ -1544,6 +1545,12 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     final travelersList =
         (l['출장자'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
     final travelersText = travelersList.where((e) => e.trim().isNotEmpty).join(', ');
+    // 출장 법인카드 표시 텍스트
+    final biztripCardText = (l['requested_card_number'] as List<dynamic>?)
+            ?.map((e) => e.toString())
+            .where((e) => e.trim().isNotEmpty)
+            .join(', ') ??
+        '';
     return Container(
       padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 18)),
       decoration: BoxDecoration(
@@ -1596,15 +1603,18 @@ class _ApprovalScreenState extends State<ApprovalScreen>
           if (isBiztrip && tripCode.isNotEmpty)
             _infoRow(Icons.confirmation_number, '출장번호', tripCode),
           _infoRow(Icons.date_range, '기간', period),
-          if (isBiztrip && (projectName.isNotEmpty || place.isNotEmpty))
-            _infoRow(Icons.work_outline, '프로젝트', [
-              if (place.isNotEmpty) place,
-              if (projectName.isNotEmpty) projectName,
-            ].join(' / ')),
+          if (isBiztrip && place.isNotEmpty)
+            _infoRow(Icons.place_outlined, '출장지', place),
+          if (isBiztrip && projectName.isNotEmpty)
+            _infoRow(Icons.work_outline, '프로젝트', projectName),
           if (isBiztrip && travelersText.isNotEmpty)
             _infoRow(Icons.group, '출장자', travelersText),
           if (isBiztrip && transport.isNotEmpty)
             _infoRow(Icons.directions_car, '교통수단', transport),
+          if (isBiztrip && biztripCardText.isNotEmpty)
+            _infoRow(Icons.credit_card, '법인카드', biztripCardText),
+          if (isBiztrip && (l['reason'] ?? '').toString().isNotEmpty)
+            _infoRow(Icons.flag_outlined, '출장목적', l['reason'].toString()),
           // 최종 승인자 정보 표시 (처리완료 탭에서만 + superadmin만)
           if (!showButtons && status != 'pending') ...[
             Consumer<UserProvider>(
@@ -1624,22 +1634,24 @@ class _ApprovalScreenState extends State<ApprovalScreen>
               },
             ),
           ],
-          SizedBox(height: ResponsiveUtils.spacing(context, 14)),
-          // 사유
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 14)),
-            decoration: BoxDecoration(
-              color: AppColors.backgroundSecondary,
-              borderRadius: BorderRadius.circular(
-                ResponsiveUtils.spacing(context, 10),
+          // 사유 (출장은 '출장목적' 행으로 표시하므로 연장 신청일 때만 박스 표시)
+          if (!isBiztrip || isExtensionPending) ...[
+            SizedBox(height: ResponsiveUtils.spacing(context, 14)),
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 14)),
+              decoration: BoxDecoration(
+                color: AppColors.backgroundSecondary,
+                borderRadius: BorderRadius.circular(
+                  ResponsiveUtils.spacing(context, 10),
+                ),
+              ),
+              child: Text(
+                reason,
+                style: AppTextStyles.cardBody(context),
               ),
             ),
-            child: Text(
-              reason,
-              style: AppTextStyles.cardBody(context),
-            ),
-          ),
+          ],
           if (showDeleteButton && status != 'pending') ...[
             // 처리완료 항목에 대한 수정/삭제 버튼
             SizedBox(height: ResponsiveUtils.spacing(context, 12)),
@@ -1997,19 +2009,20 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     final useDepartment = (r['use_department'] ?? '').toString();
     final usageCategory = (r['usage_category'] ?? '').toString();
 
-    // 사유 영역: 차량은 운행 목적, 카드는 상세 설명
+    final purpose = (r['purpose'] ?? '').toString();
+
+    // 사유 영역: 차량은 비고(사용목적은 행으로 표시), 카드는 상세 설명
     String reason;
     if (isVehicle) {
-      reason = (r['purpose'] ?? '-').toString();
-      final notes = (r['notes'] ?? '').toString();
-      if (notes.isNotEmpty) reason = '$reason\n$notes';
+      reason = (r['notes'] ?? '').toString();
     } else {
       reason = (r['description'] ?? '').toString();
-      if (reason.isEmpty) reason = usageCategory.isNotEmpty ? usageCategory : '-';
     }
     final rejectionReason = (r['rejection_reason'] ?? '').toString();
     if (status == 'rejected' && rejectionReason.isNotEmpty) {
-      reason = '[반려 사유] $rejectionReason\n$reason';
+      reason = reason.isEmpty
+          ? '[반려 사유] $rejectionReason'
+          : '[반려 사유] $rejectionReason\n$reason';
     }
 
     return Container(
@@ -2067,7 +2080,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
           if (isVehicle && vehicleInfo.isNotEmpty)
             _infoRow(Icons.directions_car, '차량', vehicleInfo),
           if (isVehicle && route.isNotEmpty)
-            _infoRow(Icons.route, '경로', route),
+            _infoRow(Icons.route, '운행지', route),
           if (isVehicle && driverName.isNotEmpty)
             _infoRow(
               Icons.person_pin_circle,
@@ -2082,22 +2095,26 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             _infoRow(Icons.credit_card, '카드', cardNumbers),
           if (!isVehicle && usageCategory.isNotEmpty)
             _infoRow(Icons.category_outlined, '용도', usageCategory),
-          SizedBox(height: ResponsiveUtils.spacing(context, 14)),
-          // 사유
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 14)),
-            decoration: BoxDecoration(
-              color: AppColors.backgroundSecondary,
-              borderRadius: BorderRadius.circular(
-                ResponsiveUtils.spacing(context, 10),
+          if (isVehicle && purpose.isNotEmpty)
+            _infoRow(Icons.flag_outlined, '사용목적', purpose),
+          // 비고/설명/반려사유 박스 (내용이 있을 때만)
+          if (reason.isNotEmpty) ...[
+            SizedBox(height: ResponsiveUtils.spacing(context, 14)),
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 14)),
+              decoration: BoxDecoration(
+                color: AppColors.backgroundSecondary,
+                borderRadius: BorderRadius.circular(
+                  ResponsiveUtils.spacing(context, 10),
+                ),
+              ),
+              child: Text(
+                reason,
+                style: AppTextStyles.cardBody(context),
               ),
             ),
-            child: Text(
-              reason,
-              style: AppTextStyles.cardBody(context),
-            ),
-          ),
+          ],
           if (showButtons && status == 'pending' && canApprove) ...[
             SizedBox(height: ResponsiveUtils.spacing(context, 12)),
             Row(

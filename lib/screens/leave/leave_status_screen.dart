@@ -294,6 +294,35 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
       companionNames = uniqueTravelers.where((t) => t != mainName).toList();
     }
 
+    // 출장 건: 출장코드/차량/카드 표시 텍스트 구성
+    String tripDetail = '';
+    if (l['type'] == 'biztrip') {
+      final tripCode = (l['trip_code'] ?? '').toString();
+      final transportRaw = (l['transport'] ?? '').toString();
+      final vehicleName =
+          (l['vehicle_name'] ?? l['requested_vehicle_info'] ?? '').toString();
+      String vehicleText = '';
+      if (transportRaw == 'company_vehicle') {
+        vehicleText = vehicleName.isNotEmpty ? vehicleName : '법인차량';
+      } else if (transportRaw == 'personal_vehicle') {
+        vehicleText = '개인차량';
+      } else if (transportRaw == 'public_transport') {
+        vehicleText = '대중교통';
+      } else if (vehicleName.isNotEmpty) {
+        vehicleText = vehicleName;
+      }
+      final cardText = (l['requested_card_number'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .where((e) => e.trim().isNotEmpty)
+              .join(', ') ??
+          '';
+      tripDetail = [
+        if (tripCode.isNotEmpty) tripCode,
+        if (vehicleText.isNotEmpty) '차량 $vehicleText',
+        if (cardText.isNotEmpty) '카드 $cardText',
+      ].join(' · ');
+    }
+
     String statusLabel = status == 'approved'
         ? '승인됨'
         : status == 'pending'
@@ -348,6 +377,15 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                   ),
               ],
             ),
+            if (tripDetail.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(
+                tripDetail,
+                style: AppTextStyles.tableCellSub(context).copyWith(
+                  color: AppColors.textTertiary,
+                ),
+              ),
+            ],
           ],
         ),
       ],
