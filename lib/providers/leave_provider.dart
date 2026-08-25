@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'dart:async';
 import '../services/leave_service.dart';
+import '../utils/user_role_helper.dart';
 import '../services/supabase_service.dart';
 import '../services/cache_service.dart';
 import '../services/request_utils.dart';
@@ -60,6 +61,13 @@ class LeaveProvider extends ChangeNotifier
   // 전체 승인 대기 중 신청 개수 (관리자용)
   int get allPendingCount =>
       allLeaves.where((l) => l['status'] == 'pending' || l['modification_status'] == 'extension_pending').length;
+
+  // 독립(출장 미연동) 차량/카드 사용 요청 (승인 화면용, hr/superadmin만 로드됨)
+  List<Map<String, dynamic>> vehicleCardRequests = [];
+
+  // 차량/카드 승인 대기 개수
+  int get vehicleCardPendingCount =>
+      vehicleCardRequests.where((r) => r['status'] == 'pending').length;
 
   // 대기 중 신청 개수 (대시보드용 - 권한에 따라 다르게 표시)
   int get pendingCount {
@@ -891,6 +899,58 @@ class LeaveProvider extends ChangeNotifier
       await _cache.invalidate(_allLeavesCacheKey);
       await fetchAllLeaves(forceRefresh: true);
       notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// 독립(출장 미연동) 차량/카드 사용 요청 조회 (hr/superadmin만)
+  Future<void> fetchVehicleCardRequests({Map<String, dynamic>? employee}) async {
+    try {
+      final roles = UserRoleHelper.getRoles(employee);
+      final canApprove =
+          UserRoleHelper.isSuperAdmin(roles) || UserRoleHelper.isHr(roles);
+      if (!canApprove) {
+        if (vehicleCardRequests.isNotEmpty) {
+          vehicleCardRequests = [];
+          notifyListeners();
+        }
+        return;
+      }
+      vehicleCardRequests = await _service.fetchVehicleCardRequests();
+      notifyListeners();
+    } catch (_) {
+      // 조회 실패 시 기존 데이터 유지
+    }
+  }
+
+  /// 독립 차량/카드 사용 요청 승인/반려
+  Future<void> updateVehicleCardStatus(
+    Map<String, dynamic> request,
+    String status, {
+    String? approverId,
+    String? rejectionReason,
+    Map<String, dynamic>? employee,
+  }) async {
+    try {
+      if (request['kind'] == 'vehicle') {
+        await _service.updateVehicleRequestStatus(
+          id: request['id'],
+          status: status,
+          approverId: approverId,
+          rejectionReason: rejectionReason,
+          requestInfo: request,
+        );
+      } else {
+        await _service.updateCardUsageStatus(
+          id: request['id'],
+          status: status,
+          approverId: approverId,
+          rejectionReason: rejectionReason,
+          requestInfo: request,
+        );
+      }
+      await fetchVehicleCardRequests(employee: employee);
     } catch (e) {
       rethrow;
     }

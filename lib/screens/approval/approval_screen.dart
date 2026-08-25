@@ -40,6 +40,8 @@ class _ApprovalScreenState extends State<ApprovalScreen>
   RealtimeChannel? _leaveChannel;
   RealtimeChannel? _purchaseChannel;
   RealtimeChannel? _purchaseItemsChannel;
+  RealtimeChannel? _vehicleChannel;
+  RealtimeChannel? _cardChannel;
   bool _isRealtimeRefreshing = false;
   Timer? _realtimeDebounce;
   
@@ -100,15 +102,15 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
       
       BadgeCacheService.saveBadgeCounts(
-        leaveCount: leaveProvider.allPendingCount,
+        leaveCount: leaveProvider.allPendingCount + leaveProvider.vehicleCardPendingCount,
         purchaseWaitingCount: purchaseProvider.purchaseWaitingCount,
         receivingWaitingCount: purchaseProvider.receivingWaitingCount,
       );
-      
+
       // 메모리 캐시도 업데이트
       setState(() {
         _cachedBadgeCounts = {
-          'leave_count': leaveProvider.allPendingCount,
+          'leave_count': leaveProvider.allPendingCount + leaveProvider.vehicleCardPendingCount,
           'purchase_waiting_count': purchaseProvider.purchaseWaitingCount,
           'receiving_waiting_count': purchaseProvider.receivingWaitingCount,
         };
@@ -161,6 +163,15 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             })
             .catchError((e) {
             });
+
+        // 차량/카드 독립 요청 로드 (hr/superadmin만 내부에서 조회됨)
+        leaveProvider
+            .fetchVehicleCardRequests(employee: userProvider.employee)
+            .then((_) {
+              _saveBadgeCounts();
+            })
+            .catchError((e) {
+            });
       }
     });
   }
@@ -209,6 +220,27 @@ class _ApprovalScreenState extends State<ApprovalScreen>
           callback: (_) => _handleRealtimeRefresh(),
         )
         .subscribe();
+
+    // 차량/카드 독립 요청 변경 감지
+    _vehicleChannel = client
+        .channel('approval_vehicle_requests_realtime')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'vehicle_requests',
+          callback: (_) => _handleRealtimeRefresh(),
+        )
+        .subscribe();
+
+    _cardChannel = client
+        .channel('approval_card_usages_realtime')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'card_usages',
+          callback: (_) => _handleRealtimeRefresh(),
+        )
+        .subscribe();
   }
 
   // 실시간 이벤트 수신 시 데이터 리프레시 (단순 재조회로 일관성 유지)
@@ -237,6 +269,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
           );
 
           await leaveProvider.fetchAllLeaves(forceRefresh: true);
+          await leaveProvider.fetchVehicleCardRequests(
+            employee: userProvider.employee,
+          );
           await purchaseProvider.fetchPendingPurchases(
             employee: userProvider.employee,
           );
@@ -268,6 +303,14 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     if (_purchaseItemsChannel != null) {
       Supabase.instance.client.removeChannel(_purchaseItemsChannel!);
       _purchaseItemsChannel = null;
+    }
+    if (_vehicleChannel != null) {
+      Supabase.instance.client.removeChannel(_vehicleChannel!);
+      _vehicleChannel = null;
+    }
+    if (_cardChannel != null) {
+      Supabase.instance.client.removeChannel(_cardChannel!);
+      _cardChannel = null;
     }
     _realtimeDebounce?.cancel();
     _mainTabController.dispose();
@@ -351,9 +394,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
         isSupportManager ||
         isLabManager;
     final bool hasApprovalRole = isAdminOrSuper || isManager;
-    
-    // 연차 승인 권한 업데이트
-    _hasLeaveApprovalAuth = hasApprovalRole;
+
+    // 연차 승인 권한 업데이트 (hr은 차량/카드 승인자이므로 탭 표시)
+    _hasLeaveApprovalAuth = hasApprovalRole || UserRoleHelper.isHr(roles);
 
     // roles에 따른 승인 가능 부서 매핑
     final List<String> approvalDepartments = [];
@@ -524,9 +567,24 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             allLeaves = [];
           }
 
-          final pending = allLeaves
+          final leavePending = allLeaves
               .where((l) => l['status'] == 'pending' || l['modification_status'] == 'extension_pending')
               .toList();
+
+          // 차량/카드 독립 요청 (hr/superadmin만 승인 가능 - 웹과 동일)
+          final bool canApproveVehicleCard =
+              UserRoleHelper.isSuperAdmin(roles) || UserRoleHelper.isHr(roles);
+          final vehicleCardAll = canApproveVehicleCard
+              ? provider.vehicleCardRequests
+              : <Map<String, dynamic>>[];
+          final vehicleCardPending =
+              vehicleCardAll.where((r) => r['status'] == 'pending').toList();
+
+          // 연차/출장 + 차량/카드 대기 건 병합 (최신순)
+          final pending = [...leavePending, ...vehicleCardPending];
+          pending.sort((a, b) => (b['created_at'] ?? '')
+              .toString()
+              .compareTo((a['created_at'] ?? '').toString()));
 
           // 발주승인 탭 뱃지 계산
           int pendingApprovalCount = 0;
@@ -578,6 +636,21 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                 date.month == thisMonth &&
                 l['status'] != 'pending';
           }).toList();
+
+          // 이번 달 처리된 차량/카드 건 병합
+          final vehicleCardThisMonthDone = vehicleCardAll.where((r) {
+            if (r['status'] == 'pending') return false;
+            final dateStr = r['updated_at'] ?? r['approved_at'] ?? r['created_at'];
+            if (dateStr == null) return false;
+            final date = DateTime.parse(dateStr).toLocal();
+            return date.year == thisYear && date.month == thisMonth;
+          }).toList();
+          if (vehicleCardThisMonthDone.isNotEmpty) {
+            thisMonthDone.addAll(vehicleCardThisMonthDone);
+            thisMonthDone.sort((a, b) =>
+                (b['updated_at'] ?? b['created_at'] ?? '').toString().compareTo(
+                    (a['updated_at'] ?? a['created_at'] ?? '').toString()));
+          }
 
           return Column(
             children: [
@@ -1157,6 +1230,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                   final userProv = Provider.of<UserProvider>(context, listen: false);
                                   await Future.wait([
                                     Provider.of<LeaveProvider>(context, listen: false).fetchAllLeaves(forceRefresh: true),
+                                    Provider.of<LeaveProvider>(context, listen: false).fetchVehicleCardRequests(employee: userProv.employee),
                                     Provider.of<PurchaseProvider>(context, listen: false).fetchPendingPurchases(employee: userProv.employee),
                                   ]);
                                   if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
@@ -1223,6 +1297,17 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                         itemCount: pending.length,
                                         itemBuilder: (context, index) {
                                           final l = pending[index];
+                                          // 차량/카드 독립 요청 카드
+                                          if (l['kind'] == 'vehicle' ||
+                                              l['kind'] == 'card') {
+                                            return _vehicleCardApprovalCard(
+                                              context,
+                                              l,
+                                              provider,
+                                              canApprove:
+                                                  canApproveVehicleCard,
+                                            );
+                                          }
                                           // superadmin의 연차는 superadmin만 승인 가능
                                           final emp = l['employees'];
                                           final leaveRoles = UserRoleHelper.getRoles(
@@ -1255,6 +1340,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                   final userProv = Provider.of<UserProvider>(context, listen: false);
                                   await Future.wait([
                                     Provider.of<LeaveProvider>(context, listen: false).fetchAllLeaves(forceRefresh: true),
+                                    Provider.of<LeaveProvider>(context, listen: false).fetchVehicleCardRequests(employee: userProv.employee),
                                     Provider.of<PurchaseProvider>(context, listen: false).fetchPendingPurchases(employee: userProv.employee),
                                   ]);
                                   if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
@@ -1319,9 +1405,21 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                         ),
                                         itemCount: thisMonthDone.length,
                                         itemBuilder: (context, index) {
+                                          final l = thisMonthDone[index];
+                                          // 차량/카드 독립 요청 카드 (처리완료)
+                                          if (l['kind'] == 'vehicle' ||
+                                              l['kind'] == 'card') {
+                                            return _vehicleCardApprovalCard(
+                                              context,
+                                              l,
+                                              provider,
+                                              showButtons: false,
+                                              canApprove: false,
+                                            );
+                                          }
                                           return _approvalCard(
                                             context,
-                                            thisMonthDone[index],
+                                            l,
                                             provider,
                                             showButtons: false,
                                             canApprove: false,
@@ -1848,6 +1946,460 @@ class _ApprovalScreenState extends State<ApprovalScreen>
         ],
       ),
     );
+  }
+
+  // 차량/카드 독립 요청 승인 카드
+  Widget _vehicleCardApprovalCard(
+    BuildContext context,
+    Map<String, dynamic> r,
+    LeaveProvider provider, {
+    bool showButtons = true,
+    bool canApprove = false,
+  }) {
+    final isVehicle = r['kind'] == 'vehicle';
+    final typeLabel = isVehicle ? '차량' : '카드';
+    final typeTextColor = isVehicle ? AppColors.info : AppColors.purple;
+    final name = (r['name'] ?? '-').toString();
+    final status = (r['status'] ?? '').toString();
+    final createdAt = DateFormat('yyyy.MM.dd')
+        .format(DateTime.parse(r['created_at']).toLocal());
+
+    // 기간 표시 (차량: 일시, 카드: 날짜)
+    String period;
+    if (isVehicle) {
+      final start = DateTime.parse(r['start_at']).toLocal();
+      final end = DateTime.parse(r['end_at']).toLocal();
+      period =
+          '${DateFormat('yyyy.MM.dd HH:mm').format(start)} ~ ${DateFormat('MM.dd HH:mm').format(end)}';
+    } else {
+      final startStr = (r['usage_date_start'] ?? '').toString();
+      final endStr = (r['usage_date_end'] ?? '').toString();
+      String fmtDate(String s) =>
+          s.isEmpty ? '' : DateFormat('yyyy.MM.dd').format(DateTime.parse(s));
+      period = (endStr.isEmpty || endStr == startStr)
+          ? fmtDate(startStr)
+          : '${fmtDate(startStr)} ~ ${fmtDate(endStr)}';
+    }
+
+    final code =
+        ((isVehicle ? r['vehicle_code'] : r['card_usage_code']) ?? '')
+            .toString();
+    final cardNumbers = isVehicle
+        ? ((r['requested_card_number'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .join(', ') ??
+            '')
+        : (r['card_number'] ?? '').toString();
+    final route = (r['route'] ?? '').toString();
+    final vehicleInfo = (r['vehicle_info'] ?? '').toString();
+    final driverName = (r['driver_name'] ?? '').toString();
+    final passengerCount = r['passenger_count'];
+    final useDepartment = (r['use_department'] ?? '').toString();
+    final usageCategory = (r['usage_category'] ?? '').toString();
+
+    // 사유 영역: 차량은 운행 목적, 카드는 상세 설명
+    String reason;
+    if (isVehicle) {
+      reason = (r['purpose'] ?? '-').toString();
+      final notes = (r['notes'] ?? '').toString();
+      if (notes.isNotEmpty) reason = '$reason\n$notes';
+    } else {
+      reason = (r['description'] ?? '').toString();
+      if (reason.isEmpty) reason = usageCategory.isNotEmpty ? usageCategory : '-';
+    }
+    final rejectionReason = (r['rejection_reason'] ?? '').toString();
+    if (status == 'rejected' && rejectionReason.isNotEmpty) {
+      reason = '[반려 사유] $rejectionReason\n$reason';
+    }
+
+    return Container(
+      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 18)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 상단: 이름, 유형, 상태
+          Row(
+            children: [
+              Icon(
+                Icons.person,
+                color: AppColors.primary,
+                size: ResponsiveUtils.iconSize(context, 22),
+              ),
+              SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      name,
+                      style: AppTextStyles.cardTitle(context),
+                    ),
+                    const SizedBox(width: 8),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 1),
+                      child: Text(
+                        createdAt,
+                        style: AppTextStyles.compactLabel(context).copyWith(
+                          fontSize: ResponsiveUtils.fontSize(context, 11),
+                          color: AppColors.gray300,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              StatusChip(label: typeLabel, color: typeTextColor),
+              SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+              _vehicleCardStatusChip(status, isVehicle),
+            ],
+          ),
+          SizedBox(height: ResponsiveUtils.spacing(context, 14)),
+          // 상세 정보
+          if (code.isNotEmpty)
+            _infoRow(Icons.confirmation_number, '요청번호', code),
+          _infoRow(Icons.date_range, '기간', period),
+          if (isVehicle && vehicleInfo.isNotEmpty)
+            _infoRow(Icons.directions_car, '차량', vehicleInfo),
+          if (isVehicle && route.isNotEmpty)
+            _infoRow(Icons.route, '경로', route),
+          if (isVehicle && driverName.isNotEmpty)
+            _infoRow(
+              Icons.person_pin_circle,
+              '운전자',
+              passengerCount != null
+                  ? '$driverName (탑승 $passengerCount명)'
+                  : driverName,
+            ),
+          if (isVehicle && useDepartment.isNotEmpty)
+            _infoRow(Icons.apartment, '사용부서', useDepartment),
+          if (cardNumbers.isNotEmpty)
+            _infoRow(Icons.credit_card, '카드', cardNumbers),
+          if (!isVehicle && usageCategory.isNotEmpty)
+            _infoRow(Icons.category_outlined, '용도', usageCategory),
+          SizedBox(height: ResponsiveUtils.spacing(context, 14)),
+          // 사유
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 14)),
+            decoration: BoxDecoration(
+              color: AppColors.backgroundSecondary,
+              borderRadius: BorderRadius.circular(
+                ResponsiveUtils.spacing(context, 10),
+              ),
+            ),
+            child: Text(
+              reason,
+              style: AppTextStyles.cardBody(context),
+            ),
+          ),
+          if (showButtons && status == 'pending' && canApprove) ...[
+            SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      boxShadow: [AppShadows.button],
+                      borderRadius: BorderRadius.circular(
+                        ResponsiveUtils.spacing(context, 8),
+                      ),
+                    ),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.error,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(
+                          vertical: ResponsiveUtils.spacing(context, 18),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveUtils.spacing(context, 8),
+                          ),
+                        ),
+                      ),
+                      onPressed: () =>
+                          _rejectVehicleCardRequest(r, provider, typeLabel),
+                      child: Text(
+                        '반려',
+                        style: AppTextStyles.buttonPrimary(context),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      boxShadow: [AppShadows.button],
+                      borderRadius: BorderRadius.circular(
+                        ResponsiveUtils.spacing(context, 8),
+                      ),
+                    ),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.success,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(
+                          vertical: ResponsiveUtils.spacing(context, 18),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveUtils.spacing(context, 8),
+                          ),
+                        ),
+                      ),
+                      onPressed: () =>
+                          _approveVehicleCardRequest(r, provider, typeLabel),
+                      child: Text(
+                        '승인',
+                        style: AppTextStyles.buttonPrimary(context),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ] else if (showButtons && status == 'pending' && !canApprove) ...[
+            SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+            Container(
+              width: double.infinity,
+              alignment: Alignment.center,
+              padding: EdgeInsets.symmetric(
+                vertical: ResponsiveUtils.spacing(context, 12),
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(
+                  ResponsiveUtils.spacing(context, 8),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.info,
+                    color: AppColors.warning,
+                    size: ResponsiveUtils.iconSize(context, 20),
+                  ),
+                  SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                  Text(
+                    '승인 권한이 없습니다',
+                    style: AppTextStyles.sectionSubtitle(context).copyWith(
+                      color: AppColors.warning,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else if (!showButtons) ...[
+            SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+            Container(
+              width: double.infinity,
+              alignment: Alignment.center,
+              padding: EdgeInsets.symmetric(
+                vertical: ResponsiveUtils.spacing(context, 10),
+              ),
+              decoration: BoxDecoration(
+                color: status == 'rejected'
+                    ? AppColors.error.withValues(alpha: 0.12)
+                    : AppColors.success.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(
+                  ResponsiveUtils.spacing(context, 8),
+                ),
+              ),
+              child: Text(
+                status == 'rejected' ? '반려' : '승인 완료',
+                style: AppTextStyles.cardTitle(context).copyWith(
+                  color: status == 'rejected'
+                      ? AppColors.error
+                      : AppColors.success,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // 차량/카드 상태 칩
+  Widget _vehicleCardStatusChip(String status, bool isVehicle) {
+    Color fg;
+    String label;
+    switch (status) {
+      case 'approved':
+        fg = AppColors.success;
+        label = '승인';
+        break;
+      case 'rejected':
+        fg = AppColors.error;
+        label = '반려';
+        break;
+      case 'returned':
+        fg = AppColors.info;
+        label = isVehicle ? '복귀완료' : '반납완료';
+        break;
+      case 'settled':
+        fg = AppColors.success;
+        label = '정산완료';
+        break;
+      default:
+        fg = AppColors.warning;
+        label = '대기';
+    }
+    return StatusChip(label: label, color: fg);
+  }
+
+  // 차량/카드 요청 승인 처리
+  Future<void> _approveVehicleCardRequest(
+    Map<String, dynamic> r,
+    LeaveProvider provider,
+    String typeLabel,
+  ) async {
+    final name = (r['name'] ?? '-').toString();
+    final confirmed = await _showConfirmationDialog(
+      context,
+      '승인 확인',
+      '$name님의 $typeLabel 사용 요청을 승인하시겠습니까?',
+      '승인',
+      AppColors.success,
+    );
+    if (confirmed != true || !mounted) return;
+
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    try {
+      await provider.updateVehicleCardStatus(
+        r,
+        'approved',
+        approverId: userProvider.employee?['id']?.toString(),
+        employee: userProvider.employee,
+      );
+      _saveBadgeCounts();
+      if (mounted) {
+        AppBanner.show(context, '승인이 완료되었습니다.', type: BannerType.success);
+      }
+    } catch (e) {
+      if (mounted) {
+        AppBanner.show(context, '승인 처리에 실패했습니다: $e', type: BannerType.error);
+      }
+    }
+  }
+
+  // 차량/카드 요청 반려 처리 (반려 사유 입력 필수)
+  Future<void> _rejectVehicleCardRequest(
+    Map<String, dynamic> r,
+    LeaveProvider provider,
+    String typeLabel,
+  ) async {
+    final name = (r['name'] ?? '-').toString();
+    final rejectReason = await _showRejectReasonDialog(
+      context,
+      '$name님의 $typeLabel 사용 요청을 반려하시겠습니까?',
+    );
+    if (rejectReason == null || rejectReason.trim().isEmpty || !mounted) return;
+
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    try {
+      await provider.updateVehicleCardStatus(
+        r,
+        'rejected',
+        approverId: userProvider.employee?['id']?.toString(),
+        rejectionReason: rejectReason.trim(),
+        employee: userProvider.employee,
+      );
+      _saveBadgeCounts();
+      if (mounted) {
+        AppBanner.show(context, '반려 처리되었습니다.', type: BannerType.success);
+      }
+    } catch (e) {
+      if (mounted) {
+        AppBanner.show(context, '반려 처리에 실패했습니다: $e', type: BannerType.error);
+      }
+    }
+  }
+
+  // 반려 사유 입력 다이얼로그
+  Future<String?> _showRejectReasonDialog(
+    BuildContext context,
+    String message,
+  ) async {
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(
+            ResponsiveUtils.spacing(context, 16),
+          ),
+        ),
+        title: Text('반려 확인', style: AppTextStyles.cardTitle(context)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(message, style: AppTextStyles.cardBody(context)),
+            SizedBox(height: ResponsiveUtils.spacing(context, 14)),
+            TextField(
+              controller: controller,
+              maxLines: 2,
+              decoration: InputDecoration(
+                hintText: '반려 사유를 입력해주세요 (필수)',
+                hintStyle: AppTextStyles.emptyState(context),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveUtils.spacing(context, 8),
+                  ),
+                ),
+                contentPadding: EdgeInsets.all(
+                  ResponsiveUtils.spacing(context, 12),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(
+              '취소',
+              style: AppTextStyles.sectionSubtitle(context).copyWith(
+                color: AppColors.textTertiary,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              if (controller.text.trim().isEmpty) {
+                AppBanner.show(
+                  dialogContext,
+                  '반려 사유를 입력해주세요.',
+                  type: BannerType.error,
+                );
+                return;
+              }
+              Navigator.of(dialogContext).pop(controller.text);
+            },
+            child: Text(
+              '반려',
+              style: AppTextStyles.sectionSubtitle(context).copyWith(
+                color: AppColors.error,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    return result;
   }
 
   Future<void> _deleteApprovedLeave(

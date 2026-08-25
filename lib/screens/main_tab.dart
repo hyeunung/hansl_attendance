@@ -262,6 +262,11 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
           // 실패해도 UI에 영향 없음
         });
       }
+
+      // 차량/카드 독립 요청 미리 로드 (hr/superadmin만 내부에서 조회됨)
+      leaveProvider.fetchVehicleCardRequests(employee: employee).catchError((e) {
+        // 실패해도 UI에 영향 없음
+      });
       
       // 발주 승인 권한이 있으면 미리 로드
       if (UserRoleHelper.hasPurchaseApprovalAuth(roles)) {
@@ -536,10 +541,12 @@ final roles = UserRoleHelper.getRoles(employee);
     final leaveProvider = Provider.of<LeaveProvider>(context);
     final purchaseProvider = Provider.of<PurchaseProvider>(context);
 
-    // 승인관리 대기 합계 (연차/출장 대기 + 발주 승인대기)
+    // 승인관리 대기 합계 (연차/출장 대기 + 차량/카드 대기 + 발주 승인대기)
     int totalApprovalCount = 0;
     if (showApprovalTab || UserRoleHelper.hasPurchaseApprovalAuth(roles)) {
-      totalApprovalCount = leaveProvider.allPendingCount + purchaseProvider.totalPendingCount;
+      totalApprovalCount = leaveProvider.allPendingCount +
+          leaveProvider.vehicleCardPendingCount +
+          purchaseProvider.totalPendingCount;
     }
 
     Widget buildApprovalIcon(int currentIndex, int itemIndex) {

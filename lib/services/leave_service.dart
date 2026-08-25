@@ -613,4 +613,134 @@ class LeaveService {
       rethrow;
     }
   }
+
+  /// 독립(출장 미연동) 차량/카드 사용 요청 조회 (승인 화면용)
+  /// 차량 승인 시 연동 카드는 DB 트리거가 자동 동기화하므로
+  /// 차량에서 자동 생성된 카드 건(auto_created_by_vehicle)은 목록에서 제외
+  Future<List<Map<String, dynamic>>> fetchVehicleCardRequests() async {
+    final results = await Future.wait([
+      _client
+          .from('vehicle_requests')
+          .select('*, requester:requester_id(name, email), driver:driver_id(name)')
+          .isFilter('business_trip_id', null)
+          .order('created_at', ascending: false)
+          .limit(100),
+      _client
+          .from('card_usages')
+          .select('*, requester:requester_id(name, email)')
+          .isFilter('business_trip_id', null)
+          .not('auto_created_by_vehicle', 'is', true)
+          .order('created_at', ascending: false)
+          .limit(100),
+    ]);
+
+    final list = <Map<String, dynamic>>[];
+    for (final v in (results[0] as List).cast<Map<String, dynamic>>()) {
+      final requester = v['requester'] as Map<String, dynamic>?;
+      final driver = v['driver'] as Map<String, dynamic>?;
+      list.add({
+        ...v,
+        'kind': 'vehicle',
+        'name': requester?['name'] ?? '-',
+        'user_email': requester?['email'] ?? '',
+        'status': v['approval_status'],
+        'driver_name': driver?['name'] ?? '',
+      });
+    }
+    for (final c in (results[1] as List).cast<Map<String, dynamic>>()) {
+      final requester = c['requester'] as Map<String, dynamic>?;
+      list.add({
+        ...c,
+        'kind': 'card',
+        'name': requester?['name'] ?? '-',
+        'user_email': requester?['email'] ?? '',
+        'status': c['approval_status'],
+      });
+    }
+    list.sort((a, b) => (b['created_at'] ?? '')
+        .toString()
+        .compareTo((a['created_at'] ?? '').toString()));
+    return list;
+  }
+
+  /// 독립 차량 사용 요청 승인/반려 (연동 카드는 DB 트리거가 자동 동기화)
+  Future<void> updateVehicleRequestStatus({
+    required dynamic id,
+    required String status, // 'approved' | 'rejected'
+    String? approverId,
+    String? rejectionReason,
+    Map<String, dynamic>? requestInfo,
+  }) async {
+    await _client.from('vehicle_requests').update({
+      'approval_status': status,
+      'approved_by': approverId,
+      'approved_at': DateTime.now().toUtc().toIso8601String(),
+      if (status == 'rejected') 'rejection_reason': rejectionReason,
+    }).eq('id', id);
+
+    // 승인 시 요청자에게 푸시 알림 (웹과 동일한 페이로드)
+    if (status == 'approved' && requestInfo != null) {
+      final email = (requestInfo['user_email'] ?? '').toString();
+      if (email.isNotEmpty) {
+        final cardNumbers =
+            (requestInfo['requested_card_number'] as List<dynamic>?)
+                    ?.map((e) => e.toString())
+                    .join(', ') ??
+                '';
+        try {
+          await _client.functions.invoke('send_fcm_notification', body: {
+            'type': 'vehicle_approved',
+            'data': {
+              'requester_email': email,
+              'requester_name': requestInfo['name'] ?? '',
+              'vehicle_info': requestInfo['vehicle_info'] ?? '',
+              'purpose': requestInfo['purpose'] ?? '',
+              'vehicle_code': requestInfo['vehicle_code'] ?? '',
+              'card_numbers': cardNumbers,
+            },
+          });
+        } catch (_) {}
+      }
+    }
+
+    final dbOptim = DatabaseOptimizationService.instance;
+    await dbOptim.invalidateCache(patterns: ['leave']);
+  }
+
+  /// 독립 카드 사용 요청 승인/반려
+  Future<void> updateCardUsageStatus({
+    required dynamic id,
+    required String status, // 'approved' | 'rejected'
+    String? approverId,
+    String? rejectionReason,
+    Map<String, dynamic>? requestInfo,
+  }) async {
+    await _client.from('card_usages').update({
+      'approval_status': status,
+      'approved_by': approverId,
+      'approved_at': DateTime.now().toUtc().toIso8601String(),
+      if (status == 'rejected') 'rejection_reason': rejectionReason,
+    }).eq('id', id);
+
+    // 승인 시 요청자 + lead buyer에게 푸시 알림 (웹과 동일한 페이로드)
+    if (status == 'approved' && requestInfo != null) {
+      final email = (requestInfo['user_email'] ?? '').toString();
+      if (email.isNotEmpty) {
+        try {
+          await _client.functions.invoke('send_fcm_notification', body: {
+            'type': 'card_usage_approved',
+            'data': {
+              'requester_email': email,
+              'requester_name': requestInfo['name'] ?? '',
+              'card_number': requestInfo['card_number'] ?? '',
+              'usage_category': requestInfo['usage_category'] ?? '',
+            },
+          });
+        } catch (_) {}
+      }
+    }
+
+    final dbOptim = DatabaseOptimizationService.instance;
+    await dbOptim.invalidateCache(patterns: ['leave']);
+  }
 }
