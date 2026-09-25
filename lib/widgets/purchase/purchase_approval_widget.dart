@@ -603,7 +603,7 @@ return;
           children: [
             Container(
               padding: EdgeInsets.symmetric(
-                horizontal: ResponsiveUtils.spacing(context, 20),
+                horizontal: ResponsiveUtils.spacing(context, 16),
                 vertical: ResponsiveUtils.spacing(context, 12),
               ),
               child: Row(
@@ -814,7 +814,7 @@ return;
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.symmetric(
-                horizontal: ResponsiveUtils.spacing(context, 20),
+                horizontal: ResponsiveUtils.spacing(context, 16),
                 vertical: ResponsiveUtils.spacing(context, 20),
               ),
               children: [
@@ -859,7 +859,7 @@ return;
           child: ListView.builder(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: EdgeInsets.symmetric(
-              horizontal: ResponsiveUtils.spacing(context, 20),
+              horizontal: ResponsiveUtils.spacing(context, 16),
               vertical: ResponsiveUtils.spacing(context, 20),
             ),
             itemCount: orders.length,
@@ -930,7 +930,7 @@ return;
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.symmetric(
-                horizontal: ResponsiveUtils.spacing(context, 20),
+                horizontal: ResponsiveUtils.spacing(context, 16),
                 vertical: ResponsiveUtils.spacing(context, 20),
               ),
               children: [
@@ -983,7 +983,7 @@ return;
             // 검색창
             Padding(
               padding: EdgeInsets.symmetric(
-                horizontal: ResponsiveUtils.spacing(context, 20),
+                horizontal: ResponsiveUtils.spacing(context, 16),
                 vertical: ResponsiveUtils.spacing(context, 12),
               ),
               child: SizedBox(
@@ -1050,7 +1050,7 @@ return;
                     ? ListView(
                         physics: const AlwaysScrollableScrollPhysics(),
                         padding: EdgeInsets.symmetric(
-                          horizontal: ResponsiveUtils.spacing(context, 20),
+                          horizontal: ResponsiveUtils.spacing(context, 16),
                           vertical: ResponsiveUtils.spacing(context, 20),
                         ),
                         children: [

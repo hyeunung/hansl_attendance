@@ -887,9 +887,9 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
   Widget _buildDepartmentEmployeeFilters() {
     return Container(
       padding: EdgeInsets.fromLTRB(
-        ResponsiveUtils.spacing(context, 20),
+        ResponsiveUtils.spacing(context, 16),
         ResponsiveUtils.spacing(context, 0),
-        ResponsiveUtils.spacing(context, 20),
+        ResponsiveUtils.spacing(context, 16),
         ResponsiveUtils.spacing(context, 15),
       ),
       child: Row(
@@ -1004,9 +1004,9 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
         // 검색창 (컴팩트 디자인)
         Container(
           padding: EdgeInsets.fromLTRB(
-            ResponsiveUtils.spacing(context, 20),
+        ResponsiveUtils.spacing(context, 16),
             ResponsiveUtils.spacing(context, 0),
-            ResponsiveUtils.spacing(context, 20),
+            ResponsiveUtils.spacing(context, 16),
             ResponsiveUtils.spacing(context, 15),
           ),
           child: SizedBox(
@@ -1119,7 +1119,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.symmetric(
-            horizontal: ResponsiveUtils.spacing(context, 20),
+            horizontal: ResponsiveUtils.spacing(context, 16),
             vertical: ResponsiveUtils.spacing(context, 20),
           ),
           children: [
@@ -1154,7 +1154,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.symmetric(
-            horizontal: ResponsiveUtils.spacing(context, 20),
+            horizontal: ResponsiveUtils.spacing(context, 16),
             vertical: ResponsiveUtils.spacing(context, 20),
           ),
           children: [
@@ -1230,9 +1230,9 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                   ),
                   child: Container(
                     padding: EdgeInsets.fromLTRB(
+        ResponsiveUtils.spacing(context, 16),
                       ResponsiveUtils.spacing(context, 20),
-                      ResponsiveUtils.spacing(context, 20),
-                      ResponsiveUtils.spacing(context, 20),
+                      ResponsiveUtils.spacing(context, 16),
                       ResponsiveUtils.spacing(context, 8),
                     ),
                     decoration: BoxDecoration(
@@ -2997,7 +2997,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
             padding: EdgeInsets.symmetric(
-              horizontal: ResponsiveUtils.spacing(context, 20),
+              horizontal: ResponsiveUtils.spacing(context, 16),
               vertical: ResponsiveUtils.spacing(context, 12),
             ),
             shape: RoundedRectangleBorder(

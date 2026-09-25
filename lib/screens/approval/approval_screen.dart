@@ -658,13 +658,19 @@ class _ApprovalScreenState extends State<ApprovalScreen>
               if (!isRegularEmployee) // 일반 직원이 아닌 경우만 탭 표시
                 // 통합된 탭 디자인 - Segmented Control 스타일
                 Container(
-                  margin: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
-                  padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 4)),
+                  margin: EdgeInsets.fromLTRB(
+                    ResponsiveUtils.spacing(context, 16),
+                    ResponsiveUtils.spacing(context, 10),
+                    ResponsiveUtils.spacing(context, 16),
+                    ResponsiveUtils.spacing(context, 12),
+                  ),
+                  padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 3)),
                   decoration: BoxDecoration(
-                    color: AppColors.backgroundSecondary,
+                    color: AppColors.backgroundCard,
                     borderRadius: BorderRadius.circular(
-                      ResponsiveUtils.spacing(context, 12),
+                      ResponsiveUtils.spacing(context, 10),
                     ),
+                    border: Border.all(color: AppColors.border),
                   ),
                   child: Row(
                     children: [
@@ -678,18 +684,15 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                           child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           padding: EdgeInsets.symmetric(
-                            vertical: ResponsiveUtils.spacing(context, 16),
+                            vertical: ResponsiveUtils.spacing(context, 10),
                           ),
                           decoration: BoxDecoration(
                             color: _mainTabController.index == 0
-                                ? Colors.white
+                                ? AppColors.primary
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(
-                              ResponsiveUtils.spacing(context, 10),
+                              ResponsiveUtils.spacing(context, 8),
                             ),
-                            boxShadow: _mainTabController.index == 0
-                                ? AppShadows.smShadow
-                                : null,
                           ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -702,7 +705,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     Icons.event_available,
                                     size: ResponsiveUtils.iconSize(context, 26),
                                     color: _mainTabController.index == 0
-                                        ? AppColors.primary
+                                        ? Colors.white
                                         : AppColors.textTertiary,
                                   ),
                                   if (pending.isNotEmpty)
@@ -775,18 +778,15 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
                             padding: EdgeInsets.symmetric(
-                              vertical: ResponsiveUtils.spacing(context, 16),
+                              vertical: ResponsiveUtils.spacing(context, 10),
                             ),
                             decoration: BoxDecoration(
                               color: _mainTabController.index == 1
-                                  ? Colors.white
+                                  ? AppColors.primary
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(
-                                ResponsiveUtils.spacing(context, 10),
+                                ResponsiveUtils.spacing(context, 8),
                               ),
-                              boxShadow: _mainTabController.index == 1
-                                  ? AppShadows.smShadow
-                                  : null,
                             ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -799,7 +799,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                       Icons.shopping_bag_outlined,
                                       size: ResponsiveUtils.iconSize(context, 26),
                                       color: _mainTabController.index == 1
-                                          ? AppColors.primary
+                                          ? Colors.white
                                           : AppColors.textTertiary,
                                     ),
                                     if (pendingApprovalCount > 0)
@@ -872,18 +872,15 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           padding: EdgeInsets.symmetric(
-                            vertical: ResponsiveUtils.spacing(context, 16),
+                            vertical: ResponsiveUtils.spacing(context, 10),
                           ),
                           decoration: BoxDecoration(
                             color: _mainTabController.index == 2
-                                ? Colors.white
+                                ? AppColors.primary
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(
-                              ResponsiveUtils.spacing(context, 10),
+                              ResponsiveUtils.spacing(context, 8),
                             ),
-                            boxShadow: _mainTabController.index == 2
-                                ? AppShadows.smShadow
-                                : null,
                           ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -896,7 +893,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     Icons.shopping_cart_outlined,
                                     size: ResponsiveUtils.iconSize(context, 26),
                                     color: _mainTabController.index == 2
-                                        ? AppColors.primary
+                                        ? Colors.white
                                         : AppColors.textTertiary,
                                   ),
                                   // 구매대기 배지 - 로컬 캐시 + Provider 조합으로 즉시 표시
@@ -979,18 +976,15 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           padding: EdgeInsets.symmetric(
-                            vertical: ResponsiveUtils.spacing(context, 16),
+                            vertical: ResponsiveUtils.spacing(context, 10),
                           ),
                           decoration: BoxDecoration(
                             color: _mainTabController.index == 3
-                                ? Colors.white
+                                ? AppColors.primary
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(
-                              ResponsiveUtils.spacing(context, 10),
+                              ResponsiveUtils.spacing(context, 8),
                             ),
-                            boxShadow: _mainTabController.index == 3
-                                ? AppShadows.smShadow
-                                : null,
                           ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -1003,7 +997,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     Icons.inventory_2_outlined,
                                     size: ResponsiveUtils.iconSize(context, 26),
                                     color: _mainTabController.index == 3
-                                        ? AppColors.primary
+                                        ? Colors.white
                                         : AppColors.textTertiary,
                                   ),
                                   // 입고대기 배지 - 로컬 캐시 + Provider 조합으로 즉시 표시
@@ -1097,9 +1091,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                         Container(
                           height: ResponsiveUtils.spacing(context, 40),
                           margin: EdgeInsets.fromLTRB(
-                            ResponsiveUtils.spacing(context, 20),
+        ResponsiveUtils.spacing(context, 16),
                             ResponsiveUtils.spacing(context, 0),
-                            ResponsiveUtils.spacing(context, 20),
+                            ResponsiveUtils.spacing(context, 16),
                             ResponsiveUtils.spacing(context, 15),
                           ),
                           child: Row(
@@ -1124,8 +1118,13 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                   decoration: BoxDecoration(
                                     color: _subTabController.index == 0
                                         ? AppColors.primary
-                                        : AppColors.backgroundSecondary,
-                                    borderRadius: BorderRadius.circular(10),
+                                        : AppColors.backgroundCard,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: _subTabController.index == 0
+                                          ? AppColors.primary
+                                          : AppColors.border,
+                                    ),
                                   ),
                                   child: Row(
                                     children: [
@@ -1202,8 +1201,13 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                   decoration: BoxDecoration(
                                     color: _subTabController.index == 1
                                         ? AppColors.primary
-                                        : AppColors.backgroundSecondary,
-                                    borderRadius: BorderRadius.circular(10),
+                                        : AppColors.backgroundCard,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: _subTabController.index == 1
+                                          ? AppColors.primary
+                                          : AppColors.border,
+                                    ),
                                   ),
                                   child: Text(
                                     '처리완료',
@@ -1239,7 +1243,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     ? ListView(
                                         physics: const AlwaysScrollableScrollPhysics(),
                                         padding: EdgeInsets.symmetric(
-                                          horizontal: ResponsiveUtils.spacing(context, 20),
+                                          horizontal: ResponsiveUtils.spacing(context, 16),
                                           vertical: ResponsiveUtils.spacing(context, 20),
                                         ),
                                         children: [
@@ -1349,7 +1353,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     ? ListView(
                                         physics: const AlwaysScrollableScrollPhysics(),
                                         padding: EdgeInsets.symmetric(
-                                          horizontal: ResponsiveUtils.spacing(context, 20),
+                                          horizontal: ResponsiveUtils.spacing(context, 16),
                                           vertical: ResponsiveUtils.spacing(context, 20),
                                         ),
                                         children: [

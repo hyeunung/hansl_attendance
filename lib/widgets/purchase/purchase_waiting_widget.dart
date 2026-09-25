@@ -599,7 +599,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.symmetric(
-            horizontal: ResponsiveUtils.spacing(context, 20),
+            horizontal: ResponsiveUtils.spacing(context, 16),
             vertical: ResponsiveUtils.spacing(context, 20),
           ),
           children: [
@@ -634,7 +634,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.symmetric(
-            horizontal: ResponsiveUtils.spacing(context, 20),
+            horizontal: ResponsiveUtils.spacing(context, 16),
             vertical: ResponsiveUtils.spacing(context, 20),
           ),
           children: [
@@ -696,9 +696,9 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                   },
                   child: Container(
                     padding: EdgeInsets.fromLTRB(
+        ResponsiveUtils.spacing(context, 16),
                       ResponsiveUtils.spacing(context, 20),
-                      ResponsiveUtils.spacing(context, 20),
-                      ResponsiveUtils.spacing(context, 20),
+                      ResponsiveUtils.spacing(context, 16),
                       ResponsiveUtils.spacing(context, 8),
                     ),
                     decoration: BoxDecoration(
