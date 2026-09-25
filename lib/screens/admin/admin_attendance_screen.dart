@@ -303,17 +303,18 @@ class _AdminAttendanceScreenState extends State<AdminAttendanceScreen> {
   }
 
   Widget _buildFilterChips() {
-    return Container(
-      height: 44,
-      margin: EdgeInsets.only(top: ResponsiveUtils.spacing(context, 14)),
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(
-            horizontal: ResponsiveUtils.spacing(context, 16)),
-        itemCount: _statusOptions.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (_, i) {
-          final option = _statusOptions[i];
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        ResponsiveUtils.spacing(context, 16),
+        ResponsiveUtils.spacing(context, 14),
+        ResponsiveUtils.spacing(context, 16),
+        0,
+      ),
+      // 가로 스크롤 시 마지막 칩이 화면 밖으로 잘려 보여 줄바꿈 방식으로 변경
+      child: Wrap(
+        spacing: ResponsiveUtils.spacing(context, 8),
+        runSpacing: ResponsiveUtils.spacing(context, 8),
+        children: _statusOptions.map((option) {
           final selected = _statusFilter == option;
           return ChoiceChip(
             label: Text(option),
@@ -321,6 +322,8 @@ class _AdminAttendanceScreenState extends State<AdminAttendanceScreen> {
             onSelected: (_) => setState(() => _statusFilter = option),
             selectedColor: AppColors.primary,
             backgroundColor: Colors.white,
+            visualDensity: VisualDensity.compact,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             labelStyle: TextStyle(
               color: selected ? Colors.white : AppColors.textSecondary,
               fontWeight: FontWeight.w600,
@@ -330,7 +333,7 @@ class _AdminAttendanceScreenState extends State<AdminAttendanceScreen> {
               color: selected ? AppColors.primary : AppColors.border,
             ),
           );
-        },
+        }).toList(),
       ),
     );
   }

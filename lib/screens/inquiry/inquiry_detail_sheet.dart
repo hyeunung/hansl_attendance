@@ -557,7 +557,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: AppColors.backgroundSecondary,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: AppColors.border),
                       ),
                       child: Column(
@@ -935,7 +935,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: AppColors.info.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     _getIconForType(_inquiry['inquiry_type'] ?? '기타'),
@@ -1017,7 +1017,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                       boxShadow: AppShadows.smShadow,
                       border: Border.all(color: AppColors.borderLight, width: 0.5),
                     ),
@@ -1141,7 +1141,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                       boxShadow: AppShadows.smShadow,
                       border: Border.all(color: AppColors.borderLight, width: 0.5),
                     ),
@@ -1196,7 +1196,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: AppColors.backgroundSecondary,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(10),
                             border: Border.all(
                               color: AppColors.border,
                               width: 0.5,
@@ -1444,7 +1444,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Wrap(
         spacing: 8,
@@ -1544,7 +1544,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                     return Stack(
                       children: [
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(10),
                           child: Image.file(
                             File(img.path),
                             width: 78,
@@ -1585,7 +1585,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                 Container(
                   decoration: BoxDecoration(
                     color: AppColors.borderLight,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: IconButton(
                     icon: const Icon(Icons.image_outlined),
@@ -1624,7 +1624,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                 Container(
                   decoration: BoxDecoration(
                     color: canSend ? AppColors.primary : AppColors.border,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: IconButton(
                     icon: _isSending
@@ -1639,7 +1639,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                   Container(
                     decoration: BoxDecoration(
                       color: _isClosedOrResolved ? AppColors.border : AppColors.success,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: IconButton(
                       icon: _isResolving
