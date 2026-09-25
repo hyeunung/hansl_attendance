@@ -611,7 +611,7 @@ class _InquiryScreenState extends State<InquiryScreen>
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(10),
       child: Container(
         padding: EdgeInsets.symmetric(
           horizontal: ResponsiveUtils.spacing(context, 12),
@@ -619,7 +619,7 @@ class _InquiryScreenState extends State<InquiryScreen>
         ),
         decoration: BoxDecoration(
           color: AppColors.backgroundSecondary,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(color: AppColors.border),
         ),
         child: Column(
@@ -716,7 +716,7 @@ class _InquiryScreenState extends State<InquiryScreen>
       padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
       decoration: BoxDecoration(
         color: AppColors.backgroundSecondary,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
@@ -1231,7 +1231,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                             vertical: ResponsiveUtils.spacing(context, 12),
                           ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
                       ),
@@ -1242,7 +1242,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                         padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
                         decoration: BoxDecoration(
                           color: AppColors.borderLight,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
                           '기간을 선택하고 발주요청을 조회해주세요.',
@@ -1266,14 +1266,14 @@ class _InquiryScreenState extends State<InquiryScreen>
                                   _selectedPurchase = purchase;
                                 });
                               },
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(10),
                               child: Container(
                                 padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
                                 decoration: BoxDecoration(
                                   color: isSelected
                                       ? AppColors.info.withValues(alpha: 0.1)
                                       : Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
                                     color: isSelected
                                         ? AppColors.info
@@ -1662,7 +1662,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                             padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 10)),
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(10),
                               border: Border.all(color: Colors.grey.shade300),
                             ),
                             child: Column(

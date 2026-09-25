@@ -2500,11 +2500,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
       title: Container(
         padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: AppColors.primary,
           borderRadius: BorderRadius.vertical(
             top: Radius.circular(ResponsiveUtils.spacing(context, 16)),
           ),

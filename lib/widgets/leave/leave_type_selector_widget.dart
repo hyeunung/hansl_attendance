@@ -68,7 +68,7 @@ class _LeaveTypeSelectorWidgetState extends State<LeaveTypeSelectorWidget> {
           height: _dropdownOpen ? (widget.availableTypes.length * 48.0) : 0,
           curve: Curves.easeInOut,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             child: ListView(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -125,7 +125,7 @@ class _LeaveTypeSelectorWidgetState extends State<LeaveTypeSelectorWidget> {
                                 color: _getTypeColor(
                                   type,
                                 ).withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
                                 '${type.days}일',

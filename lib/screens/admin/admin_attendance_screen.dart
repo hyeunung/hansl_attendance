@@ -261,9 +261,8 @@ class _AdminAttendanceScreenState extends State<AdminAttendanceScreen> {
       ),
       padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 14)),
       decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: AppShadows.cardShadow,
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -341,7 +340,7 @@ class _AdminAttendanceScreenState extends State<AdminAttendanceScreen> {
       margin: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.border),
       ),
       child: TextField(

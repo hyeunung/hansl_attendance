@@ -30,7 +30,7 @@ class LeaveInfoCardWidget extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.primary,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -53,7 +53,7 @@ class LeaveInfoCardWidget extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
             '신청 가능',
@@ -78,7 +78,7 @@ class LeaveInfoCardWidget extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: _getUsedColor(usedPercentage).withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
         '사용률 ${usedPercentage.toStringAsFixed(0)}%',

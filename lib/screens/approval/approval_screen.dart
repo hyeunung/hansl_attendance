@@ -2930,12 +2930,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                             child: Container(
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(10),
-                                gradient: LinearGradient(
-                                  colors: [
-                                    AppColors.primary,
-                                    AppColors.primary.withValues(alpha:0.8),
-                                  ],
-                                ),
+                                color: AppColors.primary,
                                 boxShadow: [
                                   BoxShadow(
                                     color: AppColors.primary.withValues(alpha:0.15),
