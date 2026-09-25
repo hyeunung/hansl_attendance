@@ -861,17 +861,17 @@ class _TransactionStatementScreenState
         ),
         if (isUploading) ...[
           const SizedBox(height: 10),
-          const Row(
+          Row(
             children: [
-              SizedBox(
+              const SizedBox(
                 width: 14,
                 height: 14,
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
                 '업로드 중...',
-                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                style: AppTextStyles.listSubtitle(context),
               ),
             ],
           ),
@@ -1027,11 +1027,7 @@ class _TransactionStatementScreenState
               const SizedBox(width: 8),
               Text(
                 label,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
+                style: AppTextStyles.listTitle(context),
               ),
             ],
           ),
@@ -1123,7 +1119,7 @@ class _TransactionStatementScreenState
       child: Container(
       padding: EdgeInsets.symmetric(
         horizontal: ResponsiveUtils.spacing(context, 16),
-        vertical: ResponsiveUtils.spacing(context, 12),
+        vertical: ResponsiveUtils.spacing(context, 8),
       ),
       decoration: const BoxDecoration(
         border: Border(
@@ -1152,7 +1148,7 @@ class _TransactionStatementScreenState
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 5),
           // 거래처명
           Text(
             vendorName,
@@ -1160,7 +1156,7 @@ class _TransactionStatementScreenState
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           // 하단: 금액 + 등록자
           Row(
             children: [
@@ -1381,9 +1377,8 @@ class _StatementImageViewerState extends State<_StatementImageViewer> {
       appBar: AppBar(
         title: Text(
           widget.statement.vendorName ?? widget.statement.fileName ?? '거래명세서',
-          style: TextStyle(
+          style: AppTextStyles.appBarTitle(context).copyWith(
             color: _isPdf ? AppColors.textPrimary : Colors.white,
-            fontSize: 16,
           ),
         ),
         backgroundColor: _isPdf ? Colors.white : Colors.black,
@@ -1397,10 +1392,7 @@ class _StatementImageViewerState extends State<_StatementImageViewer> {
                 padding: const EdgeInsets.only(right: 4),
                 child: Text(
                   '${_currentPage + 1} / $_totalPages',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
+                  style: AppTextStyles.listSubtitle(context),
                 ),
               ),
             ),
@@ -1422,7 +1414,7 @@ class _StatementImageViewerState extends State<_StatementImageViewer> {
                       const SizedBox(height: 16),
                       Text(
                         _errorMessage!,
-                        style: TextStyle(color: AppColors.gray400, fontSize: 14),
+                        style: AppTextStyles.emptyState(context).copyWith(color: AppColors.gray400),
                       ),
                     ],
                   ),
@@ -1487,7 +1479,7 @@ class _StatementImageViewerState extends State<_StatementImageViewer> {
               const SizedBox(height: 16),
               Text(
                 '이미지를 불러올 수 없습니다',
-                style: TextStyle(color: AppColors.gray400, fontSize: 14),
+                style: AppTextStyles.emptyState(context).copyWith(color: AppColors.gray400),
               ),
             ],
           ),

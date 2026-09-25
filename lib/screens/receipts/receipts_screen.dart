@@ -1228,7 +1228,7 @@ class _ReceiptDetailScreenState extends State<_ReceiptDetailScreen> {
       appBar: AppBar(
         title: Text(
           widget.receipt['ocr_merchant_name'] as String? ?? widget.receipt['file_name'] ?? '영수증',
-          style: const TextStyle(color: Colors.white, fontSize: 16),
+          style: AppTextStyles.appBarTitle(context).copyWith(color: Colors.white),
         ),
         backgroundColor: Colors.black,
         surfaceTintColor: Colors.black,
@@ -1272,7 +1272,7 @@ class _ReceiptDetailScreenState extends State<_ReceiptDetailScreen> {
                 const SizedBox(height: 16),
                 Text(
                   '이미지를 불러올 수 없습니다',
-                  style: TextStyle(color: AppColors.gray400, fontSize: 14),
+                  style: AppTextStyles.emptyState(context).copyWith(color: AppColors.gray400),
                 ),
               ],
             ),
