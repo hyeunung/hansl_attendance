@@ -6,27 +6,27 @@ class AppShadows {
 
   // ─── Single Shadows ───
   static const BoxShadow xs = BoxShadow(
-    color: Color(0x08000000), // 3% opacity
+    color: Color(0x03000000), // 1% opacity
     blurRadius: 2,
     offset: Offset(0, 1),
   );
 
   static const BoxShadow sm = BoxShadow(
-    color: Color(0x0A000000), // 4% opacity
+    color: Color(0x05000000), // 2% opacity
     blurRadius: 3,
     offset: Offset(0, 1),
   );
 
   static const BoxShadow md = BoxShadow(
-    color: Color(0x0F000000), // 6% opacity
-    blurRadius: 4,
-    offset: Offset(0, 2),
+    color: Color(0x08000000), // 3% opacity
+    blurRadius: 3,
+    offset: Offset(0, 1),
   );
 
   static const BoxShadow lg = BoxShadow(
-    color: Color(0x12000000), // 7% opacity
-    blurRadius: 6,
-    offset: Offset(0, 3),
+    color: Color(0x0A000000), // 4% opacity
+    blurRadius: 4,
+    offset: Offset(0, 2),
   );
 
   // ─── Legacy Aliases (기존 코드 호환) ───

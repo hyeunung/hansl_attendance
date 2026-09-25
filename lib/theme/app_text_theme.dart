@@ -39,7 +39,7 @@ class AppTextStyles {
   static TextStyle appBarTitle(BuildContext context) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 22,
+        fontSize: 18,
         fontWeight: FontWeight.w700,
         color: AppColors.textPrimary,
       );
@@ -48,7 +48,7 @@ class AppTextStyles {
   static TextStyle sectionTitle(BuildContext context) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 20,
+        fontSize: 15,
         fontWeight: FontWeight.w700,
         color: AppColors.textPrimary,
         letterSpacing: -0.2,
@@ -57,7 +57,7 @@ class AppTextStyles {
   static TextStyle sectionSubtitle(BuildContext context) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 16,
+        fontSize: 13,
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
         letterSpacing: -0.2,
@@ -67,7 +67,7 @@ class AppTextStyles {
   static TextStyle cardTitle(BuildContext context) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 18,
+        fontSize: 14,
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
         letterSpacing: -0.2,
@@ -76,7 +76,7 @@ class AppTextStyles {
   static TextStyle cardBody(BuildContext context) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 15,
+        fontSize: 12,
         fontWeight: FontWeight.w400,
         color: AppColors.textSecondary,
       );
@@ -84,7 +84,7 @@ class AppTextStyles {
   static TextStyle cardCaption(BuildContext context) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 13,
+        fontSize: 11,
         fontWeight: FontWeight.w400,
         color: AppColors.textTertiary,
       );
@@ -93,7 +93,7 @@ class AppTextStyles {
   static TextStyle chipLabel(BuildContext context, {Color? color}) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 13,
+        fontSize: 11,
         fontWeight: FontWeight.w600,
         color: color ?? AppColors.textSecondary,
         letterSpacing: 0.1,
@@ -127,7 +127,7 @@ class AppTextStyles {
   static TextStyle buttonPrimary(BuildContext context) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 17,
+        fontSize: 14,
         fontWeight: FontWeight.w600,
         color: Colors.white,
       );
@@ -135,7 +135,7 @@ class AppTextStyles {
   static TextStyle buttonSecondary(BuildContext context) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 17,
+        fontSize: 14,
         fontWeight: FontWeight.w600,
         color: AppColors.primary,
       );
@@ -144,7 +144,7 @@ class AppTextStyles {
   static TextStyle statNumber(BuildContext context, {Color? color}) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 28,
+        fontSize: 20,
         fontWeight: FontWeight.w700,
         color: color ?? AppColors.textPrimary,
         height: 1.0,
@@ -154,7 +154,7 @@ class AppTextStyles {
   static TextStyle statLabel(BuildContext context) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 13,
+        fontSize: 11,
         fontWeight: FontWeight.w500,
         color: AppColors.textTertiary,
       );
@@ -163,7 +163,7 @@ class AppTextStyles {
   static TextStyle compactLabel(BuildContext context) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 11,
+        fontSize: 10,
         fontWeight: FontWeight.w500,
         color: AppColors.textTertiary,
       );
@@ -171,7 +171,7 @@ class AppTextStyles {
   static TextStyle compactValue(BuildContext context, {Color? color}) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 22,
+        fontSize: 16,
         fontWeight: FontWeight.w700,
         color: color ?? AppColors.textPrimary,
         height: 1.2,
@@ -189,7 +189,7 @@ class AppTextStyles {
   static TextStyle tableHeader(BuildContext context) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 12,
+        fontSize: 10,
         fontWeight: FontWeight.w500,
         color: AppColors.textTertiary,
       );
@@ -197,7 +197,7 @@ class AppTextStyles {
   static TextStyle tableCell(BuildContext context, {Color? color}) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 15,
+        fontSize: 12,
         fontWeight: FontWeight.w600,
         color: color ?? AppColors.textPrimary,
       );
@@ -205,7 +205,7 @@ class AppTextStyles {
   static TextStyle tableCellSub(BuildContext context) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 14,
+        fontSize: 11,
         fontWeight: FontWeight.w400,
         color: AppColors.textSecondary,
       );
@@ -222,7 +222,7 @@ class AppTextStyles {
   static TextStyle listTitle(BuildContext context) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 15,
+        fontSize: 12,
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
       );
@@ -230,7 +230,7 @@ class AppTextStyles {
   static TextStyle listSubtitle(BuildContext context) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 13,
+        fontSize: 11,
         fontWeight: FontWeight.w400,
         color: AppColors.textTertiary,
       );
@@ -239,7 +239,7 @@ class AppTextStyles {
   static TextStyle inputLabel(BuildContext context) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: FontWeight.w500,
         color: AppColors.textSecondary,
       );
@@ -247,7 +247,7 @@ class AppTextStyles {
   static TextStyle emptyState(BuildContext context) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: FontWeight.w400,
         color: AppColors.textTertiary,
       );

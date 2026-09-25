@@ -4,9 +4,9 @@ class AppColors {
   AppColors._();
 
   // ─── Primary Brand ───
-  static const Color primary = Color(0xFF1777CB);
-  static const Color primaryLight = Color(0xFF1E90FF);
-  static const Color primaryColor = Color(0xFF1777CB); // alias
+  static const Color primary = Color(0xFF2563EB);
+  static const Color primaryLight = Color(0xFF3B82F6);
+  static const Color primaryColor = Color(0xFF2563EB); // alias
 
   // 그라데이션 (레거시 호환 - 버튼 등에서 사용)
   static const LinearGradient primaryGradient = LinearGradient(
@@ -30,21 +30,21 @@ class AppColors {
   static const Color gray950 = Color(0xFF0F1623);
 
   // ─── Semantic Text ───
-  static const Color textPrimary = Color(0xFF1A2332);
-  static const Color textSecondary = Color(0xFF6C757D);
+  static const Color textPrimary = Color(0xFF111827);
+  static const Color textSecondary = Color(0xFF6B7280);
   static const Color textTertiary = Color(0xFF8E8E93);
   static const Color textDisabled = Color(0xFFADB5BD);
 
   // ─── Semantic Background ───
-  static const Color backgroundPrimary = Color(0xFFFAFBFC);
-  static const Color backgroundSecondary = Color(0xFFF5F6F8);
+  static const Color backgroundPrimary = Color(0xFFF5F7FA);
+  static const Color backgroundSecondary = Color(0xFFEEF2F7);
   static const Color backgroundTertiary = Color(0xFFFFFFFF);
   static const Color backgroundCard = Color(0xFFFFFFFF);
 
   // ─── Borders & Dividers ───
-  static const Color border = Color(0xFFE9ECEF);
-  static const Color borderLight = Color(0xFFF0F1F3);
-  static const Color divider = Color(0xFFF0F1F3);
+  static const Color border = Color(0xFFD1D5DB);
+  static const Color borderLight = Color(0xFFE5E7EB);
+  static const Color divider = Color(0xFFE5E7EB);
 
   // ─── Status Colors (차분한 Apple 톤) ───
   static const Color success = Color(0xFF34C759);

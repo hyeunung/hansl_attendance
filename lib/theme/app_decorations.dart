@@ -9,9 +9,9 @@ class AppDecorations {
   // ─── Border Radius Constants ───
   static const double radiusXs = 6.0;
   static const double radiusSm = 8.0;
-  static const double radiusMd = 12.0;
-  static const double radiusLg = 16.0;
-  static const double radiusXl = 20.0;
+  static const double radiusMd = 10.0;
+  static const double radiusLg = 12.0;
+  static const double radiusXl = 14.0;
   static const double radiusFull = 100.0;
 
   // ─── Card Decorations ───
