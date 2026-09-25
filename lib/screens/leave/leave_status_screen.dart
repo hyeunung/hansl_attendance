@@ -193,6 +193,8 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                     ),
 
                     // 2. 내 연차 현황
+                    FlatCard(
+                      child: Column(children: [
                     FlatSectionHeader(
                       title: '내 연차 현황',
                       icon: Icons.calendar_today_rounded,
@@ -222,14 +224,21 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                       ],
                     ),
 
+                    ]),
+                    ),
+
                     // 3. 최근 신청
-                    FlatSectionHeader(title: '최근 신청'),
-                    if (provider.recentLeaves.isEmpty)
-                      FlatEmptyState(
-                        message: '최근 신청 내역이 없습니다.',
-                        icon: Icons.event_busy,
-                      ),
-                    ..._recentLeaveRows(provider.recentLeaves),
+                    FlatCard(
+                      child: Column(children: [
+                        FlatSectionHeader(title: '최근 신청'),
+                        if (provider.recentLeaves.isEmpty)
+                          FlatEmptyState(
+                            message: '최근 신청 내역이 없습니다.',
+                            icon: Icons.event_busy,
+                          ),
+                        ..._recentLeaveRows(provider.recentLeaves),
+                      ]),
+                    ),
 
                     // bottom spacing
                     SizedBox(height: ResponsiveUtils.spacing(context, 40)),

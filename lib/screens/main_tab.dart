@@ -534,7 +534,7 @@ final roles = UserRoleHelper.getRoles(employee);
             color: _currentIndex == 1 ? AppColors.primary : AppColors.gray400,
           ),
         ),
-        label: '휴가/출장',
+        label: '휴가',
       ),
     );
 

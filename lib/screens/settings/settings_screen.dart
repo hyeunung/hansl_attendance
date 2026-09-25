@@ -521,9 +521,16 @@ class _SettingsScreenState extends State<SettingsScreen>
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: [
                   // 프로필 섹션
+                  FlatCard(
+                    margin: EdgeInsets.fromLTRB(
+                      ResponsiveUtils.spacing(context, 16),
+                      ResponsiveUtils.spacing(context, 10),
+                      ResponsiveUtils.spacing(context, 16),
+                      ResponsiveUtils.spacing(context, 8),
+                    ),
+                    child: Column(children: [
                   FlatSectionHeader(title: '프로필'),
-                  Container(
-                    color: Colors.white,
+                  Padding(
                     padding: EdgeInsets.symmetric(
                       horizontal: ResponsiveUtils.spacing(context, 16),
                       vertical: ResponsiveUtils.spacing(context, 16),
@@ -574,9 +581,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                       ],
                     ),
                   ),
-                  const Divider(height: 0.5, thickness: 0.5, color: AppColors.borderLight),
+                    ]),
+                  ),
 
-                  // 연차 현황 섹션 (토글)
+                  // 연차/지각 현황 (토글 카드)
+                  FlatCard(
+                    child: Column(children: [
                   FlatToggleSection(
                     title: '연차 현황',
                     icon: Icons.event_available,
@@ -622,9 +632,14 @@ class _SettingsScreenState extends State<SettingsScreen>
                     },
                   ),
 
+                    ]),
+                  ),
+
                   // 관리자 전용 섹션 (HR / SuperAdmin)
                   if (UserRoleHelper.canManageAttendance(
                       UserRoleHelper.getRoles(employee))) ...[
+                    FlatCard(
+                      child: Column(children: [
                     FlatSectionHeader(title: '관리자 전용'),
                     FlatListTile(
                       title: '전체 근태 관리',
@@ -642,9 +657,13 @@ class _SettingsScreenState extends State<SettingsScreen>
                       },
                     ),
                     if (_isAdmin) _buildInquiryTile(context),
+                      ]),
+                    ),
                   ],
 
                   // 앱 설정 섹션
+                  FlatCard(
+                    child: Column(children: [
                   FlatSectionHeader(title: '앱 설정'),
                   FlatListTile(
                     title: '푸시 알림',
@@ -672,6 +691,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                     onTap: _showFontSizeDialog,
                   ),
                   if (!_isAdmin) _buildInquiryTile(context),
+                    ]),
+                  ),
                 ],
               ),
             ),

@@ -132,9 +132,15 @@ class _CalendarScreenState extends State<CalendarScreen>
                   },
                   child: ListView(
                     children: [
-                      // 달력 (flat - no card wrapper)
-                      Container(
-                        color: Colors.white,
+                      // 달력 (카드)
+                      FlatCard(
+                        margin: EdgeInsets.fromLTRB(
+                          ResponsiveUtils.spacing(context, 16),
+                          ResponsiveUtils.spacing(context, 10),
+                          ResponsiveUtils.spacing(context, 16),
+                          ResponsiveUtils.spacing(context, 8),
+                        ),
+                        child: Padding(
                         padding: EdgeInsets.all(
                           ResponsiveUtils.spacing(context, 16),
                         ),
@@ -412,8 +418,11 @@ class _CalendarScreenState extends State<CalendarScreen>
                             ),
                           ],
                         ),
+                        ),
                       ),
-                      // 상세내역 - flat section header + content
+                      // 상세내역 (카드)
+                      FlatCard(
+                        child: Column(children: [
                       FlatSectionHeader(
                         title: _selectedDay != null
                             ? '${_selectedDay!.year}년 ${_selectedDay!.month}월 ${_selectedDay!.day}일'
@@ -423,9 +432,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                             ? provider.getHolidayInfo(_selectedDay!)!['name']
                             : null,
                       ),
-                      Container(
-                        color: Colors.white,
-                        child: Column(
+                      Column(
                           children: [
                             ..._getEventsForDay(
                               _selectedDay ?? DateTime.now(),
@@ -444,7 +451,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                               ),
                           ],
                         ),
+                        ]),
                       ),
+                      SizedBox(height: ResponsiveUtils.spacing(context, 12)),
                     ],
                   ),
                 ),
