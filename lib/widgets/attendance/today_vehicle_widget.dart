@@ -220,8 +220,7 @@ class TodayVehicleWidgetState extends State<TodayVehicleWidget> {
 
     final count = _vehicleRequests.length;
 
-    return Container(
-      color: Colors.white,
+    return FlatCard(
       child: Column(
         children: [
           // 금일 차량 현황 (드롭다운)
@@ -369,8 +368,7 @@ class TodayVehicleWidgetState extends State<TodayVehicleWidget> {
   }
 
   Widget _buildNonWorkingDayWidget() {
-    return Container(
-      color: Colors.white,
+    return FlatCard(
       child: Column(
         children: [
           const FlatSectionHeader(title: '금일 차량 현황'),

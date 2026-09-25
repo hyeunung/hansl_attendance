@@ -83,8 +83,7 @@ class _TomorrowAbsenceWidgetState extends State<TomorrowAbsenceWidget> {
         final tomorrow = DateTime.now().add(const Duration(days: 1));
         final dateStr = '${tomorrow.month}/${tomorrow.day}(${_weekdayLabel(tomorrow.weekday)})';
 
-        return Container(
-          color: Colors.white,
+        return FlatCard(
           child: Column(
             children: [
               FlatSectionHeader(

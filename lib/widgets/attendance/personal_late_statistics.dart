@@ -107,8 +107,7 @@ class PersonalLateStatisticsState extends State<PersonalLateStatistics> {
     final yearlyCount = _lateRecords.length;
 
     // 플랫 토글 섹션 스타일 (아래 지각/미출근 섹션과 동일) — 행 빨간색 표기
-    return Container(
-      color: Colors.white,
+    return FlatCard(
       child: Column(
         children: [
           Material(

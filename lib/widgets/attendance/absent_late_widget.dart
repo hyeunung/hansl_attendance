@@ -157,8 +157,7 @@ class AbsentLateWidgetState extends State<AbsentLateWidget> {
       return const SizedBox.shrink();
     }
 
-    return Container(
-      color: Colors.white,
+    return FlatCard(
       child: Column(
         children: [
           // 지각자

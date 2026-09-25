@@ -70,8 +70,7 @@ class _TodayAbsenceWidgetState extends State<TodayAbsenceWidget> {
       builder: (context, provider, _) {
         final leaves = provider.todayLeaves;
 
-        return Container(
-          color: Colors.white,
+        return FlatCard(
           child: Column(
             children: [
               FlatSectionHeader(

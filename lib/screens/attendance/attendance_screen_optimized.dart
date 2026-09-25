@@ -241,7 +241,9 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
                   },
                   child: ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.zero,
+                    padding: EdgeInsets.only(
+                      top: ResponsiveUtils.spacing(context, 10),
+                    ),
                     children: [
                       // 출근/퇴근 버튼 - 휴일/공휴일에 숨김
                       if (!_isNonWorkingDay)

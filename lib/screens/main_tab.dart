@@ -514,27 +514,27 @@ final roles = UserRoleHelper.getRoles(employee);
       BottomNavigationBarItem(
         icon: Padding(
           padding: EdgeInsets.symmetric(
-            vertical: ResponsiveUtils.spacing(context, 6),
+            vertical: ResponsiveUtils.spacing(context, 2),
           ),
           child: Icon(
             Icons.access_time,
             color: _currentIndex == 0 ? AppColors.primary : AppColors.gray400,
           ),
         ),
-        label: '',
+        label: '근무',
       ),
     );
 
     items.add(
       BottomNavigationBarItem(
         icon: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(vertical: 2),
           child: Icon(
             Icons.beach_access,
             color: _currentIndex == 1 ? AppColors.primary : AppColors.gray400,
           ),
         ),
-        label: '',
+        label: '휴가/출장',
       ),
     );
 
@@ -583,10 +583,10 @@ final roles = UserRoleHelper.getRoles(employee);
       items.add(
         BottomNavigationBarItem(
           icon: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
+            padding: const EdgeInsets.symmetric(vertical: 2),
             child: buildApprovalIcon(_currentIndex, 2),
           ),
-          label: '',
+          label: '결재',
         ),
       );
       
@@ -594,13 +594,13 @@ final roles = UserRoleHelper.getRoles(employee);
       items.add(
         BottomNavigationBarItem(
           icon: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
+            padding: const EdgeInsets.symmetric(vertical: 2),
             child: Icon(
               Icons.description,
               color: _currentIndex == 3 ? AppColors.primary : AppColors.gray400,
             ),
           ),
-          label: '',
+          label: '명세서',
         ),
       );
 
@@ -608,7 +608,7 @@ final roles = UserRoleHelper.getRoles(employee);
       items.add(
         BottomNavigationBarItem(
           icon: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
+            padding: const EdgeInsets.symmetric(vertical: 2),
             child: Icon(
               Icons.calendar_today,
               color: _currentIndex == 4
@@ -616,7 +616,7 @@ final roles = UserRoleHelper.getRoles(employee);
                   : AppColors.gray400,
             ),
           ),
-          label: '',
+          label: '달력',
         ),
       );
 
@@ -624,10 +624,10 @@ final roles = UserRoleHelper.getRoles(employee);
       items.add(
         BottomNavigationBarItem(
           icon: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
+            padding: const EdgeInsets.symmetric(vertical: 2),
             child: buildSettingsIcon(_currentIndex, 5),
           ),
-          label: '',
+          label: '설정',
         ),
       );
     } else {
@@ -638,20 +638,20 @@ final roles = UserRoleHelper.getRoles(employee);
         items.add(
           BottomNavigationBarItem(
             icon: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
+              padding: const EdgeInsets.symmetric(vertical: 2),
               child: buildApprovalIcon(_currentIndex, 2),
             ),
-            label: '',
+            label: '구매',
           ),
         );
       } else {
         items.add(
           BottomNavigationBarItem(
             icon: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
+              padding: const EdgeInsets.symmetric(vertical: 2),
               child: buildApprovalIcon(_currentIndex, 2),
             ),
-            label: '',
+            label: '결재',
           ),
         );
       }
@@ -660,13 +660,13 @@ final roles = UserRoleHelper.getRoles(employee);
       items.add(
         BottomNavigationBarItem(
           icon: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
+            padding: const EdgeInsets.symmetric(vertical: 2),
             child: Icon(
               Icons.description,
               color: _currentIndex == 3 ? AppColors.primary : AppColors.gray400,
             ),
           ),
-          label: '',
+          label: '명세서',
         ),
       );
 
@@ -676,14 +676,14 @@ final roles = UserRoleHelper.getRoles(employee);
         items.add(
           BottomNavigationBarItem(
             icon: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
+              padding: const EdgeInsets.symmetric(vertical: 2),
               child: Icon(
                 Icons.receipt_long,
                 color:
                     _currentIndex == 4 ? AppColors.primary : AppColors.gray400,
               ),
             ),
-            label: '',
+            label: '영수증',
           ),
         );
 
@@ -691,7 +691,7 @@ final roles = UserRoleHelper.getRoles(employee);
         items.add(
           BottomNavigationBarItem(
             icon: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
+              padding: const EdgeInsets.symmetric(vertical: 2),
               child: Icon(
                 Icons.calendar_today,
                 color: _currentIndex == 5
@@ -699,7 +699,7 @@ final roles = UserRoleHelper.getRoles(employee);
                     : AppColors.gray400,
               ),
             ),
-            label: '',
+            label: '달력',
           ),
         );
 
@@ -707,10 +707,10 @@ final roles = UserRoleHelper.getRoles(employee);
         items.add(
           BottomNavigationBarItem(
             icon: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
+              padding: const EdgeInsets.symmetric(vertical: 2),
               child: buildSettingsIcon(_currentIndex, 6),
             ),
-            label: '',
+            label: '설정',
           ),
         );
       } else {
@@ -719,7 +719,7 @@ final roles = UserRoleHelper.getRoles(employee);
         items.add(
           BottomNavigationBarItem(
             icon: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
+              padding: const EdgeInsets.symmetric(vertical: 2),
               child: Icon(
                 Icons.calendar_today,
                 color: _currentIndex == 4
@@ -727,7 +727,7 @@ final roles = UserRoleHelper.getRoles(employee);
                     : AppColors.gray400,
               ),
             ),
-            label: '',
+            label: '달력',
           ),
         );
 
@@ -735,10 +735,10 @@ final roles = UserRoleHelper.getRoles(employee);
         items.add(
           BottomNavigationBarItem(
             icon: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
+              padding: const EdgeInsets.symmetric(vertical: 2),
               child: buildSettingsIcon(_currentIndex, 5),
             ),
-            label: '',
+            label: '설정',
           ),
         );
       }
@@ -772,15 +772,17 @@ final roles = UserRoleHelper.getRoles(employee);
             currentIndex: _currentIndex,
             onTap: _onTabTapped,
             type: BottomNavigationBarType.fixed,
-            selectedFontSize: 14,
-            unselectedFontSize: 14,
-            selectedLabelStyle: AppTextStyles.compactLabel(context).copyWith(fontSize: 12, fontWeight: FontWeight.w600),
-            unselectedLabelStyle: AppTextStyles.compactLabel(context).copyWith(fontSize: 12, fontWeight: FontWeight.w600),
+            selectedFontSize: 10,
+            unselectedFontSize: 10,
+            selectedItemColor: AppColors.primary,
+            unselectedItemColor: AppColors.textSecondary,
+            selectedLabelStyle: AppTextStyles.compactLabel(context).copyWith(fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: -0.3),
+            unselectedLabelStyle: AppTextStyles.compactLabel(context).copyWith(fontSize: 10, fontWeight: FontWeight.w400, letterSpacing: -0.3),
             selectedIconTheme: IconThemeData(
-              size: ResponsiveUtils.iconSize(context, 30),
+              size: ResponsiveUtils.iconSize(context, 23),
             ),
             unselectedIconTheme: IconThemeData(
-              size: ResponsiveUtils.iconSize(context, 30),
+              size: ResponsiveUtils.iconSize(context, 23),
             ),
             items: items,
             elevation: 0, // 그림자 제거로 성능 향상

@@ -85,6 +85,36 @@ class FlatSectionHeader extends StatelessWidget {
   }
 }
 
+// ─── Card Wrapper ───
+
+/// 섹션을 감싸는 카드 (Enterprise Neutral: 흰 배경 + 1px 테두리, 그림자 없음)
+class FlatCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsets? margin;
+
+  const FlatCard({super.key, required this.child, this.margin});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: margin ??
+          EdgeInsets.fromLTRB(
+            ResponsiveUtils.spacing(context, 16),
+            0,
+            ResponsiveUtils.spacing(context, 16),
+            ResponsiveUtils.spacing(context, 8),
+          ),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: AppColors.backgroundCard,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border, width: 1),
+      ),
+      child: child,
+    );
+  }
+}
+
 // ─── Table Column Header ───
 
 /// 테이블 컬럼 헤더 (연한 배경)
