@@ -200,11 +200,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   Widget _buildInquiryTile(BuildContext context) {
     return FlatListTile(
       title: _isAdmin ? '문의 관리' : '문의하기',
-      value: _isAdmin
-          ? (_inquiryBadgeCount > 0
-              ? '미처리 $_inquiryBadgeCount건'
-              : '처리 완료')
-          : null,
+      value: _isAdmin && _inquiryBadgeCount == 0 ? '처리 완료' : null,
       leading: Icon(
         Icons.support_agent,
         size: ResponsiveUtils.iconSize(context, 20),
@@ -215,23 +211,31 @@ class _SettingsScreenState extends State<SettingsScreen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: ResponsiveUtils.spacing(context, 22),
-                  height: ResponsiveUtils.spacing(context, 22),
-                  decoration: const BoxDecoration(
+                  constraints: BoxConstraints(
+                    minWidth: ResponsiveUtils.spacing(context, 18),
+                  ),
+                  height: ResponsiveUtils.spacing(context, 18),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: ResponsiveUtils.spacing(context, 5),
+                  ),
+                  decoration: BoxDecoration(
                     color: AppColors.error,
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(
+                      ResponsiveUtils.spacing(context, 9),
+                    ),
                   ),
                   child: Center(
                     child: Text(
                       _inquiryBadgeCount.toString(),
-                      style: AppTextStyles.tableHeader(context).copyWith(
+                      style: AppTextStyles.compactLabel(context).copyWith(
                         color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
+                        height: 1.0,
                       ),
                     ),
                   ),
                 ),
-                SizedBox(width: ResponsiveUtils.spacing(context, 4)),
+                SizedBox(width: ResponsiveUtils.spacing(context, 6)),
                 Icon(
                   Icons.chevron_right,
                   size: 20,

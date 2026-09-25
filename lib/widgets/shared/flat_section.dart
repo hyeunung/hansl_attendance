@@ -473,6 +473,8 @@ class FlatListTile extends StatelessWidget {
               value!,
               style: AppTextStyles.listSubtitle(context),
             ),
+          if (value != null && trailing != null)
+            SizedBox(width: ResponsiveUtils.spacing(context, 8)),
           if (trailing != null) trailing!,
           if (onTap != null && trailing == null)
             Icon(
