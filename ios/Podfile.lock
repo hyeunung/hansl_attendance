@@ -1,197 +1,40 @@
 PODS:
-  - app_links (0.0.2):
-    - Flutter
-  - Firebase/CoreOnly (11.2.0):
-    - FirebaseCore (= 11.2.0)
-  - Firebase/Messaging (11.2.0):
-    - Firebase/CoreOnly
-    - FirebaseMessaging (~> 11.2.0)
-  - firebase_core (3.6.0):
-    - Firebase/CoreOnly (= 11.2.0)
-    - Flutter
-  - firebase_messaging (15.1.3):
-    - Firebase/Messaging (= 11.2.0)
-    - firebase_core
-    - Flutter
-  - FirebaseCore (11.2.0):
-    - FirebaseCoreInternal (~> 11.0)
-    - GoogleUtilities/Environment (~> 8.0)
-    - GoogleUtilities/Logger (~> 8.0)
-  - FirebaseCoreInternal (11.15.0):
-    - "GoogleUtilities/NSData+zlib (~> 8.1)"
-  - FirebaseInstallations (11.4.0):
-    - FirebaseCore (~> 11.0)
-    - GoogleUtilities/Environment (~> 8.0)
-    - GoogleUtilities/UserDefaults (~> 8.0)
-    - PromisesObjC (~> 2.4)
-  - FirebaseMessaging (11.2.0):
-    - FirebaseCore (~> 11.0)
-    - FirebaseInstallations (~> 11.0)
-    - GoogleDataTransport (~> 10.0)
-    - GoogleUtilities/AppDelegateSwizzler (~> 8.0)
-    - GoogleUtilities/Environment (~> 8.0)
-    - GoogleUtilities/Reachability (~> 8.0)
-    - GoogleUtilities/UserDefaults (~> 8.0)
-    - nanopb (~> 3.30910.0)
   - Flutter (1.0.0)
   - flutter_app_badger (1.3.0):
     - Flutter
   - flutter_local_notifications (0.0.1):
     - Flutter
-  - flutter_native_splash (2.4.3):
-    - Flutter
-  - flutter_pdfview (1.0.2):
-    - Flutter
   - flutter_secure_storage (6.0.0):
     - Flutter
-  - geolocator_apple (1.2.0):
-    - Flutter
-    - FlutterMacOS
-  - GoogleDataTransport (10.1.0):
-    - nanopb (~> 3.30910.0)
-    - PromisesObjC (~> 2.4)
-  - GoogleUtilities/AppDelegateSwizzler (8.1.0):
-    - GoogleUtilities/Environment
-    - GoogleUtilities/Logger
-    - GoogleUtilities/Network
-    - GoogleUtilities/Privacy
-  - GoogleUtilities/Environment (8.1.0):
-    - GoogleUtilities/Privacy
-  - GoogleUtilities/Logger (8.1.0):
-    - GoogleUtilities/Environment
-    - GoogleUtilities/Privacy
-  - GoogleUtilities/Network (8.1.0):
-    - GoogleUtilities/Logger
-    - "GoogleUtilities/NSData+zlib"
-    - GoogleUtilities/Privacy
-    - GoogleUtilities/Reachability
-  - "GoogleUtilities/NSData+zlib (8.1.0)":
-    - GoogleUtilities/Privacy
-  - GoogleUtilities/Privacy (8.1.0)
-  - GoogleUtilities/Reachability (8.1.0):
-    - GoogleUtilities/Logger
-    - GoogleUtilities/Privacy
-  - GoogleUtilities/UserDefaults (8.1.0):
-    - GoogleUtilities/Logger
-    - GoogleUtilities/Privacy
-  - image_picker_ios (0.0.1):
-    - Flutter
-  - integration_test (0.0.1):
-    - Flutter
-  - nanopb (3.30910.0):
-    - nanopb/decode (= 3.30910.0)
-    - nanopb/encode (= 3.30910.0)
-  - nanopb/decode (3.30910.0)
-  - nanopb/encode (3.30910.0)
-  - package_info_plus (0.4.5):
-    - Flutter
-  - path_provider_foundation (0.0.1):
-    - Flutter
-    - FlutterMacOS
   - printing (1.0.0):
-    - Flutter
-  - PromisesObjC (2.4.0)
-  - shared_preferences_foundation (0.0.1):
-    - Flutter
-    - FlutterMacOS
-  - url_launcher_ios (0.0.1):
     - Flutter
 
 DEPENDENCIES:
-  - app_links (from `.symlinks/plugins/app_links/ios`)
-  - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
-  - firebase_messaging (from `.symlinks/plugins/firebase_messaging/ios`)
   - Flutter (from `Flutter`)
   - flutter_app_badger (from `.symlinks/plugins/flutter_app_badger/ios`)
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
-  - flutter_native_splash (from `.symlinks/plugins/flutter_native_splash/ios`)
-  - flutter_pdfview (from `.symlinks/plugins/flutter_pdfview/ios`)
   - flutter_secure_storage (from `.symlinks/plugins/flutter_secure_storage/ios`)
-  - geolocator_apple (from `.symlinks/plugins/geolocator_apple/darwin`)
-  - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
-  - integration_test (from `.symlinks/plugins/integration_test/ios`)
-  - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
-  - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - printing (from `.symlinks/plugins/printing/ios`)
-  - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
-  - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
-
-SPEC REPOS:
-  trunk:
-    - Firebase
-    - FirebaseCore
-    - FirebaseCoreInternal
-    - FirebaseInstallations
-    - FirebaseMessaging
-    - GoogleDataTransport
-    - GoogleUtilities
-    - nanopb
-    - PromisesObjC
 
 EXTERNAL SOURCES:
-  app_links:
-    :path: ".symlinks/plugins/app_links/ios"
-  firebase_core:
-    :path: ".symlinks/plugins/firebase_core/ios"
-  firebase_messaging:
-    :path: ".symlinks/plugins/firebase_messaging/ios"
   Flutter:
     :path: Flutter
   flutter_app_badger:
     :path: ".symlinks/plugins/flutter_app_badger/ios"
   flutter_local_notifications:
     :path: ".symlinks/plugins/flutter_local_notifications/ios"
-  flutter_native_splash:
-    :path: ".symlinks/plugins/flutter_native_splash/ios"
-  flutter_pdfview:
-    :path: ".symlinks/plugins/flutter_pdfview/ios"
   flutter_secure_storage:
     :path: ".symlinks/plugins/flutter_secure_storage/ios"
-  geolocator_apple:
-    :path: ".symlinks/plugins/geolocator_apple/darwin"
-  image_picker_ios:
-    :path: ".symlinks/plugins/image_picker_ios/ios"
-  integration_test:
-    :path: ".symlinks/plugins/integration_test/ios"
-  package_info_plus:
-    :path: ".symlinks/plugins/package_info_plus/ios"
-  path_provider_foundation:
-    :path: ".symlinks/plugins/path_provider_foundation/darwin"
   printing:
     :path: ".symlinks/plugins/printing/ios"
-  shared_preferences_foundation:
-    :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
-  url_launcher_ios:
-    :path: ".symlinks/plugins/url_launcher_ios/ios"
 
 SPEC CHECKSUMS:
-  app_links: f3e17e4ee5e357b39d8b95290a9b2c299fca71c6
-  Firebase: 98e6bf5278170668a7983e12971a66b2cd57fc8c
-  firebase_core: 2bedc3136ec7c7b8561c6123ed0239387b53f2af
-  firebase_messaging: 15d114e1a41fc31e4fbabcd48d765a19eec94a38
-  FirebaseCore: a282032ae9295c795714ded2ec9c522fc237f8da
-  FirebaseCoreInternal: 9afa45b1159304c963da48addb78275ef701c6b4
-  FirebaseInstallations: 6ef4a1c7eb2a61ee1f74727d7f6ce2e72acf1414
-  FirebaseMessaging: c9ec7b90c399c7a6100297e9d16f8a27fc7f7152
-  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  Flutter: 71a624a5bc0c04062bf19101d501e466baf2fb47
   flutter_app_badger: b87fc231847b03b92ce1412aa351842e7e97932f
   flutter_local_notifications: df98d66e515e1ca797af436137b4459b160ad8c9
-  flutter_native_splash: df59bb2e1421aa0282cb2e95618af4dcb0c56c29
-  flutter_pdfview: 2e4d13ffb774858562ffbdfdb61b40744b191adc
   flutter_secure_storage: d33dac7ae2ea08509be337e775f6b59f1ff45f12
-  geolocator_apple: 66b711889fd333205763b83c9dcf0a57a28c7afd
-  GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
-  GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
-  image_picker_ios: 4f2f91b01abdb52842a8e277617df877e40f905b
-  integration_test: 252f60fa39af5e17c3aa9899d35d908a0721b573
-  nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
-  package_info_plus: c0502532a26c7662a62a356cebe2692ec5fe4ec4
-  path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
   printing: 233e1b73bd1f4a05615548e9b5a324c98588640b
-  PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
-  shared_preferences_foundation: fcdcbc04712aee1108ac7fda236f363274528f78
-  url_launcher_ios: 5334b05cef931de560670eeae103fd3e431ac3fe
 
-PODFILE CHECKSUM: 2626e513bb3d256cffe9103e059d24b8fd6e032a
+PODFILE CHECKSUM: 0ba449e4e3b187bcfbff9775c9be2dd0bd9d3dcc
 
 COCOAPODS: 1.16.2
