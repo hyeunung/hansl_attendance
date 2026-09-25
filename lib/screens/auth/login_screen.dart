@@ -286,7 +286,7 @@ setState(
                 Text(
                   '근태 기록 시스템',
                   style: AppTextStyles.cardBody(context).copyWith(
-                    fontSize: 16,
+                    fontSize: 13,
                     color: AppColors.textDisabled,
                     letterSpacing: 1.2,
                   ),
@@ -314,7 +314,7 @@ setState(
                         decoration: InputDecoration(
                           labelText: '이메일',
                           labelStyle: AppTextStyles.inputLabel(context).copyWith(
-                            fontSize: 15,
+                            fontSize: 12,
                             color: AppColors.textPrimary,
                           ),
                           hintText: '이메일 주소 입력',
@@ -345,7 +345,7 @@ setState(
                         decoration: InputDecoration(
                           labelText: '비밀번호',
                           labelStyle: AppTextStyles.inputLabel(context).copyWith(
-                            fontSize: 15,
+                            fontSize: 12,
                             color: AppColors.textPrimary,
                           ),
                           hintText: '비밀번호 입력',
@@ -461,7 +461,7 @@ setState(
                               child: Text(
                                 '회원가입',
                                 style: AppTextStyles.inputLabel(context).copyWith(
-                                  fontSize: 15,
+                                  fontSize: 12,
                                   color: AppColors.primary,
                                 ),
                               ),
@@ -478,7 +478,7 @@ setState(
                               child: Text(
                                 '비밀번호 재설정',
                                 style: AppTextStyles.inputLabel(context).copyWith(
-                                  fontSize: 15,
+                                  fontSize: 12,
                                   color: AppColors.primary,
                                 ),
                               ),
@@ -626,7 +626,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 Text(
                   '근태 기록 시스템',
                   style: AppTextStyles.cardBody(context).copyWith(
-                    fontSize: 16,
+                    fontSize: 13,
                     color: AppColors.textDisabled,
                     letterSpacing: 1.2,
                   ),
@@ -654,7 +654,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         decoration: InputDecoration(
                           labelText: '이름',
                           labelStyle: AppTextStyles.inputLabel(context).copyWith(
-                            fontSize: 15,
+                            fontSize: 12,
                             color: AppColors.textPrimary,
                           ),
                           filled: true,
@@ -674,7 +674,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         decoration: InputDecoration(
                           labelText: '이메일',
                           labelStyle: AppTextStyles.inputLabel(context).copyWith(
-                            fontSize: 15,
+                            fontSize: 12,
                             color: AppColors.textPrimary,
                           ),
                           hintText: '이메일 주소 입력',
@@ -702,7 +702,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         decoration: InputDecoration(
                           labelText: '비밀번호',
                           labelStyle: AppTextStyles.inputLabel(context).copyWith(
-                            fontSize: 15,
+                            fontSize: 12,
                             color: AppColors.textPrimary,
                           ),
                           hintText: '비밀번호 입력',
@@ -727,7 +727,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         decoration: InputDecoration(
                           labelText: '비밀번호 확인',
                           labelStyle: AppTextStyles.inputLabel(context).copyWith(
-                            fontSize: 15,
+                            fontSize: 12,
                             color: AppColors.textPrimary,
                           ),
                           hintText: '비밀번호 확인',
@@ -757,7 +757,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         decoration: InputDecoration(
                           labelText: '직원 유형',
                           labelStyle: AppTextStyles.inputLabel(context).copyWith(
-                            fontSize: 15,
+                            fontSize: 12,
                             color: AppColors.textPrimary,
                           ),
                           hintText: '직원 유형 선택',

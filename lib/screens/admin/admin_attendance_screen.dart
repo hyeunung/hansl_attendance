@@ -221,7 +221,7 @@ class _AdminAttendanceScreenState extends State<AdminAttendanceScreen> {
                   '${_selectedDate.year}.${_selectedDate.month.toString().padLeft(2, '0')}.${_selectedDate.day.toString().padLeft(2, '0')} ($weekday)',
                   style: ResponsiveUtils.getTextStyle(
                     context,
-                    fontSize: 16,
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
@@ -284,7 +284,7 @@ class _AdminAttendanceScreenState extends State<AdminAttendanceScreen> {
           value,
           style: ResponsiveUtils.getTextStyle(
             context,
-            fontSize: 16,
+            fontSize: 12,
             fontWeight: FontWeight.w800,
             color: Colors.white,
           ),
@@ -350,7 +350,7 @@ class _AdminAttendanceScreenState extends State<AdminAttendanceScreen> {
           hintText: '직원명 또는 이메일로 검색',
           hintStyle: TextStyle(
             color: AppColors.textTertiary,
-            fontSize: 14,
+            fontSize: 12,
           ),
           prefixIcon:
               const Icon(Icons.search, color: AppColors.textTertiary, size: 20),
@@ -383,7 +383,7 @@ class _AdminAttendanceScreenState extends State<AdminAttendanceScreen> {
             const SizedBox(height: 12),
             Text(
               '조건에 맞는 직원이 없습니다',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
             ),
           ],
         ),
@@ -448,7 +448,7 @@ class _AdminAttendanceScreenState extends State<AdminAttendanceScreen> {
                             name,
                             style: ResponsiveUtils.getTextStyle(
                               context,
-                              fontSize: 15,
+                              fontSize: 12,
                               fontWeight: FontWeight.w700,
                               color: AppColors.textPrimary,
                             ),
@@ -494,7 +494,7 @@ class _AdminAttendanceScreenState extends State<AdminAttendanceScreen> {
                     status,
                     style: TextStyle(
                       color: statusColor,
-                      fontSize: 12,
+                      fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
                   ),

@@ -130,15 +130,15 @@ class LeaveCalendarWidget extends StatelessWidget {
       ),
       disabledTextStyle: AppTextStyles.tableCellSub(context).copyWith(
         color: AppColors.textDisabled,
-        fontSize: ResponsiveUtils.fontSize(context, 14),
+        fontSize: ResponsiveUtils.fontSize(context, 12),
       ),
       weekendTextStyle: AppTextStyles.tableCellSub(context).copyWith(
         color: AppColors.textPrimary,
-        fontSize: ResponsiveUtils.fontSize(context, 14),
+        fontSize: ResponsiveUtils.fontSize(context, 12),
       ),
       defaultTextStyle: AppTextStyles.tableCellSub(context).copyWith(
         color: AppColors.textPrimary,
-        fontSize: ResponsiveUtils.fontSize(context, 14),
+        fontSize: ResponsiveUtils.fontSize(context, 12),
       ),
     );
   }
@@ -159,7 +159,7 @@ class LeaveCalendarWidget extends StatelessWidget {
               '${day.day}',
               style: AppTextStyles.tableCell(context, color: AppColors.holiday).copyWith(
                 fontWeight: FontWeight.w800,
-                fontSize: ResponsiveUtils.fontSize(context, 15),
+                fontSize: ResponsiveUtils.fontSize(context, 12),
               ),
             ),
           );
@@ -173,7 +173,7 @@ class LeaveCalendarWidget extends StatelessWidget {
               '${day.day}',
               style: AppTextStyles.tableCell(context, color: AppColors.sunday).copyWith(
                 fontWeight: FontWeight.w700,
-                fontSize: ResponsiveUtils.fontSize(context, 14),
+                fontSize: ResponsiveUtils.fontSize(context, 12),
               ),
             ),
           );
@@ -187,7 +187,7 @@ class LeaveCalendarWidget extends StatelessWidget {
               '${day.day}',
               style: AppTextStyles.tableCell(context, color: AppColors.saturday).copyWith(
                 fontWeight: FontWeight.w700,
-                fontSize: ResponsiveUtils.fontSize(context, 14),
+                fontSize: ResponsiveUtils.fontSize(context, 12),
               ),
             ),
           );
@@ -295,7 +295,7 @@ class LeaveCalendarWidget extends StatelessWidget {
         '${day.day}',
         style: AppTextStyles.tableCell(context, color: AppColors.primary).copyWith(
           fontWeight: FontWeight.bold,
-          fontSize: ResponsiveUtils.fontSize(context, 14),
+          fontSize: ResponsiveUtils.fontSize(context, 12),
         ),
       ),
     );
@@ -329,7 +329,7 @@ class LeaveCalendarWidget extends StatelessWidget {
             '${day.day}',
             style: AppTextStyles.tableCell(context).copyWith(
               fontWeight: FontWeight.bold,
-              fontSize: ResponsiveUtils.fontSize(context, 14),
+              fontSize: ResponsiveUtils.fontSize(context, 12),
             ),
           ),
         ),
@@ -350,7 +350,7 @@ class LeaveCalendarWidget extends StatelessWidget {
               '${day.day}',
               style: AppTextStyles.tableCell(context).copyWith(
                 fontWeight: FontWeight.bold,
-                fontSize: ResponsiveUtils.fontSize(context, 14),
+                fontSize: ResponsiveUtils.fontSize(context, 12),
               ),
             ),
           ),

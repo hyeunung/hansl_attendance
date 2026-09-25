@@ -36,7 +36,7 @@ class AttendanceHistoryCard extends StatelessWidget {
                 ),
                 child: Text(
                   '최근 기록',
-                  style: AppTextStyles.sectionHeader(context).copyWith(fontSize: 14),
+                  style: AppTextStyles.sectionHeader(context),
                 ),
               ),
 

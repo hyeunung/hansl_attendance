@@ -31,7 +31,7 @@ class AttendanceSummaryCard extends StatelessWidget {
                 ),
                 child: Text(
                   '오늘의 근무 요약',
-                  style: AppTextStyles.sectionHeader(context).copyWith(fontSize: 14),
+                  style: AppTextStyles.sectionHeader(context),
                 ),
               ),
 

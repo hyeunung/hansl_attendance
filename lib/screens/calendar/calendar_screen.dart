@@ -170,7 +170,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                                 Text(
                                   '${_focusedMonth.year}년 ${_focusedMonth.month}월',
                                   style: AppTextStyles.sectionSubtitle(context).copyWith(
-                                    fontSize: ResponsiveUtils.fontSize(context, 22),
+                                    fontSize: ResponsiveUtils.fontSize(context, 18),
                                   ),
                                 ),
                                 SizedBox(
@@ -213,7 +213,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                                     child: Text(
                                       label,
                                       style: AppTextStyles.tableHeader(context).copyWith(
-                                        fontSize: ResponsiveUtils.fontSize(context, 14),
+                                        fontSize: ResponsiveUtils.fontSize(context, 12),
                                         color: color,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -370,7 +370,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                                                           ? AppColors.saturday // 토요일: 파란색
                                                           : AppColors.weekday, // 평일: 검정색
                                                     ).copyWith(
-                                                      fontSize: ResponsiveUtils.fontSize(context, 14),
+                                                      fontSize: ResponsiveUtils.fontSize(context, 12),
                                                       fontWeight: FontWeight.w500,
                                                     ),
                                                   ),

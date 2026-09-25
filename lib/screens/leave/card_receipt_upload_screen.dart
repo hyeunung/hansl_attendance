@@ -775,7 +775,7 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
           decoration: InputDecoration(
             hintText: hint,
             suffixText: suffix,
-            hintStyle: AppTextStyles.cardBody(context).copyWith(color: AppColors.gray400, fontSize: 12),
+            hintStyle: AppTextStyles.cardBody(context).copyWith(color: AppColors.gray400),
             filled: true,
             fillColor: Colors.white,
             border: OutlineInputBorder(

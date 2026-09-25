@@ -163,7 +163,7 @@ class _AdminAttendanceEditSheetState extends State<AdminAttendanceEditSheet> {
                 name,
                 style: ResponsiveUtils.getTextStyle(
                   context,
-                  fontSize: 18,
+                  fontSize: 12,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
                 ),
@@ -173,7 +173,7 @@ class _AdminAttendanceEditSheetState extends State<AdminAttendanceEditSheet> {
                 date,
                 style: TextStyle(
                   color: AppColors.textSecondary,
-                  fontSize: 13,
+                  fontSize: 12,
                 ),
               ),
               const SizedBox(height: 20),
@@ -290,7 +290,7 @@ class _AdminAttendanceEditSheetState extends State<AdminAttendanceEditSheet> {
       child: Text(
         text,
         style: TextStyle(
-          fontSize: 13,
+          fontSize: 12,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
         ),
@@ -328,7 +328,7 @@ class _AdminAttendanceEditSheetState extends State<AdminAttendanceEditSheet> {
                 contentPadding: EdgeInsets.symmetric(vertical: 14),
               ),
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
               ),

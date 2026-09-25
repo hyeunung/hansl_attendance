@@ -175,7 +175,7 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
                         child: Text(
                           '출장 일정 변경 신청',
                           style: AppTextStyles.tableCell(context).copyWith(
-                            fontSize: 16,
+                            fontSize: 12,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -280,7 +280,7 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
                     const SizedBox(height: 4),
                     Text(
                       '지금 시각을 기준으로 출장을 복귀 완료 처리합니다. 차량 배차 요청이 즉시 \'복귀완료\' 처리되며 법인카드의 사용 종료일이 오늘 날짜로 단축됩니다.',
-                      style: AppTextStyles.tableCellSub(context).copyWith(fontSize: 11),
+                      style: AppTextStyles.tableCellSub(context),
                     ),
                     const SizedBox(height: 8),
                     SizedBox(
@@ -328,7 +328,7 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
                                     ? '연장할 종료일을 선택해주세요'
                                     : '연장 종료일: ${DateFormat('yyyy-MM-dd').format(_selectedEndDate!)}',
                                 style: AppTextStyles.tableCell(context).copyWith(
-                                  fontSize: 13,
+                                  fontSize: 12,
                                   color: _selectedEndDate == null ? AppColors.textTertiary : AppColors.textPrimary,
                                   fontWeight: _selectedEndDate == null ? FontWeight.normal : FontWeight.w600,
                                 ),
@@ -351,7 +351,7 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                       ),
-                      style: const TextStyle(fontSize: 13),
+                      style: const TextStyle(fontSize: 12),
                       maxLines: 2,
                     ),
                     const SizedBox(height: 12),
@@ -391,8 +391,8 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12)),
+          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 11)),
         ],
       ),
     );
@@ -402,7 +402,7 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
     return Text(
       title,
       style: TextStyle(
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: FontWeight.bold,
         color: color,
       ),

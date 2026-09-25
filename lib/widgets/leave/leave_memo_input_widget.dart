@@ -90,7 +90,7 @@ class LeaveMemoInputWidget extends StatelessWidget {
         maxLines: maxLines,
         onChanged: onChanged,
         style: AppTextStyles.tableCell(context).copyWith(
-          fontSize: ResponsiveUtils.fontSize(context, 16),
+          fontSize: ResponsiveUtils.fontSize(context, 13),
         ),
       ),
     );

@@ -597,7 +597,7 @@ class _AnnualLeaveRequestScreenOptimizedState
             : Text(
                 '신청하기',
                 style: AppTextStyles.buttonPrimary(context).copyWith(
-                  fontSize: 20,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: _canSubmit ? Colors.white : AppColors.textDisabled,
                 ),

@@ -1674,7 +1674,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                                       flex: 3,
                                       child: TextFormField(
                                         initialValue: row.itemName,
-                                        style: const TextStyle(fontSize: 13),
+                                        style: const TextStyle(fontSize: 12),
                                         decoration: const InputDecoration(
                                           labelText: '품목명 *',
                                           border: OutlineInputBorder(),
@@ -1691,7 +1691,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                                       flex: 2,
                                       child: TextFormField(
                                         initialValue: row.specification,
-                                        style: const TextStyle(fontSize: 13),
+                                        style: const TextStyle(fontSize: 12),
                                         decoration: const InputDecoration(
                                           labelText: '규격',
                                           border: OutlineInputBorder(),
@@ -1716,7 +1716,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                                         inputFormatters: [
                                           FilteringTextInputFormatter.digitsOnly,
                                         ],
-                                        style: const TextStyle(fontSize: 13),
+                                        style: const TextStyle(fontSize: 12),
                                         decoration: const InputDecoration(
                                           labelText: '수량 *',
                                           border: OutlineInputBorder(),
@@ -1733,7 +1733,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                                       flex: 2,
                                       child: TextFormField(
                                         initialValue: row.unit,
-                                        style: const TextStyle(fontSize: 13),
+                                        style: const TextStyle(fontSize: 12),
                                         decoration: const InputDecoration(
                                           labelText: '단위',
                                           hintText: 'EA',
@@ -1755,7 +1755,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                                         inputFormatters: [
                                           FilteringTextInputFormatter.digitsOnly,
                                         ],
-                                        style: const TextStyle(fontSize: 13),
+                                        style: const TextStyle(fontSize: 12),
                                         decoration: const InputDecoration(
                                           labelText: '단가 *',
                                           border: OutlineInputBorder(),
@@ -1772,7 +1772,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                                       flex: 2,
                                       child: TextFormField(
                                         initialValue: row.remark,
-                                        style: const TextStyle(fontSize: 13),
+                                        style: const TextStyle(fontSize: 12),
                                         decoration: const InputDecoration(
                                           labelText: '비고',
                                           border: OutlineInputBorder(),

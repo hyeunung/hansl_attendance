@@ -144,14 +144,14 @@ class LeaveInfoCardWidget extends StatelessWidget {
                 Text(
                   _formatDays(remainAnnual),
                   style: AppTextStyles.statNumber(context, color: Colors.white).copyWith(
-                    fontSize: ResponsiveUtils.fontSize(context, 40),
+                    fontSize: ResponsiveUtils.fontSize(context, 28),
                   ),
                 ),
                 Text(
                   '일',
                   style: AppTextStyles.sectionTitle(context).copyWith(
                     color: Colors.white,
-                    fontSize: ResponsiveUtils.fontSize(context, 24),
+                    fontSize: ResponsiveUtils.fontSize(context, 20),
                   ),
                 ),
               ],

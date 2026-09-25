@@ -776,8 +776,8 @@ final roles = UserRoleHelper.getRoles(employee);
             unselectedFontSize: 10,
             selectedItemColor: AppColors.primary,
             unselectedItemColor: AppColors.textSecondary,
-            selectedLabelStyle: AppTextStyles.compactLabel(context).copyWith(fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: -0.3),
-            unselectedLabelStyle: AppTextStyles.compactLabel(context).copyWith(fontSize: 10, fontWeight: FontWeight.w400, letterSpacing: -0.3),
+            selectedLabelStyle: AppTextStyles.compactLabel(context).copyWith(fontWeight: FontWeight.w600, letterSpacing: -0.3),
+            unselectedLabelStyle: AppTextStyles.compactLabel(context).copyWith(fontWeight: FontWeight.w400, letterSpacing: -0.3),
             selectedIconTheme: IconThemeData(
               size: ResponsiveUtils.iconSize(context, 23),
             ),

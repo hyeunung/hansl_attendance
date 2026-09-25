@@ -897,7 +897,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                 flex: 2,
                 child: Text(
                   merchant,
-                  style: AppTextStyles.listTitle(context).copyWith(fontSize: 13),
+                  style: AppTextStyles.listTitle(context),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -907,7 +907,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                 flex: 2,
                 child: Text(
                   itemName,
-                  style: AppTextStyles.tableCellSub(context).copyWith(fontSize: 13),
+                  style: AppTextStyles.tableCellSub(context),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -917,7 +917,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                 width: 70,
                 child: Text(
                   _formatKrw(totalAmount),
-                  style: AppTextStyles.tableCell(context).copyWith(fontSize: 13),
+                  style: AppTextStyles.tableCell(context),
                   textAlign: TextAlign.right,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

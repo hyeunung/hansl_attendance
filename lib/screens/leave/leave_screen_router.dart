@@ -63,7 +63,7 @@ class _LeaveScreenRouterState extends State<LeaveScreenRouter> {
               ),
               child: Text(
                 'Version: $_screenVersion',
-                style: AppTextStyles.compactLabel(context).copyWith(color: Colors.white, fontSize: 10),
+                style: AppTextStyles.compactLabel(context).copyWith(color: Colors.white),
               ),
             ),
           ),

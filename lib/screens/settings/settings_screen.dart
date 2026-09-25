@@ -550,7 +550,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                             child: Text(
                               name.isNotEmpty ? name[0] : '-',
                               style: AppTextStyles.statNumber(context, color: Colors.white).copyWith(
-                                fontSize: ResponsiveUtils.fontSize(context, 24),
+                                fontSize: ResponsiveUtils.fontSize(context, 20),
                               ),
                             ),
                           ),
@@ -563,7 +563,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                               Text(
                                 name,
                                 style: AppTextStyles.sectionSubtitle(context).copyWith(
-                                  fontSize: ResponsiveUtils.fontSize(context, 20),
+                                  fontSize: ResponsiveUtils.fontSize(context, 18),
                                 ),
                               ),
                               SizedBox(
@@ -572,7 +572,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                               Text(
                                 '${(department?.isNotEmpty ?? false) ? department : '-'} / ${(position?.isNotEmpty ?? false) ? position : '-'}',
                                 style: AppTextStyles.listSubtitle(context).copyWith(
-                                  fontSize: ResponsiveUtils.fontSize(context, 14),
+                                  fontSize: ResponsiveUtils.fontSize(context, 12),
                                 ),
                               ),
                             ],

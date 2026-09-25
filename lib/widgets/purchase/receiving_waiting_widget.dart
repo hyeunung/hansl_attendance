@@ -89,10 +89,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                 children: [
                   Text(
                     '입고 처리',
-                    style: AppTextStyles.cardTitle(context).copyWith(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: AppTextStyles.sectionTitle(context),
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -2146,10 +2143,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           title: Text(
             '날짜 선택',
-            style: AppTextStyles.cardTitle(context).copyWith(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-            ),
+            style: AppTextStyles.sectionTitle(context),
           ),
           content: SizedBox(
             width: 360, // 명시적 너비 부여로 Intrinsic 측정 방지
