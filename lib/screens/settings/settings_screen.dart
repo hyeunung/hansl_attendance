@@ -35,7 +35,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-  String _fontSize = '0% (기본)';
+  String _fontSize = FontProvider.defaultSize;
   String _appVersion = '로딩 중...';
   final InquiryService _inquiryService = InquiryService();
   int _inquiryBadgeCount = 0;
@@ -134,9 +134,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildFontSizeOption('0% (기본)'),
-              _buildFontSizeOption('+15%'),
-              _buildFontSizeOption('+30%'),
+              ...FontProvider.options.map(_buildFontSizeOption),
             ],
           ),
           actions: [
@@ -272,7 +270,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       case '+30%':
         return 22.0;
       default:
-        return 17.0; // 0% (기본)
+        return 17.0; // 기본
     }
   }
 
