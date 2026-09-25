@@ -53,8 +53,8 @@ class FlatSectionHeader extends StatelessWidget {
       padding: EdgeInsets.only(
         left: ResponsiveUtils.spacing(context, 16),
         right: ResponsiveUtils.spacing(context, 16),
-        top: ResponsiveUtils.spacing(context, 24),
-        bottom: ResponsiveUtils.spacing(context, 10),
+        top: ResponsiveUtils.spacing(context, 8),
+        bottom: ResponsiveUtils.spacing(context, 8),
       ),
       decoration: const BoxDecoration(
         color: AppColors.backgroundSecondary,
@@ -103,7 +103,7 @@ class FlatTableColumnHeader extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: ResponsiveUtils.spacing(context, 16),
-        vertical: ResponsiveUtils.spacing(context, 8),
+        vertical: ResponsiveUtils.spacing(context, 5),
       ),
       decoration: const BoxDecoration(
         color: AppColors.gray50,
@@ -152,7 +152,7 @@ class FlatTableRow extends StatelessWidget {
     final content = Container(
       padding: EdgeInsets.symmetric(
         horizontal: ResponsiveUtils.spacing(context, 16),
-        vertical: ResponsiveUtils.spacing(context, 12),
+        vertical: ResponsiveUtils.spacing(context, 7),
       ),
       decoration: const BoxDecoration(
         border: Border(
@@ -215,7 +215,7 @@ class FlatToggleSection extends StatelessWidget {
               width: double.infinity,
               padding: EdgeInsets.symmetric(
                 horizontal: ResponsiveUtils.spacing(context, 16),
-                vertical: ResponsiveUtils.spacing(context, 12),
+                vertical: ResponsiveUtils.spacing(context, 8),
               ),
               decoration: const BoxDecoration(
                 border: Border(
@@ -285,8 +285,11 @@ class StatusChip extends StatelessWidget {
         style: fontSize != null
             ? AppTextStyles.chipSmall(context, color: color).copyWith(
                 fontSize: fontSize,
+                height: 1.0,
               )
-            : AppTextStyles.chipSmall(context, color: color),
+            : AppTextStyles.chipSmall(context, color: color).copyWith(
+                height: 1.0,
+              ),
       ),
     );
   }
@@ -304,7 +307,7 @@ class FlatStatGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(
-        vertical: ResponsiveUtils.spacing(context, 14),
+        vertical: ResponsiveUtils.spacing(context, 8),
       ),
       decoration: const BoxDecoration(
         border: Border(
@@ -414,7 +417,7 @@ class FlatListTile extends StatelessWidget {
     final content = Container(
       padding: EdgeInsets.symmetric(
         horizontal: ResponsiveUtils.spacing(context, 16),
-        vertical: ResponsiveUtils.spacing(context, 14),
+        vertical: ResponsiveUtils.spacing(context, 9),
       ),
       decoration: const BoxDecoration(
         border: Border(
