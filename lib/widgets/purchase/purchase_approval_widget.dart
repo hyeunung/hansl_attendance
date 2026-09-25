@@ -622,8 +622,13 @@ return;
                       decoration: BoxDecoration(
                         color: _tabController.index == 0
                             ? AppColors.primary
-                            : AppColors.backgroundSecondary,
-                        borderRadius: BorderRadius.circular(20),
+                            : AppColors.backgroundCard,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: _tabController.index == 0
+                              ? AppColors.primary
+                              : AppColors.border,
+                        ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -657,8 +662,13 @@ return;
                       decoration: BoxDecoration(
                         color: _tabController.index == 1
                             ? AppColors.primary
-                            : AppColors.backgroundSecondary,
-                        borderRadius: BorderRadius.circular(20),
+                            : AppColors.backgroundCard,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: _tabController.index == 1
+                              ? AppColors.primary
+                              : AppColors.border,
+                        ),
                       ),
                       child: Text(
                         '처리완료',

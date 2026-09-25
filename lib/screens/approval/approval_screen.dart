@@ -756,7 +756,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                       ? FontWeight.w600
                                       : FontWeight.w500,
                                   color: _mainTabController.index == 0
-                                      ? AppColors.textPrimary
+                                      ? Colors.white
                                       : AppColors.textTertiary,
                                 ),
                                 textAlign: TextAlign.center,
@@ -850,7 +850,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                         ? FontWeight.w600
                                         : FontWeight.w500,
                                     color: _mainTabController.index == 1
-                                        ? AppColors.textPrimary
+                                        ? Colors.white
                                         : AppColors.textTertiary,
                                   ),
                                   textAlign: TextAlign.center,
@@ -954,7 +954,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                       ? FontWeight.w600
                                       : FontWeight.w500,
                                   color: _mainTabController.index == 2
-                                      ? AppColors.textPrimary
+                                      ? Colors.white
                                       : AppColors.textTertiary,
                                 ),
                                 textAlign: TextAlign.center,
@@ -1058,7 +1058,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                       ? FontWeight.w600
                                       : FontWeight.w500,
                                   color: _mainTabController.index == 3
-                                      ? AppColors.textPrimary
+                                      ? Colors.white
                                       : AppColors.textTertiary,
                                 ),
                                 textAlign: TextAlign.center,
