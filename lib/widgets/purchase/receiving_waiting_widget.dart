@@ -79,7 +79,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
             return AlertDialog(
               backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
               ),
               titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
               contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
@@ -196,15 +196,15 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                       filled: true,
                       fillColor: AppColors.backgroundSecondary,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                         borderSide: const BorderSide(color: AppColors.border),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                         borderSide: const BorderSide(color: AppColors.border),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(color: AppColors.primary, width: 1.2),
                       ),
                     ),
@@ -219,15 +219,15 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                       filled: true,
                       fillColor: AppColors.backgroundSecondary,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                         borderSide: const BorderSide(color: AppColors.border),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                         borderSide: const BorderSide(color: AppColors.border),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(color: AppColors.primary, width: 1.2),
                       ),
                     ),
@@ -920,7 +920,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                   dropdownColor: Colors.white,
                   isDense: true,
                   isExpanded: true,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                   elevation: 8,
                   items: _departments.map<DropdownMenuItem<String>>((String department) {
                     return DropdownMenuItem<String>(
@@ -966,7 +966,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                   dropdownColor: Colors.white,
                   isDense: true,
                   isExpanded: true,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                   elevation: 8,
                   items: _employees.map<DropdownMenuItem<String>>((String employee) {
                     return DropdownMenuItem<String>(
@@ -2140,7 +2140,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           title: Text(
             '날짜 선택',
             style: AppTextStyles.sectionTitle(context),
@@ -2167,7 +2167,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: AppColors.backgroundSecondary,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: AppColors.border),
                   ),
                   child: Row(
@@ -2356,7 +2356,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
           padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
           decoration: BoxDecoration(
             color: AppColors.errorLight,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(color: AppColors.errorLight),
           ),
           child: Text(
@@ -2379,7 +2379,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
       padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
       decoration: BoxDecoration(
         color: AppColors.errorLight,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.errorLight),
       ),
       child: Text(
@@ -2677,7 +2677,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                               });
                             }
                           },
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                     child: Container(
                       width: double.infinity,
                       padding: EdgeInsets.symmetric(
@@ -2685,7 +2685,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                         vertical: ResponsiveUtils.spacing(context, 14),
                       ),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: AppColors.border),
                         color: Colors.white,
                       ),

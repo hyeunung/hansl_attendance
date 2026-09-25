@@ -1125,7 +1125,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     color: _subTabController.index == 0
                                         ? AppColors.primary
                                         : AppColors.backgroundSecondary,
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Row(
                                     children: [
@@ -1203,7 +1203,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     color: _subTabController.index == 1
                                         ? AppColors.primary
                                         : AppColors.backgroundSecondary,
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
                                     '처리완료',
@@ -2554,7 +2554,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
           builder: (context, setState) {
             return Dialog(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
               ),
               insetPadding: const EdgeInsets.all(16),
               child: Container(
@@ -2616,7 +2616,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 color: AppColors.infoLight,
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
                                   color: AppColors.primary.withValues(alpha:0.2),
                                 ),
@@ -2938,9 +2938,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppColors.primary.withValues(alpha:0.3),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
+                                    color: AppColors.primary.withValues(alpha:0.15),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 1),
                                   ),
                                 ],
                               ),
@@ -3086,7 +3086,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       builder: (BuildContext context) {
         return Dialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
           ),
           elevation: 0,
           backgroundColor: Colors.transparent,
@@ -3094,7 +3094,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             constraints: const BoxConstraints(maxWidth: 400),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
               boxShadow: AppShadows.lgShadow,
             ),
             child: Column(
@@ -3184,9 +3184,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                           decoration: BoxDecoration(
                             boxShadow: [
                               BoxShadow(
-                                color: confirmColor.withValues(alpha:0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
+                                color: confirmColor.withValues(alpha:0.15),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
                               ),
                             ],
                           ),

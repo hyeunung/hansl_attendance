@@ -1576,7 +1576,7 @@ return;
                                     barrierDismissible: false,
                                     builder: (dialogContext) => Dialog(
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Container(
                                         padding: const EdgeInsets.all(24),
@@ -1953,7 +1953,7 @@ return;
                                     barrierDismissible: false,
                                     builder: (dialogContext) => Dialog(
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Container(
                                         padding: const EdgeInsets.all(24),
@@ -2518,7 +2518,7 @@ return;
                 ),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: AppColors.borderLight, width: 0.5),
                   boxShadow: AppShadows.strongShadow,
                 ),
@@ -2574,7 +2574,7 @@ return;
                               padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
                               decoration: BoxDecoration(
                                 color: AppColors.backgroundSecondary,
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(10),
                                 border: Border.all(color: AppColors.border),
                               ),
                               child: Column(
@@ -2694,7 +2694,7 @@ return;
                                   vertical: ResponsiveUtils.spacing(context, 14),
                                 ),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(10),
                                   side: const BorderSide(color: AppColors.border),
                                 ),
                               ),
@@ -2719,7 +2719,7 @@ return;
                                   vertical: ResponsiveUtils.spacing(context, 14),
                                 ),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                                 elevation: 2,
                               ),
@@ -2809,7 +2809,7 @@ return;
             padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 color: selectedDate != null ? AppColors.primary : AppColors.border,
                 width: selectedDate != null ? 2 : 1,
