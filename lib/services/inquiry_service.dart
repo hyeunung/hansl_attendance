@@ -760,10 +760,11 @@ class InquiryService {
       var query = _supabase
           .from('purchase_requests')
           .select(
-            'id,purchase_order_number,vendor_name,request_date,created_at,requester_name,'
+            'id,purchase_order_number,vendor_name,request_date,created_at,requester_name,currency,'
             'middle_manager_status,final_manager_status,delivery_request_date,'
             'revised_delivery_request_date,purchase_request_items('
-            'id,line_number,item_name,specification,quantity,unit_price_value,amount_value'
+            'id,line_number,item_name,specification,quantity,unit_price_value,amount_value,'
+            'unit_price_currency,amount_currency'
             ')',
           )
           .eq('requester_name', requesterName);
@@ -800,10 +801,11 @@ class InquiryService {
       final response = await _supabase
           .from('purchase_requests')
           .select(
-            'id,purchase_order_number,vendor_name,requester_name,request_date,'
+            'id,purchase_order_number,vendor_name,requester_name,request_date,currency,'
             'created_at,delivery_request_date,revised_delivery_request_date,'
             'purchase_request_items('
-            'id,line_number,item_name,specification,quantity,unit_price_value,amount_value,remark,link'
+            'id,line_number,item_name,specification,quantity,unit_price_value,amount_value,remark,link,'
+            'unit_price_currency,amount_currency'
             ')',
           )
           .eq('id', requestId)
@@ -837,23 +839,18 @@ class InquiryService {
     String? itemName,
     String? specification,
     int? quantity,
-    int? unitPriceValue,
-    int? amountValue,
+    num? unitPriceValue,
+    num? amountValue,
     String? remark,
   }) async {
     try {
+      // 통화(unit_price_currency/amount_currency)는 기존 값 유지
       final updateData = <String, dynamic>{};
       if (itemName != null) updateData['item_name'] = itemName;
       if (specification != null) updateData['specification'] = specification;
       if (quantity != null) updateData['quantity'] = quantity;
-      if (unitPriceValue != null) {
-        updateData['unit_price_value'] = unitPriceValue;
-        updateData['unit_price_currency'] = 'KRW';
-      }
-      if (amountValue != null) {
-        updateData['amount_value'] = amountValue;
-        updateData['amount_currency'] = 'KRW';
-      }
+      if (unitPriceValue != null) updateData['unit_price_value'] = unitPriceValue;
+      if (amountValue != null) updateData['amount_value'] = amountValue;
       if (remark != null) updateData['remark'] = remark;
 
       await _supabase

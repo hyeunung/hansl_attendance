@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../providers/user_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
+import '../../utils/currency_formatter.dart';
 import '../../utils/responsive_utils.dart';
 import '../shared/flat_section.dart';
 import '../../utils/user_role_helper.dart';
@@ -1428,7 +1429,6 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                       separatorBuilder: (context, index) => const Divider(height: 1),
                       itemBuilder: (context, itemIndex) {
                         final item = items[itemIndex];
-                        final numberFormat = NumberFormat('#,###');
                         final isReceived = item['is_received'] == true;
                         final deliveryStatus = item['delivery_status']?.toString() ?? 'pending';
                         final receivedQty = item['received_quantity'] as int?;
@@ -1494,7 +1494,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                         ),
                                         SizedBox(width: ResponsiveUtils.spacing(context, 12)),
                                         Text(
-                                          '단가: ${numberFormat.format(item['unit_price_value'])}원',
+                                          '단가: ${CurrencyFormatter.formatWon(item['unit_price_value'], CurrencyFormatter.fromRow(item))}',
                                           style: AppTextStyles.listSubtitle(context).copyWith(
                                             color: AppColors.textSecondary,
                                           ),
@@ -1505,7 +1505,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          '금액: ${numberFormat.format(item['amount_value'])}원',
+                                          '금액: ${CurrencyFormatter.formatWon(item['amount_value'], CurrencyFormatter.fromRow(item))}',
                                           style: AppTextStyles.tableCellSub(context).copyWith(
                                             fontWeight: FontWeight.w600,
                                             color: AppColors.primary,
@@ -1913,8 +1913,6 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
         return null;
       }
 
-      final numberFormat = NumberFormat('#,###');
-
       String formatDateText(String? value) {
         if (value == null || value.isEmpty) return '-';
         try {
@@ -1983,9 +1981,12 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
           final itemIndex = row.itemIndex;
           if (itemIndex == null || itemIndex < 0 || itemIndex >= itemsForOrder.length) continue;
           final item = itemsForOrder[itemIndex];
-          final newValue = int.tryParse(row.controller.text.trim());
+          final newValue = num.tryParse(row.controller.text.trim());
           final currentUnitPrice = toNum(item['unit_price_value']);
           final currentAmount = toNum(item['amount_value']);
+          final currency = CurrencyFormatter.fromRow(item);
+          String money(num? value) =>
+              value == null ? '-' : CurrencyFormatter.formatWon(value, currency);
 
           payloadItems.add({
             'item_id': item['id']?.toString(),
@@ -2001,11 +2002,11 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
 
           if (row.changeType == 'amount') {
             summaryLines.add(
-              '품목: ${item['item_name'] ?? ''} (${item['specification'] ?? '-'}) / 현재 합계액: ${currentAmount != null ? numberFormat.format(currentAmount) : '-'}원 / 변경 합계액: ${newValue != null ? numberFormat.format(newValue) : '-'}원',
+              '품목: ${item['item_name'] ?? ''} (${item['specification'] ?? '-'}) / 현재 합계액: ${money(currentAmount)} / 변경 합계액: ${money(newValue)}',
             );
           } else {
             summaryLines.add(
-              '품목: ${item['item_name'] ?? ''} (${item['specification'] ?? '-'}) / 현재 단가: ${currentUnitPrice != null ? numberFormat.format(currentUnitPrice) : '-'}원 / 변경 단가: ${newValue != null ? numberFormat.format(newValue) : '-'}원',
+              '품목: ${item['item_name'] ?? ''} (${item['specification'] ?? '-'}) / 현재 단가: ${money(currentUnitPrice)} / 변경 단가: ${money(newValue)}',
             );
           }
         }
@@ -2460,7 +2461,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
         return;
       }
       final invalidRow = _priceRows.any((row) {
-        final value = int.tryParse(row.controller.text.trim());
+        final value = num.tryParse(row.controller.text.trim());
         return row.itemIndex == null || value == null || value <= 0;
       });
       if (invalidRow) {
@@ -2836,9 +2837,13 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                           : null;
                       final unitPrice = selectedItem?['unit_price_value'];
                       final amountValue = selectedItem?['amount_value'];
+                      final currency = CurrencyFormatter.fromRow(selectedItem);
+                      String money(Object? value) => value == null
+                          ? '-'
+                          : CurrencyFormatter.formatWon(value, currency);
                       final hintText = row.changeType == 'amount'
-                          ? '현재 합계액: ${amountValue ?? '-'}'
-                          : '현재 단가: ${unitPrice ?? '-'}';
+                          ? '현재 합계액: ${money(amountValue)}'
+                          : '현재 단가: ${money(unitPrice)}';
 
                       return Padding(
                         padding: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 12)),
@@ -2896,12 +2901,12 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                             SizedBox(height: ResponsiveUtils.spacing(context, 8)),
                             TextFormField(
                               controller: row.controller,
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                              keyboardType: CurrencyFormatter.keyboardType(currency),
+                              inputFormatters: CurrencyFormatter.inputFormatters(currency),
                               decoration: InputDecoration(
                                 labelText: '변경 값',
                                 hintText: hintText,
-                                suffixText: '원',
+                                suffixText: CurrencyFormatter.unitLabel(currency),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                                 ),

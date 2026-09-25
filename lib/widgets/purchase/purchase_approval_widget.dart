@@ -8,6 +8,7 @@ import '../../providers/user_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_text_theme.dart';
+import '../../utils/currency_formatter.dart';
 import '../../utils/responsive_utils.dart';
 import '../shared/flat_section.dart';
 import '../../utils/user_role_helper.dart';
@@ -24,7 +25,6 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
     with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-  final NumberFormat currencyFormat = NumberFormat('#,###');
   late TabController _tabController;
   
   // 처리완료 탭 검색 및 필터링을 위한 상태 변수들
@@ -408,7 +408,7 @@ return;
                                         ),
                                       ),
                                       Text(
-                                        '₩${currencyFormat.format(item.unitPriceValue)}',
+                                        CurrencyFormatter.format(item.unitPriceValue, item.currency),
                                         style: AppTextStyles.cardCaption(context).copyWith(
                                           color: AppColors.textPrimary,
                                         ),
@@ -430,7 +430,7 @@ return;
                                       ),
                                     ),
                                     Text(
-                                      '₩${currencyFormat.format(item.amountValue)}',
+                                      CurrencyFormatter.format(item.amountValue, item.currency),
                                       style: AppTextStyles.inputLabel(context).copyWith(
                                         fontWeight: FontWeight.bold,
                                         color: AppColors.primary,
@@ -1301,7 +1301,7 @@ return;
                         style: AppTextStyles.tableHeader(context),
                       ),
                       Text(
-                        '₩${currencyFormat.format(group.totalAmount)}',
+                        CurrencyFormatter.format(group.totalAmount, group.currency),
                         style: AppTextStyles.cardTitle(context).copyWith(
                           color: AppColors.primary,
                         ),
@@ -1443,7 +1443,7 @@ return;
                                             _buildDialogInfoRow(
                                               context,
                                               '총 금액',
-                                              '₩${currencyFormat.format(group.totalAmount)}',
+                                              CurrencyFormatter.format(group.totalAmount, group.currency),
                                             ),
                                           ],
                                         ),
@@ -1819,7 +1819,7 @@ return;
                                             _buildDialogInfoRow(
                                               context,
                                               '총 금액',
-                                              '₩${currencyFormat.format(group.totalAmount)}',
+                                              CurrencyFormatter.format(group.totalAmount, group.currency),
                                             ),
                                           ],
                                         ),
@@ -2271,7 +2271,7 @@ return;
                         style: AppTextStyles.tableHeader(context),
                       ),
                       Text(
-                        '₩${currencyFormat.format(group.totalAmount)}',
+                        CurrencyFormatter.format(group.totalAmount, group.currency),
                         style: AppTextStyles.cardTitle(context).copyWith(
                           color: AppColors.primary,
                         ),
@@ -2411,7 +2411,7 @@ return;
                     _buildDialogInfoRow(
                       context,
                       '금액',
-                      '${group.totalAmount.toStringAsFixed(0)}원',
+                      CurrencyFormatter.formatWon(group.totalAmount, group.currency),
                     ),
                   ],
                 ),
@@ -3158,9 +3158,9 @@ return;
                             label: '단가',
                             icon: Icons.attach_money_outlined,
                             hint: '단가',
-                            keyboardType: TextInputType.number,
+                            keyboardType: CurrencyFormatter.keyboardType(item.currency),
                             suffix: Text(
-                              '원',
+                              CurrencyFormatter.unitLabel(item.currency),
                               style: AppTextStyles.inputLabel(context).copyWith(
                                 color: AppColors.textSecondary,
                               ),
@@ -3514,7 +3514,7 @@ return;
                           ],
                           SizedBox(height: ResponsiveUtils.spacing(context, 4)),
                           Text(
-                            '수량: ${item.quantity}개 | 단가: ${item.unitPriceValue.toStringAsFixed(0)}원',
+                            '수량: ${item.quantity}개 | 단가: ${CurrencyFormatter.formatWon(item.unitPriceValue, item.currency)}',
                             style: AppTextStyles.inputLabel(context).copyWith(
                               color: AppColors.textSecondary,
                             ),
@@ -3785,7 +3785,7 @@ return;
                           ),
                           SizedBox(height: ResponsiveUtils.spacing(context, 4)),
                           Text(
-                            '품목 수: ${group.items.length}개 | 총액: ₩${currencyFormat.format(group.totalAmount)}',
+                            '품목 수: ${group.items.length}개 | 총액: ${CurrencyFormatter.format(group.totalAmount, group.currency)}',
                             style: AppTextStyles.inputLabel(context).copyWith(
                               color: AppColors.textSecondary,
                             ),

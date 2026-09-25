@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../providers/user_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
+import '../../utils/currency_formatter.dart';
 import '../../utils/responsive_utils.dart';
 import '../shared/flat_section.dart';
 import '../../utils/user_role_helper.dart';
@@ -817,7 +818,6 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                       separatorBuilder: (context, index) => const Divider(height: 1),
                       itemBuilder: (context, itemIndex) {
                         final item = items[itemIndex];
-                        final numberFormat = NumberFormat('#,###');
 
                         final isCompleted = item['is_payment_completed'] == true;
                         
@@ -869,7 +869,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                                         ),
                                         SizedBox(width: ResponsiveUtils.spacing(context, 12)),
                                         Text(
-                                          '단가: ${numberFormat.format(item['unit_price_value'])}원',
+                                          '단가: ${CurrencyFormatter.formatWon(item['unit_price_value'], CurrencyFormatter.fromRow(item))}',
                                           style: AppTextStyles.listSubtitle(context).copyWith(
                                             color: isCompleted ? AppColors.textTertiary : AppColors.textSecondary,
                                             decoration: isCompleted ? TextDecoration.lineThrough : null,
@@ -878,7 +878,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                                       ],
                                     ),
                                     Text(
-                                      '금액: ${numberFormat.format(item['amount_value'])}원',
+                                      '금액: ${CurrencyFormatter.formatWon(item['amount_value'], CurrencyFormatter.fromRow(item))}',
                                       style: AppTextStyles.tableCellSub(context).copyWith(
                                         fontWeight: FontWeight.w600,
                                         color: isCompleted ? AppColors.textTertiary : AppColors.warning,

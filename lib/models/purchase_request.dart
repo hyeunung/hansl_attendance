@@ -80,7 +80,11 @@ class PurchaseRequest {
       progressType: json['progress_type']?.toString() ?? '일반',
       isPaymentCompleted: json['is_payment_completed'] ?? false,
       paymentCategory: json['payment_category']?.toString() ?? '',
-      currency: json['currency']?.toString() ?? 'KRW',
+      currency: (json['currency'] ??
+                  json['unit_price_currency'] ??
+                  json['amount_currency'])
+              ?.toString() ??
+          'KRW',
       requestType: json['request_type']?.toString() ?? '',
       vendorName: json['vendor_name']?.toString() ?? '',
       vendorPaymentSchedule: json['vendor_payment_schedule']?.toString() ?? '',
@@ -201,4 +205,6 @@ class PurchaseOrderGroup {
   }
 
   int get additionalItemCount => items.length - 1;
+
+  String get currency => items.isEmpty ? 'KRW' : headerItem.currency;
 }

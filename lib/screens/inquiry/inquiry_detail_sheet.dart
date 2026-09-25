@@ -6,6 +6,7 @@ import '../../services/inquiry_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
 import '../../theme/app_shadows.dart';
+import '../../utils/currency_formatter.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
@@ -577,11 +578,11 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                             style: AppTextStyles.tableHeader(context),
                           ),
                           Text(
-                            '단가: ${(item['unit_price_value'] ?? '-').toString()}',
+                            '단가: ${item['unit_price_value'] == null ? '-' : CurrencyFormatter.formatWon(item['unit_price_value'], CurrencyFormatter.fromRow(item))}',
                             style: AppTextStyles.tableHeader(context),
                           ),
                           Text(
-                            '금액: ${(item['amount_value'] ?? '-').toString()}',
+                            '금액: ${item['amount_value'] == null ? '-' : CurrencyFormatter.formatWon(item['amount_value'], CurrencyFormatter.fromRow(item))}',
                             style: AppTextStyles.tableHeader(context),
                           ),
                           if (item['remark'] != null && item['remark'].toString().isNotEmpty)
@@ -665,6 +666,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
     final unitController =
         TextEditingController(text: (item['unit_price_value'] ?? '').toString());
     final remarkController = TextEditingController(text: (item['remark'] ?? '').toString());
+    final currency = CurrencyFormatter.fromRow(item);
 
     await showDialog(
       context: context,
@@ -688,8 +690,12 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
               ),
               TextField(
                 controller: unitController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: '단가'),
+                keyboardType: CurrencyFormatter.keyboardType(currency),
+                inputFormatters: CurrencyFormatter.inputFormatters(currency),
+                decoration: InputDecoration(
+                  labelText: '단가',
+                  suffixText: CurrencyFormatter.unitLabel(currency),
+                ),
               ),
               TextField(
                 controller: remarkController,
@@ -706,9 +712,10 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
           TextButton(
             onPressed: () async {
               final quantity = int.tryParse(qtyController.text.trim());
-              final unitPrice = int.tryParse(unitController.text.trim());
-              final amount =
-                  (quantity != null && unitPrice != null) ? quantity * unitPrice : null;
+              final unitPrice = num.tryParse(unitController.text.trim());
+              final amount = (quantity != null && unitPrice != null)
+                  ? CurrencyFormatter.round(quantity * unitPrice, currency)
+                  : null;
 
               final result = await _inquiryService.updatePurchaseRequestItem(
                 itemId: (item['id'] as num).toInt(),

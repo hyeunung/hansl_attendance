@@ -9,6 +9,7 @@ import '../../services/inquiry_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_text_theme.dart';
+import '../../utils/currency_formatter.dart';
 import '../../utils/responsive_utils.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import '../../widgets/shared/flat_section.dart';
@@ -357,6 +358,8 @@ class _InquiryScreenState extends State<InquiryScreen>
         final currentUnitPrice = (target['unit_price_value'] as num?) ?? 0;
         final currentAmount = (target['amount_value'] as num?) ?? 0;
         final changeType = row.changeType;
+        final currency = CurrencyFormatter.fromRow(target);
+        String money(num value) => CurrencyFormatter.formatWon(value, currency);
 
         final payloadItem = <String, dynamic>{
           'item_id': target['id'].toString(),
@@ -374,18 +377,18 @@ class _InquiryScreenState extends State<InquiryScreen>
           summaryLines.add(
             '${target['line_number'] ?? '-'}번 ${target['item_name']} '
             '(${target['specification'] ?? '-'}) '
-            '합계 ${numberFormat.format(currentAmount)} → ${numberFormat.format(newAmount)}',
+            '합계 ${money(currentAmount)} → ${money(newAmount)}',
           );
         } else {
           final newUnitPrice = newValue;
-          final newAmount = quantity * newUnitPrice;
+          final newAmount = CurrencyFormatter.round(quantity * newUnitPrice, currency);
           payloadItem['new_unit_price'] = newUnitPrice;
           payloadItem['new_amount'] = newAmount;
           summaryLines.add(
             '${target['line_number'] ?? '-'}번 ${target['item_name']} '
             '(${target['specification'] ?? '-'}) '
-            '단가 ${numberFormat.format(currentUnitPrice)} → ${numberFormat.format(newUnitPrice)} '
-            '합계 ${numberFormat.format(currentAmount)} → ${numberFormat.format(newAmount)}',
+            '단가 ${money(currentUnitPrice)} → ${money(newUnitPrice)} '
+            '합계 ${money(currentAmount)} → ${money(newAmount)}',
           );
         }
 
@@ -1488,7 +1491,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                           (item) => item['id'].toString() == row.itemId,
                           orElse: () => {},
                         );
-                        final numberFormat = NumberFormat.decimalPattern('ko_KR');
+                        final currency = CurrencyFormatter.fromRow(selectedItem);
                         final currentUnitPrice = selectedItem.isEmpty
                             ? null
                             : (selectedItem['unit_price_value'] ?? selectedItem['unit_price']);
@@ -1499,10 +1502,10 @@ class _InquiryScreenState extends State<InquiryScreen>
                                     (selectedItem['unit_price_value'] ?? 0)));
                         final currentUnitPriceLabel = currentUnitPrice == null
                             ? '-'
-                            : '${numberFormat.format(currentUnitPrice)}원';
+                            : CurrencyFormatter.formatWon(currentUnitPrice, currency);
                         final currentAmountLabel = currentAmount == null
                             ? '-'
-                            : '${numberFormat.format(currentAmount)}원';
+                            : CurrencyFormatter.formatWon(currentAmount, currency);
                         final priceHint = row.changeType == 'amount'
                             ? '현재 합계액: $currentAmountLabel'
                             : '현재 단가: $currentUnitPriceLabel';
@@ -1581,15 +1584,13 @@ class _InquiryScreenState extends State<InquiryScreen>
 
                                   final valueField = TextFormField(
                                     initialValue: row.newValue,
-                                    keyboardType: TextInputType.number,
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.digitsOnly,
-                                    ],
+                                    keyboardType: CurrencyFormatter.keyboardType(currency),
+                                    inputFormatters: CurrencyFormatter.inputFormatters(currency),
                                     decoration: InputDecoration(
                                       labelText: '변경 값',
                                       hintText: priceHint,
                                       hintStyle: AppTextStyles.tableHeader(context),
-                                      suffixText: '원',
+                                      suffixText: CurrencyFormatter.unitLabel(currency),
                                       border: const OutlineInputBorder(),
                                     ),
                                     onChanged: (value) {
