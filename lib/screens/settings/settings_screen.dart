@@ -131,12 +131,24 @@ class _SettingsScreenState extends State<SettingsScreen>
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('폰트 크기'),
+          titlePadding: EdgeInsets.fromLTRB(
+            ResponsiveUtils.spacing(context, 16),
+            ResponsiveUtils.spacing(context, 16),
+            ResponsiveUtils.spacing(context, 16),
+            ResponsiveUtils.spacing(context, 10),
+          ),
+          contentPadding: EdgeInsets.zero,
+          actionsPadding: EdgeInsets.fromLTRB(
+            ResponsiveUtils.spacing(context, 12),
+            ResponsiveUtils.spacing(context, 4),
+            ResponsiveUtils.spacing(context, 12),
+            ResponsiveUtils.spacing(context, 8),
+          ),
+          title: Text('폰트 크기', style: AppTextStyles.appBarTitle(context)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
-            children: [
-              ...FontProvider.options.map(_buildFontSizeOption),
-            ],
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: FontProvider.options.map(_buildFontSizeOption).toList(),
           ),
           actions: [
             TextButton(
@@ -151,51 +163,68 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   Widget _buildFontSizeOption(String size) {
     final isSelected = _fontSize == size;
+
     return InkWell(
-      onTap: () async {
-        final fontProvider = Provider.of<FontProvider>(context, listen: false);
-        await fontProvider.setFontSize(size);
-        setState(() {
-          _fontSize = size;
-        });
-        if (!mounted) return;
-        Navigator.of(context).pop();
-      },
+      onTap: () => _applyFontSize(size),
       child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        padding: EdgeInsets.symmetric(
+          horizontal: ResponsiveUtils.spacing(context, 16),
+          vertical: ResponsiveUtils.spacing(context, 10),
+        ),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primary.withValues(alpha: 0.06)
+              : Colors.transparent,
+          border: const Border(
+            bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
+          ),
+        ),
         child: Row(
           children: [
-            Radio<String>(
-              value: size,
-              groupValue: _fontSize,
-              onChanged: (String? value) async {
-                if (value != null) {
-                  final fontProvider = Provider.of<FontProvider>(
-                    context,
-                    listen: false,
-                  );
-                  await fontProvider.setFontSize(value);
-                  setState(() {
-                    _fontSize = value;
-                  });
-                  if (!mounted) return;
-                  Navigator.of(context).pop();
-                }
-              },
+            Icon(
+              isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+              size: ResponsiveUtils.iconSize(context, 18),
+              color: isSelected ? AppColors.primary : AppColors.border,
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: ResponsiveUtils.spacing(context, 10)),
+            Expanded(
+              child: Text(
+                size,
+                style: AppTextStyles.tableCell(
+                  context,
+                  color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                ).copyWith(
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+            ),
+            // 선택 시 실제 적용될 크기를 미리 보여준다
             Text(
-              size,
-              style: AppTextStyles.cardBody(context).copyWith(
-                fontSize: ResponsiveUtils.fontSize(context, _getFontSizePreview(size)),
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              '가나다 Aa',
+              style: AppTextStyles.tableCell(
+                context,
+                color: AppColors.textSecondary,
+              ).copyWith(
+                fontSize: ResponsiveUtils.fontSize(
+                  context,
+                  _getFontSizePreview(size),
+                ),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _applyFontSize(String size) async {
+    final fontProvider = Provider.of<FontProvider>(context, listen: false);
+    await fontProvider.setFontSize(size);
+    if (!mounted) return;
+    setState(() {
+      _fontSize = size;
+    });
+    Navigator.of(context).pop();
   }
 
   Widget _buildInquiryTile(BuildContext context) {
@@ -269,11 +298,11 @@ class _SettingsScreenState extends State<SettingsScreen>
   double _getFontSizePreview(String size) {
     switch (size) {
       case '+15%':
-        return 19.0;
+        return 14.0;
       case '+30%':
-        return 22.0;
+        return 16.0;
       default:
-        return 17.0; // 기본
+        return 12.0; // 기본
     }
   }
 

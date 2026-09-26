@@ -30,8 +30,15 @@ class ResponsiveUtils {
   }
 
   // 반응형 텍스트 크기
+  /// 폰트 크기 = 기기 스케일 × 사용자 폰트 크기 설정(FontProvider)
+  /// 설정 화면의 '폰트 크기'가 앱 전체에 반영되도록 배율을 여기 한 곳에서 적용한다.
   static double fontSize(BuildContext context, double baseSize) {
-    return baseSize * getScaleFactor(context);
+    return baseSize * getScaleFactor(context) * userFontScale(context);
+  }
+
+  /// 사용자가 설정한 폰트 배율 (기본 1.0 / +15% 1.15 / +30% 1.3)
+  static double userFontScale(BuildContext context) {
+    return Provider.of<FontProvider>(context, listen: true).fontScale;
   }
 
   // 반응형 패딩/마진
@@ -53,13 +60,10 @@ class ResponsiveUtils {
     double? letterSpacing,
     double? height,
   }) {
-    // FontProvider에서 폰트 크기 배율 가져오기 (listen: true로 변경하여 상태 변경 감지)
-    final fontProvider = Provider.of<FontProvider>(context, listen: true);
-    final fontScale = fontProvider.fontScale;
-
     return TextStyle(
       fontFamily: 'NotoSans',
-      fontSize: ResponsiveUtils.fontSize(context, fontSize) * fontScale,
+      // fontSize()가 이미 사용자 폰트 배율을 포함한다 (중복 적용 금지)
+      fontSize: ResponsiveUtils.fontSize(context, fontSize),
       fontWeight: fontWeight,
       color: color,
       letterSpacing: letterSpacing,
