@@ -4,6 +4,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_text_theme.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 
 class PoPreviewPage extends StatefulWidget {
@@ -72,7 +74,10 @@ class _PoPreviewPageState extends State<PoPreviewPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : localFilePath == null
-          ? const Center(child: Text('발주서 로드 실패'))
+          ? Center(
+              child: Text('발주서 로드 실패',
+                  style: AppTextStyles.listSubtitle(context)),
+            )
           : Column(
               children: [
                 Expanded(
@@ -82,17 +87,21 @@ class _PoPreviewPageState extends State<PoPreviewPage> {
                     swipeHorizontal: false,
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      await widget.onApprove();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 48),
-                    ),
-                    child: Text(
-                      widget.initialStatus == '대기' ? '확인(승인)' : '결제 승인',
+                Container(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    border: Border(top: BorderSide(color: AppColors.border)),
+                  ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () async {
+                        await widget.onApprove();
+                      },
+                      child: Text(
+                        widget.initialStatus == '대기' ? '확인(승인)' : '결제 승인',
+                      ),
                     ),
                   ),
                 ),

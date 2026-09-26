@@ -24,8 +24,8 @@ class AppDecorations {
       BoxDecoration(
         color: color ?? AppColors.backgroundCard,
         borderRadius: BorderRadius.circular(radius),
-        boxShadow: shadow ?? AppShadows.mdShadow,
-        border: border ?? Border.all(color: AppColors.borderLight, width: 0.5),
+        boxShadow: shadow,
+        border: border ?? Border.all(color: AppColors.border),
       );
 
   /// 기본 카드 (옅은 그림자 + 얇은 테두리)

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../services/receipt_upload_service.dart';
 import '../../providers/user_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 
@@ -119,7 +120,7 @@ class _ReceiptUploadButtonState extends State<ReceiptUploadButton> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: const Text('삭제'),
           ),
         ],
@@ -151,6 +152,81 @@ class _ReceiptUploadButtonState extends State<ReceiptUploadButton> {
     }
   }
 
+  void _showReceiptViewer(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        clipBehavior: Clip.antiAlias,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text('영수증', style: AppTextStyles.appBarTitle(context)),
+                  ),
+                  InkWell(
+                    onTap: () => Navigator.pop(context),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: AppColors.backgroundSecondary,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.close, size: 18, color: AppColors.textSecondary),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Flexible(
+              child: InteractiveViewer(
+                child: Image.network(
+                  widget.currentReceiptUrl!,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return SizedBox(
+                      height: 200,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) => SizedBox(
+                    height: 200,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.error_outline, size: 40, color: AppColors.error),
+                          const SizedBox(height: 8),
+                          Text('이미지를 불러올 수 없습니다',
+                              style: AppTextStyles.listSubtitle(context)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // 현장결제가 아니면 표시 안함
@@ -175,54 +251,7 @@ class _ReceiptUploadButtonState extends State<ReceiptUploadButton> {
           IconButton(
             onPressed: () {
               // 이미지 뷰어 표시
-              showDialog(
-                context: context,
-                builder: (context) => Dialog(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AppBar(
-                        title: const Text('영수증'),
-                        leading: IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ),
-                      Expanded(
-                        child: InteractiveViewer(
-                          child: Image.network(
-                            widget.currentReceiptUrl!,
-                            fit: BoxFit.contain,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Center(
-                                child: CircularProgressIndicator(
-                                  value: loadingProgress.expectedTotalBytes != null
-                                      ? loadingProgress.cumulativeBytesLoaded /
-                                          loadingProgress.expectedTotalBytes!
-                                      : null,
-                                ),
-                              );
-                            },
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.error_outline, size: 48, color: Colors.red),
-                                    SizedBox(height: 8),
-                                    Text('이미지를 불러올 수 없습니다'),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
+              _showReceiptViewer(context);
             },
             icon: Icon(Icons.receipt, color: AppColors.success),
             tooltip: '영수증 보기',

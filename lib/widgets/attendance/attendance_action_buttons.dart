@@ -118,18 +118,18 @@ class AttendanceActionButtons extends StatelessWidget {
     return Material(
       color: color,
       borderRadius: BorderRadius.only(
-        topLeft: Radius.circular(isLeft ? 8 : 0),
-        bottomLeft: Radius.circular(isLeft ? 8 : 0),
-        topRight: Radius.circular(isLeft ? 0 : 8),
-        bottomRight: Radius.circular(isLeft ? 0 : 8),
+        topLeft: Radius.circular(isLeft ? 10 : 0),
+        bottomLeft: Radius.circular(isLeft ? 10 : 0),
+        topRight: Radius.circular(isLeft ? 0 : 10),
+        bottomRight: Radius.circular(isLeft ? 0 : 10),
       ),
       child: InkWell(
         onTap: isLoading ? null : onTap,
         borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(isLeft ? 8 : 0),
-          bottomLeft: Radius.circular(isLeft ? 8 : 0),
-          topRight: Radius.circular(isLeft ? 0 : 8),
-          bottomRight: Radius.circular(isLeft ? 0 : 8),
+          topLeft: Radius.circular(isLeft ? 10 : 0),
+          bottomLeft: Radius.circular(isLeft ? 10 : 0),
+          topRight: Radius.circular(isLeft ? 0 : 10),
+          bottomRight: Radius.circular(isLeft ? 0 : 10),
         ),
         child: Container(
           padding: EdgeInsets.symmetric(

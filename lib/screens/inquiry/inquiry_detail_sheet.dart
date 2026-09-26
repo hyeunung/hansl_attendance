@@ -1132,19 +1132,8 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                                   children:
                                       _inquiryAttachments.map((attachment) {
                                     return GestureDetector(
-                                      onTap: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (_) => Dialog(
-                                            insetPadding:
-                                                const EdgeInsets.all(16),
-                                            child: Image.network(
-                                              attachment.url,
-                                              fit: BoxFit.contain,
-                                            ),
-                                          ),
-                                        );
-                                      },
+                                      onTap: () =>
+                                          _showFullImage(attachment.url),
                                       child: ClipRRect(
                                         borderRadius:
                                             BorderRadius.circular(8),

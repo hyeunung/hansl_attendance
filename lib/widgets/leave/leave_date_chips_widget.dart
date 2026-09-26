@@ -75,7 +75,7 @@ class LeaveDateChipsWidget extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(
                 color: typeColor.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
                 type == LeaveType.halfAm ? '오전' : '오후',
@@ -96,7 +96,7 @@ class LeaveDateChipsWidget extends StatelessWidget {
           width: 1,
         ),
       ),
-      deleteIcon: Icon(Icons.close, size: 18, color: typeColor),
+      deleteIcon: Icon(Icons.close, size: 16, color: typeColor),
       onDeleted: onDateRemoved != null
           ? () => onDateRemoved!(type, date)
           : null,
