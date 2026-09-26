@@ -2828,152 +2828,44 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     String confirmText,
     Color confirmColor,
   ) {
-    // 아이콘과 색상 결정
+    // 제목에 따라 아이콘 결정
     IconData iconData;
-    Color iconBgColor;
-    
     if (title.contains('삭제')) {
       iconData = Icons.delete_outline;
-      iconBgColor = AppColors.error.withValues(alpha:0.1);
     } else if (title.contains('반려')) {
-      iconData = Icons.warning_amber_rounded;
-      iconBgColor = AppColors.warning.withValues(alpha: 0.1);
+      iconData = Icons.block_outlined;
     } else if (title.contains('승인')) {
       iconData = Icons.check_circle_outline;
-      iconBgColor = AppColors.success.withValues(alpha:0.1);
     } else {
       iconData = Icons.info_outline;
-      iconBgColor = AppColors.primary.withValues(alpha:0.1);
     }
 
     return showDialog<bool>(
       context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+      builder: (BuildContext dialogContext) => AlertDialog(
+        titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+        contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+        title: Row(
+          children: [
+            Icon(iconData, size: 18, color: confirmColor),
+            const SizedBox(width: 8),
+            Expanded(child: Text(title)),
+          ],
+        ),
+        content: Text(message, style: AppTextStyles.cardBody(context)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
+            child: const Text('취소'),
           ),
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 400),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 아이콘과 제목 영역
-                Padding(
-                  padding: const EdgeInsets.only(top: 32, bottom: 20),
-                  child: Column(
-                    children: [
-                      // 아이콘
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: iconBgColor,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          iconData,
-                          size: 28,
-                          color: confirmColor,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      // 제목
-                      Text(
-                        title,
-                        style: AppTextStyles.sectionTitle(context),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                // 메시지
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Text(
-                    message,
-                    style: AppTextStyles.sectionSubtitle(context).copyWith(
-                      color: AppColors.textTertiary,
-                      fontWeight: FontWeight.normal,
-                      height: 1.5,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                
-                // 버튼 영역
-                Container(
-                  decoration: const BoxDecoration(
-                    color: AppColors.backgroundSecondary,
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(10),
-                      bottomRight: Radius.circular(10),
-                    ),
-                  ),
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                          ),
-                          child: TextButton(
-                            style: TextButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: AppColors.textPrimary,
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            onPressed: () => Navigator.of(context).pop(false),
-                            child: Text(
-                              '취소',
-                              style: AppTextStyles.sectionSubtitle(context),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                          ),
-                          child: TextButton(
-                            style: TextButton.styleFrom(
-                              backgroundColor: confirmColor,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            onPressed: () => Navigator.of(context).pop(true),
-                            child: Text(
-                              confirmText,
-                              style: AppTextStyles.inputLabel(context).copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: confirmColor),
+            child: Text(confirmText),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 }

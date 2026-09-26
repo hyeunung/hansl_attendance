@@ -2043,540 +2043,136 @@ return;
 
   // 삭제 확인 다이얼로그
   void _showDeleteDialog(dynamic item, String orderNumber) {
-    if (!_isAppAdmin()) {
-      AppBanner.show(context, '권한이 없습니다. 관리자만 삭제 가능합니다.', type: BannerType.warning);
-      return;
-    }
-
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Dialog(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        child: Container(
-          width: ResponsiveUtils.spacing(context, 360),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-            border: Border.all(color: AppColors.borderLight, width: 0.5),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 헤더 영역
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
-                decoration: BoxDecoration(
-                  color: AppColors.errorLight,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(ResponsiveUtils.spacing(context, 8)),
-                    topRight: Radius.circular(ResponsiveUtils.spacing(context, 8)),
-                  ),
-                  border: Border(
-                    bottom: BorderSide(
-                      color: AppColors.errorLight,
-                      width: 1,
-                    ),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
-                      decoration: BoxDecoration(
-                        color: AppColors.errorLight,
-                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                      ),
-                      child: Icon(
-                        Icons.warning_outlined,
-                        color: AppColors.error,
-                        size: ResponsiveUtils.iconSize(context, 28),
-                      ),
-                    ),
-                    SizedBox(width: ResponsiveUtils.spacing(context, 16)),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '품목 삭제',
-                            style: AppTextStyles.sectionTitle(context).copyWith(
-                              color: AppColors.error,
-                            ),
-                          ),
-                          SizedBox(height: ResponsiveUtils.spacing(context, 4)),
-                          Text(
-                            '삭제된 데이터는 복구할 수 없습니다',
-                            style: AppTextStyles.emptyState(context).copyWith(
-                              color: AppColors.error,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // 내용 영역
-              Padding(
-                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
-                child: Column(
-                  children: [
-                    // 삭제될 품목 정보
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
-                      decoration: BoxDecoration(
-                        color: AppColors.gray50,
-                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                        border: Border.all(
-                          color: AppColors.gray200,
-                          width: 1,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.inventory_2_outlined,
-                                size: ResponsiveUtils.iconSize(context, 18),
-                                color: AppColors.textSecondary,
-                              ),
-                              SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                              Text(
-                                '삭제할 품목',
-                                style: AppTextStyles.inputLabel(context).copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.gray700,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-                          Text(
-                            item.itemName,
-                            style: AppTextStyles.sectionSubtitle(context).copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.gray800,
-                            ),
-                          ),
-                          if (item.specification.isNotEmpty) ...[
-                            SizedBox(height: ResponsiveUtils.spacing(context, 4)),
-                            Text(
-                              '규격: ${item.specification}',
-                              style: AppTextStyles.inputLabel(context).copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                          SizedBox(height: ResponsiveUtils.spacing(context, 4)),
-                          Text(
-                            '수량: ${item.quantity}개 | 단가: ${CurrencyFormatter.formatWon(item.unitPriceValue, item.currency)}',
-                            style: AppTextStyles.inputLabel(context).copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    
-                    SizedBox(height: ResponsiveUtils.spacing(context, 20)),
-                    
-                    // 확인 메시지
-                    Text(
-                      '정말로 이 품목을 삭제하시겠습니까?',
-                      style: AppTextStyles.sectionSubtitle(context).copyWith(
-                        color: AppColors.gray800,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    
-                    SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-                    
-                    Container(
-                      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
-                      decoration: BoxDecoration(
-                        color: AppColors.errorLight,
-                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                        border: Border.all(
-                          color: AppColors.errorLight,
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.info_outline,
-                            size: ResponsiveUtils.iconSize(context, 16),
-                            color: AppColors.error,
-                          ),
-                          SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                          Expanded(
-                            child: Text(
-                              '삭제된 데이터는 되돌릴 수 없습니다',
-                              style: AppTextStyles.cardCaption(context).copyWith(
-                                color: AppColors.error,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    
-                    SizedBox(height: ResponsiveUtils.spacing(context, 24)),
-                    
-                    // 버튼 영역
-                    Row(
-                      children: [
-                        // 취소 버튼
-                        Expanded(
-                          child: Container(
-                            height: 40,
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: AppColors.border,
-                                width: 1,
-                              ),
-                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                            ),
-                            child: TextButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              style: TextButton.styleFrom(
-                                foregroundColor: AppColors.gray700,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                                ),
-                              ),
-                              child: Text(
-                                '취소',
-                                style: AppTextStyles.sectionSubtitle(context),
-                              ),
-                            ),
-                          ),
-                        ),
-                        
-                        SizedBox(width: ResponsiveUtils.spacing(context, 12)),
-                        
-                        // 삭제 버튼
-                        Expanded(
-                          child: Container(
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: AppColors.error,
-                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                            ),
-                            child: ElevatedButton(
-                              onPressed: () async {
-                                Navigator.of(context).pop();
-                                await _deletePurchaseItem(item.id, orderNumber);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                foregroundColor: Colors.white,
-                                shadowColor: Colors.transparent,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.delete_outline,
-                                    size: ResponsiveUtils.iconSize(context, 18),
-                                  ),
-                                  SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                                  Text(
-                                    '삭제하기',
-                                    style: AppTextStyles.sectionSubtitle(context),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+      builder: (dialogContext) => AlertDialog(
+        titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+        contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+        title: const Row(
+          children: [
+            Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+            SizedBox(width: 8),
+            Text('품목 삭제'),
+          ],
         ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              '정말로 이 품목을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.',
+              style: AppTextStyles.cardBody(context),
+            ),
+            const SizedBox(height: 10),
+            Container(
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: AppColors.backgroundSecondary,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.borderLight),
+              ),
+              child: Column(
+                children: [
+                  FlatInfoRow(label: '품목', value: item.itemName),
+                  if (item.specification.isNotEmpty)
+                    FlatInfoRow(label: '규격', value: item.specification),
+                  FlatInfoRow(label: '수량', value: '${item.quantity}개'),
+                  FlatInfoRow(
+                    label: '단가',
+                    value: CurrencyFormatter.formatWon(
+                      item.unitPriceValue,
+                      item.currency,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              await _deletePurchaseItem(item.id, orderNumber);
+            },
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('삭제하기'),
+          ),
+        ],
       ),
     );
   }
 
   // 발주 전체 삭제 확인 다이얼로그
   void _showBulkDeleteOrderDialog(PurchaseOrderGroup group) {
-    if (!_isAppAdmin()) {
-      AppBanner.show(context, '권한이 없습니다. 관리자만 삭제 가능합니다.', type: BannerType.warning);
-      return;
-    }
-
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Dialog(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        child: Container(
-          width: ResponsiveUtils.spacing(context, 400),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-            border: Border.all(color: AppColors.borderLight, width: 0.5),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 헤더 영역
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
-                decoration: BoxDecoration(
-                  color: AppColors.errorLight,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(ResponsiveUtils.spacing(context, 8)),
-                    topRight: Radius.circular(ResponsiveUtils.spacing(context, 8)),
-                  ),
-                  border: Border(
-                    bottom: BorderSide(
-                      color: AppColors.errorLight,
-                      width: 1,
-                    ),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
-                      decoration: BoxDecoration(
-                        color: AppColors.errorLight,
-                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                      ),
-                      child: Icon(
-                        Icons.delete_sweep_outlined,
-                        color: AppColors.error,
-                        size: ResponsiveUtils.iconSize(context, 32),
-                      ),
-                    ),
-                    SizedBox(width: ResponsiveUtils.spacing(context, 16)),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '발주 전체 삭제',
-                            style: AppTextStyles.sectionTitle(context).copyWith(
-                              color: AppColors.error,
-                            ),
-                          ),
-                          SizedBox(height: ResponsiveUtils.spacing(context, 4)),
-                          Text(
-                            '발주의 모든 품목이 삭제됩니다',
-                            style: AppTextStyles.emptyState(context).copyWith(
-                              color: AppColors.error,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // 내용 영역
-              Padding(
-                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
-                child: Column(
-                  children: [
-                    // 삭제될 발주 정보
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
-                      decoration: BoxDecoration(
-                        color: AppColors.gray50,
-                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                        border: Border.all(
-                          color: AppColors.gray200,
-                          width: 1,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.receipt_outlined,
-                                size: ResponsiveUtils.iconSize(context, 18),
-                                color: AppColors.textSecondary,
-                              ),
-                              SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                              Text(
-                                '삭제할 발주',
-                                style: AppTextStyles.inputLabel(context).copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.gray700,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-                          Text(
-                            group.purchaseOrderNumber,
-                            style: AppTextStyles.sectionSubtitle(context).copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.gray800,
-                            ),
-                          ),
-                          SizedBox(height: ResponsiveUtils.spacing(context, 4)),
-                          Text(
-                            '업체: ${group.vendorName}',
-                            style: AppTextStyles.inputLabel(context).copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          SizedBox(height: ResponsiveUtils.spacing(context, 4)),
-                          Text(
-                            '품목 수: ${group.items.length}개 | 총액: ${CurrencyFormatter.format(group.totalAmount, group.currency)}',
-                            style: AppTextStyles.inputLabel(context).copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    
-                    SizedBox(height: ResponsiveUtils.spacing(context, 20)),
-                    
-                    // 확인 메시지
-                    Text(
-                      '이 발주의 모든 품목을 삭제하시겠습니까?',
-                      style: AppTextStyles.sectionSubtitle(context).copyWith(
-                        color: AppColors.gray800,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    
-                    SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-                    
-                    Container(
-                      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
-                      decoration: BoxDecoration(
-                        color: AppColors.errorLight,
-                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                        border: Border.all(
-                          color: AppColors.errorLight,
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.warning_outlined,
-                            size: ResponsiveUtils.iconSize(context, 16),
-                            color: AppColors.error,
-                          ),
-                          SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                          Expanded(
-                            child: Text(
-                              '발주 헤더와 모든 품목이 영구적으로 삭제됩니다',
-                              style: AppTextStyles.cardCaption(context).copyWith(
-                                color: AppColors.error,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    
-                    SizedBox(height: ResponsiveUtils.spacing(context, 24)),
-                    
-                    // 버튼 영역
-                    Row(
-                      children: [
-                        // 취소 버튼
-                        Expanded(
-                          child: Container(
-                            height: 40,
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: AppColors.border,
-                                width: 1,
-                              ),
-                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                            ),
-                            child: TextButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              style: TextButton.styleFrom(
-                                foregroundColor: AppColors.gray700,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                                ),
-                              ),
-                              child: Text(
-                                '취소',
-                                style: AppTextStyles.sectionSubtitle(context),
-                              ),
-                            ),
-                          ),
-                        ),
-                        
-                        SizedBox(width: ResponsiveUtils.spacing(context, 12)),
-                        
-                        // 전체삭제 버튼
-                        Expanded(
-                          child: Container(
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: AppColors.error,
-                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                            ),
-                            child: ElevatedButton(
-                              onPressed: () async {
-                                Navigator.of(context).pop();
-                                await _deleteBulkPurchaseOrder(group);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                foregroundColor: Colors.white,
-                                shadowColor: Colors.transparent,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.delete_sweep_outlined,
-                                    size: ResponsiveUtils.iconSize(context, 18),
-                                  ),
-                                  SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                                  Text(
-                                    '전체삭제',
-                                    style: AppTextStyles.sectionSubtitle(context),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+      builder: (dialogContext) => AlertDialog(
+        titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+        contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+        title: const Row(
+          children: [
+            Icon(Icons.delete_sweep_outlined, size: 18, color: AppColors.error),
+            SizedBox(width: 8),
+            Text('발주 전체 삭제'),
+          ],
         ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              '이 발주의 모든 품목을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.',
+              style: AppTextStyles.cardBody(context),
+            ),
+            const SizedBox(height: 10),
+            Container(
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: AppColors.backgroundSecondary,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.borderLight),
+              ),
+              child: Column(
+                children: [
+                  FlatInfoRow(label: '발주번호', value: group.purchaseOrderNumber),
+                  FlatInfoRow(label: '업체', value: group.vendorName),
+                  FlatInfoRow(label: '품목 수', value: '${group.items.length}개'),
+                  FlatInfoRow(
+                    label: '총액',
+                    value: CurrencyFormatter.format(
+                      group.totalAmount,
+                      group.currency,
+                    ),
+                    valueColor: AppColors.primary,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              await _deleteBulkPurchaseOrder(group);
+            },
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('전체 삭제'),
+          ),
+        ],
       ),
     );
   }
