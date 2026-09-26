@@ -115,6 +115,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                     borderRadius: BorderRadius.circular(10),
                     onTap: () async {
                       final picked = await showDatePicker(
+                        initialEntryMode: DatePickerEntryMode.calendarOnly,
                         context: context,
                         initialDate: selectedDate,
                         firstDate: DateTime(2020),
@@ -2412,6 +2413,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                         ? null
                         : () async {
                             final picked = await showDatePicker(
+                              initialEntryMode: DatePickerEntryMode.calendarOnly,
                               context: context,
                               initialDate: _requestedDeliveryDate ?? DateTime.now(),
                               firstDate: DateTime(2019),
@@ -3326,6 +3328,7 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
 
   Future<void> _selectDate() async {
     final pickedDate = await showDatePicker(
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
       context: context,
       initialDate: _expectedDeliveryDate ?? DateTime.now(),
       firstDate: DateTime.now().subtract(const Duration(days: 365)),
@@ -3355,6 +3358,7 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
 
   Future<void> _selectRevisedDate() async {
     final pickedDate = await showDatePicker(
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
       context: context,
       initialDate: _revisedDeliveryDate ?? (_expectedDeliveryDate ?? DateTime.now()),
       firstDate: DateTime.now().subtract(const Duration(days: 365)),

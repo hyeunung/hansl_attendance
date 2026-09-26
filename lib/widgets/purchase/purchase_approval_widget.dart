@@ -2793,6 +2793,7 @@ return;
         GestureDetector(
           onTap: () async {
             final picked = await showDatePicker(
+              initialEntryMode: DatePickerEntryMode.calendarOnly,
               context: context,
               initialDate: selectedDate ?? DateTime.now(),
               firstDate: DateTime(2020),

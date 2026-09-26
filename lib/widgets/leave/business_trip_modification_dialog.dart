@@ -416,6 +416,7 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
     final initialDate = currentEndDate.add(const Duration(days: 1));
 
     final DateTime? picked = await showDatePicker(
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
       context: context,
       initialDate: initialDate,
       firstDate: initialDate,

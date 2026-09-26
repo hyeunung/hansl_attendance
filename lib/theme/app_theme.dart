@@ -133,6 +133,105 @@ class AppTheme {
       ),
     ),
 
+    // ─── Date Picker (앱 전역 showDatePicker 공통 스타일) ───
+    datePickerTheme: DatePickerThemeData(
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      headerBackgroundColor: Colors.white,
+      headerForegroundColor: AppColors.textPrimary,
+      headerHelpStyle: const TextStyle(
+        fontFamily: 'NotoSans',
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
+        color: AppColors.textSecondary,
+      ),
+      headerHeadlineStyle: const TextStyle(
+        fontFamily: 'NotoSans',
+        fontSize: 18,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textPrimary,
+      ),
+      weekdayStyle: const TextStyle(
+        fontFamily: 'NotoSans',
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textSecondary,
+      ),
+      dayStyle: const TextStyle(
+        fontFamily: 'NotoSans',
+        fontSize: 13,
+        fontWeight: FontWeight.w500,
+      ),
+      dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.disabled)) return AppColors.gray400;
+        if (states.contains(WidgetState.selected)) return Colors.white;
+        return AppColors.textPrimary;
+      }),
+      dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) return AppColors.primary;
+        return null;
+      }),
+      dayOverlayColor: WidgetStateProperty.all(
+        AppColors.primary.withValues(alpha: 0.08),
+      ),
+      todayForegroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) return Colors.white;
+        return AppColors.primary;
+      }),
+      todayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) return AppColors.primary;
+        return null;
+      }),
+      todayBorder: const BorderSide(color: AppColors.primary, width: 1),
+      yearStyle: const TextStyle(
+        fontFamily: 'NotoSans',
+        fontSize: 13,
+        fontWeight: FontWeight.w500,
+      ),
+      yearForegroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.disabled)) return AppColors.gray400;
+        if (states.contains(WidgetState.selected)) return Colors.white;
+        return AppColors.textPrimary;
+      }),
+      yearBackgroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) return AppColors.primary;
+        return null;
+      }),
+      dividerColor: AppColors.borderLight,
+      cancelButtonStyle: TextButton.styleFrom(
+        foregroundColor: AppColors.textSecondary,
+        textStyle: const TextStyle(
+          fontFamily: 'NotoSans',
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        minimumSize: const Size(0, 36),
+        visualDensity: VisualDensity.compact,
+      ),
+      confirmButtonStyle: TextButton.styleFrom(
+        foregroundColor: AppColors.primary,
+        textStyle: const TextStyle(
+          fontFamily: 'NotoSans',
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        minimumSize: const Size(0, 36),
+        visualDensity: VisualDensity.compact,
+      ),
+    ),
+
     // ─── SnackBar ───
     snackBarTheme: SnackBarThemeData(
       backgroundColor: AppColors.gray900,

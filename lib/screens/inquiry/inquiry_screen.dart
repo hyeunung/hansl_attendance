@@ -566,6 +566,7 @@ class _InquiryScreenState extends State<InquiryScreen>
         ? (_purchaseStartDate ?? DateTime.now())
         : (_purchaseEndDate ?? _purchaseStartDate ?? DateTime.now());
     final picked = await showDatePicker(
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
       context: context,
       initialDate: initialDate,
       firstDate: DateTime(2019),
@@ -652,6 +653,7 @@ class _InquiryScreenState extends State<InquiryScreen>
     }
     final initial = _requestedDeliveryDate ?? DateTime.now();
     final picked = await showDatePicker(
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
       context: context,
       initialDate: initial,
       firstDate: DateTime(2019),

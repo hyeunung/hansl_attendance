@@ -106,6 +106,7 @@ class _AdminAttendanceScreenState extends State<AdminAttendanceScreen> {
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2020),

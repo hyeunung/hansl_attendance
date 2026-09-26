@@ -2732,6 +2732,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                   child: InkWell(
                                     onTap: () async {
                                       final date = await showDatePicker(
+                                        initialEntryMode: DatePickerEntryMode.calendarOnly,
                                         context: context,
                                         initialDate: selectedStartDate ?? DateTime.now(),
                                         firstDate: DateTime(2020),
@@ -2782,6 +2783,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                   child: InkWell(
                                     onTap: () async {
                                       final date = await showDatePicker(
+                                        initialEntryMode: DatePickerEntryMode.calendarOnly,
                                         context: context,
                                         initialDate: selectedEndDate ?? DateTime.now(),
                                         firstDate: DateTime(2020),
