@@ -16,6 +16,7 @@ import '../../theme/app_text_theme.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import '../../widgets/common/notification_bell_button.dart';
 import '../../widgets/shared/flat_section.dart';
+import '../leave/card_receipt_upload_screen.dart';
 
 /// 영수증 전용 화면
 class ReceiptsScreen extends StatefulWidget {
@@ -243,7 +244,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                     elevation: 4,
                     clipBehavior: Clip.antiAlias,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                       side: const BorderSide(color: AppColors.border),
                     ),
                     child: Padding(
@@ -332,7 +333,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => Dialog(
           insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -466,7 +467,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
           width: double.infinity,
           height: 200,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             color: AppColors.backgroundPrimary,
             border: Border.all(color: AppColors.border),
           ),
@@ -479,7 +480,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                 )
               : isMulti
                   ? ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                       child: GridView.builder(
                         padding: const EdgeInsets.all(8),
                         physics: const BouncingScrollPhysics(),
@@ -529,7 +530,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                       ),
                     )
                   : ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                       child: LayoutBuilder(
                         builder: (context, constraints) {
                           return SingleChildScrollView(
@@ -720,7 +721,18 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
         surfaceTintColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
-        actions: const [NotificationBellButton()],
+        actions: [
+          // 본인 출장/카드 사용 건 영수증 업로드
+          IconButton(
+            icon: const Icon(Icons.credit_card),
+            tooltip: '내 카드 영수증 업로드',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CardReceiptUploadScreen()),
+            ),
+          ),
+          const NotificationBellButton(),
+        ],
       ),
       backgroundColor: AppColors.backgroundPrimary,
       body: _isLoading
@@ -820,7 +832,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
               return await showDialog<bool>(
                 context: context,
                 builder: (context) => AlertDialog(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   title: Text('영수증 삭제', style: AppTextStyles.cardTitle(context)),
                   content: Text('정말로 이 영수증을 삭제하시겠습니까?', style: AppTextStyles.cardBody(context)),
                   actions: [
@@ -1003,7 +1015,7 @@ class _ReceiptDetailScreenState extends State<_ReceiptDetailScreen> {
                   pw.Text(
                     '영수증',
                     style: pw.TextStyle(
-                      fontSize: 24,
+                      fontSize: 20,
                       fontWeight: pw.FontWeight.bold,
                     ),
                   ),
@@ -1044,7 +1056,7 @@ class _ReceiptDetailScreenState extends State<_ReceiptDetailScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(10),
         ),
         title: Row(
           children: [
@@ -1173,7 +1185,7 @@ class _ReceiptDetailScreenState extends State<_ReceiptDetailScreen> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: AppColors.success.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: AppColors.success.withValues(alpha: 0.3), width: 1),
                 ),
                 child: Row(

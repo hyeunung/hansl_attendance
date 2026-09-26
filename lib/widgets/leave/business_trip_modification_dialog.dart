@@ -29,7 +29,7 @@ class BusinessTripModificationDialog extends StatefulWidget {
           showDialog(
             context: context,
             builder: (context) => AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               title: const Row(
                 children: [
                   Icon(Icons.info_outline, color: AppColors.primary),
@@ -156,7 +156,7 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
             '';
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       elevation: 8,
       child: Stack(
         children: [
@@ -431,7 +431,7 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
             primaryTextTheme: Theme.of(context).primaryTextTheme.apply(fontFamily: 'NotoSans'),
             dialogTheme: DialogThemeData(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
             textButtonTheme: TextButtonThemeData(

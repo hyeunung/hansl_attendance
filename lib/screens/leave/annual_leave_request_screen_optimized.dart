@@ -581,7 +581,7 @@ class _AnnualLeaveRequestScreenOptimizedState
         height: 54,
         decoration: BoxDecoration(
           color: _canSubmit ? AppColors.primary : AppColors.border,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(10),
           boxShadow: _canSubmit ? AppShadows.smShadow : null,
         ),
         alignment: Alignment.center,

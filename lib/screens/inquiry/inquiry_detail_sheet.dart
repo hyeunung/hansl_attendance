@@ -469,7 +469,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           title: Row(
             children: [
               const Icon(Icons.receipt_long_outlined),
@@ -746,7 +746,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(10),
         ),
         title: Row(
           children: [
@@ -912,7 +912,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
             height: 4,
             decoration: BoxDecoration(
               color: AppColors.gray300,
-              borderRadius: BorderRadius.circular(100),
+              borderRadius: BorderRadius.circular(8),
             ),
           ),
 
@@ -1044,7 +1044,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                 decoration: BoxDecoration(
                                   color: statusColor.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(20),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -1284,7 +1284,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
     return Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(10),
         boxShadow: AppShadows.smShadow,
                         border: Border.all(
           color: statusColor.withValues(alpha: 0.18),
@@ -1314,7 +1314,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                     decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     statusLabel,
@@ -1367,7 +1367,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
             color: AppColors.borderLight,
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
             m.message,
@@ -1400,7 +1400,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
               padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                 color: bubbleColor,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(10),
                 border: isMine
                     ? null
                     : Border.all(color: AppColors.border, width: 0.8),
@@ -1485,7 +1485,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
             children: [
               InteractiveViewer(
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(10),
                   child: Image.network(url, fit: BoxFit.contain),
                 ),
               ),
@@ -1495,7 +1495,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                 child: Container(
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.35),
-                    borderRadius: BorderRadius.circular(999),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: IconButton(
                     icon: const Icon(Icons.close_rounded, color: Colors.white),
@@ -1558,7 +1558,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
               child: Container(
                 decoration: BoxDecoration(
                               color: Colors.black.withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(999),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             child: InkWell(
                               onTap: disabled
@@ -1598,7 +1598,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                   child: Container(
                     decoration: BoxDecoration(
                       color: AppColors.backgroundSecondary,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: AppColors.border),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 12),

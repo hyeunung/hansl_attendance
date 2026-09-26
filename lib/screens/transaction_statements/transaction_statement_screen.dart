@@ -195,7 +195,7 @@ class _TransactionStatementScreenState
             insetPadding:
                 const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: SingleChildScrollView(
               child: Padding(
@@ -542,7 +542,7 @@ class _TransactionStatementScreenState
             return AlertDialog(
               backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(10),
               ),
               titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
               contentPadding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
@@ -840,12 +840,12 @@ class _TransactionStatementScreenState
           width: double.infinity,
           height: 180,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             color: AppColors.backgroundPrimary,
             border: Border.all(color: AppColors.border),
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             child: LayoutBuilder(
               builder: (context, constraints) {
                 return SingleChildScrollView(
@@ -962,7 +962,7 @@ class _TransactionStatementScreenState
                     elevation: 4,
                     clipBehavior: Clip.antiAlias,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                       side: const BorderSide(color: AppColors.border),
                     ),
                     child: Padding(

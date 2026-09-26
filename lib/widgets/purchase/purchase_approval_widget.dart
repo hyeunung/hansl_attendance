@@ -869,7 +869,7 @@ return;
           child: ListView.builder(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: EdgeInsets.symmetric(
-              horizontal: ResponsiveUtils.spacing(context, 16),
+
               vertical: ResponsiveUtils.spacing(context, 20),
             ),
             itemCount: orders.length,
@@ -1596,7 +1596,7 @@ return;
                                               height: 60,
                                               decoration: BoxDecoration(
                                                 color: AppColors.success.withValues(alpha: 0.1),
-                                                borderRadius: BorderRadius.circular(30),
+                                                borderRadius: BorderRadius.circular(8),
                                               ),
                                               child: const Icon(
                                                 Icons.check_circle,
@@ -1973,7 +1973,7 @@ return;
                                               height: 60,
                                               decoration: BoxDecoration(
                                                 color: AppColors.primary.withValues(alpha: 0.1),
-                                                borderRadius: BorderRadius.circular(30),
+                                                borderRadius: BorderRadius.circular(8),
                                               ),
                                               child: Icon(
                                                 Icons.check_circle,

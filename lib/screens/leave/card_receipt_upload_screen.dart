@@ -13,9 +13,13 @@ import '../../theme/app_shadows.dart';
 import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
 import '../../widgets/common/notification_banner_widget.dart';
+import '../../widgets/common/notification_bell_button.dart';
 
 class CardReceiptUploadScreen extends StatefulWidget {
-  const CardReceiptUploadScreen({super.key});
+  /// 하단 영수증 탭으로 표시되는 경우 (알림 버튼 표시)
+  final bool isTab;
+
+  const CardReceiptUploadScreen({super.key, this.isTab = false});
 
   @override
   State<CardReceiptUploadScreen> createState() =>
@@ -77,6 +81,7 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
         elevation: 0,
         centerTitle: true,
         iconTheme: IconThemeData(color: AppColors.textPrimary),
+        actions: widget.isTab ? const [NotificationBellButton()] : null,
       ),
       backgroundColor: AppColors.backgroundPrimary,
       body: _isLoading

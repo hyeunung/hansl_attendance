@@ -48,7 +48,7 @@ class AppTextStyles {
   static TextStyle sectionTitle(BuildContext context) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 15,
+        fontSize: 13,
         fontWeight: FontWeight.w700,
         color: AppColors.textPrimary,
         letterSpacing: -0.2,
@@ -67,7 +67,7 @@ class AppTextStyles {
   static TextStyle cardTitle(BuildContext context) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
         letterSpacing: -0.2,
@@ -127,7 +127,7 @@ class AppTextStyles {
   static TextStyle buttonPrimary(BuildContext context) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: FontWeight.w600,
         color: Colors.white,
       );
@@ -135,7 +135,7 @@ class AppTextStyles {
   static TextStyle buttonSecondary(BuildContext context) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: FontWeight.w600,
         color: AppColors.primary,
       );
@@ -171,7 +171,7 @@ class AppTextStyles {
   static TextStyle compactValue(BuildContext context, {Color? color}) =>
       ResponsiveUtils.getTextStyle(
         context,
-        fontSize: 16,
+        fontSize: 13,
         fontWeight: FontWeight.w700,
         color: color ?? AppColors.textPrimary,
         height: 1.2,
@@ -254,7 +254,7 @@ class AppTextStyles {
 
   // ─── Static Styles (legacy) ───
   static const TextStyle titleLarge = TextStyle(
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: FontWeight.bold,
   );
 
@@ -264,12 +264,12 @@ class AppTextStyles {
   );
 
   static const TextStyle bodyLarge = TextStyle(
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: FontWeight.normal,
   );
 
   static const TextStyle bodyMedium = TextStyle(
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: FontWeight.normal,
   );
 

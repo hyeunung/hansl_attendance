@@ -181,6 +181,15 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
     }
   }
 
+  /// 제목 앞에 붙은 이모지 제거 (좌측 아이콘과 의미 중복)
+  String _stripLeadingEmoji(String title) {
+    final cleaned = title.replaceFirst(
+      RegExp(r'^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\s]+', unicode: true),
+      '',
+    );
+    return cleaned.isEmpty ? title : cleaned;
+  }
+
   Color _getNotificationColor(String type) {
     switch (type) {
       case 'leave_request':
@@ -279,8 +288,9 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                 itemBuilder: (context, index) {
                   final notification = _notifications[index];
                   final isRead = notification['is_read'] ?? false;
-                  final title =
-                      _normalizeNewlines((notification['title'] ?? '').toString());
+                  // 좌측 아이콘과 중복되므로 제목 앞 이모지 제거
+                  final title = _stripLeadingEmoji(
+                      _normalizeNewlines((notification['title'] ?? '').toString()));
                   final body =
                       _normalizeNewlines((notification['body'] ?? '').toString());
                   final notifType = NotificationNavigator.resolveType(notification);
@@ -312,27 +322,27 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                           children: [
                             Padding(
                               padding: EdgeInsets.symmetric(
-                                horizontal: ResponsiveUtils.spacing(context, 16),
-                                vertical: ResponsiveUtils.spacing(context, 12),
+                                horizontal: ResponsiveUtils.spacing(context, 14),
+                                vertical: ResponsiveUtils.spacing(context, 8),
                               ),
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Container(
-                                    width: 36,
-                                    height: 36,
+                                    width: 28,
+                                    height: 28,
                                     decoration: BoxDecoration(
                                       color: notifColor.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(18),
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Center(
                                       child: Text(
                                         _getNotificationIcon(notifType),
-                                        style: const TextStyle(fontSize: 18),
+                                        style: const TextStyle(fontSize: 14),
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                  const SizedBox(width: 10),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
@@ -360,7 +370,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                               ),
                                           ],
                                         ),
-                                        const SizedBox(height: 4),
+                                        const SizedBox(height: 2),
                                         Text(
                                           body,
                                           style: isRead
@@ -372,7 +382,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                           maxLines: 3,
                                           overflow: TextOverflow.ellipsis,
                                         ),
-                                        const SizedBox(height: 4),
+                                        const SizedBox(height: 2),
                                         Text(
                                           _formatDate(
                                             notification['created_at'],

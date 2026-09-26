@@ -66,7 +66,7 @@ class _SplashScreenState extends State<SplashScreen>
               Text(
                 '근태기록시스템',
                 style: AppTextStyles.buttonPrimary(context).copyWith(
-                  fontSize: 17,
+                  fontSize: 13,
                   fontWeight: FontWeight.w400,
                   color: AppColors.gray400,
                   letterSpacing: 1.2,

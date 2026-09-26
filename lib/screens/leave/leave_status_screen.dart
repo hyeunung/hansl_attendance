@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/leave_provider.dart';
 import 'leave_screen_router.dart';
-import 'card_receipt_upload_screen.dart';
 import '../../providers/user_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
@@ -114,81 +113,31 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 1. 연차 신청 / 영수증 업로드 버튼 (출퇴근 버튼과 동일 디자인)
+                    // 1. 연차 신청 버튼 (출퇴근 버튼과 동일 디자인)
                     Padding(
                       padding: EdgeInsets.symmetric(
                         horizontal: ResponsiveUtils.spacing(context, 16),
                         vertical: ResponsiveUtils.spacing(context, 14),
                       ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
+                      child: Material(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(10),
+                        child: InkWell(
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppColors.border, width: 0.5),
-                        ),
-                        child: IntrinsicHeight(
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Material(
-                                  color: AppColors.primary,
-                                  borderRadius: const BorderRadius.only(
-                                    topLeft: Radius.circular(9),
-                                    bottomLeft: Radius.circular(9),
-                                  ),
-                                  child: InkWell(
-                                    borderRadius: const BorderRadius.only(
-                                      topLeft: Radius.circular(9),
-                                      bottomLeft: Radius.circular(9),
-                                    ),
-                                    onTap: () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const LeaveScreenRouter()),
-                                    ),
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: ResponsiveUtils.spacing(context, 20),
-                                      ),
-                                      alignment: Alignment.center,
-                                      child: Text(
-                                        '연차 신청',
-                                        style: AppTextStyles.buttonPrimary(context),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Container(width: 0.5, color: AppColors.border),
-                              Expanded(
-                                child: Material(
-                                  color: AppColors.primary,
-                                  borderRadius: const BorderRadius.only(
-                                    topRight: Radius.circular(9),
-                                    bottomRight: Radius.circular(9),
-                                  ),
-                                  child: InkWell(
-                                    borderRadius: const BorderRadius.only(
-                                      topRight: Radius.circular(9),
-                                      bottomRight: Radius.circular(9),
-                                    ),
-                                    onTap: () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const CardReceiptUploadScreen()),
-                                    ),
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: ResponsiveUtils.spacing(context, 20),
-                                      ),
-                                      alignment: Alignment.center,
-                                      child: Text(
-                                        '영수증 업로드',
-                                        style: AppTextStyles.buttonPrimary(context),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const LeaveScreenRouter()),
+                          ),
+                          child: Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.symmetric(
+                              vertical: ResponsiveUtils.spacing(context, 20),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              '연차 신청',
+                              style: AppTextStyles.buttonPrimary(context),
+                            ),
                           ),
                         ),
                       ),

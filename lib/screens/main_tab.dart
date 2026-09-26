@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'attendance/attendance_screen_router.dart';
 import 'leave/leave_status_screen.dart';
+import 'leave/card_receipt_upload_screen.dart';
 import 'approval/approval_screen.dart';
 // import 'purchase/purchase_management_screen.dart'; // 제거됨
 import 'receipts/receipts_screen.dart';
@@ -66,7 +67,10 @@ class MainTab extends StatefulWidget {
   State<MainTab> createState() => _MainTabState();
 }
 
-class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
+class _MainTabState extends State<MainTab>
+    with TickerProviderStateMixin, WidgetsBindingObserver {
+  static const int _receiptTabIndex = 4;
+
   late int _currentIndex;
   late PageController _pageController;
   List<Widget>? _screens; // nullable로 변경
@@ -78,9 +82,13 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
   bool _isInquiryAdmin = false;
   RealtimeChannel? _inquiryBadgeChannel;
 
+  // 일반 직원 카드 영수증 탭 표시 여부 (직전 빌드 기준, 탭 인덱스 보정용)
+  bool _cardReceiptTabShown = false;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _currentIndex = 0;
     _pageController = PageController(
       initialPage: 0,
@@ -161,6 +169,9 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
         // Badge service error - silently fail
       }
 
+      // 일반 직원 카드 영수증 탭 표시 여부 확인
+      await _refreshCardReceiptTab();
+
       // 종료 상태에서 알림 탭으로 실행된 경우 해당 화면으로 이동
       if (mounted) {
         NotificationService.handlePendingInitialMessage();
@@ -173,6 +184,40 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
         }
       });
     }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshCardReceiptTab();
+    }
+  }
+
+  /// 영수증 관리 탭 접근 권한 (superadmin, hr, lead buyer / 알바·계약직 제외)
+  static bool _isReceiptManager(Map<String, dynamic>? employee) {
+    final roles = UserRoleHelper.getRoles(employee);
+    return !_isPartTimeOrContract(employee) &&
+        (UserRoleHelper.isAppAdmin(roles) ||
+            UserRoleHelper.isHr(roles) ||
+            UserRoleHelper.isLeadBuyer(roles));
+  }
+
+  static bool _isPartTimeOrContract(Map<String, dynamic>? employee) {
+    final position = employee?['position'] as String?;
+    return position == '알바' || position == '계약직';
+  }
+
+  /// 일반 정직원: 승인된 미반납 카드 사용 건이 있으면 영수증 탭 표시
+  Future<void> _refreshCardReceiptTab() async {
+    if (!mounted) return;
+    final employee = Provider.of<UserProvider>(context, listen: false).employee;
+    if (employee == null ||
+        _isPartTimeOrContract(employee) ||
+        _isReceiptManager(employee)) {
+      return;
+    }
+    await Provider.of<LeaveProvider>(context, listen: false)
+        .fetchMyUploadableCards();
   }
 
   Future<void> _initInquiryBadge() async {
@@ -334,6 +379,7 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     if (_inquiryBadgeChannel != null) {
       _inquiryService.unsubscribe(_inquiryBadgeChannel);
       _inquiryBadgeChannel = null;
@@ -373,8 +419,7 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
 final roles = UserRoleHelper.getRoles(employee);
 
     // 직원 유형 확인 (알바, 계약직, 정직원)
-    final position = employee?['position'] as String?;
-    final isPartTimeOrContract = position == '알바' || position == '계약직';
+    final isPartTimeOrContract = _isPartTimeOrContract(employee);
 
 // 승인관리 탭을 볼 수 있는 역할 확인
     final approvalRoles = [
@@ -394,13 +439,9 @@ final roles = UserRoleHelper.getRoles(employee);
     // lead buyer 권한 확인
     final isLeadBuyer = UserRoleHelper.isPureLeadBuyer(roles);
 
-    // 영수증 탭 접근 권한 확인 (관리자, hr, lead_buyer)
-    // 알바, 계약직은 영수증 탭 접근 불가
-    final canAccessReceipts = !isPartTimeOrContract && (
-      UserRoleHelper.isAppAdmin(roles) ||
-      UserRoleHelper.isHr(roles) ||
-      UserRoleHelper.isLeadBuyer(roles)
-    );
+    // 영수증 관리 탭 접근 권한 확인 (관리자, hr, lead_buyer)
+    // 일반 정직원의 카드 영수증 탭은 _buildMainContent에서 동적으로 추가
+    final canAccessReceipts = _isReceiptManager(employee);
 
     setState(() {
       if (isPartTimeOrContract) {
@@ -481,13 +522,34 @@ final roles = UserRoleHelper.getRoles(employee);
     }
   }
 
+  /// 카드 영수증 탭이 생기거나 사라질 때 뒤쪽 탭(달력/설정)의 선택 인덱스 보정
+  void _syncCardReceiptTabIndex(bool show) {
+    if (show == _cardReceiptTabShown) return;
+    _cardReceiptTabShown = show;
+
+    if (_currentIndex < _receiptTabIndex) return;
+    if (show) {
+      _currentIndex += 1;
+    } else if (_currentIndex == _receiptTabIndex) {
+      // 보고 있던 영수증 탭이 사라지면 휴가 탭으로 이동
+      _currentIndex = 1;
+    } else {
+      _currentIndex -= 1;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _pageController.hasClients) {
+        _pageController.jumpToPage(_currentIndex);
+      }
+    });
+  }
+
   Widget _buildMainContent(UserProvider userProvider) {
     final employee = userProvider.employee;
     final roles = UserRoleHelper.getRoles(employee);
 
     // 직원 유형 확인 (알바, 계약직, 정직원)
-    final position = employee?['position'] as String?;
-    final isPartTimeOrContract = position == '알바' || position == '계약직';
+    final isPartTimeOrContract = _isPartTimeOrContract(employee);
 
     final approvalRoles = [
       'admin',
@@ -505,13 +567,25 @@ final roles = UserRoleHelper.getRoles(employee);
     // lead buyer 권한 확인
     final isLeadBuyer = UserRoleHelper.isPureLeadBuyer(roles);
 
-    // 영수증 탭 접근 권한 확인 (관리자, hr, lead_buyer)
-    // 알바, 계약직은 영수증 탭 접근 불가
-    final canAccessReceipts = !isPartTimeOrContract && (
-      UserRoleHelper.isAppAdmin(roles) ||
-      UserRoleHelper.isHr(roles) ||
-      UserRoleHelper.isLeadBuyer(roles)
-    );
+    // 영수증 관리 탭 접근 권한 확인 (관리자, hr, lead_buyer)
+    final canAccessReceipts = _isReceiptManager(employee);
+
+    final leaveProvider = Provider.of<LeaveProvider>(context);
+    final purchaseProvider = Provider.of<PurchaseProvider>(context);
+
+    // 일반 정직원: 승인된 미반납 카드 사용 건이 있을 때만 카드 영수증 탭 표시
+    final showCardReceiptTab = !isPartTimeOrContract &&
+        !canAccessReceipts &&
+        leaveProvider.hasUploadableCards;
+    _syncCardReceiptTabIndex(showCardReceiptTab);
+
+    final screens = showCardReceiptTab
+        ? [
+            ..._screens!.sublist(0, _receiptTabIndex),
+            const CardReceiptUploadScreen(isTab: true),
+            ..._screens!.sublist(_receiptTabIndex),
+          ]
+        : _screens!;
 
     final List<BottomNavigationBarItem> items = [];
 
@@ -542,9 +616,6 @@ final roles = UserRoleHelper.getRoles(employee);
         label: '휴가',
       ),
     );
-
-    final leaveProvider = Provider.of<LeaveProvider>(context);
-    final purchaseProvider = Provider.of<PurchaseProvider>(context);
 
     // 승인관리 대기 합계 (연차/출장 대기 + 차량/카드 대기 + 발주 승인대기)
     int totalApprovalCount = 0;
@@ -675,9 +746,9 @@ final roles = UserRoleHelper.getRoles(employee);
         ),
       );
 
-      // 영수증 탭 접근 권한이 있는 경우만 표시
-      if (canAccessReceipts) {
-        // 5번째 탭: 영수증 관리 (superadmin, hr, lead_buyer)
+      // 영수증 탭: 관리 권한자(영수증 관리) 또는 미반납 카드 보유 일반 직원(카드 영수증 업로드)
+      if (canAccessReceipts || showCardReceiptTab) {
+        // 5번째 탭: 영수증
         items.add(
           BottomNavigationBarItem(
             icon: Padding(
@@ -762,10 +833,11 @@ final roles = UserRoleHelper.getRoles(employee);
         },
         // 모든 화면을 미리 로드하여 깨짐 방지
         allowImplicitScrolling: true,
-        children: _screens!.asMap().entries.map((entry) {
+        children: screens.map((screen) {
+          // 영수증 탭이 동적으로 끼어들어도 화면 상태가 유지되도록 화면 타입으로 키 지정
           return RepaintBoundary(
-            key: ValueKey('screen_${entry.key}'),
-            child: KeepAlive(keepAlive: true, child: entry.value),
+            key: ValueKey(screen.runtimeType),
+            child: KeepAlive(keepAlive: true, child: screen),
           );
         }).toList(),
       ),

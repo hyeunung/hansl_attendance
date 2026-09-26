@@ -169,7 +169,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                           side: BorderSide(color: AppColors.primary),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           foregroundColor: AppColors.primary,
                         ),
@@ -242,7 +242,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     foregroundColor: AppColors.textSecondary,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                   onPressed: () => Navigator.of(context).pop(null),
@@ -257,7 +257,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                         backgroundColor: isValid ? AppColors.primary : AppColors.gray300,
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                       ),
                       onPressed: isValid
@@ -1217,195 +1217,54 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
             child: Column(
               children: [
                 // 헤더 (클릭 가능)
-                InkWell(
+                FlatCardHeader(
+                  title: orderNumber,
+                  icon: Icons.receipt_long,
                   onTap: () {
                     setState(() {
                       _expandedOrders[orderNumber] = !isExpanded;
                     });
                   },
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(ResponsiveUtils.spacing(context, 12)),
-                    bottom: isExpanded ? Radius.zero : Radius.circular(ResponsiveUtils.spacing(context, 12)),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildEditRequestButton(context, orderNumber, firstItem),
+                      _buildAdminEditButton(context, orderNumber, items),
+                      Icon(
+                        isExpanded ? Icons.expand_less : Icons.expand_more,
+                        size: 16,
+                        color: AppColors.textTertiary,
+                      ),
+                    ],
                   ),
-                  child: Container(
-                    padding: EdgeInsets.fromLTRB(
-                      ResponsiveUtils.spacing(context, 14),
-                      ResponsiveUtils.spacing(context, 8),
-                      ResponsiveUtils.spacing(context, 14),
-                      ResponsiveUtils.spacing(context, 8),
-                    ),
-                    decoration: const BoxDecoration(
-                      color: AppColors.backgroundCard,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            // 좌측 정보
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // 발주번호와 카테고리
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.receipt_long,
-                                        color: AppColors.primary,
-                                        size: ResponsiveUtils.iconSize(context, 20),
-                                      ),
-                                      SizedBox(width: ResponsiveUtils.spacing(context, 6)),
-                                      Expanded(
-                                        child: Text(
-                                          orderNumber,
-                                          style: AppTextStyles.cardTitle(context),
-                                        ),
-                                      ),
-                                      // 수정요청 버튼 (요청자 본인만 표시)
-                                      _buildEditRequestButton(context, orderNumber, firstItem),
-                                      // superadmin 직접 수정 버튼
-                                      _buildAdminEditButton(context, orderNumber, items),
-                                    ],
-                                  ),
-                                  SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-                                  // 업체명
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.business,
-                                        color: AppColors.textTertiary,
-                                        size: ResponsiveUtils.iconSize(context, 16),
-                                      ),
-                                      SizedBox(width: ResponsiveUtils.spacing(context, 6)),
-                                      Expanded(
-                                        child: Text(
-                                          firstItem['vendor_name'] ?? '업체명 없음',
-                                          style: AppTextStyles.listTitle(context).copyWith(
-                                            color: AppColors.gray700,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-                        // 요청자와 입고요청일 정보
-                        Row(
-                          children: [
-                            // 요청자 정보
-                            Expanded(
-                              flex: 1,
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.person_outline,
-                                    color: AppColors.textTertiary,
-                                    size: ResponsiveUtils.iconSize(context, 16),
-                                  ),
-                                  SizedBox(width: ResponsiveUtils.spacing(context, 6)),
-                                  Flexible(
-                                    child: Text(
-                                      firstItem['requester_name'] ?? '요청자 없음',
-                                      style: AppTextStyles.tableCellSub(context),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(width: ResponsiveUtils.spacing(context, 12)),
-                            // 입고요청일 정보
-                            Expanded(
-                              flex: 1,
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.schedule_outlined,
-                                    color: AppColors.textTertiary,
-                                    size: ResponsiveUtils.iconSize(context, 16),
-                                  ),
-                                  SizedBox(width: ResponsiveUtils.spacing(context, 6)),
-                                  Flexible(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          '입고예정일',
-                                          style: AppTextStyles.tableHeader(context),
-                                        ),
-                                        Text(
-                                          firstItem['delivery_request_date'] != null && firstItem['delivery_request_date'].toString().isNotEmpty
-                                              ? dateFormat.format(DateTime.parse(firstItem['delivery_request_date']))
-                                              : '미정',
-                                          style: AppTextStyles.inputLabel(context).copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.primary,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(width: ResponsiveUtils.spacing(context, 12)),
-                            // 변경 입고예정일 정보
-                            Expanded(
-                              flex: 1,
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.edit_calendar_outlined,
-                                    color: AppColors.textTertiary,
-                                    size: ResponsiveUtils.iconSize(context, 16),
-                                  ),
-                                  SizedBox(width: ResponsiveUtils.spacing(context, 6)),
-                                  Flexible(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          '변경입고일',
-                                          style: AppTextStyles.tableHeader(context),
-                                        ),
-                                        Text(
-                                          firstItem['revised_delivery_request_date'] != null && firstItem['revised_delivery_request_date'].toString().isNotEmpty
-                                              ? dateFormat.format(DateTime.parse(firstItem['revised_delivery_request_date']))
-                                              : '미정',
-                                          style: AppTextStyles.inputLabel(context).copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.primary,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: ResponsiveUtils.spacing(context, 6)),
-                        // 진행률 바와 퍼센트 표시
-                        _buildProgressSection(items),
-                        SizedBox(height: ResponsiveUtils.spacing(context, 2)),
-                        // 하단 꺽쇠 아이콘 (컴팩하게)
-                        Center(
-                          child: Icon(
-                            isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                            color: AppColors.textTertiary,
-                            size: ResponsiveUtils.iconSize(context, 20),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                ),
+                FlatInfoRow(
+                  label: '업체명',
+                  value: firstItem['vendor_name'] ?? '업체명 없음',
+                ),
+                FlatInfoRow(
+                  label: '요청자',
+                  value: firstItem['requester_name'] ?? '요청자 없음',
+                ),
+                FlatInfoRow(
+                  label: '입고예정일',
+                  value: firstItem['delivery_request_date'] != null &&
+                          firstItem['delivery_request_date'].toString().isNotEmpty
+                      ? dateFormat.format(DateTime.parse(firstItem['delivery_request_date']))
+                      : '미정',
+                  valueColor: AppColors.primary,
+                ),
+                FlatInfoRow(
+                  label: '변경입고일',
+                  value: firstItem['revised_delivery_request_date'] != null &&
+                          firstItem['revised_delivery_request_date'].toString().isNotEmpty
+                      ? dateFormat.format(DateTime.parse(firstItem['revised_delivery_request_date']))
+                      : '미정',
+                  valueColor: AppColors.primary,
+                ),
+                Padding(
+                  padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
+                  child: _buildProgressSection(items),
                 ),
                 // 품목 리스트 (확장 시)
                 if (isExpanded)
@@ -1629,7 +1488,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                   ),
                 ],
               ),
-              SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+              SizedBox(height: ResponsiveUtils.spacing(context, 6)),
               // 진행률 바
               Container(
                 height: ResponsiveUtils.spacing(context, 8),
@@ -1644,7 +1503,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                   borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 4)),
                 ),
               ),
-              SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+              SizedBox(height: ResponsiveUtils.spacing(context, 6)),
               // 하단 상세 정보
               Row(
                 children: [
@@ -2196,7 +2055,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 foregroundColor: AppColors.textSecondary,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
               onPressed: () => Navigator.of(dialogContext).pop(null),
@@ -2207,7 +2066,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                 backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
               onPressed: () => Navigator.of(dialogContext).pop(tempDate),

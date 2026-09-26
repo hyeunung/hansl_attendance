@@ -29,7 +29,7 @@ class AppTheme {
       iconTheme: IconThemeData(color: AppColors.textPrimary),
       titleTextStyle: TextStyle(
         fontFamily: 'NotoSans',
-        fontSize: 22,
+        fontSize: 18,
         fontWeight: FontWeight.w700,
         color: AppColors.textPrimary,
       ),
@@ -40,7 +40,7 @@ class AppTheme {
       color: AppColors.backgroundCard,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         side: const BorderSide(color: AppColors.borderLight, width: 0.5),
       ),
     ),
@@ -87,7 +87,7 @@ class AppTheme {
         foregroundColor: Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
       ),
@@ -107,7 +107,7 @@ class AppTheme {
     dialogTheme: DialogThemeData(
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(10),
       ),
     ),
 

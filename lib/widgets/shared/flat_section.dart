@@ -115,6 +115,120 @@ class FlatCard extends StatelessWidget {
   }
 }
 
+// ─── Card Header / Info Row ───
+
+/// 카드 내부 제목 줄 (근무기록 섹션 헤더와 동일 규격)
+/// 회색 띠 + 13px 세미볼드 + 상하 8px
+class FlatCardHeader extends StatelessWidget {
+  final String title;
+  final IconData? icon;
+  final Color? iconColor;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+
+  const FlatCardHeader({
+    super.key,
+    required this.title,
+    this.icon,
+    this.iconColor,
+    this.trailing,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final content = Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsiveUtils.spacing(context, 14),
+        vertical: ResponsiveUtils.spacing(context, 8),
+      ),
+      decoration: const BoxDecoration(
+        color: AppColors.backgroundSecondary,
+        border: Border(
+          bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
+        ),
+      ),
+      child: Row(
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 15, color: iconColor ?? AppColors.primary),
+            SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+          ],
+          Expanded(
+            child: Text(
+              title,
+              style: AppTextStyles.sectionHeader(context),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (trailing != null) trailing!,
+        ],
+      ),
+    );
+    if (onTap == null) return content;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(onTap: onTap, child: content),
+    );
+  }
+}
+
+/// 카드 내부 정보 행 (라벨 11px 회색 / 값 12px)
+class FlatInfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData? icon;
+  final Color? valueColor;
+  final Widget? trailing;
+
+  const FlatInfoRow({
+    super.key,
+    required this.label,
+    required this.value,
+    this.icon,
+    this.valueColor,
+    this.trailing,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsiveUtils.spacing(context, 14),
+        vertical: ResponsiveUtils.spacing(context, 6),
+      ),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
+        ),
+      ),
+      child: Row(
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 14, color: AppColors.textTertiary),
+            SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+          ],
+          SizedBox(
+            width: ResponsiveUtils.spacing(context, 76),
+            child: Text(label, style: AppTextStyles.listSubtitle(context)),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: AppTextStyles.tableCell(context).copyWith(color: valueColor),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (trailing != null) trailing!,
+        ],
+      ),
+    );
+  }
+}
+
 // ─── Table Column Header ───
 
 /// 테이블 컬럼 헤더 (연한 배경)
@@ -308,7 +422,7 @@ class StatusChip extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         label,

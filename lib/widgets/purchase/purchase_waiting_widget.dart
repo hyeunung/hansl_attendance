@@ -216,7 +216,10 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
       children: [
         // 진행률 바와 정보
         Container(
-          padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 4)),
+          padding: EdgeInsets.symmetric(
+            horizontal: ResponsiveUtils.spacing(context, 10),
+            vertical: ResponsiveUtils.spacing(context, 8),
+          ),
           decoration: BoxDecoration(
             color: AppColors.warningLight,
             border: Border.all(
@@ -255,7 +258,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                   ),
                 ],
               ),
-              SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+              SizedBox(height: ResponsiveUtils.spacing(context, 6)),
               // 진행률 바
               Container(
                 height: ResponsiveUtils.spacing(context, 8),
@@ -270,7 +273,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                   borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 4)),
                 ),
               ),
-              SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+              SizedBox(height: ResponsiveUtils.spacing(context, 6)),
               // 하단 상세 정보
               Row(
                 children: [
@@ -668,7 +671,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
     return RefreshIndicator(
       onRefresh: _loadPurchaseItems,
       child: ListView.builder(
-        padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
+        padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 4)),
         itemCount: itemsToShow.length,
         itemBuilder: (context, index) {
           final orderNumber = itemsToShow.keys.elementAt(index);
@@ -687,117 +690,36 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
             child: Column(
               children: [
                 // 헤더 (클릭 가능)
-                InkWell(
+                FlatCardHeader(
+                  title: orderNumber,
+                  icon: Icons.shopping_cart,
                   onTap: () {
                     setState(() {
                       _expandedOrders[orderNumber] = !isExpanded;
                     });
                   },
-                  child: Container(
-                    padding: EdgeInsets.fromLTRB(
-                      ResponsiveUtils.spacing(context, 14),
-                      ResponsiveUtils.spacing(context, 8),
-                      ResponsiveUtils.spacing(context, 14),
-                      ResponsiveUtils.spacing(context, 8),
-                    ),
-                    decoration: const BoxDecoration(
-                      color: AppColors.backgroundCard,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            // 좌측 정보
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // 발주번호와 카테고리
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.shopping_cart,
-                                        color: AppColors.warning,
-                                        size: ResponsiveUtils.iconSize(context, 20),
-                                      ),
-                                      SizedBox(width: ResponsiveUtils.spacing(context, 6)),
-                                      Expanded(
-                                        child: Text(
-                                          orderNumber,
-                                          style: AppTextStyles.cardTitle(context),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-                                  // 업체명
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.business,
-                                        color: AppColors.textTertiary,
-                                        size: ResponsiveUtils.iconSize(context, 16),
-                                      ),
-                                      SizedBox(width: ResponsiveUtils.spacing(context, 6)),
-                                      Expanded(
-                                        child: Text(
-                                          firstItem['vendor_name'] ?? '업체명 없음',
-                                          style: AppTextStyles.listTitle(context).copyWith(
-                                            color: AppColors.gray700,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-                        // 요청자와 날짜 정보
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.person_outline,
-                              color: AppColors.textTertiary,
-                              size: ResponsiveUtils.iconSize(context, 16),
-                            ),
-                            SizedBox(width: ResponsiveUtils.spacing(context, 6)),
-                            Text(
-                              firstItem['requester_name'] ?? '요청자 없음',
-                              style: AppTextStyles.tableCellSub(context),
-                            ),
-                            SizedBox(width: ResponsiveUtils.spacing(context, 16)),
-                            Icon(
-                              Icons.calendar_today_outlined,
-                              color: AppColors.textTertiary,
-                              size: ResponsiveUtils.iconSize(context, 16),
-                            ),
-                            SizedBox(width: ResponsiveUtils.spacing(context, 6)),
-                            Text(
-                              dateFormat.format(DateTime.parse(firstItem['request_date'])),
-                              style: AppTextStyles.tableCellSub(context),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: ResponsiveUtils.spacing(context, 6)),
-                        // 진행률 표시
-                        _buildProgressSection(items),
-                        SizedBox(height: ResponsiveUtils.spacing(context, 2)),
-                        // 하단 꺽쇠 아이콘 (컴팩하게)
-                        Center(
-                          child: Icon(
-                            isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                            color: AppColors.textTertiary,
-                            size: ResponsiveUtils.iconSize(context, 20),
-                          ),
-                        ),
-                      ],
-                    ),
+                  trailing: Icon(
+                    isExpanded ? Icons.expand_less : Icons.expand_more,
+                    size: 16,
+                    color: AppColors.textTertiary,
                   ),
+                ),
+                FlatInfoRow(
+                  label: '업체명',
+                  value: firstItem['vendor_name'] ?? '업체명 없음',
+                ),
+                FlatInfoRow(
+                  label: '요청자',
+                  value: firstItem['requester_name'] ?? '요청자 없음',
+                ),
+                FlatInfoRow(
+                  label: '요청일',
+                  value: dateFormat.format(DateTime.parse(firstItem['request_date'])),
+                  valueColor: AppColors.primary,
+                ),
+                Padding(
+                  padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
+                  child: _buildProgressSection(items),
                 ),
                 // 품목 리스트 (확장 시)
                 if (isExpanded)

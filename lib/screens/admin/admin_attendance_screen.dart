@@ -4,9 +4,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../services/admin_attendance_service.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_text_theme.dart';
 import '../../theme/app_shadows.dart';
 import '../../utils/responsive_utils.dart';
 import '../../widgets/common/notification_banner_widget.dart';
+import '../../widgets/shared/flat_section.dart';
 import 'admin_attendance_edit_sheet.dart';
 
 /// 전체 직원 근태 관리 화면 (HR/SuperAdmin 전용)
@@ -203,7 +205,7 @@ class _AdminAttendanceScreenState extends State<AdminAttendanceScreen> {
       ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(10),
         boxShadow: AppShadows.cardShadow,
       ),
       child: Row(
@@ -414,101 +416,61 @@ class _AdminAttendanceScreenState extends State<AdminAttendanceScreen> {
     final clockOut = r['clock_out'] as String?;
     final statusColor = _statusColor(status);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: AppShadows.cardShadow,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: () => _openEditSheet(r),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              children: [
-                Container(
-                  width: 4,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: statusColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            name,
-                            style: ResponsiveUtils.getTextStyle(
-                              context,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.gray100,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              dept,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _buildTimeText(clockIn, clockOut),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    status,
-                    style: TextStyle(
-                      color: statusColor,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Icon(
-                  Icons.chevron_right,
-                  color: AppColors.textTertiary,
-                  size: 20,
-                ),
-              ],
+    // 한 행 구성: 상태선 | 이름 | 부서 | 출퇴근 시각 | 상태 | 화살표
+    return Material(
+      color: AppColors.backgroundCard,
+      child: InkWell(
+        onTap: () => _openEditSheet(r),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: ResponsiveUtils.spacing(context, 14),
+            vertical: ResponsiveUtils.spacing(context, 8),
+          ),
+          decoration: const BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
             ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 3,
+                height: ResponsiveUtils.spacing(context, 22),
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              SizedBox(width: ResponsiveUtils.spacing(context, 10)),
+              SizedBox(
+                width: ResponsiveUtils.spacing(context, 52),
+                child: Text(
+                  name,
+                  style: AppTextStyles.tableCell(context),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              SizedBox(
+                width: ResponsiveUtils.spacing(context, 62),
+                child: Text(
+                  dept,
+                  style: AppTextStyles.listSubtitle(context),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  _buildTimeText(clockIn, clockOut),
+                  style: AppTextStyles.tableCellSub(context),
+                ),
+              ),
+              StatusChip(label: status, color: statusColor, fontSize: 10),
+              Icon(
+                Icons.chevron_right,
+                color: AppColors.textTertiary,
+                size: 16,
+              ),
+            ],
           ),
         ),
       ),

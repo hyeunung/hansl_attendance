@@ -956,7 +956,11 @@ class LeaveProvider extends ChangeNotifier
     }
   }
 
-  /// 영수증 업로드 가능한 카드 사용 건 조회
+  /// 영수증 업로드 가능한 카드 사용 건 존재 여부 (일반 직원 영수증 탭 표시 기준)
+  bool _hasUploadableCards = false;
+  bool get hasUploadableCards => _hasUploadableCards;
+
+  /// 영수증 업로드 가능한 카드 사용 건 조회 (승인됨 + 카드 미반납)
   Future<List<Map<String, dynamic>>> fetchMyUploadableCards() async {
     try {
       final response = await Supabase.instance.client.functions.invoke(
@@ -966,13 +970,23 @@ class LeaveProvider extends ChangeNotifier
       if (response.status == 200) {
         final responseData = response.data;
         if (responseData['success'] == true) {
-          return List<Map<String, dynamic>>.from(responseData['data'] ?? []);
+          final cards = List<Map<String, dynamic>>.from(responseData['data'] ?? [])
+              .where((cu) => cu['card_returned'] != true)
+              .toList();
+          _setHasUploadableCards(cards.isNotEmpty);
+          return cards;
         }
       }
       return [];
     } catch (e) {
       return [];
     }
+  }
+
+  void _setHasUploadableCards(bool value) {
+    if (_hasUploadableCards == value) return;
+    _hasUploadableCards = value;
+    notifyListeners();
   }
 
 
