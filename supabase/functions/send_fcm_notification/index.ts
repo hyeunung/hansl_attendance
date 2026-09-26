@@ -574,6 +574,14 @@ Deno.serve(async (req)=>{
           body = purchase_order_number ? `${requester_name}님이 ${payment_category} 요청(${purchase_order_number})을 등록했습니다.` : `${requester_name}님이 새로운 구매 요청을 등록했습니다.`;
         }
       }
+      // 앱에서 알림 탭 시 발주 건 조회 및 처리 후 자동 읽음 처리에 사용
+      data = {
+        ...data,
+        type: 'purchase_requests',
+        purchase_order_number: purchase_order_number || '',
+        requester_name: requester_name || '',
+        payment_category: payment_category || ''
+      };
     } else if (type === 'purchase_status_change') {
       console.log('🔄 [구매 알림] 구매 상태 변경 처리');
       console.log('  발주번호:', purchase_order_number);
@@ -671,6 +679,14 @@ Deno.serve(async (req)=>{
         }
         if (!title) title = '❌ 구매 요청 반려';
         if (!body) body = `${requester_name}님의 ${payment_category}(${purchase_order_number})이 반려되었습니다.`;
+        data = {
+          ...data,
+          type: 'purchase_result',
+          status: 'rejected',
+          purchase_order_number: purchase_order_number || '',
+          requester_name: requester_name || '',
+          payment_category: payment_category || ''
+        };
       }
     } else if (type === 'transaction_statement_extracted') {
       console.log('🟠 [거래명세서 알림] 등록자에게 추출 완료 알림');
