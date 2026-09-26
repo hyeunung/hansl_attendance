@@ -1098,9 +1098,7 @@ return;
                       )
                     : ListView.builder(
                         padding: EdgeInsets.only(
-                          left: ResponsiveUtils.spacing(context, 20),
-                          right: ResponsiveUtils.spacing(context, 20),
-                          bottom: ResponsiveUtils.spacing(context, 20),
+                          bottom: ResponsiveUtils.spacing(context, 12),
                         ),
                         itemCount: filteredOrders.length,
                         itemBuilder: (context, index) {
@@ -2145,13 +2143,13 @@ return;
         ? AppColors.errorLight  // 연붉은색
         : Colors.white;
 
-    return Container(
+    return FlatCard(
+      child: Container(
       decoration: BoxDecoration(
         color: cardBackgroundColor,
-        border: Border(
-          bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
-          left: isPreProgress ? BorderSide(color: AppColors.error, width: 3) : BorderSide.none,
-        ),
+        border: isPreProgress
+            ? const Border(left: BorderSide(color: AppColors.error, width: 3))
+            : null,
       ),
       child: InkWell(
         onTap: () => _showOrderDetails(context, group),
@@ -2338,6 +2336,7 @@ return;
             ],
           ),
         ),
+      ),
       ),
     );
   }
