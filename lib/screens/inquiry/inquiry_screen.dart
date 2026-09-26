@@ -26,7 +26,7 @@ class _QuantityChangeRow {
 class _PriceChangeRow {
   _PriceChangeRow();
   String? itemId;
-  String changeType = '';
+  String changeType = 'unit_price';
   String newValue = '';
 }
 
@@ -35,7 +35,7 @@ class _ItemAddRow {
   String itemName = '';
   String specification = '';
   String quantity = '';
-  String unit = '';
+  String unit = 'EA';
   String unitPrice = '';
   String remark = '';
 }
