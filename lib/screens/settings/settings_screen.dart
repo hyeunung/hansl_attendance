@@ -129,6 +129,8 @@ class _SettingsScreenState extends State<SettingsScreen>
   /// 폰트 크기 조절 다이얼로그
   /// iOS(설정>텍스트 크기) / Android(설정>글꼴 크기) 표준을 따라
   /// 미리보기 + 눈금 슬라이더 구성. 선택 즉시 화면에 반영되고 '확인'에서 저장한다.
+  /// 폰트 크기 조절 다이얼로그
+  /// 행을 고르면 뒤 화면까지 즉시 반영되고, '확인'을 눌러야 저장된다.
   void _showFontSizeDialog() {
     final fontProvider = context.read<FontProvider>();
     final originalSize = fontProvider.fontSize;
@@ -139,36 +141,37 @@ class _SettingsScreenState extends State<SettingsScreen>
       builder: (BuildContext dialogContext) {
         return Consumer<FontProvider>(
           builder: (context, provider, _) {
-            final index = FontProvider.options.indexOf(provider.fontSize);
-
             return AlertDialog(
               titlePadding: EdgeInsets.fromLTRB(
                 ResponsiveUtils.spacing(context, 16),
                 ResponsiveUtils.spacing(context, 16),
                 ResponsiveUtils.spacing(context, 16),
-                ResponsiveUtils.spacing(context, 10),
+                ResponsiveUtils.spacing(context, 6),
               ),
-              contentPadding: EdgeInsets.fromLTRB(
-                ResponsiveUtils.spacing(context, 16),
-                0,
-                ResponsiveUtils.spacing(context, 16),
-                0,
-              ),
+              contentPadding: EdgeInsets.zero,
               actionsPadding: EdgeInsets.fromLTRB(
                 ResponsiveUtils.spacing(context, 12),
-                ResponsiveUtils.spacing(context, 8),
+                ResponsiveUtils.spacing(context, 4),
                 ResponsiveUtils.spacing(context, 12),
                 ResponsiveUtils.spacing(context, 8),
               ),
-              title: Text('폰트 크기', style: AppTextStyles.appBarTitle(context)),
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('폰트 크기', style: AppTextStyles.appBarTitle(context)),
+                  SizedBox(height: ResponsiveUtils.spacing(context, 2)),
+                  Text(
+                    '선택하면 화면에 바로 적용되고, 확인을 눌러야 저장됩니다.',
+                    style: AppTextStyles.listSubtitle(context),
+                  ),
+                ],
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildFontPreviewBox(context),
-                  SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-                  _buildFontSizeSlider(context, provider, index),
-                ],
+                children: FontProvider.options
+                    .map((size) => _buildFontSizeOption(size, provider))
+                    .toList(),
               ),
               actions: [
                 TextButton(
@@ -204,120 +207,63 @@ class _SettingsScreenState extends State<SettingsScreen>
     });
   }
 
-  /// 선택한 크기가 실제로 어떻게 보이는지 보여주는 미리보기 (Android 글꼴 크기 방식)
-  Widget _buildFontPreviewBox(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(
-        horizontal: ResponsiveUtils.spacing(context, 14),
-        vertical: ResponsiveUtils.spacing(context, 12),
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundSecondary,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('오늘의 근태현황', style: AppTextStyles.sectionHeader(context)),
-          SizedBox(height: ResponsiveUtils.spacing(context, 4)),
-          Text(
-            '08:30 출근 · 18:00 퇴근',
-            style: AppTextStyles.tableCell(context),
-          ),
-          SizedBox(height: ResponsiveUtils.spacing(context, 2)),
-          Text('연구소 / 책임연구원', style: AppTextStyles.listSubtitle(context)),
-        ],
-      ),
-    );
-  }
+  Widget _buildFontSizeOption(String size, FontProvider provider) {
+    final isSelected = provider.fontSize == size;
 
-  /// 눈금 슬라이더 (양끝 A 크기로 방향 표시 — iOS 텍스트 크기 방식)
-  Widget _buildFontSizeSlider(
-    BuildContext context,
-    FontProvider provider,
-    int index,
-  ) {
-    return Column(
-      children: [
-        Row(
+    return InkWell(
+      onTap: () => provider.previewFontSize(size),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: ResponsiveUtils.spacing(context, 16),
+          vertical: ResponsiveUtils.spacing(context, 10),
+        ),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primary.withValues(alpha: 0.06)
+              : Colors.transparent,
+          border: const Border(
+            bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
+          ),
+        ),
+        child: Row(
           children: [
-            Text(
-              'A',
-              style: AppTextStyles.listSubtitle(context).copyWith(
-                fontSize: ResponsiveUtils.fontSize(context, 11),
-              ),
+            Icon(
+              isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+              size: ResponsiveUtils.iconSize(context, 18),
+              color: isSelected ? AppColors.primary : AppColors.border,
             ),
+            SizedBox(width: ResponsiveUtils.spacing(context, 10)),
             Expanded(
-              child: SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  trackHeight: 3,
-                  activeTrackColor: AppColors.primary,
-                  inactiveTrackColor: AppColors.border,
-                  thumbColor: AppColors.primary,
-                  activeTickMarkColor: Colors.white,
-                  inactiveTickMarkColor: AppColors.textDisabled,
-                  overlayShape: const RoundSliderOverlayShape(
-                    overlayRadius: 14,
-                  ),
-                  thumbShape: const RoundSliderThumbShape(
-                    enabledThumbRadius: 8,
-                  ),
-                ),
-                child: Slider(
-                  value: index.toDouble(),
-                  min: 0,
-                  max: (FontProvider.options.length - 1).toDouble(),
-                  divisions: FontProvider.options.length - 1,
-                  onChanged: (value) {
-                    provider.previewFontSize(
-                      FontProvider.options[value.round()],
-                    );
-                  },
+              child: Text(
+                size,
+                style: AppTextStyles.tableCell(
+                  context,
+                  color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                ).copyWith(
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),
             ),
+            // 현재 배율과 무관하게 각 단계의 실제 크기를 보여준다
             Text(
-              'A',
-              style: AppTextStyles.listSubtitle(context).copyWith(
-                fontSize: ResponsiveUtils.fontSize(context, 20),
+              '가나다 Aa',
+              style: AppTextStyles.tableCell(
+                context,
+                color: AppColors.textSecondary,
+              ).copyWith(
+                fontSize: _fontPreviewBaseSize *
+                    ResponsiveUtils.getScaleFactor(context) *
+                    FontProvider.scaleOf(size),
               ),
             ),
           ],
         ),
-        // 각 눈금이 어떤 단계인지 표시 (눈금 위치에 맞춰 정렬)
-        Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: ResponsiveUtils.spacing(context, 18),
-          ),
-          child: Row(
-            children: [
-              for (int i = 0; i < FontProvider.options.length; i++)
-                Expanded(
-                  child: Text(
-                    FontProvider.options[i],
-                    textAlign: i == 0
-                        ? TextAlign.start
-                        : i == FontProvider.options.length - 1
-                            ? TextAlign.end
-                            : TextAlign.center,
-                    style: AppTextStyles.compactLabel(context).copyWith(
-                      color: provider.fontSize == FontProvider.options[i]
-                          ? AppColors.primary
-                          : AppColors.textSecondary,
-                      fontWeight: provider.fontSize == FontProvider.options[i]
-                          ? FontWeight.w700
-                          : FontWeight.w500,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ],
+      ),
     );
   }
+
+  /// 옵션별 미리보기 기준 크기 (여기에 단계별 배율을 곱해서 표시)
+  static const double _fontPreviewBaseSize = 13.0;
 
   Widget _buildInquiryTile(BuildContext context) {
     return FlatListTile(
