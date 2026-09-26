@@ -134,7 +134,7 @@ class AbsentLateWidgetState extends State<AbsentLateWidget> {
         }
       }
 
-      if (!context.mounted) return;
+      if (!mounted) return;
       setState(() {
         _lateEmployees = lateList;
         _absentEmployees = absentList;

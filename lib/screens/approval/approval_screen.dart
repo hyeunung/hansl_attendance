@@ -254,7 +254,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       // 짧은 시간에 여러 이벤트가 와도 한 번만 재조회
       Future.microtask(() async {
         try {
-          if (!context.mounted) return;
+          if (!mounted) return;
 
           final leaveProvider = Provider.of<LeaveProvider>(
             context,
@@ -1238,7 +1238,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     Provider.of<LeaveProvider>(context, listen: false).fetchVehicleCardRequests(employee: userProv.employee),
                                     Provider.of<PurchaseProvider>(context, listen: false).fetchPendingPurchases(employee: userProv.employee),
                                   ]);
-                                  if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+                                  if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
                                 },
                                 child: pending.isEmpty
                                     ? ListView(
@@ -1667,7 +1667,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                         try {
                           await _showEditDialog(context, l, provider);
                         } catch (e) {
-                          if (context.mounted) {
+                          if (mounted) {
                             AppBanner.show(context, '수정 화면을 열 수 없습니다: $e', type: BannerType.error);
                           }
                         }
@@ -2436,7 +2436,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       }
 
       // 로딩 닫기
-      if (context.mounted) Navigator.of(context).pop();
+      if (mounted) Navigator.of(context).pop();
 
       // 성공 메시지
       if (mounted) {
@@ -2444,7 +2444,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       }
     } catch (e) {
       // 로딩 닫기
-      if (context.mounted) Navigator.of(context).pop();
+      if (mounted) Navigator.of(context).pop();
 
       // 에러 메시지
       if (mounted) {
@@ -2987,7 +2987,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     }
                                     
                                     // 성공 메시지
-                                    if (!context.mounted) return;
+                                    if (!mounted) return;
                                     AppBanner.show(savedContext, '휴가 정보가 수정되었습니다', type: BannerType.success);
                                     
                                     // 데이터 새로고침
@@ -3007,7 +3007,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     }
                                     
                                     // 에러 메시지
-                                    if (!context.mounted) return;
+                                    if (!mounted) return;
                                     AppBanner.show(savedContext, '수정 중 오류가 발생했습니다: $e', type: BannerType.error);
                                   }
                                 },

@@ -483,7 +483,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
       return RefreshIndicator(
         onRefresh: () async {
           await _loadPurchaseItems();
-          if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+          if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
         },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -518,7 +518,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
       return RefreshIndicator(
         onRefresh: () async {
           await _loadPurchaseItems();
-          if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+          if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
         },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),

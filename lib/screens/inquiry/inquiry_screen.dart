@@ -187,7 +187,7 @@ class _InquiryScreenState extends State<InquiryScreen>
 
   /// 알림 표시
   void _showNotification(String message) {
-    if (!context.mounted) return;
+    if (!mounted) return;
 
     AppBanner.show(context, message, type: BannerType.success);
   }
@@ -527,7 +527,7 @@ class _InquiryScreenState extends State<InquiryScreen>
 
   /// 에러 표시
   void _showError(String message) {
-    if (!context.mounted) return;
+    if (!mounted) return;
 
     AppBanner.show(context, message, type: BannerType.error);
   }
@@ -859,7 +859,7 @@ class _InquiryScreenState extends State<InquiryScreen>
       endDate: endDate,
     );
 
-    if (!context.mounted) return;
+    if (!mounted) return;
 
     if (result['success'] == true) {
       setState(() {
@@ -917,7 +917,7 @@ class _InquiryScreenState extends State<InquiryScreen>
       return;
     }
 
-    if (!context.mounted) return;
+    if (!mounted) return;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -2064,7 +2064,7 @@ class _InquiryScreenState extends State<InquiryScreen>
     return RefreshIndicator(
       onRefresh: () async {
         await _loadInquiries();
-        if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+        if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
       },
       color: AppColors.info,
       child: ListView.builder(

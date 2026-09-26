@@ -71,7 +71,7 @@ class TodayVehicleWidgetState extends State<TodayVehicleWidget> {
           dayType = '휴일';
         }
 
-        if (!context.mounted) return;
+        if (!mounted) return;
         setState(() {
           _isNonWorkingDay = true;
           _holidayName = dayType;
@@ -138,7 +138,7 @@ class TodayVehicleWidgetState extends State<TodayVehicleWidget> {
         }
       }
 
-      if (!context.mounted) return;
+      if (!mounted) return;
       setState(() {
         _vehicleRequests = vehicles;
         _myActiveRequest = myRequest;
@@ -147,7 +147,7 @@ class TodayVehicleWidgetState extends State<TodayVehicleWidget> {
         _isLoading = false;
       });
     } catch (e) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       setState(() => _isLoading = false);
     }
   }
@@ -162,7 +162,7 @@ class TodayVehicleWidgetState extends State<TodayVehicleWidget> {
           .update({'approval_status': 'returned'})
           .eq('id', requestId);
 
-      if (!context.mounted) return;
+      if (!mounted) return;
       await _loadData();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

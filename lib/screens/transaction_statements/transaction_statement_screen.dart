@@ -141,7 +141,7 @@ class _TransactionStatementScreenState
       _isRealtimeRefreshing = true;
       Future.microtask(() async {
         try {
-          if (!context.mounted) return;
+          if (!mounted) return;
           await _loadStatements(showLoading: false);
         } finally {
           _isRealtimeRefreshing = false;
@@ -167,7 +167,7 @@ class _TransactionStatementScreenState
     try {
       final image = await TransactionStatementService.pickImage(source);
       if (image == null) return;
-      if (!context.mounted) return;
+      if (!mounted) return;
       await _showPreviewDialog(image);
     } catch (e) {
       if (mounted) {

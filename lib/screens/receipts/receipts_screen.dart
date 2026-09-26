@@ -408,7 +408,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                                     selectedFiles,
                                     memoController.text,
                                   );
-                                  if (context.mounted) Navigator.pop(context);
+                                  if (mounted) Navigator.pop(context);
                                 } finally {
                                   if (mounted) {
                                     setState(() => isUploading = false);
@@ -690,11 +690,11 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
         receiptUrl: receipt['receipt_image_url'],
       );
 
-      if (!context.mounted) return;
+      if (!mounted) return;
       AppBanner.show(context, '✅ 영수증 삭제 완료', type: BannerType.success);
       _loadReceipts(); // 목록 새로고침
     } catch (e) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       AppBanner.show(context, '삭제 실패: $e', type: BannerType.error);
     }
   }

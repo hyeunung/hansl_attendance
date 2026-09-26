@@ -97,7 +97,7 @@ class _MainTabState extends State<MainTab>
 
     // 빌드 완료 후에 초기화(Provider notifyDuringBuild 방지)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       _quickInitialize();
       _initializeServices();
     });
@@ -209,7 +209,7 @@ class _MainTabState extends State<MainTab>
 
   /// 일반 정직원: 승인된 미반납 카드 사용 건이 있으면 영수증 탭 표시
   Future<void> _refreshCardReceiptTab() async {
-    if (!context.mounted) return;
+    if (!mounted) return;
     final employee = Provider.of<UserProvider>(context, listen: false).employee;
     if (employee == null ||
         _isPartTimeOrContract(employee) ||
@@ -292,7 +292,7 @@ class _MainTabState extends State<MainTab>
 
   // 승인관리 데이터 미리 로드 (배지 즉시 표시를 위해)
   void _preloadApprovalData() {
-    if (!context.mounted) return;
+    if (!mounted) return;
     
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);

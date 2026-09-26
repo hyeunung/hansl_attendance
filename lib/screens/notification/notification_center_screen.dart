@@ -115,7 +115,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
         }
       });
 
-      if (!context.mounted) return;
+      if (!mounted) return;
       AppBanner.show(context, '모든 알림을 읽음으로 표시했습니다', type: BannerType.info);
     } catch (e) {
       // Debug print removed
@@ -130,7 +130,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
         _notifications.removeWhere((n) => n['id'] == notificationId);
       });
 
-      if (!context.mounted) return;
+      if (!mounted) return;
       AppBanner.show(context, '알림을 삭제했습니다', type: BannerType.info);
     } catch (e) {
       // Debug print removed
@@ -410,7 +410,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
 
   Future<void> _handleNotificationTap(Map<String, dynamic> notification) async {
     // 알림 종류(data.type)에 맞는 화면으로 이동, 대상 화면이 없으면 알림 센터 유지
-    if (!context.mounted) return;
+    if (!mounted) return;
     final type = NotificationNavigator.resolveType(notification);
     final data = notification['data'];
     await NotificationNavigator.open(

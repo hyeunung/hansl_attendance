@@ -554,7 +554,7 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
       }
 
       if (pos == null) {
-        if (context.mounted) AppBanner.show(context, '위치 정보를 가져오는데 실패했습니다. GPS 신호 상태를 확인해주세요.', type: BannerType.error);
+        if (mounted) AppBanner.show(context, '위치 정보를 가져오는데 실패했습니다. GPS 신호 상태를 확인해주세요.', type: BannerType.error);
         setState(() => _isLoading = false);
         return;
       }
@@ -622,13 +622,13 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
         final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
         await leaveProvider.fetchMyLeaves(email: userProvider.email!, forceRefresh: true);
         await leaveProvider.fetchAllLeaves(forceRefresh: true);
-        if (!context.mounted) return;
+        if (!mounted) return;
         AppBanner.show(context, '조기 복귀 처리가 완료되었습니다.', type: BannerType.success);
-        if (!context.mounted) return;
+        if (!mounted) return;
         Navigator.of(context).pop();
       }
     } catch (e) {
-      if (context.mounted) AppBanner.show(context, '처리 중 오류: $e', type: BannerType.error);
+      if (mounted) AppBanner.show(context, '처리 중 오류: $e', type: BannerType.error);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -717,7 +717,7 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
             }
 
       if (hasConflict) {
-        if (!context.mounted) return;
+        if (!mounted) return;
         final proceed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
@@ -752,13 +752,13 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
         final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
         await leaveProvider.fetchMyLeaves(email: userProvider.email!, forceRefresh: true);
         await leaveProvider.fetchAllLeaves(forceRefresh: true);
-        if (!context.mounted) return;
+        if (!mounted) return;
         AppBanner.show(context, '연장 승인 요청이 접수되었습니다.', type: BannerType.success);
-        if (!context.mounted) return;
+        if (!mounted) return;
         Navigator.of(context).pop();
       }
     } catch (e) {
-      if (context.mounted) AppBanner.show(context, '요청 중 오류: $e', type: BannerType.error);
+      if (mounted) AppBanner.show(context, '요청 중 오류: $e', type: BannerType.error);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

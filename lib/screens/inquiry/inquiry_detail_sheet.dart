@@ -150,14 +150,14 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
     setState(() => _isLoadingMessages = true);
     final result = await _inquiryService.getInquiryMessages(inquiryId);
 
-    if (!context.mounted) return;
+    if (!mounted) return;
     if (result['success'] == true) {
       final data = result['data'] as List<SupportInquiryMessage>? ?? [];
       setState(() {
         _chatMessages = data;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!context.mounted) return;
+        if (!mounted) return;
         if (stickToBottom) {
           _ensureBottom();
         } else if (previousOffset != null && _detailScrollController.hasClients) {
@@ -220,7 +220,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
       return;
     }
 
-    if (!context.mounted) return;
+    if (!mounted) return;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -379,7 +379,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
 
     setState(() => _isResolving = true);
     final result = await _inquiryService.resolveInquiry(inquiryId);
-    if (!context.mounted) return;
+    if (!mounted) return;
 
     setState(() => _isResolving = false);
 
@@ -412,7 +412,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
       inquiryId: inquiryId,
       status: 'in_progress',
     );
-    if (!context.mounted) return;
+    if (!mounted) return;
 
     if (result['success'] == true) {
       final detail = await _inquiryService.getInquiryDetail(inquiryId);
@@ -430,7 +430,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
   }
 
   void _showSnack(String msg, {bool isError = false}) {
-    if (!context.mounted) return;
+    if (!mounted) return;
     AppBanner.show(context, msg, type: isError ? BannerType.error : BannerType.success);
   }
 
@@ -455,7 +455,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
       return;
     }
 
-    if (!context.mounted) return;
+    if (!mounted) return;
     await _showPurchaseDetailDialog(detail);
   }
 
@@ -728,7 +728,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                 remark: remarkController.text.trim(),
               );
               if (result['success'] == true) {
-                if (context.mounted) Navigator.pop(context);
+                if (mounted) Navigator.pop(context);
                 _showSnack('품목이 수정되었습니다.');
               } else {
                 _showSnack(result['error']?.toString() ?? '수정 실패', isError: true);
@@ -828,11 +828,11 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
     final result = await _inquiryService.deleteInquiry(_inquiry['id']);
 
     // 로딩 닫기
-    if (context.mounted) Navigator.of(context).pop();
+    if (mounted) Navigator.of(context).pop();
 
     if (result['success']) {
       // 상세 화면 닫기
-      if (context.mounted) Navigator.of(context).pop();
+      if (mounted) Navigator.of(context).pop();
       
       // 성공 메시지
       if (mounted) {

@@ -158,7 +158,7 @@ class _SettingsScreenState extends State<SettingsScreen>
         setState(() {
           _fontSize = size;
         });
-        if (!context.mounted) return;
+        if (!mounted) return;
         Navigator.of(context).pop();
       },
       child: Container(
@@ -179,7 +179,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   setState(() {
                     _fontSize = value;
                   });
-                  if (!context.mounted) return;
+                  if (!mounted) return;
                   Navigator.of(context).pop();
                 }
               },
@@ -392,26 +392,26 @@ class _SettingsScreenState extends State<SettingsScreen>
       }
 
       // 로딩 다이얼로그 닫기
-      if (!context.mounted) return;
+      if (!mounted) return;
       Navigator.pop(context);
 
       // 성공 메시지 표시
-      if (!context.mounted) return;
+      if (!mounted) return;
       AppBanner.show(context, '계정이 성공적으로 삭제되었습니다.', type: BannerType.success);
 
       // 로그인 화면으로 이동
-      if (!context.mounted) return;
+      if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const LoginScreen()),
         (route) => false,
       );
     } catch (e) {
       // 로딩 다이얼로그 닫기
-      if (!context.mounted) return;
+      if (!mounted) return;
       Navigator.pop(context);
 
       // 에러 메시지 표시
-      if (!context.mounted) return;
+      if (!mounted) return;
       AppBanner.show(context, '계정 삭제 중 오류가 발생했습니다: $e', type: BannerType.error);
     }
   }
@@ -526,7 +526,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                   ],
                 ]);
-                if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+                if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
               },
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -755,7 +755,7 @@ class _SettingsScreenState extends State<SettingsScreen>
 
                           // 성공 메시지
                           if (mounted) {
-                            if (!context.mounted) return;
+                            if (!mounted) return;
                             AppBanner.show(context, '캐시 데이터 복원 완료! 디버그 콘솔을 확인하세요.', type: BannerType.info);
                           }
                         },
@@ -840,7 +840,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                         ).clear();
                       }
 
-                      if (!context.mounted) return;
+                      if (!mounted) return;
                       Navigator.of(context).pushAndRemoveUntil(
                         MaterialPageRoute(builder: (context) => LoginScreen()),
                         (route) => false,

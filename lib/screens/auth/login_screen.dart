@@ -135,7 +135,7 @@ if (email == null) throw Exception('이메일 정보가 없습니다.');
         if (employee == null) throw Exception('등록된 사용자 정보가 없습니다.');
 
         // UserProvider에 사용자 정보와 직원 정보 모두 설정
-        if (!context.mounted) return;
+        if (!mounted) return;
         final userProvider = Provider.of<UserProvider>(context, listen: false);
         userProvider.setUser(
           id: employee['id'],
@@ -555,9 +555,9 @@ class _SignupScreenState extends State<SignupScreen> {
         },
       );
       if (response.user != null) {
-        if (!context.mounted) return;
+        if (!mounted) return;
         AppBanner.show(context, '회원가입이 완료되었습니다. 로그인 해주세요.', type: BannerType.success);
-        if (!context.mounted) return;
+        if (!mounted) return;
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>

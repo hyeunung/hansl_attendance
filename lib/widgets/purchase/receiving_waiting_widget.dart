@@ -33,7 +33,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
 
   // mounted 체크를 포함한 안전한 setState 래퍼
   void _safeSetState(VoidCallback fn) {
-    if (!context.mounted) return;
+    if (!mounted) return;
     setState(fn);
   }
   
@@ -299,9 +299,9 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
   // 필터 초기화
   Future<void> _initializeFilters() async {
     await _loadDepartments();
-    if (!context.mounted) return;
+    if (!mounted) return;
     await _setDefaultFilters();
-    if (!context.mounted) return;
+    if (!mounted) return;
     await _loadReceivingItems();
   }
 
@@ -1114,7 +1114,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       return RefreshIndicator(
         onRefresh: () async {
           await _loadReceivingItems();
-          if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+          if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
         },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -1149,7 +1149,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       return RefreshIndicator(
         onRefresh: () async {
           await _loadReceivingItems();
-          if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+          if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
         },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -2041,7 +2041,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
     _previousFlutterErrorHandler = FlutterError.onError;
     FlutterError.onError = (FlutterErrorDetails details) {
       _previousFlutterErrorHandler?.call(details);
-      if (!context.mounted) return;
+      if (!mounted) return;
       setState(() {
         _uiErrorMessage = details.exceptionAsString();
       });
@@ -2225,9 +2225,9 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
       priceRows: _priceRows,
     );
 
-    if (!context.mounted) return;
+    if (!mounted) return;
     if (success) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       Navigator.of(context).pop();
       return;
     }

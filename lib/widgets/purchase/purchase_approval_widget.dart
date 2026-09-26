@@ -819,7 +819,7 @@ return;
               await purchaseProvider.fetchPendingPurchases(
                 employee: userProvider.employee,
               );
-              if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+              if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
             },
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -864,7 +864,7 @@ return;
             await purchaseProvider.fetchPendingPurchases(
               employee: userProvider.employee,
             );
-            if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+            if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
           },
           child: ListView.builder(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -935,7 +935,7 @@ return;
                 startDate: _startDate,
                 endDate: _endDate,
               );
-              if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+              if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
             },
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -1054,7 +1054,7 @@ return;
                     startDate: _startDate,
                     endDate: _endDate,
                   );
-                  if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+                  if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
                 },
                 child: filteredOrders.isEmpty
                     ? ListView(
