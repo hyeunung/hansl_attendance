@@ -192,14 +192,12 @@ class _TransactionStatementScreenState
               (selectedPoScope != null && selectedDate != null);
 
           return Dialog(
+            clipBehavior: Clip.antiAlias,
             insetPadding:
-                const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
             child: SingleChildScrollView(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -207,26 +205,37 @@ class _TransactionStatementScreenState
                     // ── 헤더 ──
                     Row(
                       children: [
-                        Text(
-                          '거래명세서 업로드',
-                          style: AppTextStyles.sectionSubtitle(dialogContext),
-                        ),
-                        const Spacer(),
-                        IconButton(
-                          onPressed: () => Navigator.pop(dialogContext),
-                          icon: const Icon(
-                            Icons.close,
-                            color: AppColors.textDisabled,
+                        Expanded(
+                          child: Text(
+                            '거래명세서 업로드',
+                            style: AppTextStyles.appBarTitle(dialogContext),
                           ),
-                          tooltip: '닫기',
                         ),
+                        InkWell(
+                      onTap: () => Navigator.pop(dialogContext),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.backgroundSecondary,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.close_rounded,
+                          size: 18,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
 
                     // ── 이미지 미리보기 ──
                     _buildImagePreview(File(image.path), isUploading),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
 
                     // ── 업로드 종류 ──
                     _buildFieldLabel(dialogContext, '업로드 종류'),
@@ -249,7 +258,7 @@ class _TransactionStatementScreenState
 
                     // ── 조건부 필드: 거래명세서/입고수량만 표시 ──
                     if (!isMonthly) ...[
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 12),
 
                       // 발주/수주 구분
                       _buildFieldLabel(dialogContext, '발주/수주 구분'),
@@ -262,7 +271,7 @@ class _TransactionStatementScreenState
                           setDialogState(() => selectedPoScope = value);
                         },
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 12),
 
                       // 실입고일
                       _buildFieldLabel(dialogContext, '실입고일'),
@@ -283,7 +292,7 @@ class _TransactionStatementScreenState
                       ),
                     ],
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
 
                     // ── 버튼 ──
                     Row(
@@ -292,21 +301,11 @@ class _TransactionStatementScreenState
                           child: OutlinedButton(
                             onPressed: () => Navigator.pop(dialogContext),
                             style: OutlinedButton.styleFrom(
-                              side: const BorderSide(
-                                color: AppColors.border,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 12),
+                              side: const BorderSide(color: AppColors.border),
+                              foregroundColor: AppColors.textSecondary,
+                              minimumSize: const Size(0, 40),
                             ),
-                            child: Text(
-                              '다시 선택',
-                              style: AppTextStyles.inputLabel(dialogContext).copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            child: const Text('다시 선택'),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -325,26 +324,11 @@ class _TransactionStatementScreenState
                                     );
                                   },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: canUpload
-                                  ? AppColors.primary
-                                  : AppColors.gray300,
-                              disabledBackgroundColor:
-                                  AppColors.gray300,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 12),
+                              disabledBackgroundColor: AppColors.border,
+                              disabledForegroundColor: AppColors.textDisabled,
+                              minimumSize: const Size(0, 40),
                             ),
-                            child: Text(
-                              '업로드',
-                              style: AppTextStyles.inputLabel(dialogContext).copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: canUpload
-                                    ? Colors.white
-                                    : AppColors.textDisabled,
-                              ),
-                            ),
+                            child: const Text('업로드'),
                           ),
                         ),
                       ],
@@ -362,22 +346,14 @@ class _TransactionStatementScreenState
   // ── 모달 내부 위젯 헬퍼 ────────────────────────────────
 
   Widget _buildFieldLabel(BuildContext ctx, String label) {
-    return Row(
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.sectionHeader(context).copyWith(
-            color: AppColors.gray700,
-          ),
-        ),
-        const SizedBox(width: 2),
-        Text(
-          '*',
-          style: AppTextStyles.sectionHeader(context).copyWith(
-            color: AppColors.error,
-          ),
-        ),
-      ],
+    return Text.rich(
+      TextSpan(
+        text: label,
+        children: const [
+          TextSpan(text: ' *', style: TextStyle(color: AppColors.error)),
+        ],
+      ),
+      style: AppTextStyles.listSubtitle(ctx),
     );
   }
 
@@ -388,19 +364,26 @@ class _TransactionStatementScreenState
     required ValueChanged<String?> onChanged,
   }) {
     return Container(
+      height: 40,
       decoration: BoxDecoration(
-        color: AppColors.backgroundSecondary,
-        borderRadius: BorderRadius.circular(10),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.border),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
+          isDense: true,
+          dropdownColor: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          elevation: 4,
+          style: AppTextStyles.tableCell(context),
           value: value,
           isExpanded: true,
           icon: Icon(
             Icons.arrow_drop_down,
-            color: enabled ? AppColors.primary : AppColors.textDisabled,
+            size: 18,
+            color: enabled ? AppColors.textTertiary : AppColors.textDisabled,
           ),
           items: _uploadTypes.map((type) {
             return DropdownMenuItem<String>(
@@ -416,12 +399,7 @@ class _TransactionStatementScreenState
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Text(
-                    type.label,
-                    style: AppTextStyles.inputLabel(context).copyWith(
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
+                  Text(type.label, style: AppTextStyles.tableCell(context)),
                 ],
               ),
             );
@@ -439,44 +417,39 @@ class _TransactionStatementScreenState
     required ValueChanged<String?> onChanged,
   }) {
     return Container(
+      height: 40,
       decoration: BoxDecoration(
-        color: AppColors.backgroundSecondary,
-        borderRadius: BorderRadius.circular(10),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.border),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
+          isDense: true,
+          dropdownColor: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          elevation: 4,
+          style: AppTextStyles.tableCell(context),
           value: value,
           isExpanded: true,
           hint: Text(
             '선택하세요',
-            style: AppTextStyles.inputLabel(context).copyWith(
-              color: AppColors.textDisabled,
-            ),
+            style: AppTextStyles.tableCell(context, color: AppColors.textDisabled),
           ),
           icon: Icon(
             Icons.arrow_drop_down,
-            color: enabled ? AppColors.primary : AppColors.textDisabled,
+            size: 18,
+            color: enabled ? AppColors.textTertiary : AppColors.textDisabled,
           ),
           items: [
             DropdownMenuItem(
               value: 'single',
-              child: Text(
-                '단일 발주',
-                style: AppTextStyles.inputLabel(context).copyWith(
-                  color: AppColors.textPrimary,
-                ),
-              ),
+              child: Text('단일 발주', style: AppTextStyles.tableCell(context)),
             ),
             DropdownMenuItem(
               value: 'multi',
-              child: Text(
-                '다중 발주',
-                style: AppTextStyles.inputLabel(context).copyWith(
-                  color: AppColors.textPrimary,
-                ),
-              ),
+              child: Text('다중 발주', style: AppTextStyles.tableCell(context)),
             ),
           ],
           onChanged: enabled ? onChanged : null,
@@ -493,28 +466,30 @@ class _TransactionStatementScreenState
   }) {
     return InkWell(
       onTap: enabled ? onTap : null,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
-          color: AppColors.backgroundSecondary,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.border),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: value != null ? AppColors.primary : AppColors.border,
+          ),
         ),
         child: Row(
           children: [
             Icon(
               Icons.calendar_today,
-              size: 18,
-              color: value != null ? AppColors.primary : AppColors.textDisabled,
+              size: 14,
+              color: value != null ? AppColors.primary : AppColors.textTertiary,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             Expanded(
               child: Text(
-                value != null
-                    ? _dateFormat.format(value)
-                    : '날짜를 선택하세요',
-                style: AppTextStyles.inputLabel(context).copyWith(
+                value != null ? _dateFormat.format(value) : '날짜 선택',
+                style: AppTextStyles.tableCell(
+                  context,
                   color: value != null
                       ? AppColors.textPrimary
                       : AppColors.textDisabled,
@@ -528,143 +503,19 @@ class _TransactionStatementScreenState
   }
 
   /// 앱 디자인에 맞는 커스텀 날짜 선택 다이얼로그
+  /// 실입고일 선택 — 전역 datePickerTheme 을 그대로 사용 (개별 테마/버튼 없음)
   Future<DateTime?> _showStyledDatePicker({
     required BuildContext context,
     required DateTime initialDate,
-  }) async {
-    DateTime tempDate = initialDate;
-    return showDialog<DateTime>(
+  }) {
+    return showDatePicker(
       context: context,
-      barrierDismissible: false,
-      builder: (dialogCtx) {
-        return StatefulBuilder(
-          builder: (dialogCtx, setPickerState) {
-            return AlertDialog(
-              backgroundColor: Colors.white,
-              titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              contentPadding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-              actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              title: Text(
-                '실입고일 선택',
-                style: AppTextStyles.sectionSubtitle(dialogCtx),
-              ),
-              content: SizedBox(
-                width: 320,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // 선택된 날짜 표시
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 10,
-                      ),
-                      margin: const EdgeInsets.only(
-                        left: 4, right: 4, bottom: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.calendar_today,
-                            size: 16,
-                            color: AppColors.primary,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            _dateFormat.format(tempDate),
-                            style: AppTextStyles.listTitle(dialogCtx).copyWith(
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // 달력
-                    Theme(
-                      data: Theme.of(dialogCtx).copyWith(
-                        colorScheme: ColorScheme.light(
-                          primary: AppColors.primary,
-                          onPrimary: Colors.white,
-                          surface: Colors.white,
-                          onSurface: AppColors.textPrimary,
-                        ),
-                        textButtonTheme: TextButtonThemeData(
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppColors.primary,
-                          ),
-                        ),
-                      ),
-                      child: SizedBox(
-                        height: 320,
-                        child: CalendarDatePicker(
-                          initialDate: tempDate,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime(2100),
-                          onDateChanged: (picked) {
-                            setPickerState(() => tempDate = picked);
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(dialogCtx),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(
-                            color: AppColors.border,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        child: Text(
-                          '취소',
-                          style: AppTextStyles.inputLabel(dialogCtx).copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.pop(dialogCtx, tempDate),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        child: Text(
-                          '선택',
-                          style: AppTextStyles.inputLabel(dialogCtx).copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            );
-          },
-        );
-      },
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
+      initialDate: initialDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      locale: const Locale('ko', 'KR'),
+      helpText: '실입고일 선택',
     );
   }
 
@@ -837,12 +688,12 @@ class _TransactionStatementScreenState
           width: double.infinity,
           height: 180,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
             color: AppColors.backgroundPrimary,
             border: Border.all(color: AppColors.border),
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
             child: LayoutBuilder(
               builder: (context, constraints) {
                 return SingleChildScrollView(

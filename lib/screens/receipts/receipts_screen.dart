@@ -332,28 +332,42 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          clipBehavior: Clip.antiAlias,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
                   children: [
-                    Text(
-                      '영수증 확인',
-                      style: AppTextStyles.sectionSubtitle(context),
+                    Expanded(
+                      child: Text(
+                        '영수증 확인',
+                        style: AppTextStyles.appBarTitle(context),
+                      ),
                     ),
-                    const Spacer(),
-                    IconButton(
-                      onPressed: isUploading ? null : () => Navigator.pop(context),
-                      icon: const Icon(Icons.close, color: AppColors.textDisabled),
-                      tooltip: '닫기',
+                    InkWell(
+                      onTap: isUploading ? null : () => Navigator.pop(context),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.backgroundSecondary,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.close_rounded,
+                          size: 18,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 _buildImagePreview(
                   selectedFiles,
                   memoController,
@@ -378,18 +392,10 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                               },
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: AppColors.border),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          foregroundColor: AppColors.textSecondary,
+                          minimumSize: const Size(0, 40),
                         ),
-                        child: Text(
-                          '다시 선택',
-                          style: AppTextStyles.inputLabel(context).copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
+                        child: const Text('다시 선택'),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -416,11 +422,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                                 }
                               },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          minimumSize: const Size(0, 40),
                         ),
                         child: isUploading
                             ? const SizedBox(
@@ -431,13 +433,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                                   color: Colors.white,
                                 ),
                               )
-                            : Text(
-                                '업로드',
-                                style: AppTextStyles.inputLabel(context).copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
+                            : const Text('업로드'),
                       ),
                     ),
                   ],
@@ -467,7 +463,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
           width: double.infinity,
           height: 200,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
             color: AppColors.backgroundPrimary,
             border: Border.all(color: AppColors.border),
           ),
@@ -480,7 +476,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                 )
               : isMulti
                   ? ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(8),
                       child: GridView.builder(
                         padding: const EdgeInsets.all(8),
                         physics: const BouncingScrollPhysics(),
@@ -530,7 +526,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                       ),
                     )
                   : ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(8),
                       child: LayoutBuilder(
                         builder: (context, constraints) {
                           return SingleChildScrollView(
@@ -549,41 +545,22 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
           const SizedBox(height: 8),
           Text(
             '총 ${imageFiles.length}장 선택됨',
-            style: AppTextStyles.sectionHeader(context).copyWith(
-              fontSize: ResponsiveUtils.fontSize(context, 12),
-            ),
+            style: AppTextStyles.listSubtitle(context),
           ),
         ],
         const SizedBox(height: 12),
         
         // 메모 입력
-        Text(
-          '메모 (선택사항)',
-          style: AppTextStyles.sectionHeader(context).copyWith(
-            fontSize: ResponsiveUtils.fontSize(context, 12),
-          ),
-        ),
-        const SizedBox(height: 8),
+        Text('메모 (선택사항)', style: AppTextStyles.listSubtitle(context)),
+        const SizedBox(height: 6),
         TextField(
           controller: memoController,
           maxLines: 3,
           maxLength: 200,
-          decoration: InputDecoration(
+          style: AppTextStyles.cardBody(context),
+          decoration: const InputDecoration(
             hintText: '영수증에 대한 메모를 입력하세요',
-            hintStyle: AppTextStyles.compactLabel(context).copyWith(
-              fontSize: ResponsiveUtils.fontSize(context, 12),
-              fontWeight: FontWeight.w400,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: AppColors.border),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.primary),
-            ),
             counterText: '',
-            contentPadding: const EdgeInsets.all(12),
           ),
         ),
         if (isUploading) ...[
@@ -596,13 +573,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
               const SizedBox(width: 8),
-              Text(
-                '업로드 중...',
-                style: AppTextStyles.compactLabel(context).copyWith(
-                  fontSize: ResponsiveUtils.fontSize(context, 12),
-                  color: AppColors.textSecondary,
-                ),
-              ),
+              Text('업로드 중...', style: AppTextStyles.listSubtitle(context)),
             ],
           ),
         ],
