@@ -142,62 +142,49 @@ class _CalendarScreenState extends State<CalendarScreen>
                           ResponsiveUtils.spacing(context, 16),
                           ResponsiveUtils.spacing(context, 8),
                         ),
-                        child: Padding(
-                        padding: EdgeInsets.all(
-                          ResponsiveUtils.spacing(context, 16),
-                        ),
                         child: Column(
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.chevron_left,
-                                    size: ResponsiveUtils.iconSize(context, 28),
-                                    color: AppColors.textPrimary,
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
+                            FlatCardHeader(
+                              title:
+                                  '${_focusedMonth.year}년 ${_focusedMonth.month}월',
+                              icon: Icons.calendar_today,
+                              iconColor: AppColors.primary,
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _buildMonthArrow(
+                                    icon: Icons.chevron_left,
+                                    onTap: () => setState(() {
                                       _focusedMonth = DateTime(
                                         _focusedMonth.year,
                                         _focusedMonth.month - 1,
                                       );
-                                    });
-                                  },
-                                ),
-                                SizedBox(
-                                  width: ResponsiveUtils.spacing(context, 4),
-                                ),
-                                Text(
-                                  '${_focusedMonth.year}년 ${_focusedMonth.month}월',
-                                  style: AppTextStyles.sectionSubtitle(context).copyWith(
-                                    fontSize: ResponsiveUtils.fontSize(context, 18),
+                                    }),
                                   ),
-                                ),
-                                SizedBox(
-                                  width: ResponsiveUtils.spacing(context, 4),
-                                ),
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.chevron_right,
-                                    size: ResponsiveUtils.iconSize(context, 28),
-                                    color: AppColors.textPrimary,
+                                  SizedBox(
+                                    width: ResponsiveUtils.spacing(context, 4),
                                   ),
-                                  onPressed: () {
-                                    setState(() {
+                                  _buildMonthArrow(
+                                    icon: Icons.chevron_right,
+                                    onTap: () => setState(() {
                                       _focusedMonth = DateTime(
                                         _focusedMonth.year,
                                         _focusedMonth.month + 1,
                                       );
-                                    });
-                                  },
-                                ),
-                              ],
+                                    }),
+                                  ),
+                                ],
+                              ),
                             ),
-                            SizedBox(
-                              height: ResponsiveUtils.spacing(context, 8),
-                            ),
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(
+                                ResponsiveUtils.spacing(context, 8),
+                                ResponsiveUtils.spacing(context, 6),
+                                ResponsiveUtils.spacing(context, 8),
+                                ResponsiveUtils.spacing(context, 8),
+                              ),
+                              child: Column(
+                                children: [
                             Row(
                               children: ['일', '월', '화', '수', '목', '금', '토']
                                   .asMap()
@@ -238,7 +225,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                                         child: Container(
                                           height: ResponsiveUtils.spacing(
                                             context,
-                                            54,
+                                            44,
                                           ),
                                         ),
                                       );
@@ -270,26 +257,10 @@ class _CalendarScreenState extends State<CalendarScreen>
                                           margin: EdgeInsets.all(
                                             ResponsiveUtils.spacing(context, 2),
                                           ),
-                                          decoration: BoxDecoration(
-                                            color: isSelected
-                                                ? AppColors.primaryLight.withValues(alpha: 0.1)
-                                                : null,
-                                            border: isSelected
-                                                ? Border.all(
-                                                    color: AppColors.primaryLight,
-                                                    width: 1.5,
-                                                  )
-                                                : null,
-                                            borderRadius: BorderRadius.circular(
-                                              ResponsiveUtils.spacing(
-                                                context,
-                                                8,
-                                              ),
-                                            ),
-                                          ),
+                                          decoration: const BoxDecoration(),
                                           height: ResponsiveUtils.spacing(
                                             context,
-                                            54,
+                                            44,
                                           ),
                                           child: Column(
                                             mainAxisAlignment:
@@ -306,7 +277,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                                                   height:
                                                       ResponsiveUtils.spacing(
                                                         context,
-                                                        4,
+                                                        3,
                                                       ),
                                                   margin: EdgeInsets.only(
                                                     bottom:
@@ -336,7 +307,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                                                   height:
                                                       ResponsiveUtils.spacing(
                                                         context,
-                                                        4,
+                                                        3,
                                                       ),
                                                   margin: EdgeInsets.only(
                                                     bottom:
@@ -359,21 +330,39 @@ class _CalendarScreenState extends State<CalendarScreen>
                                               // 날짜 숫자 (공휴일은 빨간색)
                                               Column(
                                                 children: [
-                                                  Text(
-                                                    '${day.day}',
-                                                    style: AppTextStyles.tableCell(
-                                                      context,
-                                                      color:
-                                                          isHoliday ||
-                                                              day.weekday ==
-                                                                  7
-                                                          ? AppColors.sunday // 공휴일/일요일: 빨간색
-                                                          : day.weekday == 6
-                                                          ? AppColors.saturday // 토요일: 파란색
-                                                          : AppColors.weekday, // 평일: 검정색
-                                                    ).copyWith(
-                                                      fontSize: ResponsiveUtils.fontSize(context, 12),
-                                                      fontWeight: FontWeight.w500,
+                                                  // 선택일은 연차 신청 달력과 동일하게 primary 원형
+                                                  Container(
+                                                    width: ResponsiveUtils
+                                                        .spacing(context, 22),
+                                                    height: ResponsiveUtils
+                                                        .spacing(context, 22),
+                                                    alignment:
+                                                        Alignment.center,
+                                                    decoration: BoxDecoration(
+                                                      color: isSelected
+                                                          ? AppColors.primary
+                                                          : null,
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    child: Text(
+                                                      '${day.day}',
+                                                      style: AppTextStyles.tableCell(
+                                                        context,
+                                                        color: isSelected
+                                                            ? Colors.white
+                                                            : isHoliday ||
+                                                                    day.weekday ==
+                                                                        7
+                                                                ? AppColors.sunday
+                                                                : day.weekday == 6
+                                                                    ? AppColors.saturday
+                                                                    : AppColors.weekday,
+                                                      ).copyWith(
+                                                        fontSize: ResponsiveUtils
+                                                            .fontSize(context, 12),
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
                                                     ),
                                                   ),
                                                   // 공휴일 이름 표시 (작은 글씨)
@@ -418,20 +407,28 @@ class _CalendarScreenState extends State<CalendarScreen>
                                 _legendDot(AppColors.biztrip, '출장'),
                               ],
                             ),
+                                ],
+                              ),
+                            ),
                           ],
-                        ),
                         ),
                       ),
                       // 상세내역 (카드)
                       FlatCard(
                         child: Column(children: [
-                      FlatSectionHeader(
+                      FlatCardHeader(
                         title: _selectedDay != null
                             ? '${_selectedDay!.year}년 ${_selectedDay!.month}월 ${_selectedDay!.day}일'
                             : '${DateTime.now().year}년 ${DateTime.now().month}월 ${DateTime.now().day}일',
+                        icon: Icons.event_note,
+                        iconColor: AppColors.primary,
                         trailing: (_selectedDay != null &&
                                 provider.isHoliday(_selectedDay!))
-                            ? provider.getHolidayInfo(_selectedDay!)!['name']
+                            ? StatusChip(
+                                label: provider
+                                    .getHolidayInfo(_selectedDay!)!['name'],
+                                color: AppColors.error,
+                              )
                             : null,
                       ),
                       Column(
@@ -461,6 +458,27 @@ class _CalendarScreenState extends State<CalendarScreen>
                 ),
         );
       },
+    );
+  }
+
+  /// 카드 헤더의 월 이동 화살표 (28x28, radius 8)
+  Widget _buildMonthArrow({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: ResponsiveUtils.spacing(context, 28),
+        height: ResponsiveUtils.spacing(context, 28),
+        alignment: Alignment.center,
+        child: Icon(
+          icon,
+          size: ResponsiveUtils.iconSize(context, 18),
+          color: AppColors.textSecondary,
+        ),
+      ),
     );
   }
 

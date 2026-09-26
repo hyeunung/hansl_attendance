@@ -11,6 +11,7 @@ import '../../theme/app_text_theme.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/responsive_utils.dart';
 import '../shared/flat_section.dart';
+import 'purchase_edit_sheets.dart';
 import '../../utils/user_role_helper.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 
@@ -2945,7 +2946,7 @@ return;
         'quantity': quantity,
         'unit_price_value': unitPrice,
         'amount_value': totalAmount,
-        'updated_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
       }).eq('id', itemId);
 
       if (mounted) {
@@ -3016,379 +3017,29 @@ return;
     }
   }
 
-  // 수정 다이얼로그
-  void _showEditDialog(dynamic item) {
+  // 수정 바텀시트
+  void _showEditDialog(PurchaseRequest item) {
     if (!_isAppAdmin()) {
       AppBanner.show(context, '권한이 없습니다. 관리자만 수정 가능합니다.', type: BannerType.warning);
       return;
     }
 
-    final TextEditingController itemNameController = 
-        TextEditingController(text: item.itemName);
-    final TextEditingController specificationController = 
-        TextEditingController(text: item.specification);
-    final TextEditingController quantityController = 
-        TextEditingController(text: item.quantity.toString());
-    final TextEditingController unitPriceController = 
-        TextEditingController(text: item.unitPriceValue.toString());
-
-    showDialog(
+    showPurchaseItemEditSheet(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => Dialog(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        child: Container(
-          width: ResponsiveUtils.spacing(context, 400),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-            border: Border.all(color: AppColors.borderLight, width: 0.5),
-            boxShadow: AppShadows.strongShadow,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 헤더 영역
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 24)),
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(ResponsiveUtils.spacing(context, 12)),
-                    topRight: Radius.circular(ResponsiveUtils.spacing(context, 12)),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 8)),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 10)),
-                      ),
-                      child: Icon(
-                        Icons.edit_outlined,
-                        color: Colors.white,
-                        size: ResponsiveUtils.iconSize(context, 24),
-                      ),
-                    ),
-                    SizedBox(width: ResponsiveUtils.spacing(context, 12)),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '품목 수정',
-                            style: AppTextStyles.sectionTitle(context).copyWith(
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(height: ResponsiveUtils.spacing(context, 2)),
-                          Text(
-                            '품목 정보를 수정합니다',
-                            style: AppTextStyles.emptyState(context).copyWith(
-                              color: Colors.white.withValues(alpha: 0.9),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: Icon(
-                        Icons.close,
-                        color: Colors.white,
-                        size: ResponsiveUtils.iconSize(context, 24),
-                      ),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.white.withValues(alpha: 0.2),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // 폼 영역
-              Padding(
-                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 24)),
-                child: Column(
-                  children: [
-                    // 품목명
-                    _buildFormField(
-                      context: context,
-                      controller: itemNameController,
-                      label: '품목명',
-                      icon: Icons.inventory_2_outlined,
-                      hint: '품목명을 입력하세요',
-                      required: true,
-                    ),
-                    
-                    SizedBox(height: ResponsiveUtils.spacing(context, 20)),
-                    
-                    // 규격
-                    _buildFormField(
-                      context: context,
-                      controller: specificationController,
-                      label: '규격',
-                      icon: Icons.straighten_outlined,
-                      hint: '규격을 입력하세요',
-                    ),
-                    
-                    SizedBox(height: ResponsiveUtils.spacing(context, 20)),
-                    
-                    // 수량과 단가를 나란히 배치
-                    Row(
-                      children: [
-                        // 수량
-                        Expanded(
-                          child: _buildFormField(
-                            context: context,
-                            controller: quantityController,
-                            label: '수량',
-                            icon: Icons.numbers_outlined,
-                            hint: '수량',
-                            keyboardType: TextInputType.number,
-                            suffix: Text(
-                              '개',
-                              style: AppTextStyles.inputLabel(context).copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ),
-                        ),
-                        
-                        SizedBox(width: ResponsiveUtils.spacing(context, 16)),
-                        
-                        // 단가
-                        Expanded(
-                          child: _buildFormField(
-                            context: context,
-                            controller: unitPriceController,
-                            label: '단가',
-                            icon: Icons.attach_money_outlined,
-                            hint: '단가',
-                            keyboardType: CurrencyFormatter.keyboardType(item.currency),
-                            suffix: Text(
-                              CurrencyFormatter.unitLabel(item.currency),
-                              style: AppTextStyles.inputLabel(context).copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    
-                    SizedBox(height: ResponsiveUtils.spacing(context, 32)),
-                    
-                    // 버튼 영역
-                    Row(
-                      children: [
-                        // 취소 버튼
-                        Expanded(
-                          child: Container(
-                            height: ResponsiveUtils.spacing(context, 48),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: AppColors.gray300,
-                                width: 1.5,
-                              ),
-                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-                            ),
-                            child: TextButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              style: TextButton.styleFrom(
-                                foregroundColor: AppColors.gray700,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-                                ),
-                              ),
-                              child: Text(
-                                '취소',
-                                style: AppTextStyles.sectionSubtitle(context),
-                              ),
-                            ),
-                          ),
-                        ),
-                        
-                        SizedBox(width: ResponsiveUtils.spacing(context, 12)),
-                        
-                        // 수정 버튼
-                        Expanded(
-                          child: Container(
-                            height: ResponsiveUtils.spacing(context, 48),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-                              boxShadow: AppShadows.smShadow,
-                            ),
-                            child: ElevatedButton(
-                              onPressed: () async {
-                                final itemName = itemNameController.text.trim();
-                                final specification = specificationController.text.trim();
-                                final quantity = int.tryParse(quantityController.text) ?? 0;
-                                final unitPrice = double.tryParse(unitPriceController.text) ?? 0.0;
-
-                                if (itemName.isEmpty) {
-                                  AppBanner.show(context, '품목명을 입력하세요', type: BannerType.error);
-                                  return;
-                                }
-
-                                if (quantity <= 0) {
-                                  AppBanner.show(context, '올바른 수량을 입력하세요', type: BannerType.error);
-                                  return;
-                                }
-
-                                if (unitPrice < 0) {
-                                  AppBanner.show(context, '올바른 단가를 입력하세요', type: BannerType.error);
-                                  return;
-                                }
-
-                                Navigator.of(context).pop();
-                                await _updatePurchaseItem(
-                                  itemId: item.id,
-                                  itemName: itemName,
-                                  specification: specification,
-                                  quantity: quantity,
-                                  unitPrice: unitPrice,
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                foregroundColor: Colors.white,
-                                shadowColor: Colors.transparent,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.save_outlined,
-                                    size: ResponsiveUtils.iconSize(context, 18),
-                                  ),
-                                  SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                                  Text(
-                                    '수정 완료',
-                                    style: AppTextStyles.sectionSubtitle(context),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+      item: item,
+      onSave: ({
+        required String itemName,
+        required String specification,
+        required int quantity,
+        required double unitPrice,
+      }) =>
+          _updatePurchaseItem(
+        itemId: item.id,
+        itemName: itemName,
+        specification: specification,
+        quantity: quantity,
+        unitPrice: unitPrice,
       ),
-    );
-  }
-
-  // 폼 필드 빌더 헬퍼 메서드
-  Widget _buildFormField({
-    required BuildContext context,
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    String? hint,
-    bool required = false,
-    TextInputType? keyboardType,
-    Widget? suffix,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(
-              icon,
-              size: ResponsiveUtils.iconSize(context, 18),
-              color: AppColors.primary,
-            ),
-            SizedBox(width: ResponsiveUtils.spacing(context, 6)),
-            Text(
-              label,
-              style: AppTextStyles.inputLabel(context).copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppColors.gray700,
-              ),
-            ),
-            if (required)
-              Text(
-                ' *',
-                style: AppTextStyles.emptyState(context).copyWith(
-                  color: AppColors.error,
-                ),
-              ),
-          ],
-        ),
-        SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.gray50,
-            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-            border: Border.all(
-              color: AppColors.gray200,
-              width: 1.5,
-            ),
-          ),
-          child: TextField(
-            controller: controller,
-            keyboardType: keyboardType,
-            style: AppTextStyles.sectionSubtitle(context).copyWith(
-              fontWeight: FontWeight.w400,
-              color: AppColors.gray800,
-            ),
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: AppTextStyles.sectionSubtitle(context).copyWith(
-                fontWeight: FontWeight.w400,
-                color: AppColors.gray400,
-              ),
-              suffixIcon: suffix != null
-                  ? Padding(
-                      padding: EdgeInsets.only(right: ResponsiveUtils.spacing(context, 12)),
-                      child: suffix,
-                    )
-                  : null,
-              suffixIconConstraints: BoxConstraints(
-                minWidth: 0,
-                minHeight: 0,
-              ),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: ResponsiveUtils.spacing(context, 16),
-                vertical: ResponsiveUtils.spacing(context, 16),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-                borderSide: BorderSide(
-                  color: AppColors.primary,
-                  width: 2,
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-                borderSide: BorderSide(
-                  color: Colors.transparent,
-                  width: 2,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 

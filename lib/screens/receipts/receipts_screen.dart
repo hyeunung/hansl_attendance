@@ -750,19 +750,42 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                     if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
                   },
                   child: ListView.builder(
+                    // 하단 업로드 버튼이 마지막 행(합계)을 가리지 않도록 여백 확보
+                    padding: EdgeInsets.fromLTRB(
+                      0,
+                      ResponsiveUtils.spacing(context, 12),
+                      0,
+                      ResponsiveUtils.spacing(context, 72),
+                    ),
                     itemCount: _receipts.length + 2, // header + table header + items
                     itemBuilder: (context, index) {
                       if (index == 0) {
-                        return FlatSectionHeader(
-                          title: '${DateTime.now().year}',
-                          trailing: '${_receipts.length}건',
+                        return _buildCardEdge(
+                          isFirst: true,
+                          isLast: false,
+                          child: FlatCardHeader(
+                            title: '${DateTime.now().year}년 영수증',
+                            icon: Icons.receipt_long_outlined,
+                            iconColor: AppColors.primary,
+                            trailing: Text(
+                              '${_receipts.length}건',
+                              style: AppTextStyles.listSubtitle(context),
+                            ),
+                          ),
                         );
                       }
                       if (index == 1) {
-                        return _buildTableHeader();
+                        return _buildCardEdge(
+                          isFirst: false,
+                          isLast: false,
+                          child: _buildTableHeader(),
+                        );
                       }
-                      final receipt = _receipts[index - 2];
-                      return _buildReceiptCard(receipt, index - 2);
+                      return _buildCardEdge(
+                        isFirst: false,
+                        isLast: index == _receipts.length + 1,
+                        child: _buildReceiptCard(_receipts[index - 2], index - 2),
+                      );
                     },
                   ),
                 ),
@@ -776,12 +799,45 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
     );
   }
 
+  /// 리스트 항목을 카드처럼 보이게 감싸는 테두리 조각
+  /// (영수증이 1,000건 이상이라 카드를 통째로 그리지 않고 지연 렌더링 유지)
+  Widget _buildCardEdge({
+    required bool isFirst,
+    required bool isLast,
+    required Widget child,
+  }) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsiveUtils.spacing(context, 16),
+      ),
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            top: isFirst
+                ? const BorderSide(color: AppColors.border)
+                : BorderSide.none,
+            left: const BorderSide(color: AppColors.border),
+            right: const BorderSide(color: AppColors.border),
+            bottom: const BorderSide(color: AppColors.border),
+          ),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(isFirst ? 10 : 0),
+            bottom: Radius.circular(isLast ? 10 : 0),
+          ),
+        ),
+        child: child,
+      ),
+    );
+  }
+
   /// 테이블 헤더 (업로드일 | 결제일 | 거래처 | 품명 | 합계)
   Widget _buildTableHeader() {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: ResponsiveUtils.spacing(context, 16),
-        vertical: ResponsiveUtils.spacing(context, 10),
+        horizontal: ResponsiveUtils.spacing(context, 14),
+        vertical: ResponsiveUtils.spacing(context, 6),
       ),
       decoration: const BoxDecoration(
         color: AppColors.backgroundSecondary,
@@ -878,8 +934,8 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
         onTap: () => _viewReceipt(receipt),
         child: Container(
           padding: EdgeInsets.symmetric(
-            horizontal: ResponsiveUtils.spacing(context, 16),
-            vertical: ResponsiveUtils.spacing(context, 12),
+            horizontal: ResponsiveUtils.spacing(context, 14),
+            vertical: ResponsiveUtils.spacing(context, 7),
           ),
           decoration: const BoxDecoration(
             border: Border(
@@ -913,7 +969,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                 flex: 2,
                 child: Text(
                   merchant,
-                  style: AppTextStyles.listTitle(context),
+                  style: AppTextStyles.tableCell(context),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

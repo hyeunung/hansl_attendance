@@ -612,12 +612,31 @@ final roles = UserRoleHelper.getRoles(employee);
       BottomNavigationBarItem(
         icon: Padding(
           padding: const EdgeInsets.symmetric(vertical: 2),
-          child: Icon(
-            Icons.beach_access,
-            color: _currentIndex == 1 ? AppColors.primary : AppColors.gray400,
-          ),
+          child: Builder(builder: (context) {
+            final color =
+                _currentIndex == 1 ? AppColors.primary : AppColors.gray400;
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.beach_access, color: color, size: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 1),
+                  child: Text(
+                    '/',
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      height: 1,
+                    ),
+                  ),
+                ),
+                Icon(Icons.flight, color: color, size: 20),
+              ],
+            );
+          }),
         ),
-        label: '휴가',
+        label: '휴가/출장',
       ),
     );
 

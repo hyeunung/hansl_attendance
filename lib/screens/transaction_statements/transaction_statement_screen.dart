@@ -1064,13 +1064,35 @@ class _TransactionStatementScreenState
                     if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
                   },
                   child: ListView.builder(
+                    // 하단 업로드 버튼이 마지막 행을 가리지 않도록 여백 확보
+                    padding: EdgeInsets.fromLTRB(
+                      0,
+                      ResponsiveUtils.spacing(context, 12),
+                      0,
+                      ResponsiveUtils.spacing(context, 72),
+                    ),
                     itemCount: _statements.length + 1,
                     itemBuilder: (context, index) {
                       if (index == 0) {
-                        return const FlatSectionHeader(title: '업로드 목록');
+                        return _buildCardEdge(
+                          isFirst: true,
+                          isLast: false,
+                          child: FlatCardHeader(
+                            title: '업로드 목록',
+                            icon: Icons.description_outlined,
+                            iconColor: AppColors.primary,
+                            trailing: Text(
+                              '${_statements.length}건',
+                              style: AppTextStyles.listSubtitle(context),
+                            ),
+                          ),
+                        );
                       }
-                      final statement = _statements[index - 1];
-                      return _buildStatementRow(statement);
+                      return _buildCardEdge(
+                        isFirst: false,
+                        isLast: index == _statements.length,
+                        child: _buildStatementRow(_statements[index - 1]),
+                      );
                     },
                   ),
                 ),
@@ -1105,6 +1127,39 @@ class _TransactionStatementScreenState
     );
   }
 
+  /// 리스트 항목을 카드처럼 보이게 감싸는 테두리 조각
+  /// (명세서가 많아 카드를 통째로 그리지 않고 지연 렌더링을 유지한다)
+  Widget _buildCardEdge({
+    required bool isFirst,
+    required bool isLast,
+    required Widget child,
+  }) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsiveUtils.spacing(context, 16),
+      ),
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            top: isFirst
+                ? const BorderSide(color: AppColors.border)
+                : BorderSide.none,
+            left: const BorderSide(color: AppColors.border),
+            right: const BorderSide(color: AppColors.border),
+            bottom: const BorderSide(color: AppColors.border),
+          ),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(isFirst ? 10 : 0),
+            bottom: Radius.circular(isLast ? 10 : 0),
+          ),
+        ),
+        child: child,
+      ),
+    );
+  }
+
   Widget _buildStatementRow(TransactionStatementSummary statement) {
     final statusStyle = _statusStyle(statement.status);
     final modeStyle = _modeStyle(statement.statementMode);
@@ -1113,69 +1168,54 @@ class _TransactionStatementScreenState
     final grandTotal = _formatAmount(statement.grandTotal);
     final uploaderName = statement.uploaderName ?? '-';
 
-    return Material(
-      color: Colors.white,
-      child: InkWell(
+    return InkWell(
       onTap: () => _viewStatement(statement),
       child: Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: ResponsiveUtils.spacing(context, 16),
-        vertical: ResponsiveUtils.spacing(context, 8),
-      ),
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
+        padding: EdgeInsets.symmetric(
+          horizontal: ResponsiveUtils.spacing(context, 14),
+          vertical: ResponsiveUtils.spacing(context, 8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1행: 거래처명 + 금액
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    vendorName,
+                    style: AppTextStyles.tableCell(context),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                Text(grandTotal, style: AppTextStyles.tableCell(context)),
+              ],
+            ),
+            SizedBox(height: ResponsiveUtils.spacing(context, 3)),
+            // 2행: 구분/상태 배지 + 등록자·업로드일
+            Row(
+              children: [
+                StatusChip(
+                  label: modeStyle.label,
+                  color: modeStyle.foregroundColor,
+                ),
+                SizedBox(width: ResponsiveUtils.spacing(context, 4)),
+                StatusChip(
+                  label: statusStyle.label,
+                  color: statusStyle.foregroundColor,
+                ),
+                const Spacer(),
+                Text(
+                  '$uploaderName · $uploadedAt',
+                  style: AppTextStyles.listSubtitle(context),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 상단: 뱃지 행
-          Row(
-            children: [
-              StatusChip(
-                label: modeStyle.label,
-                color: modeStyle.foregroundColor,
-              ),
-              const SizedBox(width: 6),
-              StatusChip(
-                label: statusStyle.label,
-                color: statusStyle.foregroundColor,
-              ),
-              const Spacer(),
-              Text(
-                uploadedAt,
-                style: AppTextStyles.listSubtitle(context),
-              ),
-            ],
-          ),
-          const SizedBox(height: 5),
-          // 거래처명
-          Text(
-            vendorName,
-            style: AppTextStyles.listTitle(context),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 3),
-          // 하단: 금액 + 등록자
-          Row(
-            children: [
-              Text(
-                grandTotal,
-                style: AppTextStyles.tableCell(context),
-              ),
-              const Spacer(),
-              Text(
-                uploaderName,
-                style: AppTextStyles.tableCellSub(context),
-              ),
-            ],
-          ),
-        ],
-      ),
-    ),
-    ),
     );
   }
 
