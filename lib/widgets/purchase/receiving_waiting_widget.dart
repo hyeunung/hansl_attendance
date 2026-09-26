@@ -16,7 +16,10 @@ import 'package:intl/intl.dart';
 
 // 입고대기 위젯
 class ReceivingWaitingWidget extends StatefulWidget {
-  const ReceivingWaitingWidget({super.key});
+  const ReceivingWaitingWidget({super.key, this.initialSearchQuery});
+
+  final String? initialSearchQuery; // 알림에서 진입 시 해당 발주번호로 검색된 상태로 표시
+
 
   @override
   State<ReceivingWaitingWidget> createState() => _ReceivingWaitingWidgetState();
@@ -54,6 +57,11 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
     super.initState();
     _initializeFilters();
     _searchController.addListener(_onSearchChanged);
+    final initialQuery = widget.initialSearchQuery;
+    if (initialQuery != null && initialQuery.isNotEmpty) {
+      _searchController.text = initialQuery;
+      _expandedOrders[initialQuery] = true;
+    }
   }
 
   // 품목 입고 입력 다이얼로그 (입고일/실입고수량/비고)

@@ -15,7 +15,10 @@ import '../../utils/user_role_helper.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 
 class PurchaseApprovalWidget extends StatefulWidget {
-  const PurchaseApprovalWidget({super.key});
+  const PurchaseApprovalWidget({super.key, this.initialSearchQuery});
+
+  final String? initialSearchQuery; // 알림에서 진입 시 해당 발주번호로 검색된 상태로 표시
+
 
   @override
   State<PurchaseApprovalWidget> createState() => _PurchaseApprovalWidgetState();
@@ -48,6 +51,7 @@ class _PurchaseApprovalWidgetState extends State<PurchaseApprovalWidget>
         _searchQuery = _searchController.text;
       });
     });
+    _searchController.text = widget.initialSearchQuery ?? '';
 
     // 탭 변경 리스너 추가
     _tabController.addListener(() {

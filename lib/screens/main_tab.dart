@@ -52,6 +52,7 @@ class MainTab extends StatefulWidget {
   final int initialIndex;
   final Map<String, dynamic>? initialEmployee;
   final int? approvalSubTab; // 승인관리 화면의 서브탭 (0: 연차/출장, 1: 발주승인)
+  final String? approvalSearchQuery; // 승인관리 발주 탭 초기 검색어 (알림 진입 시 발주번호)
 
   // initialIndex를 안전하게 제한
   const MainTab({
@@ -59,6 +60,7 @@ class MainTab extends StatefulWidget {
     int initialIndex = 0,
     this.initialEmployee,
     this.approvalSubTab,
+    this.approvalSearchQuery,
   }) : initialIndex = (initialIndex < 0
            ? 0
            : (initialIndex > 6 ? 0 : initialIndex));
@@ -449,7 +451,7 @@ final roles = UserRoleHelper.getRoles(employee);
         _screens = [
           const AttendanceScreenRouter(), // 근무기록
           const LeaveStatusScreen(), // 연차/출장
-          const ApprovalScreen(), // 대시보드(승인관리)
+          ApprovalScreen(initialSearchQuery: widget.approvalSearchQuery), // 대시보드(승인관리)
           const TransactionStatementScreen(), // 거래명세서
           const CalendarScreen(), // 달력
           const SettingsScreen(), // 설정
@@ -459,7 +461,9 @@ final roles = UserRoleHelper.getRoles(employee);
         _screens = [
           const AttendanceScreenRouter(), // 출석
           const LeaveStatusScreen(), // 연차/출장신청
-          showApprovalTab ? ApprovalScreen(initialMainTab: widget.approvalSubTab) : const ApprovalScreen(), // 승인관리
+          showApprovalTab
+              ? ApprovalScreen(initialMainTab: widget.approvalSubTab, initialSearchQuery: widget.approvalSearchQuery)
+              : ApprovalScreen(initialSearchQuery: widget.approvalSearchQuery), // 승인관리
           const TransactionStatementScreen(), // 거래명세서
           const ReceiptsScreen(), // 영수증 관리
           const CalendarScreen(), // 달력
@@ -470,7 +474,7 @@ final roles = UserRoleHelper.getRoles(employee);
         _screens = [
           const AttendanceScreenRouter(), // 출석
           const LeaveStatusScreen(), // 연차/출장신청
-          const ApprovalScreen(), // 승인관리 (lead buyer는 구매대기와 입고대기 탭만 표시)
+          ApprovalScreen(initialSearchQuery: widget.approvalSearchQuery), // 승인관리 (lead buyer는 구매대기와 입고대기 탭만 표시)
           const TransactionStatementScreen(), // 거래명세서
           const CalendarScreen(), // 달력
           const SettingsScreen(), // 설정
@@ -480,7 +484,7 @@ final roles = UserRoleHelper.getRoles(employee);
         _screens = [
           const AttendanceScreenRouter(), // 출석
           const LeaveStatusScreen(), // 연차/출장신청
-          ApprovalScreen(initialMainTab: widget.approvalSubTab), // 승인관리 (입고현황 포함)
+          ApprovalScreen(initialMainTab: widget.approvalSubTab, initialSearchQuery: widget.approvalSearchQuery), // 승인관리 (입고현황 포함)
           const TransactionStatementScreen(), // 거래명세서
           const CalendarScreen(), // 달력
           const SettingsScreen(), // 설정
@@ -490,7 +494,7 @@ final roles = UserRoleHelper.getRoles(employee);
         _screens = [
           const AttendanceScreenRouter(), // 출석
           const LeaveStatusScreen(), // 연차/출장신청
-          const ApprovalScreen(), // 입고현황 (일반 직원은 입고대기 탭만 표시)
+          ApprovalScreen(initialSearchQuery: widget.approvalSearchQuery), // 입고현황 (일반 직원은 입고대기 탭만 표시)
           const TransactionStatementScreen(), // 거래명세서
           const CalendarScreen(), // 달력
           const SettingsScreen(), // 설정

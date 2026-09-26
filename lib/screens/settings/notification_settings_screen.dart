@@ -156,17 +156,9 @@ class _NotificationSettingsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundSecondary,
+      backgroundColor: AppColors.backgroundPrimary,
       appBar: AppBar(
-        title: Text(
-          '푸시 알림',
-          style: ResponsiveUtils.getTextStyle(
-            context,
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
+        title: Text('푸시 알림', style: AppTextStyles.appBarTitle(context)),
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
         elevation: 0,
@@ -175,17 +167,32 @@ class _NotificationSettingsScreenState
       body: _isLoading
           ? const Center(child: CupertinoActivityIndicator())
           : ListView(
+              padding: EdgeInsets.symmetric(
+                vertical: ResponsiveUtils.spacing(context, 12),
+              ),
               children: [
-                FlatSectionHeader(
-                  title: '제작현황',
-                  icon: Icons.factory_outlined,
-                  iconColor: AppColors.primary,
+                FlatCard(
+                  child: Column(
+                    children: [
+                      FlatCardHeader(
+                        title: '제작현황',
+                        icon: Icons.factory_outlined,
+                        iconColor: AppColors.primary,
+                        trailing: StatusChip(
+                          label: '$_enabledCount/${_productionItems.length}',
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      for (final item in _productionItems) _buildToggleRow(item),
+                    ],
+                  ),
                 ),
-                for (final item in _productionItems) _buildToggleRow(item),
                 Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: ResponsiveUtils.spacing(context, 16),
-                    vertical: ResponsiveUtils.spacing(context, 12),
+                  padding: EdgeInsets.fromLTRB(
+                    ResponsiveUtils.spacing(context, 16),
+                    ResponsiveUtils.spacing(context, 4),
+                    ResponsiveUtils.spacing(context, 16),
+                    ResponsiveUtils.spacing(context, 12),
                   ),
                   child: Text(
                     '끄면 해당 항목의 푸시 알림과 알림함 기록을 받지 않습니다.',
@@ -197,15 +204,18 @@ class _NotificationSettingsScreenState
     );
   }
 
+  /// 수신 중인 항목 수 (헤더 배지용)
+  int get _enabledCount =>
+      _productionItems.where((item) => _isEnabled(item.key)).length;
+
   Widget _buildToggleRow(_ProductionNotifyItem item) {
     final enabled = _isEnabled(item.key);
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: ResponsiveUtils.spacing(context, 16),
-        vertical: ResponsiveUtils.spacing(context, 10),
+        horizontal: ResponsiveUtils.spacing(context, 14),
+        vertical: ResponsiveUtils.spacing(context, 8),
       ),
       decoration: const BoxDecoration(
-        color: Colors.white,
         border: Border(
           bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
         ),
@@ -216,7 +226,7 @@ class _NotificationSettingsScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.label, style: AppTextStyles.listTitle(context)),
+                Text(item.label, style: AppTextStyles.tableCell(context)),
                 SizedBox(height: ResponsiveUtils.spacing(context, 2)),
                 Text(
                   item.description,
@@ -225,10 +235,15 @@ class _NotificationSettingsScreenState
               ],
             ),
           ),
-          CupertinoSwitch(
-            value: enabled,
-            activeTrackColor: AppColors.primary,
-            onChanged: (value) => _toggle(item.key, value),
+          SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+          // 기본 스위치(51x31)는 카드 행 높이에 비해 커서 축소해 사용
+          Transform.scale(
+            scale: 0.75,
+            child: CupertinoSwitch(
+              value: enabled,
+              activeTrackColor: AppColors.primary,
+              onChanged: (value) => _toggle(item.key, value),
+            ),
           ),
         ],
       ),

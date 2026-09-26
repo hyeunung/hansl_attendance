@@ -5,9 +5,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/inquiry_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
-import '../../theme/app_shadows.dart';
 import '../../utils/currency_formatter.dart';
 import '../../widgets/common/notification_banner_widget.dart';
+import '../../widgets/shared/flat_section.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -898,8 +898,8 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
     return Container(
       height: MediaQuery.of(context).size.height * 0.9,
       decoration: const BoxDecoration(
-        color: AppColors.backgroundSecondary,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        color: AppColors.backgroundPrimary,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -919,85 +919,60 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
 
           // 상단 헤더
           Container(
-            padding: const EdgeInsets.fromLTRB(20, 16, 12, 16),
+            padding: EdgeInsets.fromLTRB(16, 10, 10, 10),
             decoration: const BoxDecoration(
               color: Colors.white,
               border: Border(
-                bottom: BorderSide(
-                  color: AppColors.border,
-                  width: 0.5,
-                ),
+                bottom: BorderSide(color: AppColors.border, width: 0.5),
               ),
             ),
             child: Row(
               children: [
-                // 아이콘
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(7),
                   decoration: BoxDecoration(
-                    color: AppColors.info.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(10),
+                    color: AppColors.info.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     _getIconForType(_inquiry['inquiry_type'] ?? '기타'),
                     color: AppColors.info,
-                    size: 22,
+                    size: 16,
                   ),
                 ),
-                const SizedBox(width: 12),
-                
-                // 제목과 날짜
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '문의 상세',
-                        style: AppTextStyles.cardTitle(context),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        dateStr,
-                        style: AppTextStyles.listSubtitle(context),
-                      ),
+                      Text('문의 상세', style: AppTextStyles.appBarTitle(context)),
+                      const SizedBox(height: 1),
+                      Text(dateStr, style: AppTextStyles.listSubtitle(context)),
                     ],
                   ),
                 ),
-                
                 // 삭제 버튼 (권한 있을 때만)
                 FutureBuilder<Map<String, dynamic>>(
                   future: _inquiryService.canDeleteInquiry(_inquiry['id']),
                   builder: (context, snapshot) {
                     final canDelete = snapshot.data?['canDelete'] == true;
-                    
+
                     return Row(
                       children: [
                         if (canDelete) ...[
-                          Container(
-                            decoration: BoxDecoration(
-                              color: AppColors.error.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: IconButton(
-                              icon: const Icon(Icons.delete_outline_rounded, size: 20),
-                              color: AppColors.error,
-                              onPressed: () => _showDeleteConfirmation(context),
-                              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                            ),
+                          _buildHeaderIconButton(
+                            icon: Icons.delete_outline_rounded,
+                            color: AppColors.error,
+                            background: AppColors.error.withValues(alpha: 0.08),
+                            onTap: () => _showDeleteConfirmation(context),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
                         ],
-                        Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.borderLight,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: IconButton(
-                            icon: const Icon(Icons.close_rounded, size: 20),
-                            color: AppColors.gray700,
-                            onPressed: () => Navigator.pop(context),
-                            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                          ),
+                        _buildHeaderIconButton(
+                          icon: Icons.close_rounded,
+                          color: AppColors.textSecondary,
+                          background: AppColors.backgroundSecondary,
+                          onTap: () => Navigator.pop(context),
                         ),
                       ],
                     );
@@ -1011,265 +986,192 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
           Expanded(
             child: SingleChildScrollView(
               controller: _detailScrollController,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(vertical: 12),
               child: Column(
                 children: [
-                  // 상태 및 정보 카드
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: AppShadows.smShadow,
-                      border: Border.all(color: AppColors.borderLight, width: 0.5),
-                    ),
+                  // 상태 및 기본 정보
+                  FlatCard(
                     child: Column(
                       children: [
-                        // 상태 헤더
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                statusColor.withValues(alpha: 0.08),
-                                statusColor.withValues(alpha: 0.03),
-                              ],
-                            ),
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(16),
-                              topRight: Radius.circular(16),
-                            ),
-                          ),
-                          child: Row(
+                        FlatCardHeader(
+                          title: '문의 정보',
+                          icon: Icons.info_outline,
+                          iconColor: AppColors.primary,
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: statusColor.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      width: 8,
-                                      height: 8,
-                                      decoration: BoxDecoration(
-                                        color: statusColor,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      statusLabel,
-                                      style: AppTextStyles.inputLabel(context).copyWith(
-                                        fontWeight: FontWeight.w600,
-                                        color: statusColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Spacer(),
-                              if (widget.isAdmin && status == 'open')
-                                TextButton(
+                              if (widget.isAdmin && status == 'open') ...[
+                                OutlinedButton(
                                   onPressed: _markInProgress,
-                                  child: const Text('처리중'),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 4,
+                                    ),
+                                    minimumSize: const Size(0, 28),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                  child: Text(
+                                    '처리중으로',
+                                    style: AppTextStyles.compactLabel(context)
+                                        .copyWith(color: AppColors.primary),
+                                  ),
                                 ),
-                              Text(
-                                '#${_inquiry['id']}',
-                                style: AppTextStyles.listSubtitle(context),
+                                const SizedBox(width: 6),
+                              ],
+                              StatusChip(
+                                label: statusLabel,
+                                color: statusColor,
                               ),
                             ],
                           ),
                         ),
-                        
-                        // 정보 목록
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            children: [
-                              _buildInfoItem(
-                                icon: Icons.person_outline_rounded,
-                                label: '작성자',
-                                value: _inquiry['user_name'] ?? '알 수 없음',
-                              ),
-                              _buildInfoItem(
-                                icon: Icons.category_outlined,
-                                label: '문의 유형',
-                                value: InquiryService.getInquiryTypeLabel(
-                                  _inquiry['inquiry_type'],
-                                ),
-                              ),
-                              if (_inquiry['user_email'] != null &&
-                                  _inquiry['user_email'].toString().isNotEmpty)
-                                _buildInfoItem(
-                                  icon: Icons.email_outlined,
-                                  label: '이메일',
-                                  value: _inquiry['user_email'],
-                                  isLast: _inquiry['purchase_order_number'] == null ||
-                                      _inquiry['purchase_order_number'].toString().isEmpty,
-                                ),
-                              if (_inquiry['purchase_order_number'] != null &&
-                                  _inquiry['purchase_order_number'].toString().isNotEmpty)
-                                _buildInfoItem(
-                                  icon: Icons.receipt_long_outlined,
-                                  label: '발주번호',
-                                  value: _inquiry['purchase_order_number'].toString(),
-                                  isLast: true,
-                                ),
-                            ],
+                        FlatInfoRow(
+                          label: '작성자',
+                          value: _inquiry['user_name'] ?? '알 수 없음',
+                        ),
+                        FlatInfoRow(
+                          label: '문의 유형',
+                          value: InquiryService.getInquiryTypeLabel(
+                            _inquiry['inquiry_type'],
                           ),
+                        ),
+                        if (_inquiry['user_email'] != null &&
+                            _inquiry['user_email'].toString().isNotEmpty)
+                          FlatInfoRow(
+                            label: '이메일',
+                            value: _inquiry['user_email'],
+                          ),
+                        if (_inquiry['purchase_order_number'] != null &&
+                            _inquiry['purchase_order_number']
+                                .toString()
+                                .isNotEmpty)
+                          FlatInfoRow(
+                            label: '발주번호',
+                            value:
+                                _inquiry['purchase_order_number'].toString(),
+                          ),
+                        FlatInfoRow(
+                          label: '문의 번호',
+                          value: '#${_inquiry['id']}',
                         ),
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 16),
-
                   if ((_inquiry['purchase_request_id'] != null) ||
-                      ((_inquiry['purchase_order_number'] ?? '').toString().isNotEmpty))
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: _openPurchaseDetail,
-                        icon: const Icon(Icons.open_in_new),
-                        label: const Text('발주 상세 보기'),
+                      ((_inquiry['purchase_order_number'] ?? '')
+                          .toString()
+                          .isNotEmpty))
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _openPurchaseDetail,
+                          icon: const Icon(Icons.open_in_new, size: 16),
+                          label: const Text('발주 상세 보기'),
+                        ),
                       ),
                     ),
 
-                  // 제목 및 내용 카드
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: AppShadows.smShadow,
-                      border: Border.all(color: AppColors.borderLight, width: 0.5),
-                    ),
+                  // 문의 내용
+                  FlatCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 제목
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.title_rounded,
-                              size: 18,
-                              color: AppColors.info,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '제목',
-                              style: AppTextStyles.inputLabel(context),
-                            ),
-                          ],
+                        FlatCardHeader(
+                          title: '문의 내용',
+                          icon: Icons.message_outlined,
+                          iconColor: AppColors.primary,
                         ),
-                        const SizedBox(height: 10),
-                        Text(
-                          _inquiry['subject'] ?? '제목 없음',
-                          style: AppTextStyles.sectionSubtitle(context),
-                        ),
-
-                        Container(
-                          margin: const EdgeInsets.symmetric(vertical: 20),
-                          height: 1,
-                          color: AppColors.border,
-                        ),
-
-                        // 내용
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.message_outlined,
-                              size: 18,
-                              color: AppColors.info,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '문의 내용',
-                              style: AppTextStyles.inputLabel(context),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppColors.backgroundSecondary,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: AppColors.border,
-                              width: 0.5,
-                            ),
-                          ),
-                          child: Text(
-                            _inquiry['message'] ?? '내용 없음',
-                            style: AppTextStyles.cardBody(context).copyWith(
-                              height: 1.5,
-                            ),
-                          ),
-                        ),
-                        if (_inquiryAttachments.isNotEmpty) ...[
-                          const SizedBox(height: 16),
-                          Row(
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                Icons.image_outlined,
-                                size: 18,
-                                color: AppColors.info,
-                              ),
-                              const SizedBox(width: 8),
                               Text(
-                                '첨부 이미지',
-                                style: AppTextStyles.inputLabel(context),
+                                _inquiry['subject'] ?? '제목 없음',
+                                style: AppTextStyles.sectionHeader(context),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: _inquiryAttachments.map((attachment) {
-                              return GestureDetector(
-                                onTap: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (_) => Dialog(
-                                      insetPadding: const EdgeInsets.all(16),
-                                      child: Image.network(
-                                        attachment.url,
-                                        fit: BoxFit.contain,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: Image.network(
-                                    attachment.url,
-                                    width: 80,
-                                    height: 80,
-                                    fit: BoxFit.cover,
+                              const SizedBox(height: 8),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.backgroundSecondary,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: AppColors.borderLight,
                                   ),
                                 ),
-                              );
-                            }).toList(),
+                                child: Text(
+                                  _inquiry['message'] ?? '내용 없음',
+                                  style: AppTextStyles.cardBody(context)
+                                      .copyWith(height: 1.5),
+                                ),
+                              ),
+                              if (_inquiryAttachments.isNotEmpty) ...[
+                                const SizedBox(height: 12),
+                                Text(
+                                  '첨부 이미지 ${_inquiryAttachments.length}장',
+                                  style: AppTextStyles.listSubtitle(context),
+                                ),
+                                const SizedBox(height: 6),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children:
+                                      _inquiryAttachments.map((attachment) {
+                                    return GestureDetector(
+                                      onTap: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (_) => Dialog(
+                                            insetPadding:
+                                                const EdgeInsets.all(16),
+                                            child: Image.network(
+                                              attachment.url,
+                                              fit: BoxFit.contain,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      child: ClipRRect(
+                                        borderRadius:
+                                            BorderRadius.circular(8),
+                                        child: Image.network(
+                                          attachment.url,
+                                          width: 72,
+                                          height: 72,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            ],
                           ),
-                        ],
+                        ),
                       ],
                     ),
                   ),
 
                   // 채팅(대화) 섹션
-                    const SizedBox(height: 16),
-                  _buildChatPanel(statusLabel: statusLabel, statusColor: statusColor),
+                  _buildChatPanel(
+                    statusLabel: statusLabel,
+                    statusColor: statusColor,
+                  ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
                 ],
               ),
             ),
           ),
+
 
           _buildChatInputBar(isKeyboardVisible: isKeyboardVisible),
         ],
@@ -1278,86 +1180,77 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
     );
   }
 
+  /// 시트 헤더의 작은 아이콘 버튼 (32x32, radius 8)
+  Widget _buildHeaderIconButton({
+    required IconData icon,
+    required Color color,
+    required Color background,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: 32,
+        height: 32,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, size: 18, color: color),
+      ),
+    );
+  }
+
   Widget _buildChatPanel({
     required String statusLabel,
     required Color statusColor,
   }) {
-    return Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-        boxShadow: AppShadows.smShadow,
-                        border: Border.all(
-          color: statusColor.withValues(alpha: 0.18),
-                        ),
-                      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                const Icon(
-                  Icons.chat_bubble_outline_rounded,
-                                size: 18,
-                  color: AppColors.info,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                  '대화',
-                                style: AppTextStyles.listTitle(context).copyWith(
-                    fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
+    return FlatCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FlatCardHeader(
+            title: '대화',
+            icon: Icons.chat_bubble_outline_rounded,
+            iconColor: AppColors.primary,
+            trailing: StatusChip(label: statusLabel, color: statusColor),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 완료/종료 상태 안내는 입력창 placeholder로 충분하므로
+                // 여기(대화 상단)에 중복 안내 박스를 띄우지 않는다.
+                if (_isLoadingMessages)
+                  const Center(child: CupertinoActivityIndicator())
+                else if (_chatMessages.isEmpty)
+                  Text(
+                    '아직 대화가 없습니다.\n아래에서 메시지를 보내보세요.',
+                    style: AppTextStyles.listSubtitle(context)
+                        .copyWith(height: 1.35),
+                  )
+                else
+                  ListView.builder(
+                    shrinkWrap: true,
+                    padding: EdgeInsets.zero,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _chatMessages.length,
+                    itemBuilder: (context, index) {
+                      final m = _chatMessages[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: _buildChatMessageBubble(m),
+                      );
+                    },
                   ),
-                  child: Text(
-                    statusLabel,
-                                          style: AppTextStyles.tableHeader(context).copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: statusColor,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-            // 완료/종료 상태 안내는 입력창 placeholder로 충분하므로
-            // 여기(대화 상단)에 중복 안내 박스를 띄우지 않는다.
-            if (_isLoadingMessages) ...[
-              const SizedBox(height: 8),
-              const Center(child: CupertinoActivityIndicator()),
-            ] else if (_chatMessages.isEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                '아직 대화가 없습니다.\n아래에서 메시지를 보내보세요.',
-                style: AppTextStyles.listSubtitle(context).copyWith(
-                  height: 1.35,
-                ),
-              ),
-            ] else ...[
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _chatMessages.length,
-                itemBuilder: (context, index) {
-                  final m = _chatMessages[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _buildChatMessageBubble(m),
-                  );
-                },
-              ),
-            ],
-                        ],
-                      ),
-                    ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1405,7 +1298,6 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                 border: isMine
                     ? null
                     : Border.all(color: AppColors.border, width: 0.8),
-                boxShadow: AppShadows.smShadow,
               ),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1516,14 +1408,14 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
     final canSend = !_isSending && !disabled;
 
     return Container(
-              padding: EdgeInsets.only(
+      padding: EdgeInsets.only(
         left: 14,
         right: 14,
-        top: 10,
-        bottom: isKeyboardVisible ? 10 : 14,
+        top: 8,
+        bottom: isKeyboardVisible ? 8 : 10,
       ),
       decoration: const BoxDecoration(
-                color: Colors.white,
+        color: Colors.white,
         border: Border(
           top: BorderSide(color: AppColors.border, width: 0.5),
         ),
@@ -1535,41 +1427,45 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
           children: [
             if (_pendingImages.isNotEmpty) ...[
               SizedBox(
-                height: 78,
+                height: 64,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: _pendingImages.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
                   itemBuilder: (context, index) {
                     final img = _pendingImages[index];
                     return Stack(
                       children: [
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(8),
                           child: Image.file(
                             File(img.path),
-                            width: 78,
-                            height: 78,
+                            width: 64,
+                            height: 64,
                             fit: BoxFit.cover,
                           ),
                         ),
                         Positioned(
-                          top: 4,
-                          right: 4,
-              child: Container(
-                decoration: BoxDecoration(
+                          top: 3,
+                          right: 3,
+                          child: Container(
+                            decoration: BoxDecoration(
                               color: Colors.black.withValues(alpha: 0.5),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: InkWell(
                               onTap: disabled
-                      ? null
+                                  ? null
                                   : () => setState(() {
                                         _pendingImages.removeAt(index);
                                       }),
                               child: const Padding(
-                                padding: EdgeInsets.all(4),
-                                child: Icon(Icons.close_rounded, size: 16, color: Colors.white),
+                                padding: EdgeInsets.all(3),
+                                child: Icon(
+                                  Icons.close_rounded,
+                                  size: 14,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),
@@ -1579,129 +1475,110 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                   },
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
             ],
             Row(
-                              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.borderLight,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.image_outlined),
-                    color: disabled ? AppColors.textDisabled : AppColors.info,
-                    onPressed: disabled ? null : _openAttachmentPicker,
-                  ),
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _buildInputBarButton(
+                  icon: Icons.image_outlined,
+                  background: AppColors.backgroundSecondary,
+                  foreground:
+                      disabled ? AppColors.textDisabled : AppColors.info,
+                  onTap: disabled ? null : _openAttachmentPicker,
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Container(
+                    constraints: const BoxConstraints(minHeight: 40),
                     decoration: BoxDecoration(
                       color: AppColors.backgroundSecondary,
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppColors.border),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     child: TextField(
                       controller: _chatController,
                       minLines: 1,
                       maxLines: 4,
                       enabled: !disabled,
                       decoration: InputDecoration(
+                        filled: false,
                         border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 8),
                         hintText: disabled ? '완료된 문의입니다' : '메시지 입력',
-                        hintStyle: AppTextStyles.inputLabel(context).copyWith(
+                        hintStyle: AppTextStyles.tableCell(
+                          context,
                           color: AppColors.textDisabled,
                         ),
                       ),
-                                  style: AppTextStyles.inputLabel(context).copyWith(
-                        color: AppColors.textPrimary,
-                      ),
+                      style: AppTextStyles.tableCell(context),
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Container(
-                  decoration: BoxDecoration(
-                    color: canSend ? AppColors.primary : AppColors.border,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: IconButton(
-                    icon: _isSending
-                        ? const CupertinoActivityIndicator(color: Colors.white)
-                        : const Icon(Icons.send_rounded),
-                    color: canSend ? Colors.white : AppColors.textTertiary,
-                    onPressed: canSend ? _sendMessage : null,
-                  ),
+                const SizedBox(width: 8),
+                _buildInputBarButton(
+                  icon: Icons.send_rounded,
+                  background: canSend ? AppColors.primary : AppColors.border,
+                  foreground:
+                      canSend ? Colors.white : AppColors.textTertiary,
+                  isBusy: _isSending,
+                  onTap: canSend ? _sendMessage : null,
                 ),
                 if (widget.isAdmin) ...[
-                  const SizedBox(width: 10),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: _isClosedOrResolved ? AppColors.border : AppColors.success,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: IconButton(
-                      icon: _isResolving
-                          ? const CupertinoActivityIndicator(color: Colors.white)
-                          : const Icon(Icons.check_circle_outline_rounded),
-                      color: _isClosedOrResolved ? AppColors.textTertiary : Colors.white,
-                      onPressed: (_isClosedOrResolved || _isResolving) ? null : _resolveFromChat,
-                    ),
+                  const SizedBox(width: 8),
+                  _buildInputBarButton(
+                    icon: Icons.check_circle_outline_rounded,
+                    background: _isClosedOrResolved
+                        ? AppColors.border
+                        : AppColors.success,
+                    foreground: _isClosedOrResolved
+                        ? AppColors.textTertiary
+                        : Colors.white,
+                    isBusy: _isResolving,
+                    onTap: (_isClosedOrResolved || _isResolving)
+                        ? null
+                        : _resolveFromChat,
                   ),
                 ],
               ],
             ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildInfoItem({
+  /// 입력 바의 정사각 아이콘 버튼 (40x40, radius 8)
+  Widget _buildInputBarButton({
     required IconData icon,
-    required String label,
-    required String value,
-    bool isLast = false,
+    required Color background,
+    required Color foreground,
+    required VoidCallback? onTap,
+    bool isBusy = false,
   }) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                size: 18,
-                color: AppColors.textTertiary,
-              ),
-              const SizedBox(width: 10),
-              Text(
-                label,
-                style: AppTextStyles.listSubtitle(context),
-              ),
-              const Spacer(),
-              Flexible(
-                child: Text(
-                  value,
-                  style: AppTextStyles.tableCellSub(context).copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                  textAlign: TextAlign.right,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: 40,
+        height: 40,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(8),
         ),
-        if (!isLast)
-          Container(
-            height: 1,
-            color: AppColors.border.withValues(alpha: 0.5),
-          ),
-      ],
+        child: isBusy
+            ? const CupertinoActivityIndicator(color: Colors.white, radius: 8)
+            : Icon(icon, size: 18, color: foreground),
+      ),
     );
   }
+
 }

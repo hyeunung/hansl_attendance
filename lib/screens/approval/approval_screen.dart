@@ -22,7 +22,8 @@ import '../../providers/attendance_provider.dart';
 
 class ApprovalScreen extends StatefulWidget {
   final int? initialMainTab; // 0: 연차/출장, 1: 발주승인, 2: 구매대기, 3: 입고대기
-  const ApprovalScreen({super.key, this.initialMainTab});
+  final String? initialSearchQuery; // 알림에서 진입 시 발주 탭 검색어 (발주번호)
+  const ApprovalScreen({super.key, this.initialMainTab, this.initialSearchQuery});
 
   @override
   State<ApprovalScreen> createState() => _ApprovalScreenState();
@@ -1079,7 +1080,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                 child: isRegularEmployee 
                   ? Padding(
                       padding: EdgeInsets.only(top: ResponsiveUtils.spacing(context, 15)),
-                      child: const ReceivingWaitingWidget(),
+                      child: ReceivingWaitingWidget(initialSearchQuery: widget.initialSearchQuery),
                     ) // 일반 직원은 입고대기만 표시 (상단 여백 추가)
                   : TabBarView(
                       controller: _mainTabController,
@@ -1432,12 +1433,12 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                       : const SizedBox.shrink(), // 권한 없으면 빈 공간
                     // 발주승인 탭 (권한이 있는 경우만 표시)
                     _hasPurchaseApprovalAuth
-                      ? const PurchaseApprovalWidget()
+                      ? PurchaseApprovalWidget(initialSearchQuery: widget.initialSearchQuery)
                       : const SizedBox.shrink(), // 권한 없으면 빈 공간
                         // 구매대기 탭
-                        const PurchaseWaitingWidget(),
+                        PurchaseWaitingWidget(initialSearchQuery: widget.initialSearchQuery),
                         // 입고대기 탭
-                        const ReceivingWaitingWidget(),
+                        ReceivingWaitingWidget(initialSearchQuery: widget.initialSearchQuery),
                       ],
                     ),
               ),

@@ -2070,22 +2070,71 @@ class _InquiryScreenState extends State<InquiryScreen>
       },
       color: AppColors.info,
       child: ListView.builder(
+        padding: EdgeInsets.symmetric(
+          vertical: ResponsiveUtils.spacing(context, 12),
+        ),
+        // 문의가 수백 건이라 카드 전체를 한 번에 그리지 않고,
+        // 행마다 카드 테두리 조각을 붙여 지연 렌더링을 유지한다
         itemCount: _inquiries.length + 1,
         itemBuilder: (context, index) {
           if (index == 0) {
-            return FlatSectionHeader(
-              title: _isAdmin ? '전체 문의' : '내 문의 내역',
-              trailing: '${_inquiries.length}건',
+            return _buildCardEdge(
+              isFirst: true,
+              isLast: false,
+              child: FlatCardHeader(
+                title: _isAdmin ? '전체 문의' : '내 문의 내역',
+                icon: Icons.forum_outlined,
+                iconColor: AppColors.primary,
+                trailing: Text(
+                  '${_inquiries.length}건',
+                  style: AppTextStyles.listSubtitle(context),
+                ),
+              ),
             );
           }
-          final inquiry = _inquiries[index - 1];
-          return _buildInquiryRow(inquiry);
+          return _buildCardEdge(
+            isFirst: false,
+            isLast: index == _inquiries.length,
+            child: _buildInquiryRow(_inquiries[index - 1]),
+          );
         },
       ),
     );
   }
 
-  /// 문의 행 (flat row style)
+  /// 리스트 항목을 카드처럼 보이게 감싸는 테두리 조각
+  Widget _buildCardEdge({
+    required bool isFirst,
+    required bool isLast,
+    required Widget child,
+  }) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsiveUtils.spacing(context, 16),
+      ),
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            top: isFirst
+                ? const BorderSide(color: AppColors.border)
+                : BorderSide.none,
+            left: const BorderSide(color: AppColors.border),
+            right: const BorderSide(color: AppColors.border),
+            bottom: const BorderSide(color: AppColors.border),
+          ),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(isFirst ? 10 : 0),
+            bottom: Radius.circular(isLast ? 10 : 0),
+          ),
+        ),
+        child: child,
+      ),
+    );
+  }
+
+  /// 문의 행 (2줄 컴팩트 행)
   Widget _buildInquiryRow(Map<String, dynamic> inquiry) {
     final createdAt = DateTime.parse(inquiry['created_at']);
     final dateStr = DateFormat('MM/dd HH:mm').format(createdAt);
@@ -2097,7 +2146,7 @@ class _InquiryScreenState extends State<InquiryScreen>
     final hasUnreadResponse =
         !_isAdmin && (inquiry['has_unread_inquiry_message'] == true);
 
-    // Determine chip label/color
+    // 상태 칩 라벨/색상 결정
     String chipLabel;
     Color chipColor;
     if (hasUnreadResponse) {
@@ -2111,66 +2160,72 @@ class _InquiryScreenState extends State<InquiryScreen>
       chipColor = statusColor;
     }
 
-    return Material(
-      color: Colors.white,
-      child: InkWell(
-        onTap: () => _showInquiryDetail(inquiry),
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: ResponsiveUtils.spacing(context, 16),
-            vertical: ResponsiveUtils.spacing(context, 12),
-          ),
-          decoration: const BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
+    // 관리자는 작성자를 함께 보여준다
+    final metaText = _isAdmin
+        ? '${inquiry['user_name'] ?? '알 수 없음'} · $dateStr'
+        : dateStr;
+
+    return InkWell(
+      onTap: () => _showInquiryDetail(inquiry),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: ResponsiveUtils.spacing(context, 14),
+          vertical: ResponsiveUtils.spacing(context, 8),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.only(
+                top: ResponsiveUtils.spacing(context, 2),
+              ),
+              child: Icon(
+                _getIconForType(inquiry['inquiry_type'] ?? '기타'),
+                size: ResponsiveUtils.iconSize(context, 16),
+                color: AppColors.info,
+              ),
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 상단: 상태 칩 + 날짜
-              Row(
+            SizedBox(width: ResponsiveUtils.spacing(context, 10)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    _getIconForType(inquiry['inquiry_type'] ?? '기타'),
-                    size: 16,
-                    color: AppColors.info,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          inquiry['subject'] ?? '제목 없음',
+                          style: AppTextStyles.tableCell(context),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+                      StatusChip(label: chipLabel, color: chipColor),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  StatusChip(label: chipLabel, color: chipColor),
-                  const Spacer(),
-                  Text(
-                    dateStr,
-                    style: AppTextStyles.listSubtitle(context),
+                  SizedBox(height: ResponsiveUtils.spacing(context, 2)),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          inquiry['message'] ?? '',
+                          style: AppTextStyles.listSubtitle(context),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                      Text(
+                        metaText,
+                        style: AppTextStyles.listSubtitle(context),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              // 제목
-              Text(
-                inquiry['subject'] ?? '제목 없음',
-                style: AppTextStyles.listTitle(context),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              // 내용 미리보기
-              Text(
-                inquiry['message'] ?? '',
-                style: AppTextStyles.tableCellSub(context),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              // 관리자면 작성자 표시
-              if (_isAdmin) ...[
-                const SizedBox(height: 4),
-                Text(
-                  inquiry['user_name'] ?? '알 수 없음',
-                  style: AppTextStyles.listSubtitle(context),
-                ),
-              ],
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

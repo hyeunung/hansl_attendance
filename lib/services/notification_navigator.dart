@@ -112,18 +112,38 @@ class NotificationNavigator {
 
     int tabIndex;
     int? approvalSubTab;
+    String? approvalSearchQuery;
     switch (destination) {
       case NotificationDestination.leaveApproval:
         tabIndex = _approvalTab;
         approvalSubTab = _leaveApprovalSubTab;
         break;
       case NotificationDestination.purchaseApproval:
-      case NotificationDestination.purchaseStatus:
+        // 승인 요청 알림은 처리 여부와 무관하게 발주승인 탭으로 이동
         tabIndex = _approvalTab;
-        approvalSubTab = await _purchaseSubTabFor(
-          _purchaseOrderNumberOf(data, body),
-          canApprove: UserRoleHelper.hasPurchaseApprovalAuth(roles),
-        );
+        final orderNumber = _purchaseOrderNumberOf(data, body);
+        if (UserRoleHelper.hasPurchaseApprovalAuth(roles)) {
+          approvalSubTab = _purchaseApprovalSubTab;
+        } else {
+          approvalSubTab = await _purchaseSubTabFor(orderNumber, canApprove: false);
+          approvalSearchQuery = orderNumber;
+        }
+        break;
+      case NotificationDestination.purchaseStatus:
+        // 최종 승인 후 진행 요청: 구매 요청 → 구매대기, 발주 → 입고대기
+        tabIndex = _approvalTab;
+        approvalSearchQuery = _purchaseOrderNumberOf(data, body);
+        final category = data?['payment_category']?.toString();
+        if (type == 'purchase_approved' && category == '구매 요청') {
+          approvalSubTab = _purchaseWaitingSubTab;
+        } else if (type == 'purchase_approved' && category == '발주') {
+          approvalSubTab = _receivingSubTab;
+        } else {
+          approvalSubTab = await _purchaseSubTabFor(
+            approvalSearchQuery,
+            canApprove: UserRoleHelper.hasPurchaseApprovalAuth(roles),
+          );
+        }
         break;
       case NotificationDestination.myLeave:
         tabIndex = _leaveTab;
@@ -140,6 +160,7 @@ class NotificationNavigator {
         builder: (_) => MainTab(
           initialIndex: tabIndex,
           approvalSubTab: approvalSubTab,
+          approvalSearchQuery: approvalSearchQuery,
           initialEmployee: employee,
         ),
       ),

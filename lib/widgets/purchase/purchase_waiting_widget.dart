@@ -13,7 +13,10 @@ import 'package:intl/intl.dart';
 
 // 구매대기 위젯
 class PurchaseWaitingWidget extends StatefulWidget {
-  const PurchaseWaitingWidget({super.key});
+  const PurchaseWaitingWidget({super.key, this.initialSearchQuery});
+
+  final String? initialSearchQuery; // 알림에서 진입 시 해당 발주번호로 검색된 상태로 표시
+
 
   @override
   State<PurchaseWaitingWidget> createState() => _PurchaseWaitingWidgetState();
@@ -34,6 +37,11 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
+    final initialQuery = widget.initialSearchQuery;
+    if (initialQuery != null && initialQuery.isNotEmpty) {
+      _searchController.text = initialQuery;
+      _expandedOrders[initialQuery] = true;
+    }
     _loadPurchaseItems();
   }
 
