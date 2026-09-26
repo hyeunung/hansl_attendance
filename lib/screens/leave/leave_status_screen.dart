@@ -65,6 +65,18 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const LeaveScreenRouter()),
+        ),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        elevation: 2,
+        icon: const Icon(Icons.add, size: 18),
+        label: Text('연차 신청', style: AppTextStyles.buttonPrimary(context).copyWith(color: Colors.white)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
       backgroundColor: AppColors.backgroundPrimary,
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -108,40 +120,11 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              child: Container(
-                color: Colors.white,
+              child: Padding(
+                padding: EdgeInsets.only(top: ResponsiveUtils.spacing(context, 10)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 1. 연차 신청 버튼 (출퇴근 버튼과 동일 디자인)
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: ResponsiveUtils.spacing(context, 16),
-                        vertical: ResponsiveUtils.spacing(context, 14),
-                      ),
-                      child: Material(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(10),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(10),
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const LeaveScreenRouter()),
-                          ),
-                          child: Container(
-                            width: double.infinity,
-                            padding: EdgeInsets.symmetric(
-                              vertical: ResponsiveUtils.spacing(context, 20),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              '연차 신청',
-                              style: AppTextStyles.buttonPrimary(context),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
 
                     // 2. 내 연차 현황
                     FlatCard(
