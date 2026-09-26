@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../services/admin_attendance_service.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 
@@ -171,10 +172,7 @@ class _AdminAttendanceEditSheetState extends State<AdminAttendanceEditSheet> {
               const SizedBox(height: 4),
               Text(
                 date,
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 12,
-                ),
+                style: AppTextStyles.listSubtitle(context),
               ),
               const SizedBox(height: 20),
 
@@ -201,7 +199,7 @@ class _AdminAttendanceEditSheetState extends State<AdminAttendanceEditSheet> {
                     onSelected: (_) =>
                         setState(() => _status = selected ? null : s),
                     selectedColor: AppColors.primary,
-                    labelStyle: TextStyle(
+                    labelStyle: AppTextStyles.compactLabel(context).copyWith(
                       color: selected ? Colors.white : AppColors.textSecondary,
                       fontWeight: FontWeight.w600,
                     ),
@@ -269,10 +267,7 @@ class _AdminAttendanceEditSheetState extends State<AdminAttendanceEditSheet> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Text(
-                              '저장',
-                              style: TextStyle(fontWeight: FontWeight.w700),
-                            ),
+                          : const Text('저장'),
                     ),
                   ),
                 ],
@@ -289,11 +284,7 @@ class _AdminAttendanceEditSheetState extends State<AdminAttendanceEditSheet> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          color: AppColors.textPrimary,
-        ),
+        style: AppTextStyles.tableCell(context),
       ),
     );
   }
@@ -327,11 +318,7 @@ class _AdminAttendanceEditSheetState extends State<AdminAttendanceEditSheet> {
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(vertical: 14),
               ),
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
+              style: AppTextStyles.tableCell(context),
               onChanged: (_) => setState(() {}),
             ),
           ),

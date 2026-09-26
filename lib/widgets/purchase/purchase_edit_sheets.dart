@@ -209,7 +209,7 @@ class _EditSheetFrame extends StatelessWidget {
                                 height: 18,
                                 child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                               )
-                            : const Text('저장', style: TextStyle(fontWeight: FontWeight.w700)),
+                            : const Text('저장'),
                       ),
                     ),
                   ],

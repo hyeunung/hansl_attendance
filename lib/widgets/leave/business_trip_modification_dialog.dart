@@ -34,7 +34,7 @@ class BusinessTripModificationDialog extends StatefulWidget {
                 children: [
                   Icon(Icons.info_outline, color: AppColors.primary),
                   SizedBox(width: 8),
-                  Text('안내', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text('안내'),
                 ],
               ),
               content: const Text(
@@ -44,7 +44,7 @@ class BusinessTripModificationDialog extends StatefulWidget {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('확인', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+                  child: const Text('확인'),
                 ),
               ],
             ),
@@ -273,7 +273,7 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                         onPressed: _isLoading ? null : () => _cancelModification(context),
-                        child: const Text('연장 신청 취소', style: TextStyle(fontWeight: FontWeight.bold)),
+                        child: const Text('연장 신청 취소'),
                       ),
                     ),
                   ] else ...[
@@ -295,7 +295,7 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                         onPressed: _isLoading ? null : () => _handleImmediateEarlyReturn(context),
-                        child: const Text('즉시 조기 복귀 완료', style: TextStyle(fontWeight: FontWeight.bold)),
+                        child: const Text('즉시 조기 복귀 완료'),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -353,7 +353,7 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                       ),
-                      style: const TextStyle(fontSize: 12),
+                      style: AppTextStyles.cardBody(context),
                       maxLines: 2,
                     ),
                     const SizedBox(height: 12),
@@ -367,7 +367,7 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                         onPressed: _isLoading ? null : () => _handleRequestExtension(context, endDateStr),
-                        child: const Text('연장 승인 요청', style: TextStyle(fontWeight: FontWeight.bold)),
+                        child: const Text('연장 승인 요청'),
                       ),
                     ),
                   ],
@@ -393,8 +393,8 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 11)),
+          Text(label, style: AppTextStyles.listSubtitle(context)),
+          Text(value, style: AppTextStyles.tableCell(context)),
         ],
       ),
     );
@@ -403,11 +403,7 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
   Widget _sectionTitle(String title, Color color) {
     return Text(
       title,
-      style: TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.bold,
-        color: color,
-      ),
+      style: AppTextStyles.sectionHeader(context).copyWith(color: color),
     );
   }
 

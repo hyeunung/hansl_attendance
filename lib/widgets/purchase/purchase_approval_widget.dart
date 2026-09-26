@@ -430,30 +430,6 @@ return;
     );
   }
 
-  Widget _buildDialogInfoRow(BuildContext context, String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: ResponsiveUtils.spacing(context, 70),
-          child: Text(
-            label,
-            style: AppTextStyles.listSubtitle(context),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: AppTextStyles.listSubtitle(context).copyWith(
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     super.build(context); // AutomaticKeepAliveClientMixin 필수
@@ -1482,162 +1458,81 @@ return;
     UserProvider userProvider,
     PurchaseProvider purchaseProvider,
   ) {
-
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(
-            ResponsiveUtils.spacing(context, 20),
-          ),
+      builder: (dialogContext) => AlertDialog(
+        titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+        contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+        title: const Row(
+          children: [
+            Icon(Icons.block_outlined, size: 18, color: AppColors.error),
+            SizedBox(width: 8),
+            Text('반려 확인'),
+          ],
         ),
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.85,
-          padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 24)),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 아이콘
-              Container(
-                width: ResponsiveUtils.spacing(context, 60),
-                height: ResponsiveUtils.spacing(context, 60),
-                decoration: BoxDecoration(
-                  color: AppColors.error.withValues(alpha: 0.102),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.block_outlined,
-                  color: AppColors.error,
-                  size: ResponsiveUtils.iconSize(context, 32),
-                ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('이 발주를 반려하시겠습니까?', style: AppTextStyles.cardBody(context)),
+            const SizedBox(height: 10),
+            Container(
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: AppColors.backgroundSecondary,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.borderLight),
               ),
-              SizedBox(height: ResponsiveUtils.spacing(context, 20)),
-
-              // 제목
-              Text(
-                '반려 확인',
-                style: AppTextStyles.sectionTitle(context),
-              ),
-              SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-
-              // 설명
-              Text(
-                '이 발주를 반려하시겠습니까?',
-                style: AppTextStyles.emptyState(context),
-              ),
-              SizedBox(height: ResponsiveUtils.spacing(context, 20)),
-
-              // 정보 카드
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
-                decoration: BoxDecoration(
-                  color: AppColors.backgroundSecondary,
-                  borderRadius: BorderRadius.circular(
-                    ResponsiveUtils.spacing(context, 12),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildDialogInfoRow(
-                      context,
-                      '발주번호',
-                      group.purchaseOrderNumber,
-                    ),
-                    SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-                    _buildDialogInfoRow(context, '요청자', group.requesterName),
-                    SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-                    _buildDialogInfoRow(context, '업체', group.vendorName),
-                    SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-                    _buildDialogInfoRow(
-                      context,
-                      '금액',
-                      CurrencyFormatter.formatWon(group.totalAmount, group.currency),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: ResponsiveUtils.spacing(context, 24)),
-
-              // 버튼
-              Row(
+              child: Column(
                 children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.symmetric(
-                          vertical: ResponsiveUtils.spacing(context, 10),
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            ResponsiveUtils.spacing(context, 12),
-                          ),
-                          side: const BorderSide(color: AppColors.border),
-                        ),
-                      ),
-                      child: Text(
-                        '취소',
-                        style: AppTextStyles.sectionSubtitle(context).copyWith(
-                          color: AppColors.textTertiary,
-                        ),
-                      ),
+                  FlatInfoRow(label: '발주번호', value: group.purchaseOrderNumber),
+                  FlatInfoRow(label: '요청자', value: group.requesterName),
+                  FlatInfoRow(label: '업체', value: group.vendorName),
+                  FlatInfoRow(
+                    label: '금액',
+                    value: CurrencyFormatter.formatWon(
+                      group.totalAmount,
+                      group.currency,
                     ),
-                  ),
-                  SizedBox(width: ResponsiveUtils.spacing(context, 12)),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        // BuildContext 저장
-                        final dialogContext = context;
-                        final scaffoldContext = context;
-                        
-                        final isMiddleManager =
-                            canApproveMiddle(purchaseRoles) &&
-                            group.middleManagerStatus == 'pending';
-
-                        final success = await purchaseProvider.rejectPurchase(
-                          group.purchaseOrderNumber,
-                          isMiddleManager: isMiddleManager,
-                          reason: '확인 후 반려',
-                        );
-
-                        if (success && dialogContext.mounted) {
-                          Navigator.of(dialogContext).pop();
-                          if (scaffoldContext.mounted) {
-                            AppBanner.show(scaffoldContext, '반려 처리되었습니다', type: BannerType.success);
-                            await purchaseProvider.fetchPendingPurchases(
-                              employee: userProvider.employee,
-                            );
-                          }
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.error,
-                        padding: EdgeInsets.symmetric(
-                          vertical: ResponsiveUtils.spacing(context, 10),
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            ResponsiveUtils.spacing(context, 12),
-                          ),
-                        ),
-                      ),
-                      child: Text(
-                        '반려',
-                        style: AppTextStyles.sectionSubtitle(context).copyWith(
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
+                    valueColor: AppColors.primary,
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final isMiddleManager = canApproveMiddle(purchaseRoles) &&
+                  group.middleManagerStatus == 'pending';
+
+              final success = await purchaseProvider.rejectPurchase(
+                group.purchaseOrderNumber,
+                isMiddleManager: isMiddleManager,
+                reason: '확인 후 반려',
+              );
+
+              if (success && dialogContext.mounted) {
+                Navigator.of(dialogContext).pop();
+                if (context.mounted) {
+                  AppBanner.show(context, '반려 처리되었습니다', type: BannerType.success);
+                  await purchaseProvider.fetchPendingPurchases(
+                    employee: userProvider.employee,
+                  );
+                }
+              }
+            },
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('반려'),
+          ),
+        ],
       ),
     );
   }
@@ -2172,7 +2067,7 @@ return;
               // 헤더 영역
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 24)),
+                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
                 decoration: BoxDecoration(
                   color: AppColors.errorLight,
                   borderRadius: BorderRadius.only(
@@ -2227,7 +2122,7 @@ return;
 
               // 내용 영역
               Padding(
-                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 24)),
+                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
                 child: Column(
                   children: [
                     // 삭제될 품목 정보
@@ -2341,11 +2236,11 @@ return;
                         // 취소 버튼
                         Expanded(
                           child: Container(
-                            height: ResponsiveUtils.spacing(context, 48),
+                            height: 40,
                             decoration: BoxDecoration(
                               border: Border.all(
-                                color: AppColors.gray300,
-                                width: 1.5,
+                                color: AppColors.border,
+                                width: 1,
                               ),
                               borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                             ),
@@ -2370,7 +2265,7 @@ return;
                         // 삭제 버튼
                         Expanded(
                           child: Container(
-                            height: ResponsiveUtils.spacing(context, 48),
+                            height: 40,
                             decoration: BoxDecoration(
                               color: AppColors.error,
                               borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
@@ -2443,7 +2338,7 @@ return;
               // 헤더 영역
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 24)),
+                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
                 decoration: BoxDecoration(
                   color: AppColors.errorLight,
                   borderRadius: BorderRadius.only(
@@ -2498,7 +2393,7 @@ return;
 
               // 내용 영역
               Padding(
-                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 24)),
+                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
                 child: Column(
                   children: [
                     // 삭제될 발주 정보
@@ -2610,11 +2505,11 @@ return;
                         // 취소 버튼
                         Expanded(
                           child: Container(
-                            height: ResponsiveUtils.spacing(context, 48),
+                            height: 40,
                             decoration: BoxDecoration(
                               border: Border.all(
-                                color: AppColors.gray300,
-                                width: 1.5,
+                                color: AppColors.border,
+                                width: 1,
                               ),
                               borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                             ),
@@ -2639,7 +2534,7 @@ return;
                         // 전체삭제 버튼
                         Expanded(
                           child: Container(
-                            height: ResponsiveUtils.spacing(context, 48),
+                            height: 40,
                             decoration: BoxDecoration(
                               color: AppColors.error,
                               borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),

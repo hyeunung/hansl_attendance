@@ -2528,7 +2528,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
           builder: (context, setState) {
             return Dialog(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(8),
               ),
               insetPadding: const EdgeInsets.all(16),
               child: Container(
@@ -2880,18 +2880,18 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                           bottomRight: Radius.circular(10),
                         ),
                       ),
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
                       child: Row(
                         children: [
                           Expanded(
                             child: TextButton(
                               style: TextButton.styleFrom(
                                 backgroundColor: Colors.white,
-                                foregroundColor: AppColors.gray700,
+                                foregroundColor: AppColors.textSecondary,
                                 padding: const EdgeInsets.symmetric(vertical: 10),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  side: BorderSide(color: AppColors.gray300),
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: const BorderSide(color: AppColors.border),
                                 ),
                               ),
                               onPressed: () => Navigator.pop(context),
@@ -2903,18 +2903,11 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                color: AppColors.primary,
-                              ),
-                              child: TextButton(
-                                style: TextButton.styleFrom(
-                                  backgroundColor: Colors.transparent,
-                                  foregroundColor: Colors.white,
+                            child: FilledButton(
+                                style: FilledButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(vertical: 10),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
                                 onPressed: () async {
@@ -3010,7 +3003,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                   ),
                                 ),
                               ),
-                            ),
                           ),
                         ],
                       ),
@@ -3055,7 +3047,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       builder: (BuildContext context) {
         return Dialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
           ),
           elevation: 0,
           backgroundColor: Colors.transparent,
@@ -3083,7 +3075,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                         ),
                         child: Icon(
                           iconData,
-                          size: 40,
+                          size: 28,
                           color: confirmColor,
                         ),
                       ),
@@ -3121,7 +3113,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                       bottomRight: Radius.circular(10),
                     ),
                   ),
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
                   child: Row(
                     children: [
                       Expanded(
@@ -3134,7 +3126,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                               foregroundColor: AppColors.textPrimary,
                               padding: const EdgeInsets.symmetric(vertical: 10),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                             ),
                             onPressed: () => Navigator.of(context).pop(false),
@@ -3156,7 +3148,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 10),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                             ),
                             onPressed: () => Navigator.of(context).pop(true),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_text_theme.dart';
 
 /// Optimized image loading widget with caching, error handling, and progressive loading
 class OptimizedImage extends StatefulWidget {
@@ -196,11 +197,7 @@ class _OptimizedImageState extends State<OptimizedImage> {
             const SizedBox(height: 8),
             Text(
               '이미지를 불러올 수 없습니다',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-                fontFamily: 'NotoSans',
-              ),
+              style: AppTextStyles.listSubtitle(context),
               textAlign: TextAlign.center,
             ),
           ],

@@ -339,7 +339,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                     child: Center(
                                       child: Text(
                                         _getNotificationIcon(notifType),
-                                        style: const TextStyle(fontSize: 14),
+                                        style: AppTextStyles.cardBody(context),
                                       ),
                                     ),
                                   ),

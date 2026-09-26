@@ -377,7 +377,7 @@ class _AdminAttendanceScreenState extends State<AdminAttendanceScreen> {
             const SizedBox(height: 12),
             Text(
               '조건에 맞는 직원이 없습니다',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              style: AppTextStyles.listSubtitle(context),
             ),
           ],
         ),

@@ -1070,9 +1070,7 @@ class _InquiryScreenState extends State<InquiryScreen>
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(
-                ResponsiveUtils.spacing(context, 12),
-              ),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(color: AppColors.borderLight, width: 0.5),
             ),
             child: Padding(
@@ -1108,9 +1106,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                     ),
                     decoration: BoxDecoration(
                       color: AppColors.backgroundSecondary,
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveUtils.spacing(context, 12),
-                      ),
+                      borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: AppColors.border,
                       ),
@@ -1667,7 +1663,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                                       flex: 3,
                                       child: TextFormField(
                                         initialValue: row.itemName,
-                                        style: const TextStyle(fontSize: 12),
+                                        style: AppTextStyles.cardBody(context),
                                         decoration: const InputDecoration(
                                           labelText: '품목명 *',
                                           border: OutlineInputBorder(),
@@ -1684,7 +1680,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                                       flex: 2,
                                       child: TextFormField(
                                         initialValue: row.specification,
-                                        style: const TextStyle(fontSize: 12),
+                                        style: AppTextStyles.cardBody(context),
                                         decoration: const InputDecoration(
                                           labelText: '규격',
                                           border: OutlineInputBorder(),
@@ -1709,7 +1705,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                                         inputFormatters: [
                                           FilteringTextInputFormatter.digitsOnly,
                                         ],
-                                        style: const TextStyle(fontSize: 12),
+                                        style: AppTextStyles.cardBody(context),
                                         decoration: const InputDecoration(
                                           labelText: '수량 *',
                                           border: OutlineInputBorder(),
@@ -1726,7 +1722,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                                       flex: 2,
                                       child: TextFormField(
                                         initialValue: row.unit,
-                                        style: const TextStyle(fontSize: 12),
+                                        style: AppTextStyles.cardBody(context),
                                         decoration: const InputDecoration(
                                           labelText: '단위',
                                           hintText: 'EA',
@@ -1748,7 +1744,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                                         inputFormatters: [
                                           FilteringTextInputFormatter.digitsOnly,
                                         ],
-                                        style: const TextStyle(fontSize: 12),
+                                        style: AppTextStyles.cardBody(context),
                                         decoration: const InputDecoration(
                                           labelText: '단가 *',
                                           border: OutlineInputBorder(),
@@ -1765,7 +1761,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                                       flex: 2,
                                       child: TextFormField(
                                         initialValue: row.remark,
-                                        style: const TextStyle(fontSize: 12),
+                                        style: AppTextStyles.cardBody(context),
                                         decoration: const InputDecoration(
                                           labelText: '비고',
                                           border: OutlineInputBorder(),
@@ -1843,9 +1839,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                   Container(
                     decoration: BoxDecoration(
                       color: AppColors.backgroundSecondary,
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveUtils.spacing(context, 12),
-                      ),
+                      borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: _messageController.text.isNotEmpty 
                             ? AppColors.info.withValues(alpha: 0.3)
@@ -1896,34 +1890,21 @@ class _InquiryScreenState extends State<InquiryScreen>
                     ),
                   ),
 
-                  SizedBox(height: ResponsiveUtils.spacing(context, 28)),
+                  SizedBox(height: ResponsiveUtils.spacing(context, 16)),
 
                   // 제출 버튼
                   Container(
                     width: double.infinity,
-                    height: ResponsiveUtils.spacing(context, 56),
+                    height: 44,
                     decoration: BoxDecoration(
                       color: canSubmit ? AppColors.primary : AppColors.border,
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveUtils.spacing(context, 14),
-                      ),
-                      boxShadow: canSubmit
-                          ? [
-                              BoxShadow(
-                                color: AppColors.info.withValues(alpha: 0.25),
-                                blurRadius: ResponsiveUtils.spacing(context, 12),
-                                offset: Offset(0, ResponsiveUtils.spacing(context, 6)),
-                              ),
-                            ]
-                          : [],
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
                         onTap: canSubmit ? _submitInquiry : null,
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveUtils.spacing(context, 14),
-                        ),
+                        borderRadius: BorderRadius.circular(8),
                         child: Center(
                           child: _isSubmitting
                               ? const CupertinoActivityIndicator(
@@ -1966,9 +1947,7 @@ class _InquiryScreenState extends State<InquiryScreen>
             padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
             decoration: BoxDecoration(
               color: AppColors.borderLight.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(
-                ResponsiveUtils.spacing(context, 12),
-              ),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
