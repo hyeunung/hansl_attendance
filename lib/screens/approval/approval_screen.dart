@@ -2446,7 +2446,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     Map<String, dynamic> leave,
     LeaveProvider provider,
   ) async {
-    
     final startDateController = TextEditingController(
       text: leave['start_date'] ?? '',
     );
@@ -2456,7 +2455,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     final reasonController = TextEditingController(
       text: leave['reason'] ?? '',
     );
-    
+
     String selectedType = leave['type'] ?? 'annual';
     DateTime? selectedStartDate = leave['start_date'] != null
         ? DateTime.parse(leave['start_date'])
@@ -2465,348 +2464,238 @@ class _ApprovalScreenState extends State<ApprovalScreen>
         ? DateTime.parse(leave['end_date'])
         : null;
 
+    const typeOptions = <String, String>{
+      'annual': '연차',
+      'biztrip': '출장',
+      'half_am': '오전 반차',
+      'half_pm': '오후 반차',
+      'official': '공가',
+    };
+
     await showDialog(
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setState) {
-            return Dialog(
-              shape: RoundedRectangleBorder(
+            // 공통 입력 박스 (높이 40, radius 8, 테두리)
+            BoxDecoration fieldBox() => BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.border),
+                );
+
+            Widget label(String text) => Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text(text, style: AppTextStyles.listSubtitle(context)),
+                );
+
+            Widget dateField({
+              required String hint,
+              required TextEditingController controller,
+              required DateTime? initial,
+              required ValueChanged<DateTime> onPicked,
+            }) {
+              return InkWell(
                 borderRadius: BorderRadius.circular(8),
-              ),
-              insetPadding: const EdgeInsets.all(16),
-              child: Container(
+                onTap: () async {
+                  final date = await showDatePicker(
+                    initialEntryMode: DatePickerEntryMode.calendarOnly,
+                    context: context,
+                    initialDate: initial ?? DateTime.now(),
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2030),
+                  );
+                  if (date != null) onPicked(date);
+                },
+                child: Container(
+                  height: 40,
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  decoration: fieldBox(),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.calendar_today,
+                        size: 14,
+                        color: AppColors.textTertiary,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          controller.text.isEmpty ? hint : controller.text,
+                          style: AppTextStyles.tableCell(
+                            context,
+                            color: controller.text.isEmpty
+                                ? AppColors.textDisabled
+                                : AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            return Dialog(
+              clipBehavior: Clip.antiAlias,
+              insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
+              child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 500),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // 헤더
                     Container(
+                      padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
                       decoration: const BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(10),
-                        ),
                         border: Border(
-                          bottom: BorderSide(color: AppColors.border, width: 1),
+                          bottom: BorderSide(color: AppColors.border, width: 0.5),
                         ),
                       ),
-                      padding: const EdgeInsets.all(20),
                       child: Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              Icons.edit_calendar,
-                              color: AppColors.primary,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
                           Expanded(
-                            child: Text(
-                              '휴가 정보 수정',
-                              style: AppTextStyles.sectionTitle(context),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '휴가 정보 수정',
+                                  style: AppTextStyles.appBarTitle(context),
+                                ),
+                                const SizedBox(height: 1),
+                                Text(
+                                  '${leave['name'] ?? '알 수 없음'} · 신청일 '
+                                  '${leave['created_at']?.substring(0, 10) ?? '-'}',
+                                  style: AppTextStyles.listSubtitle(context),
+                                ),
+                              ],
                             ),
                           ),
-                          IconButton(
-                            icon: Icon(Icons.close, color: AppColors.textTertiary),
-                            onPressed: () => Navigator.pop(context),
+                          InkWell(
+                            onTap: () => Navigator.pop(context),
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: AppColors.backgroundSecondary,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.close_rounded,
+                                size: 18,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    
-                    // 컨텐츠
+
+                    // 본문
                     Flexible(
                       child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // 신청자 정보
+                            label('휴가 유형'),
                             Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: AppColors.infoLight,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: AppColors.primary.withValues(alpha:0.2),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  CircleAvatar(
-                                    backgroundColor: AppColors.primary.withValues(alpha:0.1),
-                                    child: Text(
-                                      (leave['name'] ?? '?')[0],
-                                      style: AppTextStyles.sectionSubtitle(context).copyWith(
-                                        color: AppColors.primary,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '신청자: ${leave['name'] ?? '알 수 없음'}',
-                                        style: AppTextStyles.sectionSubtitle(context).copyWith(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '신청일: ${leave['created_at']?.substring(0, 10) ?? ''}',
-                                        style: AppTextStyles.inputLabel(context).copyWith(
-                                          color: AppColors.textSecondary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            
-                            // 휴가 유형
-                            Row(
-                              children: [
-                                Container(
-                                  width: 4,
-                                  height: 20,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary,
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '휴가 유형',
-                                  style: AppTextStyles.sectionSubtitle(context).copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Container(
+                              height: 40,
                               padding: const EdgeInsets.symmetric(horizontal: 12),
-                              decoration: BoxDecoration(
-                                color: AppColors.backgroundSecondary,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: AppColors.border),
-                              ),
+                              decoration: fieldBox(),
                               child: DropdownButtonHideUnderline(
                                 child: DropdownButton<String>(
-                                  value: selectedType,
+                                  value: typeOptions.containsKey(selectedType)
+                                      ? selectedType
+                                      : null,
                                   isExpanded: true,
-                                  icon: Icon(
+                                  isDense: true,
+                                  dropdownColor: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  elevation: 4,
+                                  icon: const Icon(
                                     Icons.arrow_drop_down,
-                                    color: AppColors.primary,
+                                    size: 18,
+                                    color: AppColors.textTertiary,
                                   ),
-                                  items: const [
-                                    DropdownMenuItem(
-                                      value: 'annual',
-                                      child: Text('연차'),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: 'biztrip',
-                                      child: Text('출장'),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: 'half_am',
-                                      child: Text('오전 반차'),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: 'half_pm',
-                                      child: Text('오후 반차'),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: 'official',
-                                      child: Text('공가'),
-                                    ),
-                                  ],
+                                  style: AppTextStyles.tableCell(context),
+                                  items: typeOptions.entries
+                                      .map(
+                                        (e) => DropdownMenuItem<String>(
+                                          value: e.key,
+                                          child: Text(
+                                            e.value,
+                                            style: AppTextStyles.tableCell(context),
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
                                   onChanged: (value) {
                                     if (value != null) {
-                                      setState(() {
-                                        selectedType = value;
-                                      });
+                                      setState(() => selectedType = value);
                                     }
                                   },
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 24),
-                            
-                            // 날짜 선택
+                            const SizedBox(height: 12),
+                            label('기간'),
                             Row(
                               children: [
-                                Container(
-                                  width: 4,
-                                  height: 20,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary,
-                                    borderRadius: BorderRadius.circular(2),
+                                Expanded(
+                                  child: dateField(
+                                    hint: '시작일',
+                                    controller: startDateController,
+                                    initial: selectedStartDate,
+                                    onPicked: (date) => setState(() {
+                                      selectedStartDate = date;
+                                      startDateController.text =
+                                          DateFormat('yyyy-MM-dd').format(date);
+                                    }),
                                   ),
                                 ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '휴가 기간',
-                                  style: AppTextStyles.sectionSubtitle(context).copyWith(
-                                    fontWeight: FontWeight.bold,
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 6),
+                                  child: Text('~'),
+                                ),
+                                Expanded(
+                                  child: dateField(
+                                    hint: '종료일',
+                                    controller: endDateController,
+                                    initial: selectedEndDate,
+                                    onPicked: (date) => setState(() {
+                                      selectedEndDate = date;
+                                      endDateController.text =
+                                          DateFormat('yyyy-MM-dd').format(date);
+                                    }),
                                   ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: InkWell(
-                                    onTap: () async {
-                                      final date = await showDatePicker(
-                                        initialEntryMode: DatePickerEntryMode.calendarOnly,
-                                        context: context,
-                                        initialDate: selectedStartDate ?? DateTime.now(),
-                                        firstDate: DateTime(2020),
-                                        lastDate: DateTime(2030),
-                                      );
-                                      if (date != null) {
-                                        setState(() {
-                                          selectedStartDate = date;
-                                          startDateController.text = 
-                                              DateFormat('yyyy-MM-dd').format(date);
-                                        });
-                                      }
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.backgroundSecondary,
-                                        borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(color: AppColors.border),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.calendar_today,
-                                            size: 18,
-                                            color: AppColors.primary,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              startDateController.text.isEmpty
-                                                  ? '시작일'
-                                                  : startDateController.text,
-                                              style: AppTextStyles.inputLabel(context).copyWith(
-                                                color: startDateController.text.isEmpty
-                                                    ? AppColors.gray400
-                                                    : AppColors.textPrimary,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: InkWell(
-                                    onTap: () async {
-                                      final date = await showDatePicker(
-                                        initialEntryMode: DatePickerEntryMode.calendarOnly,
-                                        context: context,
-                                        initialDate: selectedEndDate ?? DateTime.now(),
-                                        firstDate: DateTime(2020),
-                                        lastDate: DateTime(2030),
-                                      );
-                                      if (date != null) {
-                                        setState(() {
-                                          selectedEndDate = date;
-                                          endDateController.text = 
-                                              DateFormat('yyyy-MM-dd').format(date);
-                                        });
-                                      }
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.backgroundSecondary,
-                                        borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(color: AppColors.border),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.calendar_today,
-                                            size: 18,
-                                            color: AppColors.primary,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              endDateController.text.isEmpty
-                                                  ? '종료일'
-                                                  : endDateController.text,
-                                              style: AppTextStyles.inputLabel(context).copyWith(
-                                                color: endDateController.text.isEmpty
-                                                    ? AppColors.gray400
-                                                    : AppColors.textPrimary,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 24),
-                            
-                            // 사유
-                            Row(
-                              children: [
-                                Container(
-                                  width: 4,
-                                  height: 20,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary,
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '사유',
-                                  style: AppTextStyles.sectionSubtitle(context).copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
+                            label('사유'),
                             Container(
-                              decoration: BoxDecoration(
-                                color: AppColors.backgroundSecondary,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: AppColors.border),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
                               ),
+                              decoration: fieldBox(),
                               child: TextField(
                                 controller: reasonController,
                                 maxLines: 3,
-                                decoration: const InputDecoration(
+                                minLines: 2,
+                                style: AppTextStyles.cardBody(context),
+                                decoration: InputDecoration(
                                   hintText: '휴가 사유를 입력하세요',
+                                  hintStyle: AppTextStyles.listSubtitle(context),
+                                  filled: false,
+                                  isDense: true,
                                   border: InputBorder.none,
-                                  contentPadding: EdgeInsets.all(12),
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  contentPadding: EdgeInsets.zero,
                                 ),
                               ),
                             ),
@@ -2814,139 +2703,108 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                         ),
                       ),
                     ),
-                    
-                    // 버튼 영역
-                    Container(
-                      decoration: const BoxDecoration(
-                        color: AppColors.backgroundSecondary,
-                        borderRadius: BorderRadius.only(
-                          bottomLeft: Radius.circular(10),
-                          bottomRight: Radius.circular(10),
-                        ),
-                      ),
-                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextButton(
-                              style: TextButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: AppColors.textSecondary,
-                                padding: const EdgeInsets.symmetric(vertical: 10),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  side: const BorderSide(color: AppColors.border),
-                                ),
-                              ),
-                              onPressed: () => Navigator.pop(context),
-                              child: Text(
-                                '취소',
-                                style: AppTextStyles.sectionSubtitle(context),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: FilledButton(
-                                style: FilledButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                onPressed: () async {
-                                  
-                                  // 수정 로직 구현
-                                  if (selectedStartDate == null || selectedEndDate == null) {
-                                    AppBanner.show(context, '시작일과 종료일을 선택해주세요', type: BannerType.error);
-                                    return;
-                                  }
 
-                                  if (reasonController.text.trim().isEmpty) {
-                                    AppBanner.show(context, '사유를 입력해주세요', type: BannerType.error);
-                                    return;
-                                  }
-                                  
-                                  
-                                  // BuildContext를 먼저 저장
-                                  final navigatorContext = Navigator.of(context);
-                                  final savedContext = context;
-                                  
-                                  // 수정 다이얼로그 닫기
-                                  Navigator.pop(context);
-                                  
-                                  // mounted 체크
-                                  await Future.delayed(const Duration(milliseconds: 100));
-                                  
-                                  // 로딩 표시 - GlobalKey 사용
-                                  late BuildContext loadingContext;
-                                  showDialog(
-                                    context: navigatorContext.context,
-                                    barrierDismissible: false,
-                                    builder: (dialogContext) {
-                                      loadingContext = dialogContext;
-                                      return const Center(
-                                        child: CircularProgressIndicator(),
-                                      );
-                                    },
-                                  );
-                                  
-                                  try {
-                                    // 실제 수정 로직 호출
-                                    await provider.updateLeaveDetails(
-                                      leaveId: leave['id'],
-                                      type: selectedType,
-                                      startDate: DateFormat('yyyy-MM-dd').format(selectedStartDate!),
-                                      endDate: DateFormat('yyyy-MM-dd').format(selectedEndDate!),
-                                      reason: reasonController.text.trim(),
-                                    );
-                                    
-                                    
-                                    // 로딩 닫기 - loadingContext 사용
-                                    if (loadingContext.mounted) {
-                                      Navigator.of(loadingContext).pop();
-                                    } else {
-                                      // 백업 방법 - navigatorContext 사용
-                                      try {
-                                        navigatorContext.pop();
-                                      } catch (e) {
-      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
-    }
-                                    }
-                                    
-                                    // 성공 메시지
-                                    if (!mounted) return;
-                                    AppBanner.show(savedContext, '휴가 정보가 수정되었습니다', type: BannerType.success);
-                                    
-                                    // 데이터 새로고침
-                                    await provider.fetchAllLeaves(forceRefresh: true);
-                                  } catch (e) {
-                                    
-                                    // 로딩 닫기 - loadingContext 사용
-                                    if (loadingContext.mounted) {
-                                      Navigator.of(loadingContext).pop();
-                                    } else {
-                                      // 백업 방법 - navigatorContext 사용
-                                      try {
-                                        navigatorContext.pop();
-                                      } catch (e2) {
-      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
-    }
-                                    }
-                                    
-                                    // 에러 메시지
-                                    if (!mounted) return;
-                                    AppBanner.show(savedContext, '수정 중 오류가 발생했습니다: $e', type: BannerType.error);
-                                  }
-                                },
-                                child: Text(
-                                  '수정하기',
-                                  style: AppTextStyles.inputLabel(context).copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
+                    // 버튼
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.textSecondary,
+                            ),
+                            child: const Text('취소'),
+                          ),
+                          const SizedBox(width: 4),
+                          FilledButton(
+                                                onPressed: () async {
+
+                                                  // 수정 로직 구현
+                                                  if (selectedStartDate == null || selectedEndDate == null) {
+                                                    AppBanner.show(context, '시작일과 종료일을 선택해주세요', type: BannerType.error);
+                                                    return;
+                                                  }
+
+                                                  if (reasonController.text.trim().isEmpty) {
+                                                    AppBanner.show(context, '사유를 입력해주세요', type: BannerType.error);
+                                                    return;
+                                                  }
+
+
+                                                  // BuildContext를 먼저 저장
+                                                  final navigatorContext = Navigator.of(context);
+                                                  final savedContext = context;
+
+                                                  // 수정 다이얼로그 닫기
+                                                  Navigator.pop(context);
+
+                                                  // mounted 체크
+                                                  await Future.delayed(const Duration(milliseconds: 100));
+
+                                                  // 로딩 표시 - GlobalKey 사용
+                                                  late BuildContext loadingContext;
+                                                  showDialog(
+                                                    context: navigatorContext.context,
+                                                    barrierDismissible: false,
+                                                    builder: (dialogContext) {
+                                                      loadingContext = dialogContext;
+                                                      return const Center(
+                                                        child: CircularProgressIndicator(),
+                                                      );
+                                                    },
+                                                  );
+
+                                                  try {
+                                                    // 실제 수정 로직 호출
+                                                    await provider.updateLeaveDetails(
+                                                      leaveId: leave['id'],
+                                                      type: selectedType,
+                                                      startDate: DateFormat('yyyy-MM-dd').format(selectedStartDate!),
+                                                      endDate: DateFormat('yyyy-MM-dd').format(selectedEndDate!),
+                                                      reason: reasonController.text.trim(),
+                                                    );
+
+
+                                                    // 로딩 닫기 - loadingContext 사용
+                                                    if (loadingContext.mounted) {
+                                                      Navigator.of(loadingContext).pop();
+                                                    } else {
+                                                      // 백업 방법 - navigatorContext 사용
+                                                      try {
+                                                        navigatorContext.pop();
+                                                      } catch (e) {
+                      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+                    }
+                                                    }
+
+                                                    // 성공 메시지
+                                                    if (!mounted) return;
+                                                    AppBanner.show(savedContext, '휴가 정보가 수정되었습니다', type: BannerType.success);
+
+                                                    // 데이터 새로고침
+                                                    await provider.fetchAllLeaves(forceRefresh: true);
+                                                  } catch (e) {
+
+                                                    // 로딩 닫기 - loadingContext 사용
+                                                    if (loadingContext.mounted) {
+                                                      Navigator.of(loadingContext).pop();
+                                                    } else {
+                                                      // 백업 방법 - navigatorContext 사용
+                                                      try {
+                                                        navigatorContext.pop();
+                                                      } catch (e2) {
+                      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+                    }
+                                                    }
+
+                                                    // 에러 메시지
+                                                    if (!mounted) return;
+                                                    AppBanner.show(savedContext, '수정 중 오류가 발생했습니다: $e', type: BannerType.error);
+                                                  }
+                                                },
+                            child: const Text('수정하기'),
                           ),
                         ],
                       ),

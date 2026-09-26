@@ -1861,6 +1861,8 @@ class _InquiryScreenState extends State<InquiryScreen>
                           height: 1.5,
                         ),
                         border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
                         contentPadding: EdgeInsets.all(
                           ResponsiveUtils.spacing(context, 16),
                         ),

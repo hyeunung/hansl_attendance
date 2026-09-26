@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import '../../services/admin_attendance_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
-import '../../utils/responsive_utils.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 
 /// 근태 기록 수정 바텀시트
@@ -141,7 +140,7 @@ class _AdminAttendanceEditSheetState extends State<AdminAttendanceEditSheet> {
       child: SafeArea(
         top: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -157,40 +156,34 @@ class _AdminAttendanceEditSheetState extends State<AdminAttendanceEditSheet> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               // Header
+              Text(name, style: AppTextStyles.appBarTitle(context)),
+              const SizedBox(height: 1),
               Text(
-                name,
-                style: ResponsiveUtils.getTextStyle(
-                  context,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                date,
+                '$date · 근태 수정',
                 style: AppTextStyles.listSubtitle(context),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
+              const Divider(height: 1, color: AppColors.borderLight),
+              const SizedBox(height: 12),
 
               // 출근 시간 (직접 입력)
               _label('출근 시간'),
               _timeInputField(_clockInCtrl),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               // 퇴근 시간 (직접 입력)
               _label('퇴근 시간'),
               _timeInputField(_clockOutCtrl),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               // 상태
               _label('상태'),
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: 6,
+                runSpacing: 6,
                 children: _statusOptions.map((s) {
                   final selected = _status == s;
                   return ChoiceChip(
@@ -208,30 +201,40 @@ class _AdminAttendanceEditSheetState extends State<AdminAttendanceEditSheet> {
                           selected ? AppColors.primary : AppColors.border,
                     ),
                     backgroundColor: Colors.white,
+                    showCheckmark: false,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   );
                 }).toList(),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               // 비고
               _label('비고'),
               Container(
                 decoration: BoxDecoration(
                   border: Border.all(color: AppColors.border),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: TextField(
                   controller: _remarksCtrl,
                   maxLines: 2,
+                  style: AppTextStyles.cardBody(context),
                   decoration: const InputDecoration(
                     hintText: '예: GPS 오류로 수동 보정',
                     border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
                     contentPadding:
                         EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
               // Buttons
               Row(
@@ -241,9 +244,9 @@ class _AdminAttendanceEditSheetState extends State<AdminAttendanceEditSheet> {
                       onPressed:
                           _saving ? null : () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        side: BorderSide(color: AppColors.border),
+                        side: const BorderSide(color: AppColors.border),
                         foregroundColor: AppColors.textSecondary,
+                        minimumSize: const Size(0, 40),
                       ),
                       child: const Text('취소'),
                     ),
@@ -253,15 +256,12 @@ class _AdminAttendanceEditSheetState extends State<AdminAttendanceEditSheet> {
                     child: ElevatedButton(
                       onPressed: _saving ? null : _save,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        elevation: 0,
+                        minimumSize: const Size(0, 40),
                       ),
                       child: _saving
                           ? const SizedBox(
-                              width: 20,
-                              height: 20,
+                              width: 16,
+                              height: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
                                 color: Colors.white,
@@ -281,11 +281,8 @@ class _AdminAttendanceEditSheetState extends State<AdminAttendanceEditSheet> {
 
   Widget _label(String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Text(
-        text,
-        style: AppTextStyles.tableCell(context),
-      ),
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text(text, style: AppTextStyles.listSubtitle(context)),
     );
   }
 
@@ -293,16 +290,17 @@ class _AdminAttendanceEditSheetState extends State<AdminAttendanceEditSheet> {
   /// 숫자 키보드 + 자동 콜론 삽입 + 5자 제한
   Widget _timeInputField(TextEditingController controller) {
     return Container(
+      height: 40,
       decoration: BoxDecoration(
         border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
+          const Padding(
+            padding: EdgeInsets.only(left: 12, right: 8),
             child: Icon(Icons.access_time,
-                size: 18, color: AppColors.textTertiary),
+                size: 16, color: AppColors.textTertiary),
           ),
           Expanded(
             child: TextField(
@@ -316,7 +314,9 @@ class _AdminAttendanceEditSheetState extends State<AdminAttendanceEditSheet> {
               decoration: const InputDecoration(
                 hintText: 'HH:MM (예: 09:15)',
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 14),
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
               ),
               style: AppTextStyles.tableCell(context),
               onChanged: (_) => setState(() {}),
@@ -324,8 +324,8 @@ class _AdminAttendanceEditSheetState extends State<AdminAttendanceEditSheet> {
           ),
           if (controller.text.isNotEmpty)
             IconButton(
-              icon: Icon(Icons.clear,
-                  size: 18, color: AppColors.textTertiary),
+              icon: const Icon(Icons.clear,
+                  size: 16, color: AppColors.textTertiary),
               onPressed: () => setState(() => controller.clear()),
             ),
         ],

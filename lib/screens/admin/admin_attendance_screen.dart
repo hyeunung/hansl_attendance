@@ -340,6 +340,8 @@ class _AdminAttendanceScreenState extends State<AdminAttendanceScreen> {
                   prefixIconConstraints:
                       const BoxConstraints(minWidth: 34, minHeight: 18),
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
                   isDense: true,
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: ResponsiveUtils.spacing(context, 4),

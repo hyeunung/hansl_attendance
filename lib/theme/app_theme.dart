@@ -62,9 +62,25 @@ class AppTheme {
     ),
 
     // ─── Input ───
+    // ─── Input (전역) ───
+    // 채움을 끈다: 테두리 컨테이너로 감싼 입력칸마다 안쪽에 회색 박스가
+    // 한 번 더 그려지던 '이중 박스' 문제의 근본 원인. 채움이 필요한 곳(검색창)은
+    // 개별 위젯에서 filled: true 를 명시한다.
     inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: AppColors.backgroundSecondary,
+      filled: false,
+      fillColor: Colors.white,
+      isDense: true,
+      hintStyle: const TextStyle(
+        fontFamily: 'NotoSans',
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        color: AppColors.textDisabled,
+      ),
+      labelStyle: const TextStyle(
+        fontFamily: 'NotoSans',
+        fontSize: 12,
+        color: AppColors.textSecondary,
+      ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
         borderSide: const BorderSide(color: AppColors.border),
@@ -77,7 +93,14 @@ class AppTheme {
         borderRadius: BorderRadius.circular(8),
         borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    ),
+
+    // ─── 기본 본문 글자 (스타일 미지정 TextField 입력값·드롭다운 항목 등) ───
+    textTheme: const TextTheme(
+      bodyLarge: TextStyle(fontSize: 13, color: AppColors.textPrimary),
+      bodyMedium: TextStyle(fontSize: 12, color: AppColors.textPrimary),
+      titleMedium: TextStyle(fontSize: 13, color: AppColors.textPrimary),
     ),
 
     // ─── ElevatedButton ───

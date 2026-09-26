@@ -344,66 +344,65 @@ class _SettingsScreenState extends State<SettingsScreen>
     _loadInquiryBadgeCount();
   }
 
-  void _showAccountDeletionDialog() {
-    showCupertinoDialog(
+  /// 앱 공통 확인창 (제목 18 + 아이콘, 본문 12, 취소/확인)
+  Future<bool> _confirm({
+    required String title,
+    required String message,
+    required String confirmText,
+    IconData icon = Icons.help_outline,
+    Color color = AppColors.primary,
+  }) async {
+    final result = await showDialog<bool>(
       context: context,
-      builder: (context) {
-        return CupertinoAlertDialog(
-          title: Text(
-            '계정 삭제',
-            style: AppTextStyles.cardTitle(context).copyWith(
-              color: AppColors.error,
-            ),
-          ),
-          content: Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: Text(
-              '계정을 삭제하면 모든 데이터가 영구적으로 삭제됩니다.\n\n• 출퇴근 기록\n• 연차 신청 내역\n• 개인 정보\n\n이 작업은 되돌릴 수 없습니다.',
-              style: AppTextStyles.tableCellSub(context),
-            ),
-          ),
-          actions: [
-            CupertinoDialogAction(
-              child: const Text('취소'),
-              onPressed: () => Navigator.pop(context),
-            ),
-            CupertinoDialogAction(
-              isDestructiveAction: true,
-              child: const Text('삭제'),
-              onPressed: () async {
-                Navigator.pop(context);
-
-                // 최종 확인 다이얼로그
-                final confirmed = await showCupertinoDialog<bool>(
-                  context: context,
-                  builder: (context) {
-                    return CupertinoAlertDialog(
-                      title: const Text('정말 삭제하시겠습니까?'),
-                      content: const Text('마지막 확인입니다. 계정을 삭제하시겠습니까?'),
-                      actions: [
-                        CupertinoDialogAction(
-                          child: const Text('취소'),
-                          onPressed: () => Navigator.pop(context, false),
-                        ),
-                        CupertinoDialogAction(
-                          isDestructiveAction: true,
-                          child: const Text('삭제'),
-                          onPressed: () => Navigator.pop(context, true),
-                        ),
-                      ],
-                    );
-                  },
-                );
-
-                if (confirmed == true) {
-                  await _deleteAccount();
-                }
-              },
-            ),
+      builder: (dialogContext) => AlertDialog(
+        titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+        contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+        title: Row(
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(width: 8),
+            Expanded(child: Text(title)),
           ],
-        );
-      },
+        ),
+        content: Text(message, style: AppTextStyles.cardBody(context)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: color),
+            child: Text(confirmText),
+          ),
+        ],
+      ),
     );
+    return result == true;
+  }
+
+  Future<void> _showAccountDeletionDialog() async {
+    final first = await _confirm(
+      title: '계정 삭제',
+      message: '계정을 삭제하면 모든 데이터가 영구적으로 삭제됩니다.\n\n'
+          '• 출퇴근 기록\n• 연차 신청 내역\n• 개인 정보\n\n'
+          '이 작업은 되돌릴 수 없습니다.',
+      confirmText: '삭제',
+      icon: Icons.delete_forever,
+      color: AppColors.error,
+    );
+    if (!first || !mounted) return;
+
+    // 최종 확인
+    final second = await _confirm(
+      title: '정말 삭제하시겠습니까?',
+      message: '마지막 확인입니다. 계정을 삭제하시겠습니까?',
+      confirmText: '삭제',
+      icon: Icons.warning_amber_rounded,
+      color: AppColors.error,
+    );
+    if (second) await _deleteAccount();
   }
 
   Future<void> _deleteAccount() async {
@@ -804,6 +803,14 @@ class _SettingsScreenState extends State<SettingsScreen>
                           padding: EdgeInsets.zero,
                         ),
                         onPressed: () async {
+                          final ok = await _confirm(
+                            title: '캐시 복원',
+                            message: '기기에 남은 연차 캐시를 DB로 복원합니다. 진행하시겠습니까?',
+                            confirmText: '복원',
+                            icon: Icons.restore,
+                          );
+                          if (!ok) return;
+
                           // 캐시 내용 확인
                           await CacheRecoveryService.printCacheContents();
 
@@ -875,6 +882,15 @@ class _SettingsScreenState extends State<SettingsScreen>
                       padding: EdgeInsets.zero,
                     ),
                     onPressed: () async {
+                      final ok = await _confirm(
+                        title: '로그아웃',
+                        message: '로그아웃하시겠습니까?\n자동 로그인 정보도 함께 해제됩니다.',
+                        confirmText: '로그아웃',
+                        icon: Icons.logout,
+                        color: AppColors.error,
+                      );
+                      if (!ok) return;
+
                       // Supabase 세션 종료
                       final supabase = Supabase.instance.client;
                       await supabase.auth.signOut();

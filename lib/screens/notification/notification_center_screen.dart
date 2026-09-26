@@ -137,48 +137,48 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
     }
   }
 
-  String _getNotificationIcon(String type) {
+  IconData _getNotificationIcon(String type) {
     switch (type) {
       case 'leave_request':
       case 'annual':
       case 'leave_cancelled':
-        return '🏖';
+        return Icons.beach_access_outlined;
       case 'business_trip':
       case 'biztrip':
       case 'vehicle_requested':
-        return '🚗';
+        return Icons.directions_car_outlined;
       case 'leave_result':
       case 'leave_status_change':
       case 'leave_update':
       case 'business_trip_approved':
       case 'card_usage_approved':
       case 'vehicle_approved':
-        return '✅';
+        return Icons.check_circle_outline;
       case 'card_usage_requested':
-        return '💳';
+        return Icons.credit_card;
       case 'transaction_statement_extracted':
       case 'transaction_statement_quantities_matched':
-        return '🧾';
+        return Icons.description_outlined;
       case 'inquiry_resolved':
       case 'inquiry_message':
       case 'new_vendor_inquiry':
       case 'new_vendor_registered':
-        return '💬';
+        return Icons.forum_outlined;
       case 'attendance_late':
-        return '⏰';
+        return Icons.schedule;
       case 'purchase_requests':
       case 'purchase_approval':
       case 'final_approval_request':
-        return '📦';
+        return Icons.inventory_2_outlined;
       case 'purchase_approved':
       case 'purchase_result':
-        return '💳';
+        return Icons.receipt_long_outlined;
       case 'notification_summary':
       case 'grouped_notification':
       case 'multiple_notifications':
-        return '🔔';
+        return Icons.notifications_none;
       default:
-        return '📢';
+        return Icons.campaign_outlined;
     }
   }
 
@@ -222,11 +222,11 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
         return AppColors.purple;
       case 'purchase_approved':
       case 'purchase_result':
-        return Colors.teal;
+        return AppColors.success;
       case 'notification_summary':
       case 'grouped_notification':
       case 'multiple_notifications':
-        return Colors.indigo;
+        return AppColors.primary;
       default:
         return AppColors.gray500;
     }
@@ -268,7 +268,10 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
           if (unreadCount > 0)
             TextButton(
               onPressed: _markAllAsRead,
-              child: Text('모두 읽음', style: AppTextStyles.tableCellSub(context)),
+              child: Text(
+                '모두 읽음',
+                style: AppTextStyles.tableCell(context, color: AppColors.primary),
+              ),
             ),
         ],
       ),
@@ -285,9 +288,29 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                 if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
               },
               child: ListView.builder(
-                itemCount: _notifications.length,
+                padding: EdgeInsets.symmetric(
+                  vertical: ResponsiveUtils.spacing(context, 12),
+                ),
+                itemCount: _notifications.length + 1,
                 itemBuilder: (context, index) {
-                  final notification = _notifications[index];
+                  if (index == 0) {
+                    return _buildCardEdge(
+                      isFirst: true,
+                      isLast: false,
+                      child: FlatCardHeader(
+                        title: '알림',
+                        icon: Icons.notifications_none,
+                        iconColor: AppColors.primary,
+                        trailing: Text(
+                          unreadCount > 0
+                              ? '미확인 $unreadCount · 전체 ${_notifications.length}'
+                              : '전체 ${_notifications.length}',
+                          style: AppTextStyles.listSubtitle(context),
+                        ),
+                      ),
+                    );
+                  }
+                  final notification = _notifications[index - 1];
                   final isRead = notification['is_read'] ?? false;
                   // 좌측 아이콘과 중복되므로 제목 앞 이모지 제거
                   final title = _stripLeadingEmoji(
@@ -297,107 +320,106 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                   final notifType = NotificationNavigator.resolveType(notification);
                   final notifColor = _getNotificationColor(notifType);
 
-                  return Dismissible(
-                    key: Key(notification['id'].toString()),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      color: AppColors.error,
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 20),
-                      child: const Icon(Icons.delete, color: Colors.white),
-                    ),
-                    onDismissed: (direction) {
-                      _deleteNotification(notification['id']);
-                    },
-                    child: InkWell(
-                      onTap: () async {
-                        if (!isRead) {
-                          await _markAsRead(notification['id']);
-                        }
-                        // 알림 타입에 따라 화면 이동
-                        _handleNotificationTap(notification);
+                  return _buildCardEdge(
+                    isFirst: false,
+                    isLast: index == _notifications.length,
+                    child: Dismissible(
+                      key: Key(notification['id'].toString()),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        color: AppColors.error,
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 16),
+                        child: const Icon(Icons.delete_outline,
+                            color: Colors.white, size: 20),
+                      ),
+                      onDismissed: (direction) {
+                        _deleteNotification(notification['id']);
                       },
-                      child: Container(
-                        color: isRead ? Colors.white : AppColors.infoLight,
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: ResponsiveUtils.spacing(context, 14),
-                                vertical: ResponsiveUtils.spacing(context, 8),
+                      child: InkWell(
+                        onTap: () async {
+                          if (!isRead) {
+                            await _markAsRead(notification['id']);
+                          }
+                          // 알림 타입에 따라 화면 이동
+                          _handleNotificationTap(notification);
+                        },
+                        child: Container(
+                          color: isRead
+                              ? Colors.white
+                              : AppColors.primary.withValues(alpha: 0.04),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: ResponsiveUtils.spacing(context, 14),
+                            vertical: ResponsiveUtils.spacing(context, 8),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 28,
+                                height: 28,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: notifColor.withValues(alpha: 0.10),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  _getNotificationIcon(notifType),
+                                  size: 16,
+                                  color: notifColor,
+                                ),
                               ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    width: 28,
-                                    height: 28,
-                                    decoration: BoxDecoration(
-                                      color: notifColor.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        _getNotificationIcon(notifType),
-                                        style: AppTextStyles.cardBody(context),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
                                       children: [
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                title,
-                                                style: isRead
-                                                    ? AppTextStyles.tableCellSub(context)
-                                                    : AppTextStyles.listTitle(context),
-                                              ),
+                                        Expanded(
+                                          child: Text(
+                                            title,
+                                            style: AppTextStyles.tableCell(
+                                              context,
+                                              color: isRead
+                                                  ? AppColors.textSecondary
+                                                  : AppColors.textPrimary,
                                             ),
-                                            if (!isRead)
-                                              Container(
-                                                width: 8,
-                                                height: 8,
-                                                decoration: BoxDecoration(
-                                                  color: AppColors.primary,
-                                                  borderRadius:
-                                                      BorderRadius.circular(4),
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          body,
-                                          style: isRead
-                                              ? AppTextStyles.listSubtitle(context)
-                                              : AppTextStyles.tableCellSub(context).copyWith(
-                                                  color: AppColors.gray700,
-                                                ),
-                                          softWrap: true,
-                                          maxLines: 3,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          _formatDate(
-                                            notification['created_at'],
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          _formatDate(notification['created_at']),
                                           style: AppTextStyles.listSubtitle(context),
                                         ),
+                                        if (!isRead) ...[
+                                          const SizedBox(width: 6),
+                                          Container(
+                                            width: 6,
+                                            height: 6,
+                                            decoration: const BoxDecoration(
+                                              color: AppColors.primary,
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                        ],
                                       ],
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      body,
+                                      style: AppTextStyles.listSubtitle(context),
+                                      softWrap: true,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            const Divider(height: 0.5, thickness: 0.5, color: AppColors.borderLight),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -405,6 +427,39 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                 },
               ),
             ),
+    );
+  }
+
+  /// 리스트 항목을 카드처럼 보이게 감싸는 테두리 조각 (지연 렌더링 유지)
+  Widget _buildCardEdge({
+    required bool isFirst,
+    required bool isLast,
+    required Widget child,
+  }) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsiveUtils.spacing(context, 16),
+      ),
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            top: isFirst
+                ? const BorderSide(color: AppColors.border)
+                : BorderSide.none,
+            left: const BorderSide(color: AppColors.border),
+            right: const BorderSide(color: AppColors.border),
+            // 둥근 모서리는 테두리 색이 모두 같아야 그려진다 (변마다 다르면 페인트 오류)
+            bottom: const BorderSide(color: AppColors.border),
+          ),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(isFirst ? 10 : 0),
+            bottom: Radius.circular(isLast ? 10 : 0),
+          ),
+        ),
+        child: child,
+      ),
     );
   }
 
