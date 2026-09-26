@@ -5,7 +5,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/admin_attendance_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
-import '../../theme/app_shadows.dart';
 import '../../utils/responsive_utils.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import '../../widgets/shared/flat_section.dart';
@@ -187,8 +186,7 @@ class _AdminAttendanceScreenState extends State<AdminAttendanceScreen> {
         children: [
           _buildDateNav(),
           _buildSummaryCard(),
-          _buildFilterChips(),
-          _buildSearchBar(),
+          _buildFilterAndSearchRow(),
           Expanded(child: _buildList()),
         ],
       ),
@@ -197,54 +195,56 @@ class _AdminAttendanceScreenState extends State<AdminAttendanceScreen> {
 
   Widget _buildDateNav() {
     final weekday = ['일', '월', '화', '수', '목', '금', '토'][_selectedDate.weekday % 7];
-    return Container(
-      margin: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
-      padding: EdgeInsets.symmetric(
-        vertical: ResponsiveUtils.spacing(context, 12),
-        horizontal: ResponsiveUtils.spacing(context, 8),
+    return FlatCard(
+      margin: EdgeInsets.fromLTRB(
+        ResponsiveUtils.spacing(context, 16),
+        ResponsiveUtils.spacing(context, 10),
+        ResponsiveUtils.spacing(context, 16),
+        ResponsiveUtils.spacing(context, 8),
       ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: AppShadows.cardShadow,
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.chevron_left),
-            color: AppColors.textSecondary,
-            onPressed: () => _moveDate(-1),
-          ),
-          Expanded(
-            child: GestureDetector(
-              onTap: _pickDate,
-              child: Center(
-                child: Text(
-                  '${_selectedDate.year}.${_selectedDate.month.toString().padLeft(2, '0')}.${_selectedDate.day.toString().padLeft(2, '0')} ($weekday)',
-                  style: ResponsiveUtils.getTextStyle(
-                    context,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: ResponsiveUtils.spacing(context, 6),
+          vertical: ResponsiveUtils.spacing(context, 2),
+        ),
+        child: Row(
+          children: [
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.chevron_left, size: 20),
+              color: AppColors.textSecondary,
+              onPressed: () => _moveDate(-1),
+            ),
+            Expanded(
+              child: InkWell(
+                onTap: _pickDate,
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    vertical: ResponsiveUtils.spacing(context, 8),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${_selectedDate.year}.${_selectedDate.month.toString().padLeft(2, '0')}.${_selectedDate.day.toString().padLeft(2, '0')} ($weekday)',
+                      style: AppTextStyles.sectionHeader(context),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.chevron_right),
-            color: AppColors.textSecondary,
-            onPressed: () => _moveDate(1),
-          ),
-          TextButton(
-            onPressed: _goToday,
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.primary,
-              textStyle: const TextStyle(fontWeight: FontWeight.w600),
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.chevron_right, size: 20),
+              color: AppColors.textSecondary,
+              onPressed: () => _moveDate(1),
             ),
-            child: const Text('오늘'),
-          ),
-        ],
+            TextButton(
+              onPressed: _goToday,
+              child: Text('오늘', style: AppTextStyles.tableCell(context).copyWith(color: AppColors.primary)),
+            ),
+            SizedBox(width: ResponsiveUtils.spacing(context, 4)),
+          ],
+        ),
       ),
     );
   }
@@ -257,117 +257,106 @@ class _AdminAttendanceScreenState extends State<AdminAttendanceScreen> {
         .where((r) => r['has_leave'] == true || r['has_biztrip'] == true)
         .length;
 
-    return Container(
-      margin: EdgeInsets.symmetric(
-        horizontal: ResponsiveUtils.spacing(context, 16),
+    return FlatCard(
+      margin: EdgeInsets.fromLTRB(
+        ResponsiveUtils.spacing(context, 16),
+        0,
+        ResponsiveUtils.spacing(context, 16),
+        ResponsiveUtils.spacing(context, 8),
       ),
-      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 14)),
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _summaryItem('전체', '$total명'),
-          _summaryItem('출근', '$clockedIn'),
-          _summaryItem('지각', '$late'),
-          _summaryItem('연차/출장', '$onLeave'),
+      child: FlatStatGrid(
+        items: [
+          FlatStatItem(label: '전체', value: '$total', color: AppColors.textPrimary),
+          FlatStatItem(label: '출근', value: '$clockedIn', color: AppColors.primary),
+          FlatStatItem(label: '지각', value: '$late', color: late > 0 ? AppColors.error : AppColors.textTertiary),
+          FlatStatItem(label: '연차/출장', value: '$onLeave', color: AppColors.biztrip),
         ],
       ),
     );
   }
 
-  Widget _summaryItem(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: ResponsiveUtils.getTextStyle(
-            context,
-            fontSize: 12,
-            fontWeight: FontWeight.w800,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: ResponsiveUtils.getTextStyle(
-            context,
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            color: Colors.white.withValues(alpha: 0.85),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFilterChips() {
+  /// 상태 필터(드롭다운) + 검색을 한 행에 배치
+  Widget _buildFilterAndSearchRow() {
     return Padding(
       padding: EdgeInsets.fromLTRB(
         ResponsiveUtils.spacing(context, 16),
-        ResponsiveUtils.spacing(context, 14),
+        ResponsiveUtils.spacing(context, 12),
         ResponsiveUtils.spacing(context, 16),
-        0,
+        ResponsiveUtils.spacing(context, 8),
       ),
-      // 가로 스크롤 시 마지막 칩이 화면 밖으로 잘려 보여 줄바꿈 방식으로 변경
-      child: Wrap(
-        spacing: ResponsiveUtils.spacing(context, 8),
-        runSpacing: ResponsiveUtils.spacing(context, 8),
-        children: _statusOptions.map((option) {
-          final selected = _statusFilter == option;
-          return ChoiceChip(
-            label: Text(option),
-            selected: selected,
-            onSelected: (_) => setState(() => _statusFilter = option),
-            selectedColor: AppColors.primary,
-            backgroundColor: Colors.white,
-            visualDensity: VisualDensity.compact,
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            labelStyle: TextStyle(
-              color: selected ? Colors.white : AppColors.textSecondary,
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
+      child: Row(
+        children: [
+          // 상태 필터
+          Container(
+            height: ResponsiveUtils.spacing(context, 38),
+            padding: EdgeInsets.symmetric(
+              horizontal: ResponsiveUtils.spacing(context, 10),
             ),
-            side: BorderSide(
-              color: selected ? AppColors.primary : AppColors.border,
+            decoration: BoxDecoration(
+              color: AppColors.backgroundCard,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.border),
             ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildSearchBar() {
-    return Container(
-      margin: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: TextField(
-        controller: _searchCtrl,
-        decoration: InputDecoration(
-          hintText: '직원명 또는 이메일로 검색',
-          hintStyle: TextStyle(
-            color: AppColors.textTertiary,
-            fontSize: 12,
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _statusFilter,
+                isDense: true,
+                icon: const Icon(Icons.arrow_drop_down,
+                    size: 18, color: AppColors.textSecondary),
+                style: AppTextStyles.tableCell(context),
+                dropdownColor: AppColors.backgroundCard,
+                borderRadius: BorderRadius.circular(8),
+                items: _statusOptions
+                    .map((o) => DropdownMenuItem<String>(
+                          value: o,
+                          child: Text(o, style: AppTextStyles.tableCell(context)),
+                        ))
+                    .toList(),
+                onChanged: (v) {
+                  if (v != null) setState(() => _statusFilter = v);
+                },
+              ),
+            ),
           ),
-          prefixIcon:
-              const Icon(Icons.search, color: AppColors.textTertiary, size: 20),
-          border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          suffixIcon: _searchQuery.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear, size: 18),
-                  onPressed: () => _searchCtrl.clear(),
-                )
-              : null,
-        ),
+          SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+          // 검색
+          Expanded(
+            child: Container(
+              height: ResponsiveUtils.spacing(context, 38),
+              decoration: BoxDecoration(
+                color: AppColors.backgroundCard,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: TextField(
+                controller: _searchCtrl,
+                style: AppTextStyles.tableCell(context),
+                decoration: InputDecoration(
+                  hintText: '직원명 또는 이메일 검색',
+                  hintStyle: AppTextStyles.listSubtitle(context),
+                  prefixIcon: const Icon(Icons.search,
+                      color: AppColors.textTertiary, size: 18),
+                  prefixIconConstraints:
+                      const BoxConstraints(minWidth: 34, minHeight: 18),
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: ResponsiveUtils.spacing(context, 4),
+                    vertical: ResponsiveUtils.spacing(context, 10),
+                  ),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          icon: const Icon(Icons.clear, size: 16),
+                          onPressed: () => _searchCtrl.clear(),
+                        )
+                      : null,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -393,17 +382,30 @@ class _AdminAttendanceScreenState extends State<AdminAttendanceScreen> {
         ),
       );
     }
+    // 목록도 카드 안에 넣어 상단 요소들과 좌우 정렬을 맞춘다
     return RefreshIndicator(
       onRefresh: () => _loadData(),
-      child: ListView.builder(
-        padding: EdgeInsets.fromLTRB(
-          ResponsiveUtils.spacing(context, 16),
-          0,
-          ResponsiveUtils.spacing(context, 16),
-          ResponsiveUtils.spacing(context, 24),
-        ),
-        itemCount: filtered.length,
-        itemBuilder: (_, i) => _buildRecordCard(filtered[i]),
+      child: ListView(
+        padding: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 20)),
+        children: [
+          FlatCard(
+            margin: EdgeInsets.symmetric(
+              horizontal: ResponsiveUtils.spacing(context, 16),
+            ),
+            child: Column(
+              children: [
+                FlatCardHeader(
+                  title: '직원 근태',
+                  trailing: Text(
+                    '${filtered.length}명',
+                    style: AppTextStyles.listSubtitle(context),
+                  ),
+                ),
+                ...filtered.map(_buildRecordCard),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
