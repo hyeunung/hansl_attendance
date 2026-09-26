@@ -1745,7 +1745,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                         backgroundColor: AppColors.error,
                         foregroundColor: Colors.white,
                         padding: EdgeInsets.symmetric(
-                          vertical: ResponsiveUtils.spacing(context, 18),
+                          vertical: ResponsiveUtils.spacing(context, 10),
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
@@ -1814,7 +1814,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                         backgroundColor: AppColors.success,
                         foregroundColor: Colors.white,
                         padding: EdgeInsets.symmetric(
-                          vertical: ResponsiveUtils.spacing(context, 18),
+                          vertical: ResponsiveUtils.spacing(context, 10),
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
@@ -2111,7 +2111,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                         backgroundColor: AppColors.error,
                         foregroundColor: Colors.white,
                         padding: EdgeInsets.symmetric(
-                          vertical: ResponsiveUtils.spacing(context, 18),
+                          vertical: ResponsiveUtils.spacing(context, 10),
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
@@ -2142,7 +2142,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                         backgroundColor: AppColors.success,
                         foregroundColor: Colors.white,
                         padding: EdgeInsets.symmetric(
-                          vertical: ResponsiveUtils.spacing(context, 18),
+                          vertical: ResponsiveUtils.spacing(context, 10),
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
@@ -2892,7 +2892,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                               style: TextButton.styleFrom(
                                 backgroundColor: Colors.white,
                                 foregroundColor: AppColors.gray700,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                padding: const EdgeInsets.symmetric(vertical: 10),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
                                   side: BorderSide(color: AppColors.gray300),
@@ -2923,7 +2923,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                 style: TextButton.styleFrom(
                                   backgroundColor: Colors.transparent,
                                   foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
@@ -3141,7 +3141,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                             style: TextButton.styleFrom(
                               backgroundColor: Colors.white,
                               foregroundColor: AppColors.textPrimary,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
@@ -3170,7 +3170,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                             style: TextButton.styleFrom(
                               backgroundColor: confirmColor,
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),

@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'package:intl/intl.dart';
 import '../../providers/leave_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
@@ -32,6 +33,13 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
   bool _isLoading = true;
   final double rValue = 14;
 
+  // 카드 사용 건별 업로드된 영수증 품목 (card_usage_id → 품목 목록)
+  Map<int, List<Map<String, dynamic>>> _receiptsByCard = {};
+  // 영수증 이미지 경로 → 미리보기용 서명 URL
+  Map<String, String> _signedUrls = {};
+  final Set<int> _expandedCards = {};
+  final NumberFormat _numberFormat = NumberFormat('#,###');
+
   @override
   void initState() {
     super.initState();
@@ -44,9 +52,13 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
     try {
       final provider = Provider.of<LeaveProvider>(context, listen: false);
       final usages = await provider.fetchMyUploadableCards();
+      final receiptsByCard = await _loadReceiptDetails(usages);
+      final signedUrls = await _createSignedUrls(receiptsByCard);
       if (mounted) {
         setState(() {
           _cardUsages = usages;
+          _receiptsByCard = receiptsByCard;
+          _signedUrls = signedUrls;
           _isLoading = false;
         });
       }
@@ -54,6 +66,49 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  /// 업로드된 영수증 품목 상세 조회 (규격/수량/단가/비고 포함)
+  Future<Map<int, List<Map<String, dynamic>>>> _loadReceiptDetails(
+    List<Map<String, dynamic>> usages,
+  ) async {
+    final ids = usages.map((u) => u['id']).whereType<int>().toList();
+    if (ids.isEmpty) return {};
+    try {
+      final rows = await Supabase.instance.client
+          .from('card_usage_receipts')
+          .select('id, card_usage_id, receipt_url, merchant_name, item_name, specification, quantity, unit_price, total_amount, remark, created_at')
+          .inFilter('card_usage_id', ids)
+          .order('created_at', ascending: false);
+      final result = <int, List<Map<String, dynamic>>>{};
+      for (final row in List<Map<String, dynamic>>.from(rows)) {
+        result.putIfAbsent(row['card_usage_id'] as int, () => []).add(row);
+      }
+      return result;
+    } catch (_) {
+      return {};
+    }
+  }
+
+  /// card-receipts 버킷 이미지 미리보기용 서명 URL 일괄 발급
+  Future<Map<String, String>> _createSignedUrls(
+    Map<int, List<Map<String, dynamic>>> receiptsByCard,
+  ) async {
+    final paths = receiptsByCard.values
+        .expand((items) => items)
+        .map((r) => r['receipt_url'] as String?)
+        .whereType<String>()
+        .toSet()
+        .toList();
+    if (paths.isEmpty) return {};
+    try {
+      final signed = await Supabase.instance.client.storage
+          .from('card-receipts')
+          .createSignedUrls(paths, 3600);
+      return {for (final s in signed) s.path: s.signedUrl};
+    } catch (_) {
+      return {};
     }
   }
 
@@ -150,7 +205,10 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
     final description = cardUsage['description'] ?? '';
     final startDate = cardUsage['usage_date_start'] ?? '';
     final endDate = cardUsage['usage_date_end'] ?? startDate;
-    final receipts = (cardUsage['card_usage_receipts'] as List?) ?? [];
+    final cardUsageId = cardUsage['id'] as int;
+    final receipts = _receiptsByCard[cardUsageId] ?? const [];
+    final receiptGroups = _groupByReceiptImage(receipts);
+    final isExpanded = _expandedCards.contains(cardUsageId);
 
     return Container(
       margin: EdgeInsets.only(
@@ -232,25 +290,12 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
                 ],
               ),
             ),
-            // 기존 영수증 목록
+            // 업로드된 영수증 목록 (누르면 펼침)
             if (receipts.isNotEmpty) ...[
               SizedBox(height: ResponsiveUtils.spacing(context, 10)),
-              Row(
-                children: [
-                  Icon(
-                    Icons.check_circle,
-                    size: ResponsiveUtils.iconSize(context, 16),
-                    color: AppColors.success,
-                  ),
-                  SizedBox(width: ResponsiveUtils.spacing(context, 6)),
-                  Text(
-                    '업로드된 영수증: ${receipts.map((r) => r['receipt_url']).toSet().length}건',
-                    style: AppTextStyles.inputLabel(context).copyWith(
-                      color: AppColors.success,
-                    ),
-                  ),
-                ],
-              ),
+              _buildReceiptSummaryRow(cardUsageId, receiptGroups.length),
+              if (isExpanded)
+                ...receiptGroups.map(_buildReceiptGroup),
             ],
             SizedBox(height: ResponsiveUtils.spacing(context, 14)),
             // 업로드 버튼
@@ -279,7 +324,7 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
                     backgroundColor: AppColors.info,
                     foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(
-                      vertical: ResponsiveUtils.spacing(context, 14),
+                      vertical: ResponsiveUtils.spacing(context, 10),
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(
@@ -293,6 +338,228 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// 같은 영수증 사진(receipt_url)에 속한 품목끼리 묶기 (최신 업로드 순)
+  List<List<Map<String, dynamic>>> _groupByReceiptImage(
+    List<Map<String, dynamic>> receipts,
+  ) {
+    final groups = <String, List<Map<String, dynamic>>>{};
+    for (final r in receipts) {
+      groups.putIfAbsent(r['receipt_url'] as String? ?? '', () => []).add(r);
+    }
+    // 사진 안의 품목은 입력 순서대로
+    for (final items in groups.values) {
+      items.sort((a, b) => (a['id'] as int).compareTo(b['id'] as int));
+    }
+    return groups.values.toList();
+  }
+
+  String _formatAmount(dynamic value) {
+    final number = num.tryParse(value?.toString() ?? '');
+    return number == null ? '-' : _numberFormat.format(number);
+  }
+
+  String _formatUploadedAt(String? value) {
+    if (value == null) return '';
+    final local = DateTime.parse(value).toLocal();
+    return DateFormat('M/d HH:mm').format(local);
+  }
+
+  Widget _buildReceiptSummaryRow(int cardUsageId, int count) {
+    final isExpanded = _expandedCards.contains(cardUsageId);
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () => setState(() {
+        if (isExpanded) {
+          _expandedCards.remove(cardUsageId);
+        } else {
+          _expandedCards.add(cardUsageId);
+        }
+      }),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          vertical: ResponsiveUtils.spacing(context, 4),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.check_circle,
+              size: ResponsiveUtils.iconSize(context, 16),
+              color: AppColors.success,
+            ),
+            SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+            Text(
+              '업로드된 영수증: $count건',
+              style: AppTextStyles.inputLabel(context).copyWith(
+                color: AppColors.success,
+              ),
+            ),
+            const Spacer(),
+            Icon(
+              isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+              size: ResponsiveUtils.iconSize(context, 20),
+              color: AppColors.textTertiary,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 영수증 사진 1장 단위 카드: 썸네일 + 사용처 + 품목 목록
+  Widget _buildReceiptGroup(List<Map<String, dynamic>> items) {
+    final first = items.first;
+    final imageUrl = _signedUrls[first['receipt_url']];
+    final merchant = first['merchant_name'] as String? ?? '';
+    final total = items.fold<num>(
+      0,
+      (sum, r) => sum + (num.tryParse(r['total_amount']?.toString() ?? '') ?? 0),
+    );
+    final thumbSize = ResponsiveUtils.spacing(context, 56);
+
+    return Container(
+      margin: EdgeInsets.only(top: ResponsiveUtils.spacing(context, 8)),
+      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundSecondary,
+        borderRadius: BorderRadius.circular(
+          ResponsiveUtils.spacing(context, 10),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              GestureDetector(
+                onTap: imageUrl == null
+                    ? null
+                    : () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => _CardReceiptImageViewer(
+                              imageUrl: imageUrl,
+                              title: merchant.isNotEmpty ? merchant : '영수증',
+                            ),
+                          ),
+                        ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    width: thumbSize,
+                    height: thumbSize,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border.all(color: AppColors.border, width: 0.5),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: imageUrl == null
+                        ? Icon(
+                            Icons.broken_image,
+                            color: AppColors.gray400,
+                            size: ResponsiveUtils.iconSize(context, 22),
+                          )
+                        : Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) => Icon(
+                              Icons.broken_image,
+                              color: AppColors.gray400,
+                              size: ResponsiveUtils.iconSize(context, 22),
+                            ),
+                          ),
+                  ),
+                ),
+              ),
+              SizedBox(width: ResponsiveUtils.spacing(context, 12)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      merchant,
+                      style: AppTextStyles.tableCell(context).copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: ResponsiveUtils.spacing(context, 2)),
+                    Text(
+                      '${_formatUploadedAt(first['created_at'] as String?)} 업로드',
+                      style: AppTextStyles.tableCellSub(context),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                '${_formatAmount(total)}원',
+                style: AppTextStyles.tableCell(context).copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: ResponsiveUtils.spacing(context, 10)),
+          ...items.map(_buildReceiptItemRow),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReceiptItemRow(Map<String, dynamic> item) {
+    final spec = item['specification'] as String?;
+    final remark = item['remark'] as String?;
+    final quantity = _formatAmount(item['quantity']);
+    final unitPrice = item['unit_price'] != null
+        ? ' × ${_formatAmount(item['unit_price'])}원'
+        : '';
+
+    return Container(
+      width: double.infinity,
+      margin: EdgeInsets.only(top: ResponsiveUtils.spacing(context, 6)),
+      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 10)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: AppColors.border, width: 0.5),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  spec != null && spec.isNotEmpty
+                      ? '${item['item_name'] ?? ''} ($spec)'
+                      : item['item_name'] as String? ?? '',
+                  style: AppTextStyles.tableCell(context),
+                ),
+              ),
+              SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+              Text(
+                '${_formatAmount(item['total_amount'])}원',
+                style: AppTextStyles.tableCell(context),
+              ),
+            ],
+          ),
+          SizedBox(height: ResponsiveUtils.spacing(context, 2)),
+          Text(
+            '수량 $quantity$unitPrice',
+            style: AppTextStyles.tableCellSub(context),
+          ),
+          if (remark != null && remark.isNotEmpty) ...[
+            SizedBox(height: ResponsiveUtils.spacing(context, 2)),
+            Text(
+              '비고: $remark',
+              style: AppTextStyles.tableCellSub(context),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -504,7 +771,7 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
                           disabledBackgroundColor: AppColors.gray400,
                           foregroundColor: Colors.white,
                           padding: EdgeInsets.symmetric(
-                            vertical: ResponsiveUtils.spacing(context, 16),
+                            vertical: ResponsiveUtils.spacing(context, 10),
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(
@@ -903,5 +1170,58 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
         AppBanner.show(context, '업로드 중 오류: $e', type: BannerType.error);
       }
     }
+  }
+}
+
+/// 카드 영수증 이미지 전체화면 미리보기 (확대/축소)
+class _CardReceiptImageViewer extends StatelessWidget {
+  final String imageUrl;
+  final String title;
+
+  const _CardReceiptImageViewer({required this.imageUrl, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: Text(
+          title,
+          style: AppTextStyles.appBarTitle(context).copyWith(color: Colors.white),
+        ),
+        backgroundColor: Colors.black,
+        surfaceTintColor: Colors.black,
+        foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
+        elevation: 0,
+      ),
+      body: InteractiveViewer(
+        minScale: 0.5,
+        maxScale: 4.0,
+        child: Center(
+          child: Image.network(
+            imageUrl,
+            fit: BoxFit.contain,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              );
+            },
+            errorBuilder: (context, error, stackTrace) => Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.broken_image, size: 64, color: AppColors.gray400),
+                const SizedBox(height: 16),
+                Text(
+                  '이미지를 불러올 수 없습니다',
+                  style: AppTextStyles.emptyState(context).copyWith(color: AppColors.gray400),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

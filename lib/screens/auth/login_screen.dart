@@ -414,7 +414,7 @@ setState(
                         const Center(child: CircularProgressIndicator())
                       else ...[
                         SizedBox(
-                          height: 52,
+                          height: 44,
                           child: ElevatedButton(
                             onPressed: _login,
                             style: ElevatedButton.styleFrom(
@@ -805,7 +805,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         const Center(child: CircularProgressIndicator())
                       else ...[
                         SizedBox(
-                          height: 52,
+                          height: 44,
                           child: ElevatedButton(
                             onPressed: _signup,
                             style: ElevatedButton.styleFrom(

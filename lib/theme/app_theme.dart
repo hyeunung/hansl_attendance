@@ -87,9 +87,13 @@ class AppTheme {
         foregroundColor: Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(8),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        // 기본 터치영역 패딩(상하 8px 추가)을 제거해 버튼 높이를 여백대로 유지
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        minimumSize: const Size(0, 36),
+        visualDensity: VisualDensity.compact,
       ),
     ),
 
@@ -100,6 +104,24 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        minimumSize: const Size(0, 34),
+        visualDensity: VisualDensity.compact,
+      ),
+    ),
+
+    // ─── OutlinedButton ───
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.primary,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        minimumSize: const Size(0, 36),
+        visualDensity: VisualDensity.compact,
       ),
     ),
 

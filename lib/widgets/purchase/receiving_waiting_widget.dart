@@ -1542,8 +1542,8 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
           borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
           child: Container(
             padding: EdgeInsets.symmetric(
-              horizontal: ResponsiveUtils.spacing(context, 12),
-              vertical: ResponsiveUtils.spacing(context, 6),
+              horizontal: ResponsiveUtils.spacing(context, 9),
+              vertical: ResponsiveUtils.spacing(context, 4),
             ),
             decoration: BoxDecoration(
               color: AppColors.primary.withValues(alpha: 0.1),
@@ -1559,14 +1559,12 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                 Icon(
                   Icons.edit_outlined,
                   color: AppColors.primary,
-                  size: ResponsiveUtils.iconSize(context, 16),
+                  size: ResponsiveUtils.iconSize(context, 13),
                 ),
-                SizedBox(width: ResponsiveUtils.spacing(context, 4)),
+                SizedBox(width: ResponsiveUtils.spacing(context, 3)),
                 Text(
                   '수정요청',
-                  style: AppTextStyles.chipSmall(context, color: AppColors.primary).copyWith(
-                    fontSize: 12,
-                  ),
+                  style: AppTextStyles.chipSmall(context, color: AppColors.primary),
                 ),
               ],
             ),
@@ -1830,8 +1828,8 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
           borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
           child: Container(
             padding: EdgeInsets.symmetric(
-              horizontal: ResponsiveUtils.spacing(context, 12),
-              vertical: ResponsiveUtils.spacing(context, 6),
+              horizontal: ResponsiveUtils.spacing(context, 9),
+              vertical: ResponsiveUtils.spacing(context, 4),
             ),
             decoration: BoxDecoration(
               color: AppColors.success,
@@ -3031,7 +3029,7 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
                     child: TextButton(
                       onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
                       style: TextButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 16)),
+                        padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 10)),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                         ),
@@ -3051,7 +3049,7 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
                       onPressed: _isLoading || !_hasChanges ? null : _saveChanges,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
-                        padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 16)),
+                        padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 10)),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
                         ),
@@ -3410,9 +3408,7 @@ class _AdminEditDialogState extends State<AdminEditDialog> {
                 ),
                 child: Text(
                   '품목 ${index + 1}',
-                  style: AppTextStyles.chipSmall(context, color: AppColors.primary).copyWith(
-                    fontSize: 12,
-                  ),
+                  style: AppTextStyles.chipSmall(context, color: AppColors.primary),
                 ),
               ),
             ],

@@ -39,7 +39,7 @@ class _LeaveTypeSelectorWidgetState extends State<LeaveTypeSelectorWidget> {
         GestureDetector(
           onTap: () => setState(() => _dropdownOpen = !_dropdownOpen),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: Colors.white,
               border: Border(bottom: BorderSide(color: AppColors.borderLight, width: 0.5)),

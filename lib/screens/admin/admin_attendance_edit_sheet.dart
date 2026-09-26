@@ -243,7 +243,7 @@ class _AdminAttendanceEditSheetState extends State<AdminAttendanceEditSheet> {
                       onPressed:
                           _saving ? null : () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
                         side: BorderSide(color: AppColors.border),
                         foregroundColor: AppColors.textSecondary,
                       ),
@@ -257,7 +257,7 @@ class _AdminAttendanceEditSheetState extends State<AdminAttendanceEditSheet> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
                         elevation: 0,
                       ),
                       child: _saving

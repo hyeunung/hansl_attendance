@@ -353,7 +353,7 @@ class TodayVehicleWidgetState extends State<TodayVehicleWidget> {
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
             padding: EdgeInsets.symmetric(
-              vertical: ResponsiveUtils.spacing(context, 14),
+              vertical: ResponsiveUtils.spacing(context, 10),
               horizontal: ResponsiveUtils.spacing(context, 12),
             ),
             shape: RoundedRectangleBorder(

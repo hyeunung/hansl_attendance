@@ -2435,7 +2435,7 @@ return;
                       onPressed: () => Navigator.of(context).pop(),
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.symmetric(
-                          vertical: ResponsiveUtils.spacing(context, 14),
+                          vertical: ResponsiveUtils.spacing(context, 10),
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
@@ -2483,7 +2483,7 @@ return;
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.error,
                         padding: EdgeInsets.symmetric(
-                          vertical: ResponsiveUtils.spacing(context, 14),
+                          vertical: ResponsiveUtils.spacing(context, 10),
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
@@ -2700,7 +2700,7 @@ return;
                               onPressed: () => Navigator.of(context).pop(false),
                               style: TextButton.styleFrom(
                                 padding: EdgeInsets.symmetric(
-                                  vertical: ResponsiveUtils.spacing(context, 14),
+                                  vertical: ResponsiveUtils.spacing(context, 10),
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
@@ -2725,7 +2725,7 @@ return;
                                 backgroundColor: AppColors.primary,
                                 foregroundColor: Colors.white,
                                 padding: EdgeInsets.symmetric(
-                                  vertical: ResponsiveUtils.spacing(context, 14),
+                                  vertical: ResponsiveUtils.spacing(context, 10),
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
