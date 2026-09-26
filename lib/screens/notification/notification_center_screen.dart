@@ -6,8 +6,7 @@ import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import '../../widgets/shared/flat_section.dart';
-import '../../utils/user_role_helper.dart';
-import '../main_tab.dart';
+import '../../services/notification_navigator.dart';
 
 class NotificationCenterScreen extends StatefulWidget {
   const NotificationCenterScreen({super.key});
@@ -141,12 +140,31 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
     switch (type) {
       case 'leave_request':
       case 'annual':
+      case 'leave_cancelled':
         return '🏖';
       case 'business_trip':
       case 'biztrip':
+      case 'vehicle_requested':
         return '🚗';
       case 'leave_result':
+      case 'leave_status_change':
+      case 'leave_update':
+      case 'business_trip_approved':
+      case 'card_usage_approved':
+      case 'vehicle_approved':
         return '✅';
+      case 'card_usage_requested':
+        return '💳';
+      case 'transaction_statement_extracted':
+      case 'transaction_statement_quantities_matched':
+        return '🧾';
+      case 'inquiry_resolved':
+      case 'inquiry_message':
+      case 'new_vendor_inquiry':
+      case 'new_vendor_registered':
+        return '💬';
+      case 'attendance_late':
+        return '⏰';
       case 'purchase_requests':
       case 'purchase_approval':
       case 'final_approval_request':
@@ -167,11 +185,26 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
     switch (type) {
       case 'leave_request':
       case 'annual':
+      case 'leave_cancelled':
+      case 'inquiry_resolved':
+      case 'inquiry_message':
+      case 'new_vendor_inquiry':
+      case 'new_vendor_registered':
         return AppColors.info;
       case 'business_trip':
       case 'biztrip':
+      case 'vehicle_requested':
+      case 'card_usage_requested':
+      case 'attendance_late':
         return AppColors.warning;
       case 'leave_result':
+      case 'leave_status_change':
+      case 'leave_update':
+      case 'business_trip_approved':
+      case 'card_usage_approved':
+      case 'vehicle_approved':
+      case 'transaction_statement_extracted':
+      case 'transaction_statement_quantities_matched':
         return AppColors.success;
       case 'purchase_requests':
       case 'purchase_approval':
@@ -250,9 +283,8 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                       _normalizeNewlines((notification['title'] ?? '').toString());
                   final body =
                       _normalizeNewlines((notification['body'] ?? '').toString());
-                  final notifColor = _getNotificationColor(
-                    notification['type'] ?? '',
-                  );
+                  final notifType = NotificationNavigator.resolveType(notification);
+                  final notifColor = _getNotificationColor(notifType);
 
                   return Dismissible(
                     key: Key(notification['id'].toString()),
@@ -295,9 +327,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                                     ),
                                     child: Center(
                                       child: Text(
-                                        _getNotificationIcon(
-                                          notification['type'] ?? '',
-                                        ),
+                                        _getNotificationIcon(notifType),
                                         style: const TextStyle(fontSize: 18),
                                       ),
                                     ),
@@ -367,107 +397,10 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
     );
   }
 
-  void _handleNotificationTap(Map<String, dynamic> notification) async {
-    // 알림 타입에 따라 적절한 화면으로 이동
-    final type = notification['type'] ?? '';
-
-    // 먼저 현재 사용자 정보와 권한 가져오기
-    final user = _supabase.auth.currentUser;
-    Map<String, dynamic>? employeeData;
-
-    if (user != null) {
-      try {
-        employeeData = await _supabase
-            .from('employees')
-            .select('*') // 모든 필드 가져오기
-            .eq('email', user.email!)
-            .single();
-      } catch (e) {
-        // Debug print removed
-      }
-    }
-
-    switch (type) {
-      case 'leave_request':
-      case 'business_trip':
-        // 연차/출장 승인 권한 확인
-        final leaveRoles = UserRoleHelper.getRoles(employeeData);
-        final hasApprovalRole = UserRoleHelper.isAdminOrSuper(leaveRoles) ||
-            UserRoleHelper.isAnyManager(leaveRoles);
-
-        if (hasApprovalRole) {
-          // MainTab에 employee 정보 전달
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => MainTab(
-                initialIndex: 2, // 승인 탭
-                approvalSubTab: 0, // 연차/출장 서브탭
-                initialEmployee: employeeData,
-              ),
-            ),
-          );
-        } else {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => const MainTab(initialIndex: 0),
-            ),
-          );
-        }
-        break;
-
-      case 'purchase_requests':
-      case 'purchase_approval':
-      case 'final_approval_request':
-        // 발주 승인 권한 확인
-        final purchaseNotifRoles = UserRoleHelper.getRoles(employeeData);
-
-        final hasAttendanceApproval = UserRoleHelper.isAdminOrSuper(purchaseNotifRoles) ||
-            UserRoleHelper.isAnyManager(purchaseNotifRoles);
-
-        final hasPurchaseApproval = UserRoleHelper.hasPurchaseApprovalAuth(purchaseNotifRoles);
-
-        if (hasAttendanceApproval && hasPurchaseApproval) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => MainTab(
-                initialIndex: 2, // 승인 탭
-                approvalSubTab: 1, // 발주 서브탭
-                initialEmployee: employeeData,
-              ),
-            ),
-          );
-        } else {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => const MainTab(initialIndex: 0),
-            ),
-          );
-        }
-        break;
-      case 'leave_result':
-        // 연차 현황 탭으로 이동
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => const MainTab(initialIndex: 1),
-          ),
-        );
-        break;
-      case 'purchase_approved':
-      case 'purchase_result':
-        // 홈으로 이동 (발주 결과)
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => const MainTab(initialIndex: 0),
-          ),
-        );
-        break;
-      default:
-        // 홈으로 이동
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => const MainTab(initialIndex: 0),
-          ),
-        );
-    }
+  Future<void> _handleNotificationTap(Map<String, dynamic> notification) async {
+    // 알림 종류(data.type)에 맞는 화면으로 이동, 대상 화면이 없으면 알림 센터 유지
+    if (!mounted) return;
+    final type = NotificationNavigator.resolveType(notification);
+    await NotificationNavigator.open(Navigator.of(context), type);
   }
 }

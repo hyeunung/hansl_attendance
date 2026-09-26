@@ -1243,8 +1243,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     ? ListView(
                                         physics: const AlwaysScrollableScrollPhysics(),
                                         padding: EdgeInsets.symmetric(
-                                          horizontal: ResponsiveUtils.spacing(context, 16),
-                                          vertical: ResponsiveUtils.spacing(context, 20),
+                                          vertical: ResponsiveUtils.spacing(context, 4),
                                         ),
                                         children: [
                                           SizedBox(height: MediaQuery.of(context).size.height * 0.2),
@@ -1289,13 +1288,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                       )
                                     : ListView.builder(
                                         padding: EdgeInsets.symmetric(
-                                          horizontal: ResponsiveUtils.spacing(
-                                            context,
-                                            20,
-                                          ),
                                           vertical: ResponsiveUtils.spacing(
                                             context,
-                                            20,
+                                            4,
                                           ),
                                         ),
                                         itemCount: pending.length,
@@ -1353,8 +1348,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     ? ListView(
                                         physics: const AlwaysScrollableScrollPhysics(),
                                         padding: EdgeInsets.symmetric(
-                                          horizontal: ResponsiveUtils.spacing(context, 16),
-                                          vertical: ResponsiveUtils.spacing(context, 20),
+                                          vertical: ResponsiveUtils.spacing(context, 4),
                                         ),
                                         children: [
                                           SizedBox(height: MediaQuery.of(context).size.height * 0.2),
@@ -1398,13 +1392,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                       )
                                     : ListView.builder(
                                         padding: EdgeInsets.symmetric(
-                                          horizontal: ResponsiveUtils.spacing(
-                                            context,
-                                            20,
-                                          ),
                                           vertical: ResponsiveUtils.spacing(
                                             context,
-                                            20,
+                                            4,
                                           ),
                                         ),
                                         itemCount: thisMonthDone.length,
@@ -1555,14 +1545,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             .where((e) => e.trim().isNotEmpty)
             .join(', ') ??
         '';
-    return Container(
-      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 18)),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
-        ),
-      ),
+    return FlatCard(
+      child: Padding(
+      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 14)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1664,18 +1649,13 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                 // 수정 버튼
                 Expanded(
                   child: Container(
-                    decoration: BoxDecoration(
-                      boxShadow: [AppShadows.button],
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveUtils.spacing(context, 8),
-                      ),
-                    ),
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
+                        elevation: 0,
                         padding: EdgeInsets.symmetric(
-                          vertical: ResponsiveUtils.spacing(context, 14),
+                          vertical: ResponsiveUtils.spacing(context, 9),
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
@@ -1692,11 +1672,12 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                           }
                         }
                       },
-                      icon: const Icon(Icons.edit),
+                      icon: const Icon(Icons.edit, size: 16),
                       label: Text(
                         '수정',
-                        style: AppTextStyles.sectionSubtitle(context).copyWith(
+                        style: AppTextStyles.inputLabel(context).copyWith(
                           color: Colors.white,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -1706,18 +1687,14 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                 // 삭제 버튼
                 Expanded(
                   child: Container(
-                    decoration: BoxDecoration(
-                      boxShadow: [AppShadows.button],
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveUtils.spacing(context, 8),
-                      ),
-                    ),
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.error,
-                        foregroundColor: Colors.white,
+                        backgroundColor: AppColors.backgroundCard,
+                        foregroundColor: AppColors.error,
+                        elevation: 0,
+                        side: const BorderSide(color: AppColors.error),
                         padding: EdgeInsets.symmetric(
-                          vertical: ResponsiveUtils.spacing(context, 14),
+                          vertical: ResponsiveUtils.spacing(context, 9),
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
@@ -1737,11 +1714,12 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                           await _deleteApprovedLeave(l, provider);
                         }
                       },
-                      icon: const Icon(Icons.delete_outline),
+                      icon: const Icon(Icons.delete_outline, size: 16),
                       label: Text(
                         '삭제',
-                        style: AppTextStyles.sectionSubtitle(context).copyWith(
-                          color: Colors.white,
+                        style: AppTextStyles.inputLabel(context).copyWith(
+                          color: AppColors.error,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -1961,6 +1939,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
           ],
         ],
       ),
+      ),
     );
   }
 
@@ -2029,14 +2008,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
           : '[반려 사유] $rejectionReason\n$reason';
     }
 
-    return Container(
-      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 18)),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
-        ),
-      ),
+    return FlatCard(
+      child: Padding(
+      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 14)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2246,6 +2220,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             ),
           ],
         ],
+      ),
       ),
     );
   }
@@ -3035,8 +3010,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                 },
                                 child: Text(
                                   '수정하기',
-                                  style: AppTextStyles.sectionSubtitle(context).copyWith(
+                                  style: AppTextStyles.inputLabel(context).copyWith(
                                     color: Colors.white,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ),
@@ -3201,8 +3177,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                             onPressed: () => Navigator.of(context).pop(true),
                             child: Text(
                               confirmText,
-                              style: AppTextStyles.sectionSubtitle(context).copyWith(
+                              style: AppTextStyles.inputLabel(context).copyWith(
                                 color: Colors.white,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),

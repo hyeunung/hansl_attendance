@@ -161,6 +161,11 @@ class _MainTabState extends State<MainTab> with TickerProviderStateMixin {
         // Badge service error - silently fail
       }
 
+      // 종료 상태에서 알림 탭으로 실행된 경우 해당 화면으로 이동
+      if (mounted) {
+        NotificationService.handlePendingInitialMessage();
+      }
+
       // 승인관리 데이터 미리 로드 (배지 즉시 표시를 위해)
       Future.delayed(const Duration(seconds: 1), () {
         if (mounted) {

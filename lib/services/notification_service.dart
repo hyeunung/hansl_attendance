@@ -8,8 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
-import '../utils/user_role_helper.dart';
-import '../screens/main_tab.dart';
+import 'notification_navigator.dart';
 import '../screens/notification/notification_center_screen.dart';
 
 // 백그라운드 메시지 핸들러 (글로벌 함수여야 함)
@@ -37,6 +36,7 @@ class NotificationService {
   static String? _fcmToken;
 
   /// 글로벌 네비게이터 키 (외부에서 접근 가능)
+  /// MaterialApp.navigatorKey로 연결됨 (main.dart)
   static final GlobalKey<NavigatorState> navigatorKey =
       GlobalKey<NavigatorState>();
 
@@ -293,10 +293,12 @@ class NotificationService {
 
     // 앱이 백그라운드에서 열릴 때 (알림 탭)
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      if (kDebugMode) {
-        // Debug code removed
-      }
       _handleNotificationTap(message);
+    });
+
+    // 앱이 종료된 상태에서 알림 탭으로 실행된 경우 - MainTab 준비 후 처리
+    FirebaseMessaging.instance.getInitialMessage().then((message) {
+      if (message != null) _pendingInitialMessage = message;
     });
 
     // 토큰 갱신 리스너
@@ -402,240 +404,35 @@ class NotificationService {
     }
   }
 
-  /// 알림 탭 처리
+  /// 앱 실행을 유발한 알림 (MainTab 초기화 후 처리)
+  static RemoteMessage? _pendingInitialMessage;
+
+  /// 앱 실행 알림이 있으면 해당 화면으로 이동 (MainTab 초기화 완료 후 호출)
+  static void handlePendingInitialMessage() {
+    final message = _pendingInitialMessage;
+    if (message == null) return;
+    _pendingInitialMessage = null;
+    _handleNotificationTap(message);
+  }
+
+  /// 알림 탭 처리 - 알림 종류(data.type)에 맞는 화면으로 이동
   static void _handleNotificationTap(RemoteMessage message) async {
-    if (kDebugMode) {
-        // Debug code removed
-    }
-
     try {
-      // 알림 타입에 따라 적절한 화면으로 이동
-      String? type = message.data['type'];
+      final navigator = navigatorKey.currentState;
+      if (navigator == null) return;
 
-      final context = navigatorKey.currentContext;
-      if (context == null) {
-        if (kDebugMode) {
-        // Debug code removed
-        }
-        return;
+      final type = (message.data['type'] as String?) ?? '';
+      final moved = await NotificationNavigator.open(navigator, type);
+      if (!moved) {
+        // 앱 내 대상 화면이 없는 알림(제작현황 등)은 알림 센터로 이동
+        navigator.push(
+          MaterialPageRoute(builder: (_) => const NotificationCenterScreen()),
+        );
       }
 
-      switch (type) {
-        case 'leave_request':
-        case 'business_trip':
-          // 연차/출장 신청 알림 - 관리자는 승인 탭으로 바로 이동
-          if (kDebugMode) {
-            if (kDebugMode) {
-              // Debug code removed
-            }
-        // Debug code removed
-          }
-
-          // 현재 사용자의 권한 확인을 위해 Supabase에서 직접 조회
-          try {
-            final user = Supabase.instance.client.auth.currentUser;
-            if (user != null) {
-              final response = await Supabase.instance.client
-                  .from('employees')
-                  .select('roles')
-                  .eq('email', user.email!)
-                  .single();
-
-              final List<dynamic> attendanceRoles =
-                  UserRoleHelper.getRoles(response);
-
-              // 승인 권한이 있는 역할 확인
-              final approvalRoles = [
-                'admin',
-                'superadmin',
-                '개발3팀_manager',
-                'CAD_manager',
-                '개발팀_manager',
-                '경영팀_manager',
-                '연구소_manager',
-              ];
-
-              final hasApprovalRole = attendanceRoles.any(
-                (role) => approvalRoles.contains(role),
-              );
-
-              if (hasApprovalRole) {
-                // 관리자는 승인 탭(index 2)으로 바로 이동 - 연차/출장 탭(0)
-                if (kDebugMode) {
-        // Debug code removed
-                }
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(
-                    builder: (context) => MainTab(
-                      initialIndex: 2, // 승인 탭
-                      approvalSubTab: 0, // 연차/출장 서브탭
-                    ),
-                  ),
-                  (route) => false,
-                );
-              } else {
-                // 일반 사용자는 홈 탭으로 이동
-                if (kDebugMode) {
-        // Debug code removed
-                }
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(
-                    builder: (context) => MainTab(initialIndex: 0), // 홈 탭
-                  ),
-                  (route) => false,
-                );
-              }
-            }
-          } catch (e) {
-            // 오류 시 기본 홈 화면으로
-            if (kDebugMode) {
-        // Debug code removed
-            }
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(
-                builder: (context) => MainTab(initialIndex: 0), // 홈 탭
-              ),
-              (route) => false,
-            );
-          }
-          break;
-
-        case 'leave_result':
-          // 승인/반려 결과 알림 - 연차 현황 화면으로 이동
-          if (kDebugMode) {
-        // Debug code removed
-          }
-
-          // MainTab으로 이동하고 연차 탭(index 1) 선택
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(
-              builder: (context) => MainTab(initialIndex: 1), // 연차 탭
-            ),
-            (route) => false,
-          );
-          break;
-
-        case 'purchase_requests':
-        case 'final_approval_request':
-        case 'purchase_approval':
-          // 발주 관련 알림 - 권한에 따라 발주 승인 탭 또는 홈으로 이동
-          if (kDebugMode) {
-        // Debug code removed
-        // Debug code removed
-            if (kDebugMode) {
-              // Debug code removed
-            }
-          }
-
-          // 현재 사용자의 발주 권한 확인
-          try {
-            final user = Supabase.instance.client.auth.currentUser;
-            if (user != null) {
-              final response = await Supabase.instance.client
-                  .from('employees')
-                  .select('roles')
-                  .eq('email', user.email!)
-                  .single();
-
-              final List<dynamic> purchaseRoles =
-                  UserRoleHelper.getRoles(response);
-
-              // 발주 승인 권한이 있는 역할 확인
-              final hasApprovalRole = UserRoleHelper.hasPurchaseApprovalAuth(purchaseRoles);
-
-              if (hasApprovalRole) {
-                // 발주 승인 권한이 있는 사용자는 승인관리 탭(index 2)으로 이동 - 발주승인 탭(1)
-                if (kDebugMode) {
-        // Debug code removed
-                }
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(
-                    builder: (context) => MainTab(
-                      initialIndex: 2, // 승인관리 탭
-                      approvalSubTab: 1, // 발주승인 서브탭
-                    ),
-                  ),
-                  (route) => false,
-                );
-              } else {
-                // 일반 사용자는 홈 탭으로 이동
-                if (kDebugMode) {
-        // Debug code removed
-                }
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(
-                    builder: (context) => MainTab(initialIndex: 0), // 홈 탭
-                  ),
-                  (route) => false,
-                );
-              }
-            }
-          } catch (e) {
-            // 오류 시 기본 홈 화면으로
-            if (kDebugMode) {
-        // Debug code removed
-            }
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(
-                builder: (context) => MainTab(initialIndex: 0), // 홈 탭
-              ),
-              (route) => false,
-            );
-          }
-          break;
-
-        case 'purchase_approved':
-        case 'purchase_result':
-          // 발주 승인/반려 결과 알림 - 홈 화면으로 이동
-          if (kDebugMode) {
-        // Debug code removed
-          }
-
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(
-              builder: (context) => MainTab(initialIndex: 0), // 홈 탭
-            ),
-            (route) => false,
-          );
-          break;
-
-        case 'notification_summary':
-        case 'grouped_notification':
-        case 'multiple_notifications':
-          // 그룹 알림 클릭 시 알림 센터로 이동
-          if (kDebugMode) {
-        // Debug code removed
-          }
-
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(
-              builder: (context) => const NotificationCenterScreen(),
-            ),
-            (route) => false,
-          );
-          break;
-
-        default:
-          // 기본 홈 화면으로 이동
-          if (kDebugMode) {
-        // Debug code removed
-          }
-
-          // MainTab으로 이동하고 홈 탭(index 0) 선택
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(
-              builder: (context) => MainTab(initialIndex: 0), // 홈 탭
-            ),
-            (route) => false,
-          );
-      }
-
-      // 알림 탭 이벤트 로깅
       _logNotificationEvent('tap', message);
     } catch (e) {
-      if (kDebugMode) {
-        // Debug code removed
-      }
+      // 이동 실패 시 현재 화면 유지
     }
   }
 

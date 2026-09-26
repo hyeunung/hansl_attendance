@@ -27,7 +27,7 @@ import 'services/feature_flag_service.dart';
 import 'services/badge_count_service.dart';
 import 'screens/attendance/attendance_screen_optimized.dart';
 
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> navigatorKey = NotificationService.navigatorKey;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
