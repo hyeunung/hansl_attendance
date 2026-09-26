@@ -35,13 +35,13 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
     if (!_isFirstLoad) return;
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
+      if (!context.mounted) return;
 
       final provider = Provider.of<LeaveProvider>(context, listen: false);
       final userProvider = Provider.of<UserProvider>(context, listen: false);
 
       if (provider.myLeaves.isNotEmpty && provider.annualLeaveLoaded) {
-        if (!mounted) return;
+        if (!context.mounted) return;
         setState(() {
           _isFirstLoad = false;
         });
@@ -54,7 +54,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
       provider.fetchTodayLeaves(DateTime.now());
       provider.fetchAllLeaves(forceRefresh: false);
 
-      if (!mounted) return;
+      if (!context.mounted) return;
       setState(() {
         _isFirstLoad = false;
       });
@@ -129,7 +129,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
               }
               await provider.fetchTodayLeaves(DateTime.now());
               await provider.fetchAllLeaves(forceRefresh: true);
-              if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+              if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -425,7 +425,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
 
   Future<void> _deleteLeaveRequest(Map<String, dynamic> leave) async {
     if (leave['type'] == 'biztrip' || leave['is_business_trip'] == true) {
-      if (!mounted) return;
+      if (!context.mounted) return;
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -486,13 +486,13 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
         endDate: leave['end_date'],
       );
 
-      if (mounted) Navigator.of(context).pop();
+      if (context.mounted) Navigator.of(context).pop();
 
       if (mounted) {
         AppBanner.show(context, '신청이 취소되었습니다.', type: BannerType.success);
       }
     } catch (e) {
-      if (mounted) Navigator.of(context).pop();
+      if (context.mounted) Navigator.of(context).pop();
 
       if (mounted) {
         AppBanner.show(context, '취소 중 오류가 발생했습니다: $e', type: BannerType.error);

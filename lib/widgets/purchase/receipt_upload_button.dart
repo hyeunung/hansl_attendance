@@ -57,6 +57,7 @@ class _ReceiptUploadButtonState extends State<ReceiptUploadButton> {
                     userEmail: userEmail,
                   );
                   if (mounted) {
+                    if (!context.mounted) return;
                     Navigator.pop(context, url);
                   }
                 },
@@ -70,6 +71,7 @@ class _ReceiptUploadButtonState extends State<ReceiptUploadButton> {
                     userEmail: userEmail,
                   );
                   if (mounted) {
+                    if (!context.mounted) return;
                     Navigator.pop(context, url);
                   }
                 },

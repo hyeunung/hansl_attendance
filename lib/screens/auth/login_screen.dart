@@ -296,7 +296,7 @@ setState(
                   width: ResponsiveUtils.spacing(context, 340),
                   padding: EdgeInsets.symmetric(
                     horizontal: ResponsiveUtils.spacing(context, 20),
-                    vertical: ResponsiveUtils.spacing(context, 28),
+                    vertical: ResponsiveUtils.spacing(context, 18),
                   ),
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -555,8 +555,9 @@ class _SignupScreenState extends State<SignupScreen> {
         },
       );
       if (response.user != null) {
-        if (!mounted) return;
+        if (!context.mounted) return;
         AppBanner.show(context, '회원가입이 완료되었습니다. 로그인 해주세요.', type: BannerType.success);
+        if (!context.mounted) return;
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>

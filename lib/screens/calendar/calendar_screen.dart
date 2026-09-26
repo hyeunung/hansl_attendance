@@ -130,7 +130,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                       provider.fetchApprovedLeavesForCalendar(forceRefresh: true),
                       provider.fetchHolidays(forceRefresh: true),
                     ]);
-                    if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+                    if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
                   },
                   child: ListView(
                     children: [
@@ -406,14 +406,14 @@ class _CalendarScreenState extends State<CalendarScreen>
                               }),
                             ),
                             SizedBox(
-                              height: ResponsiveUtils.spacing(context, 8),
+                              height: ResponsiveUtils.spacing(context, 4),
                             ),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 _legendDot(AppColors.success, '연차'),
                                 SizedBox(
-                                  width: ResponsiveUtils.spacing(context, 20),
+                                  width: ResponsiveUtils.spacing(context, 14),
                                 ),
                                 _legendDot(AppColors.biztrip, '출장'),
                               ],

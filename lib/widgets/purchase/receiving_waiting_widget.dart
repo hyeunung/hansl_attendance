@@ -33,7 +33,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
 
   // mounted 체크를 포함한 안전한 setState 래퍼
   void _safeSetState(VoidCallback fn) {
-    if (!mounted) return;
+    if (!context.mounted) return;
     setState(fn);
   }
   
@@ -299,9 +299,9 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
   // 필터 초기화
   Future<void> _initializeFilters() async {
     await _loadDepartments();
-    if (!mounted) return;
+    if (!context.mounted) return;
     await _setDefaultFilters();
-    if (!mounted) return;
+    if (!context.mounted) return;
     await _loadReceivingItems();
   }
 
@@ -1114,7 +1114,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       return RefreshIndicator(
         onRefresh: () async {
           await _loadReceivingItems();
-          if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+          if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
         },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -1123,13 +1123,13 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
             vertical: ResponsiveUtils.spacing(context, 20),
           ),
           children: [
-            SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.08),
             Center(
               child: Column(
                 children: [
                   Icon(
                     Icons.inventory_2_outlined,
-                    size: ResponsiveUtils.iconSize(context, 80),
+                    size: ResponsiveUtils.iconSize(context, 40),
                     color: AppColors.border,
                   ),
                   SizedBox(height: ResponsiveUtils.spacing(context, 20)),
@@ -1149,7 +1149,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       return RefreshIndicator(
         onRefresh: () async {
           await _loadReceivingItems();
-          if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+          if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
         },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -1158,13 +1158,13 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
             vertical: ResponsiveUtils.spacing(context, 20),
           ),
           children: [
-            SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.08),
             Center(
               child: Column(
                 children: [
                   Icon(
                     Icons.search_off,
-                    size: ResponsiveUtils.iconSize(context, 80),
+                    size: ResponsiveUtils.iconSize(context, 40),
                     color: AppColors.border,
                   ),
                   SizedBox(height: ResponsiveUtils.spacing(context, 20)),
@@ -2041,7 +2041,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
     _previousFlutterErrorHandler = FlutterError.onError;
     FlutterError.onError = (FlutterErrorDetails details) {
       _previousFlutterErrorHandler?.call(details);
-      if (!mounted) return;
+      if (!context.mounted) return;
       setState(() {
         _uiErrorMessage = details.exceptionAsString();
       });
@@ -2225,8 +2225,9 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
       priceRows: _priceRows,
     );
 
-    if (!mounted) return;
+    if (!context.mounted) return;
     if (success) {
+      if (!context.mounted) return;
       Navigator.of(context).pop();
       return;
     }

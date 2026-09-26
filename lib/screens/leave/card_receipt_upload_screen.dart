@@ -123,7 +123,9 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
           _vendors = List<Map<String, dynamic>>.from(data);
         });
       }
-    } catch (_) {}
+    } catch (_) {
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
   }
 
   @override
@@ -146,11 +148,11 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
               : RefreshIndicator(
                   onRefresh: () async {
                     await _loadCardUsages();
-                    if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+                    if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
                   },
                   child: ListView.builder(
                     padding: EdgeInsets.symmetric(
-                      horizontal: ResponsiveUtils.spacing(context, 20),
+                      horizontal: ResponsiveUtils.spacing(context, 16),
                       vertical: ResponsiveUtils.spacing(context, 20),
                     ),
                     itemCount: _cardUsages.length,
@@ -801,11 +803,11 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
     // 필수 검증: 사용처, 첫번째 비고(사용이유), 최소 1개 품목
     final merchant = merchantController.text.trim();
     if (merchant.isEmpty) {
-      if (mounted) AppBanner.show(context, '사용처는 필수입니다.', type: BannerType.error);
+      if (context.mounted) AppBanner.show(context, '사용처는 필수입니다.', type: BannerType.error);
       return;
     }
     if (itemRows.isEmpty || itemRows[0]['remark']!.text.trim().isEmpty) {
-      if (mounted) AppBanner.show(context, '첫번째 품목의 비고(사용이유)는 필수입니다.', type: BannerType.error);
+      if (context.mounted) AppBanner.show(context, '첫번째 품목의 비고(사용이유)는 필수입니다.', type: BannerType.error);
       return;
     }
 
@@ -827,7 +829,7 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
     }
 
     if (validItems.isEmpty) {
-      if (mounted) AppBanner.show(context, '최소 1개 품목의 품명과 합계를 입력해주세요.', type: BannerType.error);
+      if (context.mounted) AppBanner.show(context, '최소 1개 품목의 품명과 합계를 입력해주세요.', type: BannerType.error);
       return;
     }
 
@@ -1154,7 +1156,7 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
-      if (mounted) Navigator.of(context).pop();
+      if (context.mounted) Navigator.of(context).pop();
 
       if (response.statusCode == 200) {
         if (mounted) {

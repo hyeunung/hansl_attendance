@@ -202,7 +202,9 @@ class TransactionStatementService {
             'fileType': 'image',
           },
         );
-      } catch (_) {}
+      } catch (_) {
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
     });
 
     return TransactionStatementUploadResult(
@@ -242,7 +244,9 @@ class TransactionStatementService {
             })
             .eq('id', statementId)
             .inFilter('status', ['pending', 'queued', 'processing']);
-      } catch (_) {}
+      } catch (_) {
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
       rethrow;
     }
   }

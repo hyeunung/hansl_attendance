@@ -366,8 +366,8 @@ class PurchaseProvider extends ChangeNotifier {
           isMiddleManager: true,
         );
       } catch (e) {
-        
-      }
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
 
       return true;
     } catch (e) {
@@ -402,8 +402,8 @@ class PurchaseProvider extends ChangeNotifier {
           isMiddleManager: false,
         );
       } catch (e) {
-        
-      }
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
 
       return true;
     } catch (e) {
@@ -466,8 +466,8 @@ class PurchaseProvider extends ChangeNotifier {
           rejectionReason: reason,
         );
       } catch (e) {
-        
-      }
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
 
       return true;
     } catch (e) {
@@ -968,7 +968,7 @@ class PurchaseProvider extends ChangeNotifier {
 
       // 관리자에게도 알림
       await _sendNotificationToRole(
-        UserRoleHelper.SUPERADMIN,
+        UserRoleHelper.superadmin,
         title,
         body,
         purchaseOrderNumber,

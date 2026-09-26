@@ -41,6 +41,7 @@ class _PoPreviewPageState extends State<PoPreviewPage> {
         .single();
 
     if (response['po_file_url'] == null) {
+      if (!context.mounted) return;
       AppBanner.show(context, '발주서가 없습니다.', type: BannerType.error);
       setState(() => _isLoading = false);
       return;
@@ -59,6 +60,7 @@ class _PoPreviewPageState extends State<PoPreviewPage> {
       });
     } catch (e) {
       setState(() => _isLoading = false);
+      if (!context.mounted) return;
       AppBanner.show(context, '발주서 다운로드 오류: $e', type: BannerType.error);
     }
   }

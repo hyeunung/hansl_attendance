@@ -498,7 +498,9 @@ class AttendanceProvider extends ChangeNotifier
           .eq('id', userId)
           .single();
       employeePosition = empData['position'] as String?;
-    } catch (_) {}
+    } catch (_) {
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
 
     // 지각 판정 헬퍼: 아르바이트는 9:00, 일반직원은 8:30
     bool checkLateByPosition(int hour, int minute) {

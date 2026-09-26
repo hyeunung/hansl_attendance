@@ -141,7 +141,7 @@ class _TransactionStatementScreenState
       _isRealtimeRefreshing = true;
       Future.microtask(() async {
         try {
-          if (!mounted) return;
+          if (!context.mounted) return;
           await _loadStatements(showLoading: false);
         } finally {
           _isRealtimeRefreshing = false;
@@ -167,7 +167,7 @@ class _TransactionStatementScreenState
     try {
       final image = await TransactionStatementService.pickImage(source);
       if (image == null) return;
-      if (!mounted) return;
+      if (!context.mounted) return;
       await _showPreviewDialog(image);
     } catch (e) {
       if (mounted) {
@@ -1061,7 +1061,7 @@ class _TransactionStatementScreenState
               : RefreshIndicator(
                   onRefresh: () async {
                     await _loadStatements();
-                    if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+                    if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
                   },
                   child: ListView.builder(
                     itemCount: _statements.length + 1,

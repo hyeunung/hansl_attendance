@@ -819,7 +819,7 @@ return;
               await purchaseProvider.fetchPendingPurchases(
                 employee: userProvider.employee,
               );
-              if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+              if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
             },
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -828,13 +828,13 @@ return;
                 vertical: ResponsiveUtils.spacing(context, 20),
               ),
               children: [
-                SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.08),
                 Center(
                   child: Column(
                     children: [
                       Icon(
                         Icons.check_circle_outline,
-                        size: ResponsiveUtils.iconSize(context, 80),
+                        size: ResponsiveUtils.iconSize(context, 40),
                         color: AppColors.border,
                       ),
                       SizedBox(height: ResponsiveUtils.spacing(context, 20)),
@@ -864,7 +864,7 @@ return;
             await purchaseProvider.fetchPendingPurchases(
               employee: userProvider.employee,
             );
-            if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+            if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
           },
           child: ListView.builder(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -935,7 +935,7 @@ return;
                 startDate: _startDate,
                 endDate: _endDate,
               );
-              if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+              if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
             },
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -944,13 +944,13 @@ return;
                 vertical: ResponsiveUtils.spacing(context, 20),
               ),
               children: [
-                SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.08),
                 Center(
                   child: Column(
                     children: [
                       Icon(
                         Icons.task_alt,
-                        size: ResponsiveUtils.iconSize(context, 80),
+                        size: ResponsiveUtils.iconSize(context, 40),
                         color: AppColors.border,
                       ),
                       SizedBox(height: ResponsiveUtils.spacing(context, 20)),
@@ -1054,7 +1054,7 @@ return;
                     startDate: _startDate,
                     endDate: _endDate,
                   );
-                  if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+                  if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
                 },
                 child: filteredOrders.isEmpty
                     ? ListView(
@@ -1064,13 +1064,13 @@ return;
                           vertical: ResponsiveUtils.spacing(context, 20),
                         ),
                         children: [
-                          SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+                          SizedBox(height: MediaQuery.of(context).size.height * 0.08),
                           Center(
                             child: Column(
                               children: [
                                 Icon(
                                   _searchQuery.isNotEmpty ? Icons.search_off : Icons.task_alt,
-                                  size: ResponsiveUtils.iconSize(context, 80),
+                                  size: ResponsiveUtils.iconSize(context, 40),
                                   color: AppColors.border,
                                 ),
                                 SizedBox(height: ResponsiveUtils.spacing(context, 20)),

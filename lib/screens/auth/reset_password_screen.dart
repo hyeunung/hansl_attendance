@@ -127,7 +127,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   width: ResponsiveUtils.spacing(context, 340),
                   padding: EdgeInsets.symmetric(
                     horizontal: ResponsiveUtils.spacing(context, 20),
-                    vertical: ResponsiveUtils.spacing(context, 28),
+                    vertical: ResponsiveUtils.spacing(context, 18),
                   ),
                   decoration: BoxDecoration(
                     color: Colors.white,

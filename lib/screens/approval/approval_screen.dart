@@ -254,7 +254,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       // 짧은 시간에 여러 이벤트가 와도 한 번만 재조회
       Future.microtask(() async {
         try {
-          if (!mounted) return;
+          if (!context.mounted) return;
 
           final leaveProvider = Provider.of<LeaveProvider>(
             context,
@@ -484,7 +484,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                     ),
                     SizedBox(width: ResponsiveUtils.spacing(context, 4)),
                     Text(
-                      'ADMIN',
+                      'admin',
                       style: AppTextStyles.chipSmall(context).copyWith(
                         color: AppColors.primary,
                         fontSize: 12,
@@ -1238,7 +1238,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     Provider.of<LeaveProvider>(context, listen: false).fetchVehicleCardRequests(employee: userProv.employee),
                                     Provider.of<PurchaseProvider>(context, listen: false).fetchPendingPurchases(employee: userProv.employee),
                                   ]);
-                                  if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+                                  if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
                                 },
                                 child: pending.isEmpty
                                     ? ListView(
@@ -1247,7 +1247,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                           vertical: ResponsiveUtils.spacing(context, 4),
                                         ),
                                         children: [
-                                          SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+                                          SizedBox(height: MediaQuery.of(context).size.height * 0.08),
                                           Center(
                                             child: Column(
                                               mainAxisAlignment: MainAxisAlignment.center,
@@ -1343,7 +1343,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                     Provider.of<LeaveProvider>(context, listen: false).fetchVehicleCardRequests(employee: userProv.employee),
                                     Provider.of<PurchaseProvider>(context, listen: false).fetchPendingPurchases(employee: userProv.employee),
                                   ]);
-                                  if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+                                  if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
                                 },
                                 child: thisMonthDone.isEmpty
                                     ? ListView(
@@ -1352,7 +1352,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                           vertical: ResponsiveUtils.spacing(context, 4),
                                         ),
                                         children: [
-                                          SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+                                          SizedBox(height: MediaQuery.of(context).size.height * 0.08),
                                           Center(
                                             child: Column(
                                               children: [
@@ -1649,8 +1649,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
               children: [
                 // 수정 버튼
                 Expanded(
-                  child: Container(
-                    child: ElevatedButton.icon(
+                  child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
@@ -1680,15 +1679,13 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
                         ),
-                      ),
                     ),
                   ),
                 ),
                 SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                 // 삭제 버튼
                 Expanded(
-                  child: Container(
-                    child: ElevatedButton.icon(
+                  child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.backgroundCard,
                         foregroundColor: AppColors.error,
@@ -1723,7 +1720,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ),
                   ),
                 ),
               ],
@@ -1865,7 +1861,9 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                               try {
                                 final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
                                 await attendanceProvider.forceRefreshAll();
-                              } catch (_) {}
+                              } catch (_) {
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
                             }
                           }
                         }
@@ -2438,7 +2436,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       }
 
       // 로딩 닫기
-      if (mounted) Navigator.of(context).pop();
+      if (context.mounted) Navigator.of(context).pop();
 
       // 성공 메시지
       if (mounted) {
@@ -2446,7 +2444,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       }
     } catch (e) {
       // 로딩 닫기
-      if (mounted) Navigator.of(context).pop();
+      if (context.mounted) Navigator.of(context).pop();
 
       // 에러 메시지
       if (mounted) {
@@ -2984,10 +2982,12 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                       try {
                                         navigatorContext.pop();
                                       } catch (e) {
-                                      }
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
                                     }
                                     
                                     // 성공 메시지
+                                    if (!context.mounted) return;
                                     AppBanner.show(savedContext, '휴가 정보가 수정되었습니다', type: BannerType.success);
                                     
                                     // 데이터 새로고침
@@ -3002,10 +3002,12 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                       try {
                                         navigatorContext.pop();
                                       } catch (e2) {
-                                      }
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
                                     }
                                     
                                     // 에러 메시지
+                                    if (!context.mounted) return;
                                     AppBanner.show(savedContext, '수정 중 오류가 발생했습니다: $e', type: BannerType.error);
                                   }
                                 },

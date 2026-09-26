@@ -103,10 +103,6 @@ class RequestUtils with TimerManagementMixin {
   Future<void> _executeBatch(String groupKey, _BatchGroup group) async {
     if (group.items.isEmpty) return;
 
-    if (kDebugMode)
-      if (kDebugMode) {
-        // Debug code removed
-      }
 
     // Execute all requests in parallel
     final futures = group.items.map((item) async {

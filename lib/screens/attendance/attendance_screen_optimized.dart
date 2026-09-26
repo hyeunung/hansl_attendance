@@ -100,7 +100,7 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
       key: 'smart_ui_update',
       interval: smartUpdateInterval,
       callback: (timer) {
-        if (!mounted) return;
+        if (!context.mounted) return;
 
         final provider = Provider.of<AttendanceProvider>(
           context,
@@ -131,7 +131,7 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
   }
 
   void _showBanner(String msg, {bool error = false}) {
-    if (!mounted) return;
+    if (!context.mounted) return;
     AppBanner.show(
       context,
       msg,

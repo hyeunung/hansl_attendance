@@ -51,7 +51,9 @@ class BusinessTripModificationDialog extends StatefulWidget {
           );
           return Future.value();
         }
-      } catch (_) {}
+      } catch (_) {
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
     }
 
     return showDialog(
@@ -480,11 +482,13 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
         final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
         await leaveProvider.fetchMyLeaves(email: userProvider.email!, forceRefresh: true);
         await leaveProvider.fetchAllLeaves(forceRefresh: true);
+        if (!context.mounted) return;
         AppBanner.show(context, '변경 신청이 취소되었습니다.', type: BannerType.success);
+        if (!context.mounted) return;
         Navigator.of(context).pop();
       }
     } catch (e) {
-      if (mounted) AppBanner.show(context, '취소 중 오류: $e', type: BannerType.error);
+      if (context.mounted) AppBanner.show(context, '취소 중 오류: $e', type: BannerType.error);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -509,7 +513,7 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
       // 1. 위치 서비스 활성화 여부 확인
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        if (mounted) AppBanner.show(context, '위치 서비스를 켜주세요.', type: BannerType.error);
+        if (context.mounted) AppBanner.show(context, '위치 서비스를 켜주세요.', type: BannerType.error);
         setState(() => _isLoading = false);
         return;
       }
@@ -519,13 +523,13 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          if (mounted) AppBanner.show(context, '위치 권한이 필요합니다.', type: BannerType.error);
+          if (context.mounted) AppBanner.show(context, '위치 권한이 필요합니다.', type: BannerType.error);
           setState(() => _isLoading = false);
           return;
         }
       }
       if (permission == LocationPermission.deniedForever) {
-        if (mounted) AppBanner.show(context, '위치 권한이 영구적으로 거부되었습니다. 설정에서 권한을 허용해주세요.', type: BannerType.error);
+        if (context.mounted) AppBanner.show(context, '위치 권한이 영구적으로 거부되었습니다. 설정에서 권한을 허용해주세요.', type: BannerType.error);
         setState(() => _isLoading = false);
         return;
       }
@@ -544,11 +548,13 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
             desiredAccuracy: LocationAccuracy.low,
             timeLimit: const Duration(seconds: 10),
           );
-        } catch (_) {}
+        } catch (_) {
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
       }
 
       if (pos == null) {
-        if (mounted) AppBanner.show(context, '위치 정보를 가져오는데 실패했습니다. GPS 신호 상태를 확인해주세요.', type: BannerType.error);
+        if (context.mounted) AppBanner.show(context, '위치 정보를 가져오는데 실패했습니다. GPS 신호 상태를 확인해주세요.', type: BannerType.error);
         setState(() => _isLoading = false);
         return;
       }
@@ -594,7 +600,9 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
             .select('id')
             .eq('business_trip_id', tripId);
         linkedCardIds = cardsRes.map((c) => c['id']).toList();
-            } catch (_) {}
+            } catch (_) {
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
 
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final department = widget.tripData['request_department'] ?? widget.tripData['employees']?['department'] ?? '개발팀';
@@ -614,11 +622,13 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
         final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
         await leaveProvider.fetchMyLeaves(email: userProvider.email!, forceRefresh: true);
         await leaveProvider.fetchAllLeaves(forceRefresh: true);
+        if (!context.mounted) return;
         AppBanner.show(context, '조기 복귀 처리가 완료되었습니다.', type: BannerType.success);
+        if (!context.mounted) return;
         Navigator.of(context).pop();
       }
     } catch (e) {
-      if (mounted) AppBanner.show(context, '처리 중 오류: $e', type: BannerType.error);
+      if (context.mounted) AppBanner.show(context, '처리 중 오류: $e', type: BannerType.error);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -707,7 +717,7 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
             }
 
       if (hasConflict) {
-        if (!mounted) return;
+        if (!context.mounted) return;
         final proceed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
@@ -742,11 +752,13 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
         final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
         await leaveProvider.fetchMyLeaves(email: userProvider.email!, forceRefresh: true);
         await leaveProvider.fetchAllLeaves(forceRefresh: true);
+        if (!context.mounted) return;
         AppBanner.show(context, '연장 승인 요청이 접수되었습니다.', type: BannerType.success);
+        if (!context.mounted) return;
         Navigator.of(context).pop();
       }
     } catch (e) {
-      if (mounted) AppBanner.show(context, '요청 중 오류: $e', type: BannerType.error);
+      if (context.mounted) AppBanner.show(context, '요청 중 오류: $e', type: BannerType.error);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

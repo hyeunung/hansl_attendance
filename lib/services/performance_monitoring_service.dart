@@ -331,29 +331,36 @@ class PerformanceMonitoringService {
 
     if (avgMemory > 400) {
       score -= 30;
-    } else if (avgMemory > 300)
+    } else if (avgMemory > 300) {
       score -= 20;
-    else if (avgMemory > 200)
+    }
+    else if (avgMemory > 200) {
       score -= 10;
+    }
 
     if (avgFrameRate < 50) {
       score -= 40;
-    } else if (avgFrameRate < 55)
+    } else if (avgFrameRate < 55) {
       score -= 25;
-    else if (avgFrameRate < 58)
+    }
+    else if (avgFrameRate < 58) {
       score -= 10;
+    }
 
     if (avgCacheHitRate < 50) {
       score -= 20;
-    } else if (avgCacheHitRate < 70)
+    } else if (avgCacheHitRate < 70) {
       score -= 10;
-    else if (avgCacheHitRate < 85)
+    }
+    else if (avgCacheHitRate < 85) {
       score -= 5;
+    }
 
     if (latest.activeTimers > 20) {
       score -= 10;
-    } else if (latest.activeTimers > 10)
+    } else if (latest.activeTimers > 10) {
       score -= 5;
+    }
 
     return score.clamp(0.0, 100.0);
   }

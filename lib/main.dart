@@ -214,28 +214,40 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
       await Future.delayed(const Duration(seconds: 1));
       try {
         await NotificationService.initialize();
-      } catch (_) {}
+      } catch (_) {
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
 
       try {
         await SecureStorageService.migrateFromSharedPreferences();
-      } catch (_) {}
+      } catch (_) {
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
 
       try {
         PurchaseNotificationListener.startListening();
-      } catch (_) {}
+      } catch (_) {
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
 
       try {
         await PerformanceInitialization.initialize();
-      } catch (_) {}
+      } catch (_) {
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
 
       try {
         await FeatureFlagService().initialize();
-      } catch (_) {}
+      } catch (_) {
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
 
       try {
         await BadgeCountService.updateBadgeCount();
         BadgeCountService.setupRealtimeSubscription();
-      } catch (_) {}
+      } catch (_) {
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
     });
   }
 

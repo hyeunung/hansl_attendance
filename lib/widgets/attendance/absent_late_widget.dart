@@ -128,11 +128,13 @@ class AbsentLateWidgetState extends State<AbsentLateWidget> {
             if (h > 13 || (h == 13 && m > 30)) {
               lateList.add({'name': name, 'time': clockIn.toString()});
             }
-          } catch (_) {}
+          } catch (_) {
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
         }
       }
 
-      if (!mounted) return;
+      if (!context.mounted) return;
       setState(() {
         _lateEmployees = lateList;
         _absentEmployees = absentList;

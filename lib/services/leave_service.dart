@@ -533,7 +533,9 @@ class LeaveService {
             'status': 'extension_pending',
           }
         });
-      } catch (_) {}
+      } catch (_) {
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
 
       final dbOptim = DatabaseOptimizationService.instance;
       await dbOptim.invalidateCache(patterns: ['leave']);
@@ -592,7 +594,9 @@ class LeaveService {
             'status': 'early_return',
           }
         });
-      } catch (_) {}
+      } catch (_) {
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
 
       final dbOptim = DatabaseOptimizationService.instance;
       await dbOptim.invalidateCache(patterns: ['leave']);
@@ -703,7 +707,9 @@ class LeaveService {
               'card_numbers': cardNumbers,
             },
           });
-        } catch (_) {}
+        } catch (_) {
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
       }
     }
 
@@ -740,7 +746,9 @@ class LeaveService {
               'usage_category': requestInfo['usage_category'] ?? '',
             },
           });
-        } catch (_) {}
+        } catch (_) {
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
       }
     }
 

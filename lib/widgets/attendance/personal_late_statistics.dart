@@ -37,7 +37,7 @@ class PersonalLateStatisticsState extends State<PersonalLateStatistics> {
       final userEmail = userProvider.email;
 
       if (userEmail == null) {
-        if (!mounted) return;
+        if (!context.mounted) return;
         setState(() => _isLoading = false);
         return;
       }
@@ -61,14 +61,14 @@ class PersonalLateStatisticsState extends State<PersonalLateStatistics> {
           .where((r) => (r['date']?.toString() ?? '').compareTo(monthStartStr) >= 0)
           .length;
 
-      if (!mounted) return;
+      if (!context.mounted) return;
       setState(() {
         _lateRecords = records;
         _monthlyLateCount = monthlyCount;
         _isLoading = false;
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!context.mounted) return;
       setState(() => _isLoading = false);
     }
   }

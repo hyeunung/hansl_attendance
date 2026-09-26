@@ -483,7 +483,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
       return RefreshIndicator(
         onRefresh: () async {
           await _loadPurchaseItems();
-          if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+          if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
         },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -492,13 +492,13 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
             vertical: ResponsiveUtils.spacing(context, 20),
           ),
           children: [
-            SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.08),
             Center(
               child: Column(
                 children: [
                   Icon(
                     Icons.shopping_cart_outlined,
-                    size: ResponsiveUtils.iconSize(context, 80),
+                    size: ResponsiveUtils.iconSize(context, 40),
                     color: AppColors.border,
                   ),
                   SizedBox(height: ResponsiveUtils.spacing(context, 20)),
@@ -518,7 +518,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
       return RefreshIndicator(
         onRefresh: () async {
           await _loadPurchaseItems();
-          if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+          if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
         },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -527,13 +527,13 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
             vertical: ResponsiveUtils.spacing(context, 20),
           ),
           children: [
-            SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.08),
             Center(
               child: Column(
                 children: [
                   Icon(
                     Icons.search_off,
-                    size: ResponsiveUtils.iconSize(context, 80),
+                    size: ResponsiveUtils.iconSize(context, 40),
                     color: AppColors.border,
                   ),
                   SizedBox(height: ResponsiveUtils.spacing(context, 20)),

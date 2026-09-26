@@ -586,7 +586,7 @@ class FlatEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(
-        vertical: ResponsiveUtils.spacing(context, 24),
+        vertical: ResponsiveUtils.spacing(context, 16),
       ),
       alignment: Alignment.center,
       child: Column(
@@ -594,10 +594,10 @@ class FlatEmptyState extends StatelessWidget {
           if (icon != null) ...[
             Icon(
               icon,
-              size: ResponsiveUtils.spacing(context, 32),
+              size: ResponsiveUtils.spacing(context, 24),
               color: AppColors.gray400,
             ),
-            SizedBox(height: ResponsiveUtils.spacing(context, 8)),
+            SizedBox(height: ResponsiveUtils.spacing(context, 6)),
           ],
           Text(
             message,

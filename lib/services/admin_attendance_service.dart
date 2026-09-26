@@ -1,6 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// 전체 근태 관리 서비스 (HR/SuperAdmin 전용)
+/// 전체 근태 관리 서비스 (hr/SuperAdmin 전용)
 ///
 /// attendance_records + employees + leave + business_trips를 조합하여
 /// 특정 날짜의 전 직원 근태 현황을 반환.

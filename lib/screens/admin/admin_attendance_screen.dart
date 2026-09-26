@@ -11,7 +11,7 @@ import '../../widgets/common/notification_banner_widget.dart';
 import '../../widgets/shared/flat_section.dart';
 import 'admin_attendance_edit_sheet.dart';
 
-/// 전체 직원 근태 관리 화면 (HR/SuperAdmin 전용)
+/// 전체 직원 근태 관리 화면 (hr/SuperAdmin 전용)
 ///
 /// 웹앱 hanslworkspace의 AttendanceList.tsx를 Flutter로 이식.
 /// 날짜별 전 직원 근태 조회 + 수정 기능 제공.

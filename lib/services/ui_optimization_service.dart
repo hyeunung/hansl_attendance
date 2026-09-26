@@ -449,7 +449,7 @@ class OptimizedListView extends StatelessWidget {
         // Use RepaintBoundary to isolate list items
         return RepaintBoundary(child: itemBuilder(context, index));
       },
-      // Performance optimizations
+      // 화면 밖 200px까지 미리 캐시 (스크롤 성능)
       cacheExtent: 200.0, // Cache items 200 pixels off-screen
       addAutomaticKeepAlives: false, // Don't keep alive items by default
       addRepaintBoundaries: false, // We're adding them manually

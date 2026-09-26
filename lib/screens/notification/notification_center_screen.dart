@@ -130,6 +130,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
         _notifications.removeWhere((n) => n['id'] == notificationId);
       });
 
+      if (!context.mounted) return;
       AppBanner.show(context, '알림을 삭제했습니다', type: BannerType.info);
     } catch (e) {
       // Debug print removed
@@ -281,7 +282,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
           : RefreshIndicator(
               onRefresh: () async {
                 await _loadNotifications();
-                if (mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
+                if (context.mounted) AppBanner.show(context, '새로고침 완료', type: BannerType.success);
               },
               child: ListView.builder(
                 itemCount: _notifications.length,
@@ -409,7 +410,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
 
   Future<void> _handleNotificationTap(Map<String, dynamic> notification) async {
     // 알림 종류(data.type)에 맞는 화면으로 이동, 대상 화면이 없으면 알림 센터 유지
-    if (!mounted) return;
+    if (!context.mounted) return;
     final type = NotificationNavigator.resolveType(notification);
     final data = notification['data'];
     await NotificationNavigator.open(

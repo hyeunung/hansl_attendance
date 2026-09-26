@@ -98,7 +98,9 @@ class BadgeCountService {
       // 에러 시 배지 제거
       try {
         await FlutterAppBadger.removeBadge();
-      } catch (_) {}
+      } catch (_) {
+      // 실패해도 주 흐름에 영향 없음 (의도적 무시)
+    }
     }
   }
 
