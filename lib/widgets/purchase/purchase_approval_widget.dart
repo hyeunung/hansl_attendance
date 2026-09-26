@@ -136,405 +136,173 @@ return;
 
   // 상세보기 다이얼로그
   void _showOrderDetails(BuildContext context, PurchaseOrderGroup group) {
+    final sortedItems = group.items.toList()
+      ..sort((a, b) => a.lineNumber.compareTo(b.lineNumber));
+
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(
-            ResponsiveUtils.spacing(context, 16),
-          ),
+      builder: (dialogContext) => Dialog(
+        clipBehavior: Clip.antiAlias,
+        insetPadding: EdgeInsets.symmetric(
+          horizontal: ResponsiveUtils.spacing(context, 16),
+          vertical: ResponsiveUtils.spacing(context, 40),
         ),
-        child: Container(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: ConstrainedBox(
           constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.9,
             maxHeight: MediaQuery.of(context).size.height * 0.8,
           ),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // 헤더 (개선된 모던 디자인)
+              // 헤더
               Container(
                 padding: EdgeInsets.fromLTRB(
-                  ResponsiveUtils.spacing(context, 24),
-                  ResponsiveUtils.spacing(context, 20),
-                  ResponsiveUtils.spacing(context, 16),
-                  ResponsiveUtils.spacing(context, 20),
+                  ResponsiveUtils.spacing(context, 14),
+                  ResponsiveUtils.spacing(context, 10),
+                  ResponsiveUtils.spacing(context, 10),
+                  ResponsiveUtils.spacing(context, 10),
                 ),
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(ResponsiveUtils.spacing(context, 8)),
-                    topRight: Radius.circular(ResponsiveUtils.spacing(context, 8)),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  border: Border(
+                    bottom: BorderSide(color: AppColors.border, width: 0.5),
                   ),
                 ),
                 child: Row(
                   children: [
-                    Container(
-                      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 8)),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                      ),
-                      child: Icon(
-                        Icons.description_outlined,
-                        color: Colors.white,
-                        size: ResponsiveUtils.iconSize(context, 20),
-                      ),
-                    ),
-                    SizedBox(width: ResponsiveUtils.spacing(context, 12)),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             '발주 상세정보',
-                            style: AppTextStyles.tableHeader(context).copyWith(
-                              color: Colors.white.withValues(alpha: 0.7),
-                            ),
+                            style: AppTextStyles.listSubtitle(context),
                           ),
-                          SizedBox(height: ResponsiveUtils.spacing(context, 2)),
+                          const SizedBox(height: 1),
                           Text(
                             group.purchaseOrderNumber,
-                            style: AppTextStyles.cardTitle(context).copyWith(
-                              color: Colors.white,
-                            ),
+                            style: AppTextStyles.appBarTitle(context),
                           ),
                         ],
                       ),
                     ),
-                    // 결제구분 칩 (개선된 디자인)
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: ResponsiveUtils.spacing(context, 12),
-                        vertical: ResponsiveUtils.spacing(context, 6),
+                    if ((group.paymentCategory ?? '').isNotEmpty) ...[
+                      StatusChip(
+                        label: group.paymentCategory!,
+                        color: AppColors.primary,
                       ),
-                      decoration: BoxDecoration(
-                        color: group.paymentCategory == '발주' 
-                            ? AppColors.success.withValues(alpha: 0.2)
-                            : AppColors.purple.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                        border: Border.all(
-                          color: group.paymentCategory == '발주' 
-                              ? AppColors.success.withValues(alpha: 0.5)
-                              : AppColors.purple.withValues(alpha: 0.5),
-                          width: 1,
+                      SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                    ],
+                    InkWell(
+                      onTap: () => Navigator.of(dialogContext).pop(),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.backgroundSecondary,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.close_rounded,
+                          size: 18,
+                          color: AppColors.textSecondary,
                         ),
                       ),
-                      child: Text(
-                        group.paymentCategory ?? '',
-                        style: AppTextStyles.chipSmall(context, color: Colors.white),
-                      ),
-                    ),
-                    SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                    IconButton(
-                      icon: Icon(
-                        Icons.close_rounded,
-                        color: Colors.white,
-                        size: ResponsiveUtils.iconSize(context, 24),
-                      ),
-                      onPressed: () => Navigator.of(context).pop(),
-                      splashRadius: ResponsiveUtils.spacing(context, 20),
                     ),
                   ],
                 ),
               ),
 
-              // 상세 내역 (개선된 디자인)
-              Expanded(
-                child: ListView(
-                  padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
-                  children: [
-                    // 기본 정보 카드
-                    Container(
-                      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
-                      decoration: BoxDecoration(
-                        color: AppColors.backgroundSecondary,
-                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                        border: Border.all(color: AppColors.border, width: 1),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '기본 정보',
-                            style: AppTextStyles.sectionSubtitle(context),
-                          ),
-                          SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-                          _buildInfoRow(context, '요청자', group.requesterName),
-                          _buildInfoRow(context, '업체명', group.vendorName),
-                          _buildInfoRow(
-                            context,
-                            '요청일',
-                            DateFormat('yyyy.MM.dd').format(group.requestDate),
-                          ),
-                          if (group.items.isNotEmpty &&
-                              group.headerItem.deliveryRequestDate != DateTime(1970))
-                            _buildInfoRow(
-                              context,
-                              '입고요청일',
-                              DateFormat('yyyy.MM.dd').format(group.headerItem.deliveryRequestDate),
-                            ),
-                          if (group.headerItem.projectVendor != null &&
-                              group.headerItem.projectVendor!.isNotEmpty)
-                            _buildInfoRow(
-                              context,
-                              'PJ업체',
-                              group.headerItem.projectVendor!,
-                            ),
-                          if (group.headerItem.salesOrderNumber != null &&
-                              group.headerItem.salesOrderNumber!.isNotEmpty)
-                            _buildInfoRow(
-                              context,
-                              '수주번호',
-                              group.headerItem.salesOrderNumber!,
-                            ),
-                          if (group.headerItem.projectItem != null &&
-                              group.headerItem.projectItem!.isNotEmpty)
-                            _buildInfoRow(
-                              context,
-                              'Item',
-                              group.headerItem.projectItem!,
-                            ),
-                        ],
-                      ),
+              // 본문
+              Flexible(
+                child: Container(
+                  color: AppColors.backgroundPrimary,
+                  child: ListView(
+                    shrinkWrap: true,
+                    padding: EdgeInsets.symmetric(
+                      vertical: ResponsiveUtils.spacing(context, 12),
                     ),
-                    SizedBox(height: ResponsiveUtils.spacing(context, 16)),
-
-                    // line_number 순서로 정렬된 아이템들 표시
-                    ...(group.items.toList()..sort(
-                          (a, b) => a.lineNumber.compareTo(b.lineNumber),
-                        ))
-                        .map(
-                          (item) => Container(
-                            margin: EdgeInsets.only(
-                              bottom: ResponsiveUtils.spacing(context, 12),
+                    children: [
+                      FlatCard(
+                        child: Column(
+                          children: [
+                            FlatCardHeader(
+                              title: '기본 정보',
+                              icon: Icons.info_outline,
+                              iconColor: AppColors.primary,
                             ),
-                            padding: EdgeInsets.all(
-                              ResponsiveUtils.spacing(context, 12),
+                            FlatInfoRow(
+                              label: '요청자',
+                              value: group.requesterName,
                             ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(
-                                ResponsiveUtils.spacing(context, 10),
+                            FlatInfoRow(
+                              label: '업체명',
+                              value: group.vendorName,
+                            ),
+                            FlatInfoRow(
+                              label: '요청일',
+                              value: DateFormat(
+                                'yyyy.MM.dd',
+                              ).format(group.requestDate),
+                            ),
+                            if (group.items.isNotEmpty &&
+                                group.headerItem.deliveryRequestDate !=
+                                    DateTime(1970))
+                              FlatInfoRow(
+                                label: '입고요청일',
+                                value: DateFormat('yyyy.MM.dd').format(
+                                  group.headerItem.deliveryRequestDate,
+                                ),
                               ),
-                              border: Border.all(
-                                color: AppColors.border,
+                            if (group.headerItem.projectVendor != null &&
+                                group.headerItem.projectVendor!.isNotEmpty)
+                              FlatInfoRow(
+                                label: 'PJ업체',
+                                value: group.headerItem.projectVendor!,
                               ),
-                              boxShadow: AppShadows.xsShadow,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '${item.lineNumber}. ${item.itemName.isNotEmpty ? item.itemName : "품목명 없음"}',
-                                  style: AppTextStyles.inputLabel(context).copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                                SizedBox(
-                                  height: ResponsiveUtils.spacing(context, 8),
-                                ),
-                                // 규격
-                                if (item.specification.isNotEmpty)
-                                  Padding(
-                                    padding: EdgeInsets.only(
-                                      bottom: ResponsiveUtils.spacing(
-                                        context,
-                                        4,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        SizedBox(
-                                          width: ResponsiveUtils.spacing(
-                                            context,
-                                            60,
-                                          ),
-                                          child: Text(
-                                            '규격:',
-                                            style: AppTextStyles.cardCaption(context),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: Text(
-                                            item.specification,
-                                            style: AppTextStyles.cardCaption(context).copyWith(
-                                              color: AppColors.textPrimary,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                // 수량
-                                Padding(
-                                  padding: EdgeInsets.only(
-                                    bottom: ResponsiveUtils.spacing(context, 4),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      SizedBox(
-                                        width: ResponsiveUtils.spacing(
-                                          context,
-                                          60,
-                                        ),
-                                        child: Text(
-                                          '수량:',
-                                          style: AppTextStyles.cardCaption(context),
-                                        ),
-                                      ),
-                                      Text(
-                                        '${item.quantity}',
-                                        style: AppTextStyles.cardCaption(context).copyWith(
-                                          color: AppColors.textPrimary,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                // 단가
-                                Padding(
-                                  padding: EdgeInsets.only(
-                                    bottom: ResponsiveUtils.spacing(context, 4),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      SizedBox(
-                                        width: ResponsiveUtils.spacing(
-                                          context,
-                                          60,
-                                        ),
-                                        child: Text(
-                                          '단가:',
-                                          style: AppTextStyles.cardCaption(context),
-                                        ),
-                                      ),
-                                      Text(
-                                        CurrencyFormatter.format(item.unitPriceValue, item.currency),
-                                        style: AppTextStyles.cardCaption(context).copyWith(
-                                          color: AppColors.textPrimary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                // 금액
-                                Row(
-                                  children: [
-                                    SizedBox(
-                                      width: ResponsiveUtils.spacing(
-                                        context,
-                                        60,
-                                      ),
-                                      child: Text(
-                                        '금액:',
-                                        style: AppTextStyles.cardCaption(context),
-                                      ),
-                                    ),
-                                    Text(
-                                      CurrencyFormatter.format(item.amountValue, item.currency),
-                                      style: AppTextStyles.inputLabel(context).copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.primary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                // 비고
-                                if (item.remark != null &&
-                                    item.remark!.isNotEmpty) ...[
-                                  SizedBox(
-                                    height: ResponsiveUtils.spacing(context, 4),
-                                  ),
-                                  Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      SizedBox(
-                                        width: ResponsiveUtils.spacing(
-                                          context,
-                                          60,
-                                        ),
-                                        child: Text(
-                                          '비고:',
-                                          style: AppTextStyles.cardCaption(context),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        child: Text(
-                                          item.remark!,
-                                          style: AppTextStyles.cardCaption(context).copyWith(
-                                            color: AppColors.textPrimary,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                                // 수정/삭제 버튼 (관리자만 표시)
-                                if (_isAppAdmin()) ...[
-                                  SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      // 수정 버튼
-                                      SizedBox(
-                                        width: ResponsiveUtils.spacing(context, 32),
-                                        height: ResponsiveUtils.spacing(context, 32),
-                                        child: IconButton(
-                                          onPressed: () => _showEditDialog(item),
-                                          icon: Icon(
-                                            Icons.edit_outlined,
-                                            size: ResponsiveUtils.iconSize(context, 16),
-                                            color: AppColors.success,
-                                          ),
-                                          style: IconButton.styleFrom(
-                                            backgroundColor: AppColors.successLight,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(
-                                                ResponsiveUtils.spacing(context, 8),
-                                              ),
-                                            ),
-                                            padding: EdgeInsets.zero,
-                                          ),
-                                          tooltip: '품목 수정',
-                                        ),
-                                      ),
-                                      SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                                      // 삭제 버튼
-                                      SizedBox(
-                                        width: ResponsiveUtils.spacing(context, 32),
-                                        height: ResponsiveUtils.spacing(context, 32),
-                                        child: IconButton(
-                                          onPressed: () => _showDeleteDialog(item, group.purchaseOrderNumber),
-                                          icon: Icon(
-                                            Icons.delete_outline,
-                                            size: ResponsiveUtils.iconSize(context, 16),
-                                            color: AppColors.error,
-                                          ),
-                                          style: IconButton.styleFrom(
-                                            backgroundColor: AppColors.errorLight,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(
-                                                ResponsiveUtils.spacing(context, 8),
-                                              ),
-                                            ),
-                                            padding: EdgeInsets.zero,
-                                          ),
-                                          tooltip: '품목 삭제',
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
+                            if (group.headerItem.salesOrderNumber != null &&
+                                group.headerItem.salesOrderNumber!.isNotEmpty)
+                              FlatInfoRow(
+                                label: '수주번호',
+                                value: group.headerItem.salesOrderNumber!,
+                              ),
+                            if (group.headerItem.projectItem != null &&
+                                group.headerItem.projectItem!.isNotEmpty)
+                              FlatInfoRow(
+                                label: 'Item',
+                                value: group.headerItem.projectItem!,
+                              ),
+                          ],
                         ),
-                  ],
+                      ),
+                      FlatCard(
+                        child: Column(
+                          children: [
+                            FlatCardHeader(
+                              title: '품목',
+                              icon: Icons.inventory_2_outlined,
+                              iconColor: AppColors.primary,
+                              trailing: Text(
+                                '${sortedItems.length}개',
+                                style: AppTextStyles.listSubtitle(context),
+                              ),
+                            ),
+                            for (final item in sortedItems)
+                              _buildOrderDetailItemRow(
+                                context,
+                                item,
+                                group.purchaseOrderNumber,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -544,31 +312,121 @@ return;
     );
   }
 
-  Widget _buildInfoRow(BuildContext context, String label, String value) {
-    return Padding(
+  /// 발주 상세 다이얼로그의 품목 행
+  Widget _buildOrderDetailItemRow(
+    BuildContext context,
+    dynamic item,
+    String orderNumber,
+  ) {
+    // 규격 · 수량 · 단가를 한 줄로 요약
+    final summary = [
+      if (item.specification.isNotEmpty) item.specification,
+      '${item.quantity}개',
+      CurrencyFormatter.format(item.unitPriceValue, item.currency),
+    ].join(' · ');
+
+    return Container(
       padding: EdgeInsets.symmetric(
-        vertical: ResponsiveUtils.spacing(context, 4),
+        horizontal: ResponsiveUtils.spacing(context, 14),
+        vertical: ResponsiveUtils.spacing(context, 8),
       ),
-      child: Row(
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: ResponsiveUtils.spacing(context, 80),
-            child: Text(
-              label,
-              style: AppTextStyles.tableCellSub(context).copyWith(
-                color: AppColors.textTertiary,
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${item.lineNumber}. '
+                  '${item.itemName.isNotEmpty ? item.itemName : "품목명 없음"}',
+                  style: AppTextStyles.tableCell(context),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: AppTextStyles.tableCellSub(context).copyWith(
-                fontWeight: FontWeight.w500,
+              SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+              Text(
+                CurrencyFormatter.format(item.amountValue, item.currency),
+                style: AppTextStyles.tableCell(
+                  context,
+                  color: AppColors.primary,
+                ),
               ),
-            ),
+            ],
           ),
+          SizedBox(height: ResponsiveUtils.spacing(context, 3)),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  summary,
+                  style: AppTextStyles.listSubtitle(context),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              // 수정/삭제 버튼 (관리자만 표시)
+              if (_isAppAdmin()) ...[
+                SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+                _buildDetailIconButton(
+                  context,
+                  icon: Icons.edit_outlined,
+                  color: AppColors.textSecondary,
+                  tooltip: '품목 수정',
+                  onTap: () => _showEditDialog(item),
+                ),
+                SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+                _buildDetailIconButton(
+                  context,
+                  icon: Icons.delete_outline,
+                  color: AppColors.error,
+                  tooltip: '품목 삭제',
+                  onTap: () => _showDeleteDialog(item, orderNumber),
+                ),
+              ],
+            ],
+          ),
+          if (item.remark != null && item.remark!.isNotEmpty) ...[
+            SizedBox(height: ResponsiveUtils.spacing(context, 2)),
+            Text(
+              item.remark!,
+              style: AppTextStyles.listSubtitle(context),
+            ),
+          ],
         ],
+      ),
+    );
+  }
+
+  /// 상세 다이얼로그 품목 행의 작은 아이콘 버튼 (28x28, radius 8)
+  Widget _buildDetailIconButton(
+    BuildContext context, {
+    required IconData icon,
+    required Color color,
+    required String tooltip,
+    required VoidCallback onTap,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          width: 28,
+          height: 28,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Icon(icon, size: 14, color: color),
+        ),
       ),
     );
   }
