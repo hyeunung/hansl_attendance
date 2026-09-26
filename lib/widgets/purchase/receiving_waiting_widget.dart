@@ -1892,22 +1892,24 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
               vertical: ResponsiveUtils.spacing(context, 4),
             ),
             decoration: BoxDecoration(
-              color: AppColors.success,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+              border: Border.all(color: AppColors.border),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   Icons.edit,
-                  color: Colors.white,
+                  color: AppColors.textSecondary,
                   size: ResponsiveUtils.iconSize(context, 14),
                 ),
                 SizedBox(width: ResponsiveUtils.spacing(context, 4)),
                 Text(
                   '수정',
-                  style: AppTextStyles.chipSmall(context, color: Colors.white).copyWith(
-                    fontSize: 12,
+                  style: AppTextStyles.chipSmall(
+                    context,
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],

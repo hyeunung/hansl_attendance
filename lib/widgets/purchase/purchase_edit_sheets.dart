@@ -769,19 +769,46 @@ class _OrderEditSheetState extends State<_OrderEditSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const _SheetSectionLabel('기본 정보'),
-          Text('카테고리', style: AppTextStyles.inputLabel(context)),
-          const SizedBox(height: 6),
-          _buildCategoryDropdown(),
-          const SizedBox(height: 14),
-          Text.rich(
-            const TextSpan(
-              text: '업체',
-              children: [TextSpan(text: ' *', style: TextStyle(color: AppColors.error))],
-            ),
-            style: AppTextStyles.inputLabel(context),
+          // 카테고리와 업체는 한 행에 배치
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('카테고리', style: AppTextStyles.inputLabel(context)),
+                    const SizedBox(height: 6),
+                    _buildCategoryDropdown(),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 3,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text.rich(
+                      const TextSpan(
+                        text: '업체',
+                        children: [
+                          TextSpan(
+                            text: ' *',
+                            style: TextStyle(color: AppColors.error),
+                          ),
+                        ],
+                      ),
+                      style: AppTextStyles.inputLabel(context),
+                    ),
+                    const SizedBox(height: 6),
+                    _buildVendorDropdown(),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 6),
-          _buildVendorDropdown(),
           const SizedBox(height: 14),
           _buildDateRows(),
           const SizedBox(height: 24),

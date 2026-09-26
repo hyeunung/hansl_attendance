@@ -2150,118 +2150,108 @@ return;
 
     return FlatCard(
       child: Container(
-      decoration: BoxDecoration(
-        color: cardBackgroundColor,
-        border: isPreProgress
-            ? const Border(left: BorderSide(color: AppColors.error, width: 3))
-            : null,
-      ),
-      child: InkWell(
-        onTap: () => _showOrderDetails(context, group),
-        child: Padding(
-          padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 18)),
+        decoration: BoxDecoration(
+          color: cardBackgroundColor,
+          border: isPreProgress
+              ? const Border(left: BorderSide(color: AppColors.error, width: 3))
+              : null,
+        ),
+        child: InkWell(
+          onTap: () => _showOrderDetails(context, group),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 상단: 발주번호, 카테고리, 상태
-              Row(
-                children: [
-                  Icon(
-                    Icons.task_alt,
-                    color: AppColors.textTertiary,
-                    size: ResponsiveUtils.iconSize(context, 22),
-                  ),
-                  SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                  Expanded(
-                    child: Text(
-                      group.purchaseOrderNumber,
-                      style: AppTextStyles.sectionSubtitle(context),
-                    ),
-                  ),
-                  StatusChip(
-                    label: group.paymentCategory ?? '',
-                    color: categoryTextColor,
-                  ),
-                  SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                  StatusChip(
-                    label: statusLabel,
-                    color: statusTextColor,
-                  ),
-                ],
-              ),
-
-              SizedBox(height: ResponsiveUtils.spacing(context, 16)),
-
-              // 요청자 & 업체 정보
-              Row(
-                children: [
-                  Icon(
-                    Icons.person_outline,
-                    size: ResponsiveUtils.iconSize(context, 16),
-                    color: AppColors.textTertiary,
-                  ),
-                  SizedBox(width: ResponsiveUtils.spacing(context, 4)),
-                  Text(
-                    group.requesterName,
-                    style: AppTextStyles.tableCellSub(context),
-                  ),
-                  SizedBox(width: ResponsiveUtils.spacing(context, 16)),
-                  Icon(
-                    Icons.business,
-                    size: ResponsiveUtils.iconSize(context, 16),
-                    color: AppColors.textTertiary,
-                  ),
-                  SizedBox(width: ResponsiveUtils.spacing(context, 4)),
-                  Expanded(
-                    child: Text(
-                      group.vendorName,
-                      style: AppTextStyles.tableCellSub(context),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-
-              // 품목 정보
-              Container(
-                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 10)),
-                decoration: BoxDecoration(
-                  color: AppColors.backgroundSecondary,
-                  borderRadius: BorderRadius.circular(
-                    ResponsiveUtils.spacing(context, 8),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              FlatCardHeader(
+                title: group.purchaseOrderNumber,
+                icon: Icons.task_alt,
+                iconColor: statusTextColor,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
+                    StatusChip(
+                      label: group.paymentCategory ?? '',
+                      color: categoryTextColor,
+                    ),
+                    SizedBox(width: ResponsiveUtils.spacing(context, 4)),
+                    StatusChip(label: statusLabel, color: statusTextColor),
+                  ],
+                ),
+              ),
+              FlatInfoRow(label: '요청자', value: group.requesterName),
+              FlatInfoRow(label: '업체', value: group.vendorName),
+              FlatInfoRow(
+                label: '품목',
+                value: headerItem.itemName.isNotEmpty
+                    ? headerItem.itemName
+                    : '품목명 없음',
+                trailing: group.additionalItemCount > 0
+                    ? StatusChip(
+                        label: '외 ${group.additionalItemCount}개',
+                        color: AppColors.primary,
+                      )
+                    : null,
+              ),
+              // 하단: 총 금액 + 처리 시점 + 전체삭제
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: ResponsiveUtils.spacing(context, 14),
+                  vertical: ResponsiveUtils.spacing(context, 8),
+                ),
+                child: Row(
+                  children: [
+                    Text('총 금액', style: AppTextStyles.listSubtitle(context)),
+                    SizedBox(width: ResponsiveUtils.spacing(context, 6)),
                     Text(
-                      headerItem.itemName.isNotEmpty
-                          ? headerItem.itemName
-                          : '품목명 없음',
-                      style: AppTextStyles.inputLabel(context).copyWith(
-                        fontWeight: FontWeight.w600,
+                      CurrencyFormatter.format(
+                        group.totalAmount,
+                        group.currency,
+                      ),
+                      style: AppTextStyles.tableCell(
+                        context,
+                        color: AppColors.primary,
                       ),
                     ),
-                    if (group.additionalItemCount > 0) ...[
-                      SizedBox(height: ResponsiveUtils.spacing(context, 6)),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: ResponsiveUtils.spacing(context, 8),
-                          vertical: ResponsiveUtils.spacing(context, 2),
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.051),
-                          borderRadius: BorderRadius.circular(
-                            ResponsiveUtils.spacing(context, 4),
+                    const Spacer(),
+                    Text(
+                      '오늘 처리됨',
+                      style: AppTextStyles.listSubtitle(context),
+                    ),
+                    // 관리자만 전체삭제 버튼 표시
+                    if (_isAppAdmin()) ...[
+                      SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                      InkWell(
+                        onTap: () => _showBulkDeleteOrderDialog(group),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: ResponsiveUtils.spacing(context, 8),
+                            vertical: ResponsiveUtils.spacing(context, 4),
                           ),
-                        ),
-                        child: Text(
-                          '외 ${group.additionalItemCount}개 품목',
-                          style: AppTextStyles.tableHeader(context).copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: AppColors.error.withValues(alpha: 0.4),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.delete_sweep_outlined,
+                                size: ResponsiveUtils.iconSize(context, 14),
+                                color: AppColors.error,
+                              ),
+                              SizedBox(
+                                width: ResponsiveUtils.spacing(context, 4),
+                              ),
+                              Text(
+                                '전체삭제',
+                                style: AppTextStyles.chipSmall(
+                                  context,
+                                  color: AppColors.error,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -2269,79 +2259,9 @@ return;
                   ],
                 ),
               ),
-
-              SizedBox(height: ResponsiveUtils.spacing(context, 16)),
-
-              // 하단: 금액과 전체삭제 버튼
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '총 금액',
-                        style: AppTextStyles.tableHeader(context),
-                      ),
-                      Text(
-                        CurrencyFormatter.format(group.totalAmount, group.currency),
-                        style: AppTextStyles.cardTitle(context).copyWith(
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      // 관리자만 전체삭제 버튼 표시
-                      if (_isAppAdmin()) ...[
-                        GestureDetector(
-                          onTap: () => _showBulkDeleteOrderDialog(group),
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: ResponsiveUtils.spacing(context, 8),
-                              vertical: ResponsiveUtils.spacing(context, 6),
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.errorLight,
-                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 6)),
-                              border: Border.all(
-                                color: AppColors.errorLight,
-                                width: 1,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.delete_sweep_outlined,
-                                  size: ResponsiveUtils.iconSize(context, 14),
-                                  color: AppColors.error,
-                                ),
-                                SizedBox(width: ResponsiveUtils.spacing(context, 4)),
-                                Text(
-                                  '전체삭제',
-                                  style: AppTextStyles.chipSmall(context, color: AppColors.error),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: ResponsiveUtils.spacing(context, 4)),
-                      ],
-                      Text(
-                        '오늘 처리됨',
-                        style: AppTextStyles.tableHeader(context),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
             ],
           ),
         ),
-      ),
       ),
     );
   }
