@@ -15,6 +15,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
 import '../../widgets/common/notification_banner_widget.dart';
+import '../../widgets/common/notification_bell_button.dart';
 import '../../widgets/shared/flat_section.dart';
 
 // ── 업로드 종류 정의 ─────────────────────────────────────
@@ -1047,7 +1048,7 @@ class _TransactionStatementScreenState
         surfaceTintColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
-        actions: const [],
+        actions: const [NotificationBellButton()],
       ),
       backgroundColor: AppColors.backgroundPrimary,
       body: _isLoading

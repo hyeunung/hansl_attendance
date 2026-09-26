@@ -14,6 +14,7 @@ import '../../utils/user_role_helper.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
 import '../../widgets/common/notification_banner_widget.dart';
+import '../../widgets/common/notification_bell_button.dart';
 import '../../widgets/shared/flat_section.dart';
 
 /// 영수증 전용 화면
@@ -719,6 +720,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
         surfaceTintColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
+        actions: const [NotificationBellButton()],
       ),
       backgroundColor: AppColors.backgroundPrimary,
       body: _isLoading

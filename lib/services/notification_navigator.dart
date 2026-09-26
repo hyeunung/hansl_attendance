@@ -33,6 +33,7 @@ class NotificationNavigator {
   // ApprovalScreen 메인 탭 인덱스
   static const int _leaveApprovalSubTab = 0;
   static const int _purchaseApprovalSubTab = 1;
+  static const int _purchaseWaitingSubTab = 2;
   static const int _receivingSubTab = 3;
 
   /// 실제 알림 종류 추출
@@ -90,7 +91,12 @@ class NotificationNavigator {
 
   /// 알림 종류에 맞는 화면으로 이동
   /// 이동할 화면이 없으면 false 반환 (호출 측에서 현재 화면 유지)
-  static Future<bool> open(NavigatorState navigator, String type) async {
+  static Future<bool> open(
+    NavigatorState navigator,
+    String type, {
+    Map<String, dynamic>? data,
+    String? body,
+  }) async {
     final destination = destinationOf(type);
     if (destination == NotificationDestination.none) return false;
 
@@ -112,14 +118,12 @@ class NotificationNavigator {
         approvalSubTab = _leaveApprovalSubTab;
         break;
       case NotificationDestination.purchaseApproval:
-        tabIndex = _approvalTab;
-        approvalSubTab = UserRoleHelper.hasPurchaseApprovalAuth(roles)
-            ? _purchaseApprovalSubTab
-            : _receivingSubTab;
-        break;
       case NotificationDestination.purchaseStatus:
         tabIndex = _approvalTab;
-        approvalSubTab = _receivingSubTab;
+        approvalSubTab = await _purchaseSubTabFor(
+          _purchaseOrderNumberOf(data, body),
+          canApprove: UserRoleHelper.hasPurchaseApprovalAuth(roles),
+        );
         break;
       case NotificationDestination.myLeave:
         tabIndex = _leaveTab;
@@ -148,6 +152,55 @@ class NotificationNavigator {
       );
     }
     return true;
+  }
+
+  /// 발주번호 추출 - data에 없는 이전 알림은 본문 괄호 안의 번호 사용
+  /// 예: "홍길동님이 구매 요청 요청(F20260923_026)을 등록했습니다."
+  static String? _purchaseOrderNumberOf(Map<String, dynamic>? data, String? body) {
+    final fromData = data?['purchase_order_number']?.toString();
+    if (fromData != null && fromData.isNotEmpty) return fromData;
+    if (body == null) return null;
+    return RegExp(r'\(([A-Za-z0-9_\-]+)\)').firstMatch(body)?.group(1);
+  }
+
+  /// 발주 건의 현재 진행 단계에 맞는 승인관리 서브탭
+  /// (알림 발송 이후 단계가 바뀌었을 수 있으므로 알림 종류가 아닌 현재 상태 기준)
+  static Future<int> _purchaseSubTabFor(
+    String? purchaseOrderNumber, {
+    required bool canApprove,
+  }) async {
+    final fallback = canApprove ? _purchaseApprovalSubTab : _receivingSubTab;
+    if (purchaseOrderNumber == null || purchaseOrderNumber.isEmpty) {
+      return fallback;
+    }
+
+    try {
+      final purchase = await Supabase.instance.client
+          .from('purchase_requests')
+          .select(
+            'middle_manager_status, final_manager_status, payment_category, is_payment_completed, is_received',
+          )
+          .eq('purchase_order_number', purchaseOrderNumber)
+          .limit(1)
+          .maybeSingle();
+      if (purchase == null) return fallback;
+
+      final middle = purchase['middle_manager_status'];
+      final finalStatus = purchase['final_manager_status'];
+      final isRejected = middle == 'rejected' || finalStatus == 'rejected';
+      final isApprovalPending =
+          !isRejected && (middle == 'pending' || finalStatus == 'pending');
+
+      if (isApprovalPending && canApprove) return _purchaseApprovalSubTab;
+      if (purchase['payment_category'] == '구매 요청' &&
+          purchase['is_payment_completed'] != true) {
+        return _purchaseWaitingSubTab;
+      }
+      if (purchase['is_received'] != true) return _receivingSubTab;
+      return fallback;
+    } catch (_) {
+      return fallback;
+    }
   }
 
   static Future<Map<String, dynamic>?> _loadEmployee(BuildContext context) async {

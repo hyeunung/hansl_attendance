@@ -1188,7 +1188,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
     return RefreshIndicator(
       onRefresh: _loadReceivingItems,
       child: ListView.builder(
-        padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
+        padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 4)),
         itemCount: itemsToShow.length,
         itemBuilder: (context, index) {
           final orderNumber = itemsToShow.keys.elementAt(index);
@@ -1207,13 +1207,12 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                             UserRoleHelper.isPureLeadBuyer(purchaseRoles) ||
                             firstItem['requester_name'] == userName;
 
-          return Container(
+          return FlatCard(
+            child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(
-                bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
-                left: isExpanded ? BorderSide(color: AppColors.primary, width: 3) : BorderSide.none,
-              ),
+              border: isExpanded
+                  ? const Border(left: BorderSide(color: AppColors.primary, width: 3))
+                  : null,
             ),
             child: Column(
               children: [
@@ -1230,13 +1229,13 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                   ),
                   child: Container(
                     padding: EdgeInsets.fromLTRB(
-        ResponsiveUtils.spacing(context, 16),
-                      ResponsiveUtils.spacing(context, 20),
-                      ResponsiveUtils.spacing(context, 16),
+                      ResponsiveUtils.spacing(context, 14),
+                      ResponsiveUtils.spacing(context, 8),
+                      ResponsiveUtils.spacing(context, 14),
                       ResponsiveUtils.spacing(context, 8),
                     ),
-                    decoration: BoxDecoration(
-                      color: isExpanded ? AppColors.backgroundSecondary : Colors.white,
+                    decoration: const BoxDecoration(
+                      color: AppColors.backgroundCard,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1572,6 +1571,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                     ),
                   ),
               ],
+            ),
             ),
           );
         },

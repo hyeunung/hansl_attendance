@@ -17,6 +17,7 @@ import '../../services/badge_cache_service.dart';
 import '../../utils/user_role_helper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../widgets/common/notification_banner_widget.dart';
+import '../../widgets/common/notification_bell_button.dart';
 import '../../providers/attendance_provider.dart';
 
 class ApprovalScreen extends StatefulWidget {
@@ -501,7 +502,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
         surfaceTintColor: Colors.white,
         elevation: 0,
         iconTheme: IconThemeData(color: AppColors.textPrimary),
-        actions: const [],
+        actions: const [NotificationBellButton()],
       ),
       body: Consumer<LeaveProvider>(
         builder: (context, provider, _) {

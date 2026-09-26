@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
 import '../../providers/attendance_provider.dart';
-import '../../providers/notification_provider.dart';
 import '../../providers/font_provider.dart';
 import '../../utils/responsive_utils.dart';
 import '../../services/timer_manager.dart';
@@ -16,8 +15,8 @@ import '../../widgets/attendance/today_absence_widget.dart';
 import '../../widgets/attendance/tomorrow_absence_widget.dart';
 import '../../widgets/attendance/today_vehicle_widget.dart';
 import '../../widgets/attendance/absent_late_widget.dart';
-import '../notification/notification_center_screen.dart';
 import '../../widgets/common/notification_banner_widget.dart';
+import '../../widgets/common/notification_bell_button.dart';
 import '../../providers/leave_provider.dart';
 
 class AttendanceScreenOptimized extends StatefulWidget {
@@ -158,70 +157,7 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
               bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
             ),
             title: AppBarTitle('근무 기록'),
-            actions: [
-              // 알림 아이콘과 배지
-              Consumer<NotificationProvider>(
-                builder: (context, notificationProvider, _) {
-                  return Padding(
-                    padding: EdgeInsets.only(
-                      right: ResponsiveUtils.spacing(context, 16),
-                    ),
-                    child: Stack(
-                      children: [
-                        IconButton(
-                          icon: const Icon(
-                            Icons.notifications_outlined,
-                            color: AppColors.textPrimary,
-                          ),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const NotificationCenterScreen(),
-                              ),
-                            ).then((_) {
-                              // 알림 센터에서 돌아오면 알림 개수 새로고침
-                              notificationProvider.loadNotifications();
-                            });
-                          },
-                        ),
-                        if (notificationProvider.unreadCount > 0)
-                          Positioned(
-                            right: 8,
-                            top: 8,
-                            child: Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: BoxDecoration(
-                                color: AppColors.error,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              constraints: const BoxConstraints(
-                                minWidth: 18,
-                                minHeight: 18,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  notificationProvider.unreadCount > 99
-                                      ? '99+'
-                                      : notificationProvider.unreadCount
-                                            .toString(),
-                                  style: AppTextStyles.compactLabel(context).copyWith(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ],
+            actions: const [NotificationBellButton()],
           ),
           body: Column(
             children: [

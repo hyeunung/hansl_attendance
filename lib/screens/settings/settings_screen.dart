@@ -22,6 +22,7 @@ import '../../widgets/shared/flat_section.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import '../../utils/user_role_helper.dart';
 import '../admin/admin_attendance_screen.dart';
+import '../../widgets/common/notification_bell_button.dart';
 import 'notification_settings_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -487,6 +488,7 @@ class _SettingsScreenState extends State<SettingsScreen>
         centerTitle: true,
         title: AppBarTitle('설정'),
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        actions: const [NotificationBellButton()],
       ),
       body: isLoading
           ? const Center(child: CupertinoActivityIndicator())

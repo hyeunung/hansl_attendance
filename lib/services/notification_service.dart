@@ -422,7 +422,12 @@ class NotificationService {
       if (navigator == null) return;
 
       final type = (message.data['type'] as String?) ?? '';
-      final moved = await NotificationNavigator.open(navigator, type);
+      final moved = await NotificationNavigator.open(
+        navigator,
+        type,
+        data: message.data,
+        body: message.notification?.body,
+      );
       if (!moved) {
         // 앱 내 대상 화면이 없는 알림(제작현황 등)은 알림 센터로 이동
         navigator.push(

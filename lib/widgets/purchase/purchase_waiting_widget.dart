@@ -216,7 +216,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
       children: [
         // 진행률 바와 정보
         Container(
-          padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
+          padding: EdgeInsets.symmetric(vertical: ResponsiveUtils.spacing(context, 4)),
           decoration: BoxDecoration(
             color: AppColors.warningLight,
             border: Border.all(
@@ -677,13 +677,12 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
           final firstItem = items.first;
           final dateFormat = DateFormat('yyyy-MM-dd');
 
-          return Container(
+          return FlatCard(
+            child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(
-                bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
-                left: isExpanded ? BorderSide(color: AppColors.primary, width: 3) : BorderSide.none,
-              ),
+              border: isExpanded
+                  ? const Border(left: BorderSide(color: AppColors.primary, width: 3))
+                  : null,
             ),
             child: Column(
               children: [
@@ -696,13 +695,13 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                   },
                   child: Container(
                     padding: EdgeInsets.fromLTRB(
-        ResponsiveUtils.spacing(context, 16),
-                      ResponsiveUtils.spacing(context, 20),
-                      ResponsiveUtils.spacing(context, 16),
+                      ResponsiveUtils.spacing(context, 14),
+                      ResponsiveUtils.spacing(context, 8),
+                      ResponsiveUtils.spacing(context, 14),
                       ResponsiveUtils.spacing(context, 8),
                     ),
-                    decoration: BoxDecoration(
-                      color: isExpanded ? AppColors.backgroundSecondary : Colors.white,
+                    decoration: const BoxDecoration(
+                      color: AppColors.backgroundCard,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -925,6 +924,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                     ),
                   ),
               ],
+            ),
             ),
           );
         },

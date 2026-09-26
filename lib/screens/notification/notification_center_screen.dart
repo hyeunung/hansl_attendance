@@ -401,6 +401,12 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
     // 알림 종류(data.type)에 맞는 화면으로 이동, 대상 화면이 없으면 알림 센터 유지
     if (!mounted) return;
     final type = NotificationNavigator.resolveType(notification);
-    await NotificationNavigator.open(Navigator.of(context), type);
+    final data = notification['data'];
+    await NotificationNavigator.open(
+      Navigator.of(context),
+      type,
+      data: data is Map ? Map<String, dynamic>.from(data) : null,
+      body: notification['body']?.toString(),
+    );
   }
 }

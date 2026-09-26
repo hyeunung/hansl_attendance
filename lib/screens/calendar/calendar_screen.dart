@@ -7,6 +7,7 @@ import '../../utils/responsive_utils.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import '../../widgets/optimized_widgets.dart';
 import '../../widgets/shared/flat_section.dart';
+import '../../widgets/common/notification_bell_button.dart';
 import '../../widgets/leave/business_trip_modification_dialog.dart';
 
 class CalendarScreen extends StatefulWidget {
@@ -117,6 +118,7 @@ class _CalendarScreenState extends State<CalendarScreen>
             elevation: 0,
             centerTitle: true,
             iconTheme: IconThemeData(color: AppColors.textPrimary),
+            actions: const [NotificationBellButton()],
           ),
           backgroundColor: AppColors.backgroundPrimary,
           body: showLoading

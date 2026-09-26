@@ -10,6 +10,7 @@ import '../../utils/responsive_utils.dart';
 import '../../services/ui_optimization_service.dart';
 import '../../widgets/shared/flat_section.dart';
 import '../../widgets/common/notification_banner_widget.dart';
+import '../../widgets/common/notification_bell_button.dart';
 import '../../widgets/leave/business_trip_modification_dialog.dart';
 
 class LeaveStatusScreen extends StatefulWidget {
@@ -72,6 +73,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
         elevation: 0,
         centerTitle: true,
         title: AppBarTitle('연차/출장 대시보드'),
+        actions: const [NotificationBellButton()],
       ),
       body: Consumer<LeaveProvider>(
         builder: (context, provider, _) {
