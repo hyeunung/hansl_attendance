@@ -65,17 +65,30 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const LeaveScreenRouter()),
+      floatingActionButton: SizedBox(
+        height: ResponsiveUtils.spacing(context, 40),
+        child: FloatingActionButton.extended(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const LeaveScreenRouter()),
+          ),
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          elevation: 1,
+          extendedPadding: EdgeInsets.symmetric(
+            horizontal: ResponsiveUtils.spacing(context, 14),
+          ),
+          extendedIconLabelSpacing: ResponsiveUtils.spacing(context, 5),
+          icon: const Icon(Icons.add, size: 15),
+          label: Text(
+            '연차 신청',
+            style: AppTextStyles.inputLabel(context).copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 2,
-        icon: const Icon(Icons.add, size: 18),
-        label: Text('연차 신청', style: AppTextStyles.buttonPrimary(context).copyWith(color: Colors.white)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
       backgroundColor: AppColors.backgroundPrimary,
       appBar: AppBar(
