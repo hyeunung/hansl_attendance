@@ -1547,48 +1547,24 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             .join(', ') ??
         '';
     return FlatCard(
-      child: Padding(
-      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 14)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 상단: 이름, 유형, 상태
-          Row(
-            children: [
-              Icon(
-                Icons.person,
-                color: AppColors.primary,
-                size: ResponsiveUtils.iconSize(context, 22),
-              ),
-              SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      name,
-                      style: AppTextStyles.cardTitle(context),
-                    ),
-                    const SizedBox(width: 8),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 1),
-                      child: Text(
-                        createdAt,
-                        style: AppTextStyles.compactLabel(context).copyWith(
-                          fontSize: ResponsiveUtils.fontSize(context, 11),
-                          color: AppColors.gray300,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              StatusChip(label: typeLabel, color: typeTextColor),
-              SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-              _statusChip(status),
-            ],
+          FlatCardHeader(
+            title: name,
+            icon: Icons.person_outline,
+            iconColor: AppColors.primary,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(createdAt, style: AppTextStyles.listSubtitle(context)),
+                SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+                StatusChip(label: typeLabel, color: typeTextColor),
+                SizedBox(width: ResponsiveUtils.spacing(context, 4)),
+                _statusChip(status),
+              ],
+            ),
           ),
-          SizedBox(height: ResponsiveUtils.spacing(context, 14)),
           // 상세 정보
           if (isBiztrip && tripCode.isNotEmpty)
             _infoRow(Icons.confirmation_number, '출장번호', tripCode),
@@ -1626,37 +1602,44 @@ class _ApprovalScreenState extends State<ApprovalScreen>
           ],
           // 사유 (출장은 '출장목적' 행으로 표시하므로 연장 신청일 때만 박스 표시)
           if (!isBiztrip || isExtensionPending) ...[
-            SizedBox(height: ResponsiveUtils.spacing(context, 14)),
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 14)),
-              decoration: BoxDecoration(
-                color: AppColors.backgroundSecondary,
-                borderRadius: BorderRadius.circular(
-                  ResponsiveUtils.spacing(context, 10),
-                ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                ResponsiveUtils.spacing(context, 14),
+                ResponsiveUtils.spacing(context, 8),
+                ResponsiveUtils.spacing(context, 14),
+                0,
               ),
-              child: Text(
-                reason,
-                style: AppTextStyles.cardBody(context),
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
+                decoration: BoxDecoration(
+                  color: AppColors.backgroundSecondary,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.borderLight),
+                ),
+                child: Text(reason, style: AppTextStyles.cardBody(context)),
               ),
             ),
           ],
           if (showDeleteButton && status != 'pending') ...[
             // 처리완료 항목에 대한 수정/삭제 버튼
-            SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-            Row(
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                ResponsiveUtils.spacing(context, 14),
+                ResponsiveUtils.spacing(context, 8),
+                ResponsiveUtils.spacing(context, 14),
+                ResponsiveUtils.spacing(context, 10),
+              ),
+              child: Row(
               children: [
                 // 수정 버튼
                 Expanded(
                   child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.textSecondary,
                         elevation: 0,
-                        padding: EdgeInsets.symmetric(
-                          vertical: ResponsiveUtils.spacing(context, 9),
-                        ),
+                        side: const BorderSide(color: AppColors.border),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
                             ResponsiveUtils.spacing(context, 8),
@@ -1676,7 +1659,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                       label: Text(
                         '수정',
                         style: AppTextStyles.inputLabel(context).copyWith(
-                          color: Colors.white,
+                          color: AppColors.textSecondary,
                           fontWeight: FontWeight.w600,
                         ),
                     ),
@@ -1691,9 +1674,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                         foregroundColor: AppColors.error,
                         elevation: 0,
                         side: const BorderSide(color: AppColors.error),
-                        padding: EdgeInsets.symmetric(
-                          vertical: ResponsiveUtils.spacing(context, 9),
-                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
                             ResponsiveUtils.spacing(context, 8),
@@ -1723,10 +1703,17 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                   ),
                 ),
               ],
+              ),
             ),
           ] else if (showButtons && status == 'pending' && canApprove) ...[
-            SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-            Row(
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                ResponsiveUtils.spacing(context, 14),
+                ResponsiveUtils.spacing(context, 8),
+                ResponsiveUtils.spacing(context, 14),
+                ResponsiveUtils.spacing(context, 10),
+              ),
+              child: Row(
               children: [
                 Expanded(
                   child: Container(
@@ -1739,9 +1726,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.error,
                         foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(
-                          vertical: ResponsiveUtils.spacing(context, 10),
-                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
                             ResponsiveUtils.spacing(context, 8),
@@ -1807,9 +1791,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.success,
                         foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(
-                          vertical: ResponsiveUtils.spacing(context, 10),
-                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
                             ResponsiveUtils.spacing(context, 8),
@@ -1874,14 +1855,21 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                   ),
                 ),
               ],
+              ),
             ),
           ] else if (showButtons && status == 'pending' && !canApprove) ...[
-            SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-            Container(
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                ResponsiveUtils.spacing(context, 14),
+                ResponsiveUtils.spacing(context, 8),
+                ResponsiveUtils.spacing(context, 14),
+                ResponsiveUtils.spacing(context, 10),
+              ),
+              child: Container(
               width: double.infinity,
               alignment: Alignment.center,
               padding: EdgeInsets.symmetric(
-                vertical: ResponsiveUtils.spacing(context, 12),
+                vertical: ResponsiveUtils.spacing(context, 8),
               ),
               decoration: BoxDecoration(
                 color: AppColors.warning.withValues(alpha: 0.12),
@@ -1900,20 +1888,28 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                   SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                   Text(
                     '승인 권한이 없습니다',
-                    style: AppTextStyles.sectionSubtitle(context).copyWith(
+                    style: AppTextStyles.tableCell(
+                      context,
                       color: AppColors.warning,
                     ),
                   ),
                 ],
               ),
+              ),
             ),
           ] else if (!showButtons) ...[
-            SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-            Container(
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                ResponsiveUtils.spacing(context, 14),
+                ResponsiveUtils.spacing(context, 8),
+                ResponsiveUtils.spacing(context, 14),
+                ResponsiveUtils.spacing(context, 10),
+              ),
+              child: Container(
               width: double.infinity,
               alignment: Alignment.center,
               padding: EdgeInsets.symmetric(
-                vertical: ResponsiveUtils.spacing(context, 10),
+                vertical: ResponsiveUtils.spacing(context, 8),
               ),
               decoration: BoxDecoration(
                 color: status == 'approved'
@@ -1925,17 +1921,17 @@ class _ApprovalScreenState extends State<ApprovalScreen>
               ),
               child: Text(
                 status == 'approved' ? '승인 완료' : '반려',
-                style: AppTextStyles.cardTitle(context).copyWith(
+                style: AppTextStyles.tableCell(
+                  context,
                   color: status == 'approved'
                       ? AppColors.success
                       : AppColors.error,
-                  fontWeight: FontWeight.w700,
-                ),
+                  ),
+              ),
               ),
             ),
           ],
         ],
-      ),
       ),
     );
   }
@@ -2006,48 +2002,24 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     }
 
     return FlatCard(
-      child: Padding(
-      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 14)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 상단: 이름, 유형, 상태
-          Row(
-            children: [
-              Icon(
-                Icons.person,
-                color: AppColors.primary,
-                size: ResponsiveUtils.iconSize(context, 22),
-              ),
-              SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      name,
-                      style: AppTextStyles.cardTitle(context),
-                    ),
-                    const SizedBox(width: 8),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 1),
-                      child: Text(
-                        createdAt,
-                        style: AppTextStyles.compactLabel(context).copyWith(
-                          fontSize: ResponsiveUtils.fontSize(context, 11),
-                          color: AppColors.gray300,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              StatusChip(label: typeLabel, color: typeTextColor),
-              SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-              _vehicleCardStatusChip(status, isVehicle),
-            ],
+          FlatCardHeader(
+            title: name,
+            icon: Icons.person_outline,
+            iconColor: AppColors.primary,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(createdAt, style: AppTextStyles.listSubtitle(context)),
+                SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+                StatusChip(label: typeLabel, color: typeTextColor),
+                SizedBox(width: ResponsiveUtils.spacing(context, 4)),
+                _vehicleCardStatusChip(status, isVehicle),
+              ],
+            ),
           ),
-          SizedBox(height: ResponsiveUtils.spacing(context, 14)),
           // 상세 정보
           if (code.isNotEmpty)
             _infoRow(Icons.confirmation_number, '요청번호', code),
@@ -2074,25 +2046,34 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             _infoRow(Icons.flag_outlined, '사용목적', purpose),
           // 비고/설명/반려사유 박스 (내용이 있을 때만)
           if (reason.isNotEmpty) ...[
-            SizedBox(height: ResponsiveUtils.spacing(context, 14)),
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 14)),
-              decoration: BoxDecoration(
-                color: AppColors.backgroundSecondary,
-                borderRadius: BorderRadius.circular(
-                  ResponsiveUtils.spacing(context, 10),
-                ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                ResponsiveUtils.spacing(context, 14),
+                ResponsiveUtils.spacing(context, 8),
+                ResponsiveUtils.spacing(context, 14),
+                0,
               ),
-              child: Text(
-                reason,
-                style: AppTextStyles.cardBody(context),
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
+                decoration: BoxDecoration(
+                  color: AppColors.backgroundSecondary,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.borderLight),
+                ),
+                child: Text(reason, style: AppTextStyles.cardBody(context)),
               ),
             ),
           ],
           if (showButtons && status == 'pending' && canApprove) ...[
-            SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-            Row(
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                ResponsiveUtils.spacing(context, 14),
+                ResponsiveUtils.spacing(context, 8),
+                ResponsiveUtils.spacing(context, 14),
+                ResponsiveUtils.spacing(context, 10),
+              ),
+              child: Row(
               children: [
                 Expanded(
                   child: Container(
@@ -2105,9 +2086,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.error,
                         foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(
-                          vertical: ResponsiveUtils.spacing(context, 10),
-                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
                             ResponsiveUtils.spacing(context, 8),
@@ -2135,9 +2113,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.success,
                         foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(
-                          vertical: ResponsiveUtils.spacing(context, 10),
-                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
                             ResponsiveUtils.spacing(context, 8),
@@ -2154,14 +2129,21 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                   ),
                 ),
               ],
+              ),
             ),
           ] else if (showButtons && status == 'pending' && !canApprove) ...[
-            SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-            Container(
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                ResponsiveUtils.spacing(context, 14),
+                ResponsiveUtils.spacing(context, 8),
+                ResponsiveUtils.spacing(context, 14),
+                ResponsiveUtils.spacing(context, 10),
+              ),
+              child: Container(
               width: double.infinity,
               alignment: Alignment.center,
               padding: EdgeInsets.symmetric(
-                vertical: ResponsiveUtils.spacing(context, 12),
+                vertical: ResponsiveUtils.spacing(context, 8),
               ),
               decoration: BoxDecoration(
                 color: AppColors.warning.withValues(alpha: 0.12),
@@ -2180,20 +2162,28 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                   SizedBox(width: ResponsiveUtils.spacing(context, 8)),
                   Text(
                     '승인 권한이 없습니다',
-                    style: AppTextStyles.sectionSubtitle(context).copyWith(
+                    style: AppTextStyles.tableCell(
+                      context,
                       color: AppColors.warning,
                     ),
                   ),
                 ],
               ),
+              ),
             ),
           ] else if (!showButtons) ...[
-            SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-            Container(
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                ResponsiveUtils.spacing(context, 14),
+                ResponsiveUtils.spacing(context, 8),
+                ResponsiveUtils.spacing(context, 14),
+                ResponsiveUtils.spacing(context, 10),
+              ),
+              child: Container(
               width: double.infinity,
               alignment: Alignment.center,
               padding: EdgeInsets.symmetric(
-                vertical: ResponsiveUtils.spacing(context, 10),
+                vertical: ResponsiveUtils.spacing(context, 8),
               ),
               decoration: BoxDecoration(
                 color: status == 'rejected'
@@ -2205,17 +2195,17 @@ class _ApprovalScreenState extends State<ApprovalScreen>
               ),
               child: Text(
                 status == 'rejected' ? '반려' : '승인 완료',
-                style: AppTextStyles.cardTitle(context).copyWith(
+                style: AppTextStyles.tableCell(
+                  context,
                   color: status == 'rejected'
                       ? AppColors.error
                       : AppColors.success,
-                  fontWeight: FontWeight.w700,
-                ),
+                  ),
+              ),
               ),
             ),
           ],
         ],
-      ),
       ),
     );
   }
@@ -2325,13 +2315,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     final result = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(
-            ResponsiveUtils.spacing(context, 16),
-          ),
-        ),
-        title: Text('반려 확인', style: AppTextStyles.cardTitle(context)),
+        title: const Text('반려 확인'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -2343,12 +2327,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
               maxLines: 2,
               decoration: InputDecoration(
                 hintText: '반려 사유를 입력해주세요 (필수)',
-                hintStyle: AppTextStyles.emptyState(context),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(
-                    ResponsiveUtils.spacing(context, 8),
-                  ),
-                ),
+                hintStyle: AppTextStyles.listSubtitle(context),
                 contentPadding: EdgeInsets.all(
                   ResponsiveUtils.spacing(context, 12),
                 ),
@@ -2359,14 +2338,11 @@ class _ApprovalScreenState extends State<ApprovalScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(
-              '취소',
-              style: AppTextStyles.sectionSubtitle(context).copyWith(
-                color: AppColors.textTertiary,
-              ),
-            ),
+            style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
+            child: const Text('취소'),
           ),
-          TextButton(
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () {
               if (controller.text.trim().isEmpty) {
                 AppBanner.show(
@@ -2378,13 +2354,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
               }
               Navigator.of(dialogContext).pop(controller.text);
             },
-            child: Text(
-              '반려',
-              style: AppTextStyles.sectionSubtitle(context).copyWith(
-                color: AppColors.error,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+            child: const Text('반려'),
           ),
         ],
       ),
@@ -2450,34 +2420,8 @@ class _ApprovalScreenState extends State<ApprovalScreen>
   }
 
   Widget _infoRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: ResponsiveUtils.spacing(context, 6)),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            color: AppColors.textDisabled,
-            size: ResponsiveUtils.iconSize(context, 18),
-          ),
-          SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-          Text(
-            label,
-            style: AppTextStyles.tableCellSub(context).copyWith(
-              color: AppColors.textTertiary,
-            ),
-          ),
-          SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-          Expanded(
-            child: Text(
-              value,
-              style: AppTextStyles.tableCellSub(context).copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    // 아이콘 나열 대신 공통 정보 행 사용 (icon 인자는 호출부 호환용으로 유지)
+    return FlatInfoRow(label: label, value: value);
   }
 
   Widget _statusChip(String status) {
