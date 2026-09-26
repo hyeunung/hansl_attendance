@@ -1218,7 +1218,7 @@ class _ReceiptDetailScreenState extends State<_ReceiptDetailScreen> {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
       ),
       backgroundColor: Colors.white,
       builder: (context) => Padding(

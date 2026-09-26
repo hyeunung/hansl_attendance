@@ -225,7 +225,7 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
       ),
       builder: (_) {
         return SafeArea(

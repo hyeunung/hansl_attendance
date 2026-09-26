@@ -634,6 +634,8 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
             'request_date': purchase['request_date'],
             'delivery_request_date': purchase['delivery_request_date'],
             'revised_delivery_request_date': purchase['revised_delivery_request_date'],
+            // 수정 시트에서 현재 카테고리를 선택 상태로 표시하기 위해 함께 전달
+            'payment_category': purchase['payment_category'],
             'purchase_id': purchase['id'],
           }).toList();
           
@@ -918,7 +920,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                 child: DropdownButton<String>(
                   value: _selectedDepartment,
                   hint: Text(
-                    '부서 선택',
+                    '부서 전체',
                     style: AppTextStyles.cardCaption(context),
                   ),
                   icon: Icon(
@@ -930,8 +932,31 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                   dropdownColor: Colors.white,
                   isDense: true,
                   isExpanded: true,
-                  borderRadius: BorderRadius.circular(10),
-                  elevation: 8,
+                  borderRadius: BorderRadius.circular(8),
+                  elevation: 4,
+                  itemHeight: null,
+                  menuMaxHeight: 320,
+                  // 닫힌 상태에서는 무엇을 거르는 필터인지 보이도록 '부서'를 앞에 붙인다
+                  selectedItemBuilder: (context) {
+                    return _departments.map<Widget>((String department) {
+                      return Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: ResponsiveUtils.spacing(context, 12),
+                        ),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            '부서 $department',
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.chipLabel(
+                              context,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList();
+                  },
                   items: _departments.map<DropdownMenuItem<String>>((String department) {
                     return DropdownMenuItem<String>(
                       value: department,
@@ -964,7 +989,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                 child: DropdownButton<String>(
                   value: _selectedEmployee,
                   hint: Text(
-                    '이름 선택',
+                    '직원 전체',
                     style: AppTextStyles.cardCaption(context),
                   ),
                   icon: Icon(
@@ -976,8 +1001,31 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                   dropdownColor: Colors.white,
                   isDense: true,
                   isExpanded: true,
-                  borderRadius: BorderRadius.circular(10),
-                  elevation: 8,
+                  borderRadius: BorderRadius.circular(8),
+                  elevation: 4,
+                  itemHeight: null,
+                  menuMaxHeight: 320,
+                  // 닫힌 상태에서는 무엇을 거르는 필터인지 보이도록 '직원'을 앞에 붙인다
+                  selectedItemBuilder: (context) {
+                    return _employees.map<Widget>((String employee) {
+                      return Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: ResponsiveUtils.spacing(context, 12),
+                        ),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            '직원 $employee',
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.chipLabel(
+                              context,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList();
+                  },
                   items: _employees.map<DropdownMenuItem<String>>((String employee) {
                     return DropdownMenuItem<String>(
                       value: employee,
@@ -1023,6 +1071,8 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
             height: ResponsiveUtils.spacing(context, 36),
             child: TextField(
               controller: _searchController,
+              // 고정 높이(36) + prefixIcon 조합에서 텍스트가 위로 쏠려 수직 중앙 정렬
+              textAlignVertical: TextAlignVertical.center,
               decoration: InputDecoration(
                 hintText: '발주번호, 업체명, 요청자, 품목명, 규격, 수량, 금액 검색...',
                 hintStyle: AppTextStyles.tableHeader(context),
@@ -1080,7 +1130,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
               ),
               SizedBox(width: ResponsiveUtils.spacing(context, 4)),
               Text(
-                '필터: ${_selectedDepartment ?? "전체"} > ${_selectedEmployee ?? "전체"}',
+                '필터: 부서 ${_selectedDepartment ?? "전체"} · 직원 ${_selectedEmployee ?? "전체"}',
                 style: AppTextStyles.tableHeader(context).copyWith(
                   color: AppColors.primary,
                   fontWeight: FontWeight.w600,
@@ -1835,7 +1885,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () => _showAdminEditDialog(context, orderNumber, items),
-          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+          borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
           child: Container(
             padding: EdgeInsets.symmetric(
               horizontal: ResponsiveUtils.spacing(context, 9),
@@ -1843,7 +1893,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
             ),
             decoration: BoxDecoration(
               color: AppColors.success,
-              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -2247,14 +2297,14 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
 
     return AlertDialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
       ),
       title: Container(
         padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
         decoration: BoxDecoration(
           color: AppColors.primary,
           borderRadius: BorderRadius.vertical(
-            top: Radius.circular(ResponsiveUtils.spacing(context, 16)),
+            top: Radius.circular(ResponsiveUtils.spacing(context, 8)),
           ),
         ),
         child: Row(
@@ -2304,14 +2354,14 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                 isExpanded: true,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                    borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                     borderSide: const BorderSide(
                       color: AppColors.border,
                       width: 1,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                    borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                     borderSide: BorderSide(
                       color: AppColors.primary,
                       width: 2,
@@ -2328,7 +2378,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                 padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
                 decoration: BoxDecoration(
                   color: AppColors.backgroundSecondary,
-                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                   border: Border.all(
                     color: AppColors.border,
                     width: 1,
@@ -2497,7 +2547,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                               decoration: InputDecoration(
                                 labelText: '품목',
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                                 ),
                                 contentPadding: EdgeInsets.symmetric(
                                   horizontal: ResponsiveUtils.spacing(context, 12),
@@ -2514,7 +2564,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                                 labelText: '변경 수량',
                                 hintText: quantityHint,
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                                 ),
                                 contentPadding: EdgeInsets.symmetric(
                                   horizontal: ResponsiveUtils.spacing(context, 12),
@@ -2607,7 +2657,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                               decoration: InputDecoration(
                                 labelText: '품목',
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                                 ),
                                 contentPadding: EdgeInsets.symmetric(
                                   horizontal: ResponsiveUtils.spacing(context, 12),
@@ -2633,7 +2683,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                               decoration: InputDecoration(
                                 labelText: '변경 유형',
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                                 ),
                                 contentPadding: EdgeInsets.symmetric(
                                   horizontal: ResponsiveUtils.spacing(context, 12),
@@ -2651,7 +2701,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                                 hintText: hintText,
                                 suffixText: CurrencyFormatter.unitLabel(currency),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                                 ),
                                 contentPadding: EdgeInsets.symmetric(
                                   horizontal: ResponsiveUtils.spacing(context, 12),
@@ -2708,14 +2758,14 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
                     color: AppColors.gray400,
                   ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                    borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                     borderSide: const BorderSide(
                       color: AppColors.border,
                       width: 1,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                    borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                     borderSide: BorderSide(
                       color: AppColors.primary,
                       width: 2,

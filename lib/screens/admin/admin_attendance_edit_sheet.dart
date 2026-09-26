@@ -135,7 +135,7 @@ class _AdminAttendanceEditSheetState extends State<AdminAttendanceEditSheet> {
       padding: EdgeInsets.only(bottom: bottomInset),
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
       ),
       child: SafeArea(
         top: false,

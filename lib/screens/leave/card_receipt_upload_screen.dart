@@ -590,7 +590,7 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
-          top: Radius.circular(ResponsiveUtils.spacing(context, 20)),
+          top: Radius.circular(ResponsiveUtils.spacing(context, 8)),
         ),
       ),
       builder: (context) {

@@ -2546,8 +2546,8 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                       decoration: const BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          topRight: Radius.circular(20),
+                          topLeft: Radius.circular(10),
+                          topRight: Radius.circular(10),
                         ),
                         border: Border(
                           bottom: BorderSide(color: AppColors.border, width: 1),
@@ -2881,8 +2881,8 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                       decoration: const BoxDecoration(
                         color: AppColors.backgroundSecondary,
                         borderRadius: BorderRadius.only(
-                          bottomLeft: Radius.circular(20),
-                          bottomRight: Radius.circular(20),
+                          bottomLeft: Radius.circular(10),
+                          bottomRight: Radius.circular(10),
                         ),
                       ),
                       padding: const EdgeInsets.all(16),
@@ -3130,8 +3130,8 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                   decoration: const BoxDecoration(
                     color: AppColors.backgroundSecondary,
                     borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(20),
-                      bottomRight: Radius.circular(20),
+                      bottomLeft: Radius.circular(10),
+                      bottomRight: Radius.circular(10),
                     ),
                   ),
                   padding: const EdgeInsets.all(16),

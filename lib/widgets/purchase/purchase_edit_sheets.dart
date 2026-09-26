@@ -121,7 +121,7 @@ class _EditSheetFrame extends StatelessWidget {
           constraints: BoxConstraints(maxHeight: media.size.height * 0.9),
           decoration: const BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -278,7 +278,7 @@ class _SheetField extends StatelessWidget {
             isDense: true,
             filled: false,
             hintText: hint,
-            hintStyle: AppTextStyles.cardBody(context).copyWith(color: AppColors.textDisabled),
+            hintStyle: AppTextStyles.tableCell(context, color: AppColors.textDisabled),
             suffixText: suffix,
             suffixStyle: AppTextStyles.cardBody(context),
             errorText: errorText,
@@ -586,8 +586,13 @@ class _OrderEditSheetState extends State<_OrderEditSheet> {
 
   SupabaseClient get _supabase => Supabase.instance.client;
 
-  late final TextEditingController _vendor;
+  // 업체: vendors 테이블에서 검색·선택 (vendor_id 기준 저장 — 이름 직접 입력은 DB 트리거가 되돌림)
+  final TextEditingController _vendorCtrl = TextEditingController();
   late final String _originalVendor;
+  List<Map<String, dynamic>> _vendors = [];
+  bool _vendorsLoading = true;
+  int? _selectedVendorId;
+  String? _selectedVendorName;
   late final String _originalCategory;
   late final DateTime? _originalExpected;
   late final DateTime? _originalRevised;
@@ -604,8 +609,8 @@ class _OrderEditSheetState extends State<_OrderEditSheet> {
     super.initState();
     final first = widget.items.isNotEmpty ? widget.items.first : <String, dynamic>{};
 
-    _vendor = TextEditingController(text: first['vendor_name']?.toString() ?? '');
-    _originalVendor = _vendor.text;
+    _originalVendor = first['vendor_name']?.toString() ?? '';
+    _vendorCtrl.text = _originalVendor;
     _category = first['payment_category']?.toString() ?? '';
     _originalCategory = _category;
     _expected = DateTime.tryParse(first['delivery_request_date']?.toString() ?? '');
@@ -616,7 +621,7 @@ class _OrderEditSheetState extends State<_OrderEditSheet> {
     _items = widget.items.map(_ItemEditState.new).toList();
     if (_items.length == 1) _items.first.expanded = true;
 
-    _vendor.addListener(_rebuild);
+    _loadVendors();
     for (final item in _items) {
       for (final c in item.controllers) {
         c.addListener(_rebuild);
@@ -626,9 +631,42 @@ class _OrderEditSheetState extends State<_OrderEditSheet> {
 
   void _rebuild() => setState(() {});
 
+  Future<void> _loadVendors() async {
+    try {
+      final data = await _supabase
+          .from('vendors')
+          .select('id, vendor_name, vendor_alias')
+          .order('vendor_name');
+      if (!mounted) return;
+      setState(() {
+        _vendors = List<Map<String, dynamic>>.from(data);
+        _vendorsLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _vendorsLoading = false);
+    }
+  }
+
+  /// 업체명 + 별칭(vendor_alias)으로 부분 일치 검색
+  List<DropdownMenuEntry<int>> _filterVendors(List<DropdownMenuEntry<int>> entries, String filter) {
+    final q = filter.trim().toLowerCase();
+    if (q.isEmpty || q == _currentVendorName.toLowerCase()) return entries;
+    final aliasById = {
+      for (final v in _vendors) v['id'] as int: (v['vendor_alias'] ?? '').toString().toLowerCase(),
+    };
+    return entries
+        .where((e) => e.label.toLowerCase().contains(q) || (aliasById[e.value] ?? '').contains(q))
+        .toList();
+  }
+
+  String get _currentVendorName => _selectedVendorName ?? _originalVendor;
+
+  bool get _vendorChanged => _selectedVendorId != null && _selectedVendorName != _originalVendor;
+
   @override
   void dispose() {
-    _vendor.dispose();
+    _vendorCtrl.dispose();
     for (final item in _items) {
       item.dispose();
     }
@@ -636,7 +674,7 @@ class _OrderEditSheetState extends State<_OrderEditSheet> {
   }
 
   bool get _hasChanges =>
-      _vendor.text != _originalVendor ||
+      _vendorChanged ||
       _category != _originalCategory ||
       _expected != _originalExpected ||
       _revised != _originalRevised ||
@@ -667,9 +705,9 @@ class _OrderEditSheetState extends State<_OrderEditSheet> {
   }
 
   Future<void> _save() async {
-    final vendor = _vendor.text.trim();
-    var valid = vendor.isNotEmpty;
-    _vendorError = vendor.isEmpty ? '업체명을 입력하세요' : null;
+    // 입력창 글자가 선택된 업체와 다르면(검색만 하고 고르지 않음) 저장 불가
+    var valid = _vendorCtrl.text.trim() == _currentVendorName;
+    _vendorError = valid ? null : '목록에서 업체를 선택하세요';
     for (final item in _items) {
       if (!item.validate()) {
         item.expanded = true;
@@ -688,8 +726,6 @@ class _OrderEditSheetState extends State<_OrderEditSheet> {
         final quantity = int.parse(item.qty.text.trim());
         final unitPrice = double.parse(item.price.text.trim());
         await _supabase.from('purchase_request_items').update({
-          'vendor_name': vendor,
-          'payment_category': _category,
           'item_name': item.name.text.trim(),
           'specification': item.spec.text.trim(),
           'quantity': quantity,
@@ -702,6 +738,12 @@ class _OrderEditSheetState extends State<_OrderEditSheet> {
       await _supabase.from('purchase_requests').update({
         'delivery_request_date': _expected == null ? null : DateFormat('yyyy-MM-dd').format(_expected!),
         'revised_delivery_request_date': _revised == null ? null : DateFormat('yyyy-MM-dd').format(_revised!),
+        // 카테고리는 purchase_requests에만 존재 (items에는 칼럼 없음)
+        'payment_category': _category,
+        // 업체 변경 시 vendor_id만 바꾸면 트리거가 vendor_name을 요청·품목에 전파.
+        // 기존 담당자(contact_id)는 이전 업체 소속이므로 해제
+        if (_vendorChanged) 'vendor_id': _selectedVendorId,
+        if (_vendorChanged) 'contact_id': null,
       }).eq('purchase_order_number', widget.orderNumber);
 
       if (!mounted) return;
@@ -727,17 +769,19 @@ class _OrderEditSheetState extends State<_OrderEditSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const _SheetSectionLabel('기본 정보'),
-          _SheetField(
-            label: '업체명',
-            controller: _vendor,
-            hint: '업체명',
-            errorText: _vendorError,
-            required: true,
-          ),
-          const SizedBox(height: 14),
           Text('카테고리', style: AppTextStyles.inputLabel(context)),
           const SizedBox(height: 6),
-          _buildCategorySelector(),
+          _buildCategoryDropdown(),
+          const SizedBox(height: 14),
+          Text.rich(
+            const TextSpan(
+              text: '업체',
+              children: [TextSpan(text: ' *', style: TextStyle(color: AppColors.error))],
+            ),
+            style: AppTextStyles.inputLabel(context),
+          ),
+          const SizedBox(height: 6),
+          _buildVendorDropdown(),
           const SizedBox(height: 14),
           _buildDateRows(),
           const SizedBox(height: 24),
@@ -757,42 +801,149 @@ class _OrderEditSheetState extends State<_OrderEditSheet> {
     );
   }
 
-  Widget _buildCategorySelector() {
-    return Row(
-      children: [
-        for (var i = 0; i < _categories.length; i++) ...[
-          if (i > 0) const SizedBox(width: 6),
-          Expanded(child: _categoryOption(_categories[i])),
-        ],
+  Widget _buildVendorDropdown() {
+    OutlineInputBorder border(Color color, [double width = 1]) => OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: color, width: width),
+        );
+
+    return DropdownMenu<int>(
+      controller: _vendorCtrl,
+      expandedInsets: EdgeInsets.zero,
+      menuHeight: 280,
+      enabled: !_vendorsLoading,
+      enableFilter: true,
+      requestFocusOnTap: true,
+      filterCallback: _filterVendors,
+      hintText: _vendorsLoading ? '업체 목록 불러오는 중' : '업체명 검색',
+      errorText: _vendorError,
+      leadingIcon: const Icon(Icons.search, size: 16, color: AppColors.textTertiary),
+      trailingIcon: const Icon(Icons.arrow_drop_down,
+          size: 18, color: AppColors.textTertiary),
+      selectedTrailingIcon: const Icon(Icons.arrow_drop_up,
+          size: 18, color: AppColors.textTertiary),
+      textStyle: AppTextStyles.tableCell(context),
+      inputDecorationTheme: InputDecorationThemeData(
+        isDense: true,
+        filled: false,
+        // 앱 공통 입력 컨트롤 높이(40)로 고정
+        constraints: const BoxConstraints(minHeight: 40, maxHeight: 40),
+        // 기본 아이콘 터치영역(48)이 필드 높이를 키워서 앞/뒤 아이콘 모두 제한
+        prefixIconConstraints: const BoxConstraints(
+          minWidth: 32,
+          minHeight: 32,
+        ),
+        suffixIconConstraints: const BoxConstraints(
+          minWidth: 32,
+          minHeight: 32,
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        hintStyle: AppTextStyles.tableCell(context, color: AppColors.textDisabled),
+        border: border(AppColors.border),
+        enabledBorder: border(AppColors.border),
+        disabledBorder: border(AppColors.borderLight),
+        focusedBorder: border(AppColors.primary, 1.5),
+        errorBorder: border(AppColors.error),
+        focusedErrorBorder: border(AppColors.error, 1.5),
+      ),
+      menuStyle: MenuStyle(
+        backgroundColor: const WidgetStatePropertyAll(Colors.white),
+        surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+        elevation: const WidgetStatePropertyAll(4),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: const BorderSide(color: AppColors.borderLight),
+          ),
+        ),
+      ),
+      dropdownMenuEntries: [
+        for (final v in _vendors)
+          DropdownMenuEntry<int>(
+            value: v['id'] as int,
+            label: (v['vendor_name'] ?? '').toString(),
+            labelWidget: _vendorLabel(v),
+            style: MenuItemButton.styleFrom(
+              minimumSize: const Size.fromHeight(38),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+            ),
+          ),
       ],
+      onSelected: (id) {
+        if (id == null) return;
+        final v = _vendors.firstWhere((e) => e['id'] == id);
+        setState(() {
+          _selectedVendorId = id;
+          _selectedVendorName = (v['vendor_name'] ?? '').toString();
+          _vendorError = null;
+        });
+      },
     );
   }
 
-  Widget _categoryOption(String value) {
-    final selected = _category == value;
-    return Material(
-      color: selected ? AppColors.primary : Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(color: selected ? AppColors.primary : AppColors.border),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: () => setState(() => _category = value),
-        child: SizedBox(
-          height: 38,
-          child: Center(
-            child: Text(
-              value,
-              style: AppTextStyles.listTitle(context).copyWith(
-                color: selected ? Colors.white : AppColors.textSecondary,
-              ),
+  Widget _vendorLabel(Map<String, dynamic> v) {
+    final alias = (v['vendor_alias'] ?? '').toString().trim();
+    return Text.rich(
+      TextSpan(
+        text: (v['vendor_name'] ?? '').toString(),
+        children: [
+          if (alias.isNotEmpty)
+            TextSpan(
+              text: '  $alias',
+              style: AppTextStyles.listSubtitle(context),
             ),
+        ],
+      ),
+      style: AppTextStyles.tableCell(context),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  Widget _buildCategoryDropdown() {
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _categories.contains(_category) ? _category : null,
+          hint: Text(
+            '카테고리 선택',
+            style: AppTextStyles.tableCell(context, color: AppColors.textDisabled),
           ),
+          icon: const Icon(
+            Icons.arrow_drop_down,
+            size: 18,
+            color: AppColors.textTertiary,
+          ),
+          isExpanded: true,
+          isDense: true,
+          dropdownColor: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          elevation: 4,
+          menuMaxHeight: 320,
+          style: AppTextStyles.tableCell(context),
+          items: _categories
+              .map(
+                (value) => DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value, style: AppTextStyles.tableCell(context)),
+                ),
+              )
+              .toList(),
+          onChanged: (value) {
+            if (value == null) return;
+            setState(() => _category = value);
+          },
         ),
       ),
     );
   }
+
 
   Widget _buildDateRows() {
     return Container(

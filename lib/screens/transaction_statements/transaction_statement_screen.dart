@@ -1534,7 +1534,7 @@ class _StatementImageViewerState extends State<_StatementImageViewer> {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
       ),
       backgroundColor: Colors.white,
       builder: (context) => Padding(

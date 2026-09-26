@@ -162,8 +162,8 @@ return;
                 decoration: BoxDecoration(
                   color: AppColors.primary,
                   borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(ResponsiveUtils.spacing(context, 16)),
-                    topRight: Radius.circular(ResponsiveUtils.spacing(context, 16)),
+                    topLeft: Radius.circular(ResponsiveUtils.spacing(context, 8)),
+                    topRight: Radius.circular(ResponsiveUtils.spacing(context, 8)),
                   ),
                 ),
                 child: Row(
@@ -211,7 +211,7 @@ return;
                         color: group.paymentCategory == '발주' 
                             ? AppColors.success.withValues(alpha: 0.2)
                             : AppColors.purple.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                         border: Border.all(
                           color: group.paymentCategory == '발주' 
                               ? AppColors.success.withValues(alpha: 0.5)
@@ -248,7 +248,7 @@ return;
                       padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
                       decoration: BoxDecoration(
                         color: AppColors.backgroundSecondary,
-                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                         border: Border.all(color: AppColors.border, width: 1),
                       ),
                       child: Column(
@@ -703,7 +703,7 @@ return;
                             ),
                             decoration: BoxDecoration(
                               color: AppColors.backgroundSecondary,
-                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 18)),
+                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                               border: Border.all(color: AppColors.border),
                             ),
                             child: Row(
@@ -733,7 +733,7 @@ return;
                             padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 8)),
                             decoration: BoxDecoration(
                               color: AppColors.backgroundSecondary,
-                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 18)),
+                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                               border: Border.all(color: AppColors.border),
                             ),
                             child: Icon(
@@ -2553,8 +2553,8 @@ return;
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          topRight: Radius.circular(20),
+                          topLeft: Radius.circular(10),
+                          topRight: Radius.circular(10),
                         ),
                       ),
                       child: Row(
@@ -3060,7 +3060,7 @@ return;
           width: ResponsiveUtils.spacing(context, 360),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
             border: Border.all(color: AppColors.borderLight, width: 0.5),
             boxShadow: AppShadows.strongShadow,
           ),
@@ -3074,8 +3074,8 @@ return;
                 decoration: BoxDecoration(
                   color: AppColors.errorLight,
                   borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(ResponsiveUtils.spacing(context, 20)),
-                    topRight: Radius.circular(ResponsiveUtils.spacing(context, 20)),
+                    topLeft: Radius.circular(ResponsiveUtils.spacing(context, 8)),
+                    topRight: Radius.circular(ResponsiveUtils.spacing(context, 8)),
                   ),
                   border: Border(
                     bottom: BorderSide(
@@ -3090,7 +3090,7 @@ return;
                       padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
                       decoration: BoxDecoration(
                         color: AppColors.errorLight,
-                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                       ),
                       child: Icon(
                         Icons.warning_outlined,
@@ -3134,7 +3134,7 @@ return;
                       padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
                       decoration: BoxDecoration(
                         color: AppColors.gray50,
-                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                         border: Border.all(
                           color: AppColors.gray200,
                           width: 1,
@@ -3245,14 +3245,14 @@ return;
                                 color: AppColors.gray300,
                                 width: 1.5,
                               ),
-                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                             ),
                             child: TextButton(
                               onPressed: () => Navigator.of(context).pop(),
                               style: TextButton.styleFrom(
                                 foregroundColor: AppColors.gray700,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                                 ),
                               ),
                               child: Text(
@@ -3271,7 +3271,7 @@ return;
                             height: ResponsiveUtils.spacing(context, 48),
                             decoration: BoxDecoration(
                               color: AppColors.error,
-                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                               boxShadow: AppShadows.smShadow,
                             ),
                             child: ElevatedButton(
@@ -3284,7 +3284,7 @@ return;
                                 foregroundColor: Colors.white,
                                 shadowColor: Colors.transparent,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                                 ),
                               ),
                               child: Row(
@@ -3333,7 +3333,7 @@ return;
           width: ResponsiveUtils.spacing(context, 400),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
             border: Border.all(color: AppColors.borderLight, width: 0.5),
             boxShadow: AppShadows.strongShadow,
           ),
@@ -3347,8 +3347,8 @@ return;
                 decoration: BoxDecoration(
                   color: AppColors.errorLight,
                   borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(ResponsiveUtils.spacing(context, 20)),
-                    topRight: Radius.circular(ResponsiveUtils.spacing(context, 20)),
+                    topLeft: Radius.circular(ResponsiveUtils.spacing(context, 8)),
+                    topRight: Radius.circular(ResponsiveUtils.spacing(context, 8)),
                   ),
                   border: Border(
                     bottom: BorderSide(
@@ -3363,7 +3363,7 @@ return;
                       padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
                       decoration: BoxDecoration(
                         color: AppColors.errorLight,
-                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                       ),
                       child: Icon(
                         Icons.delete_sweep_outlined,
@@ -3407,7 +3407,7 @@ return;
                       padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
                       decoration: BoxDecoration(
                         color: AppColors.gray50,
-                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                         border: Border.all(
                           color: AppColors.gray200,
                           width: 1,
@@ -3516,14 +3516,14 @@ return;
                                 color: AppColors.gray300,
                                 width: 1.5,
                               ),
-                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                             ),
                             child: TextButton(
                               onPressed: () => Navigator.of(context).pop(),
                               style: TextButton.styleFrom(
                                 foregroundColor: AppColors.gray700,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                                 ),
                               ),
                               child: Text(
@@ -3542,7 +3542,7 @@ return;
                             height: ResponsiveUtils.spacing(context, 48),
                             decoration: BoxDecoration(
                               color: AppColors.error,
-                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                               boxShadow: AppShadows.smShadow,
                             ),
                             child: ElevatedButton(
@@ -3555,7 +3555,7 @@ return;
                                 foregroundColor: Colors.white,
                                 shadowColor: Colors.transparent,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
                                 ),
                               ),
                               child: Row(
