@@ -79,6 +79,8 @@ class _EditSheetFrame extends StatelessWidget {
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+        contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
         title: Text('수정 내용을 버릴까요?', style: AppTextStyles.sectionTitle(ctx)),

@@ -26,7 +26,8 @@ class AppTheme {
         statusBarIconBrightness: Brightness.dark,
         statusBarBrightness: Brightness.light,
       ),
-      iconTheme: IconThemeData(color: AppColors.textPrimary),
+      // iconTheme 을 고정하지 않는다: 지정하면 화면별 foregroundColor(예: 검은 이미지
+      // 뷰어의 흰 아이콘)를 덮어써 아이콘이 배경에 묻힌다. 기본은 foregroundColor를 따름.
       titleTextStyle: TextStyle(
         fontFamily: 'NotoSans',
         fontSize: 18,
@@ -172,6 +173,26 @@ class AppTheme {
       actionsPadding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
     ),
 
+    // ─── ListTile (사진 선택 시트 등): 행 높이 44, 제목 13, 아이콘 20 ───
+    listTileTheme: const ListTileThemeData(
+      dense: true,
+      minTileHeight: 44,
+      horizontalTitleGap: 12,
+      contentPadding: EdgeInsets.symmetric(horizontal: 16),
+      iconColor: AppColors.textSecondary,
+      titleTextStyle: TextStyle(
+        fontFamily: 'NotoSans',
+        fontSize: 13,
+        fontWeight: FontWeight.w500,
+        color: AppColors.textPrimary,
+      ),
+      subtitleTextStyle: TextStyle(
+        fontFamily: 'NotoSans',
+        fontSize: 11,
+        color: AppColors.textSecondary,
+      ),
+    ),
+
     // ─── Bottom Sheet (전역: 흰 배경, 상단 radius 10, 틴트 없음) ───
     bottomSheetTheme: const BottomSheetThemeData(
       backgroundColor: Colors.white,
@@ -201,8 +222,8 @@ class AppTheme {
 
     // ─── IconButton (기본 48pt 터치영역 → 36pt, 아이콘 20) ───
     iconButtonTheme: IconButtonThemeData(
+      // 전경색은 지정하지 않는다: AppBar·다크 뷰어 등 주변 IconTheme 색을 따르도록
       style: IconButton.styleFrom(
-        foregroundColor: AppColors.textPrimary,
         padding: const EdgeInsets.all(8),
         minimumSize: const Size(36, 36),
         iconSize: 20,

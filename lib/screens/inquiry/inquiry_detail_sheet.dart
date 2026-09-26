@@ -469,7 +469,8 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+          contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
           title: Row(
             children: [
               const Icon(Icons.receipt_long_outlined),
@@ -486,6 +487,8 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                     final confirmed = await showDialog<bool>(
                       context: context,
                       builder: (context) => AlertDialog(
+                        titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+                        contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
                         title: const Text('발주요청 삭제'),
                         content: const Text('발주요청 전체를 삭제하시겠습니까?'),
                         actions: [
@@ -611,6 +614,8 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
                                     final confirmed = await showDialog<bool>(
                                       context: context,
                                       builder: (context) => AlertDialog(
+                                        titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+                                        contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
                                         title: const Text('품목 삭제'),
                                         content: const Text('이 품목을 삭제하시겠습니까?'),
                                         actions: [
@@ -672,6 +677,8 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+        contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
         title: const Text('품목 수정'),
         content: SingleChildScrollView(
           child: Column(
@@ -746,9 +753,8 @@ class _InquiryDetailSheetState extends State<InquiryDetailSheet> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+        contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
         title: Row(
           children: [
             Icon(

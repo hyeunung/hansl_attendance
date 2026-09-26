@@ -429,10 +429,18 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('취소 불가'),
+          titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+          contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+          title: const Row(
+            children: [
+              Icon(Icons.info_outline, size: 18, color: AppColors.info),
+              SizedBox(width: 8),
+              Text('취소 불가'),
+            ],
+          ),
           content: const Text('출장 건은 웹에서만 취소할 수 있습니다.'),
           actions: [
-            TextButton(
+            FilledButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('확인'),
             ),
@@ -445,19 +453,28 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('신청 취소'),
+        titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+        contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+        title: const Row(
+          children: [
+            Icon(Icons.event_busy, size: 18, color: AppColors.error),
+            SizedBox(width: 8),
+            Text('신청 취소'),
+          ],
+        ),
         content: const Text(
           '연차 신청을 취소하시겠습니까?\n취소 후에는 복구할 수 없습니다.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
+            style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
             child: const Text('아니오'),
           ),
-          TextButton(
+          FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('예, 취소합니다'),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('신청 취소'),
           ),
         ],
       ),

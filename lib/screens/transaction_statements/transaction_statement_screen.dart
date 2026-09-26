@@ -541,9 +541,6 @@ class _TransactionStatementScreenState
           builder: (dialogCtx, setPickerState) {
             return AlertDialog(
               backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
               titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
               contentPadding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
               actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -1451,8 +1448,8 @@ class _StatementImageViewerState extends State<_StatementImageViewer> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.error_outline, size: 64, color: AppColors.gray400),
-                      const SizedBox(height: 16),
+                      const Icon(Icons.error_outline, size: 32, color: AppColors.gray400),
+                      const SizedBox(height: 8),
                       Text(
                         _errorMessage!,
                         style: AppTextStyles.emptyState(context).copyWith(color: AppColors.gray400),
@@ -1516,8 +1513,8 @@ class _StatementImageViewerState extends State<_StatementImageViewer> {
           errorBuilder: (context, error, stackTrace) => Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.broken_image, size: 64, color: AppColors.gray400),
-              const SizedBox(height: 16),
+              const Icon(Icons.broken_image, size: 32, color: AppColors.gray400),
+              const SizedBox(height: 8),
               Text(
                 '이미지를 불러올 수 없습니다',
                 style: AppTextStyles.emptyState(context).copyWith(color: AppColors.gray400),
@@ -1537,34 +1534,44 @@ class _StatementImageViewerState extends State<_StatementImageViewer> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
       ),
       backgroundColor: Colors.white,
-      builder: (context) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+      builder: (context) => SafeArea(
+        top: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.gray200,
-                borderRadius: BorderRadius.circular(2),
+            FlatSheetHeader(
+              title: '명세서 정보',
+              subtitle: widget.statement.fileName,
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              child: Container(
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Column(
+                  children: [
+                    _infoRow(context, '거래처', widget.statement.vendorName ?? '-'),
+                    _infoRow(context, '합계금액', widget.statement.grandTotal != null
+                        ? '${NumberFormat('#,##0').format(widget.statement.grandTotal)}원'
+                        : '-'),
+                    _infoRow(context, '종류', widget.statement.statementMode == 'receipt'
+                        ? '입고수량'
+                        : widget.statement.statementMode == 'monthly'
+                            ? '월말결제'
+                            : '거래명세서'),
+                    _infoRow(context, '상태', _statementStatusLabel(widget.statement.status)),
+                    _infoRow(context, '업로드일', dateFormat.format(widget.statement.uploadedAt)),
+                    _infoRow(context, '등록자', widget.statement.uploaderName ?? '-'),
+                    if (widget.statement.confirmedByName != null)
+                      _infoRow(context, '확인자', widget.statement.confirmedByName!),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 20),
-            _infoRow(context, '거래처', widget.statement.vendorName ?? '-'),
-            _infoRow(context, '합계금액', widget.statement.grandTotal != null
-                ? '${NumberFormat('#,##0').format(widget.statement.grandTotal)}원'
-                : '-'),
-            _infoRow(context, '종류', widget.statement.statementMode == 'receipt'
-                ? '입고수량'
-                : widget.statement.statementMode == 'monthly'
-                    ? '월말결제'
-                    : '거래명세서'),
-            _infoRow(context, '상태', widget.statement.status),
-            _infoRow(context, '업로드일', dateFormat.format(widget.statement.uploadedAt)),
-            _infoRow(context, '등록자', widget.statement.uploaderName ?? '-'),
-            if (widget.statement.confirmedByName != null)
-              _infoRow(context, '확인자', widget.statement.confirmedByName!),
           ],
         ),
       ),
@@ -1572,31 +1579,31 @@ class _StatementImageViewerState extends State<_StatementImageViewer> {
   }
 
   Widget _infoRow(BuildContext context, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 80,
-            child: Text(
-              label,
-              style: AppTextStyles.inputLabel(context).copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppColors.gray400,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: AppTextStyles.sectionSubtitle(context).copyWith(
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    return FlatInfoRow(label: label, value: value);
+  }
+
+}
+
+/// 명세서 상태 코드 → 화면 표시 라벨 (목록 카드의 상태 배지와 동일)
+String _statementStatusLabel(String status) {
+  switch (status) {
+    case 'uploading':
+      return '업로드 중';
+    case 'pending':
+      return '대기중';
+    case 'queued':
+      return '대기열';
+    case 'processing':
+      return '처리중';
+    case 'extracted':
+      return '확인필요';
+    case 'confirmed':
+      return '확정됨';
+    case 'rejected':
+      return '거부됨';
+    case 'failed':
+      return '실패';
+    default:
+      return status;
   }
 }

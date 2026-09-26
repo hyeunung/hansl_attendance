@@ -108,6 +108,8 @@ class _ReceiptUploadButtonState extends State<ReceiptUploadButton> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+        contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
         title: const Text('영수증 삭제'),
         content: const Text('영수증을 삭제하시겠습니까?'),
         actions: [

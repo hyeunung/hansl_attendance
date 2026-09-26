@@ -693,3 +693,54 @@ class FlatListTile extends StatelessWidget {
     return content;
   }
 }
+
+
+// ─── Bottom Sheet Header ───
+
+/// 바텀시트 상단 (핸들 + 제목 18 + 부제 11 + 구분선)
+class FlatSheetHeader extends StatelessWidget {
+  final String title;
+  final String? subtitle;
+
+  const FlatSheetHeader({super.key, required this.title, this.subtitle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Center(
+          child: Container(
+            width: 36,
+            height: 4,
+            margin: const EdgeInsets.only(top: 8, bottom: 10),
+            decoration: BoxDecoration(
+              color: AppColors.gray300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: AppTextStyles.appBarTitle(context)),
+              if (subtitle != null) ...[
+                const SizedBox(height: 1),
+                Text(
+                  subtitle!,
+                  style: AppTextStyles.listSubtitle(context),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ],
+          ),
+        ),
+        const Divider(height: 1, color: AppColors.borderLight),
+      ],
+    );
+  }
+}

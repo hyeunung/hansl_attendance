@@ -2315,6 +2315,8 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     final result = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+        contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
         title: const Text('반려 확인'),
         content: Column(
           mainAxisSize: MainAxisSize.min,

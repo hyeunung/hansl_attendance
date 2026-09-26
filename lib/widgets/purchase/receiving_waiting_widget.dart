@@ -87,9 +87,6 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
           builder: (context, setState) {
             return AlertDialog(
               backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
               titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
               contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
               actionsPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -1942,8 +1939,9 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
       barrierDismissible: false,
       builder: (dialogContext) {
         return AlertDialog(
+          titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+          contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           title: Text(
             '날짜 선택',
             style: AppTextStyles.sectionTitle(context),
@@ -2298,9 +2296,6 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
     final maxHeight = MediaQuery.of(context).size.height * 0.7;
 
     return AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-      ),
       title: Container(
         padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
         decoration: BoxDecoration(
