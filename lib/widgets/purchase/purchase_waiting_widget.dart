@@ -209,127 +209,13 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
   Widget _buildProgressSection(List<Map<String, dynamic>> items) {
     final completedItems = items.where((item) => item['is_payment_completed'] == true).length;
     final totalItems = items.length;
-    final pendingItems = totalItems - completedItems;
     final percentage = totalItems > 0 ? (completedItems / totalItems * 100).round() : 0;
-
-    return Column(
-      children: [
-        // 진행률 바와 정보
-        Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: ResponsiveUtils.spacing(context, 10),
-            vertical: ResponsiveUtils.spacing(context, 8),
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.warningLight,
-            border: Border.all(
-              color: AppColors.warning.withValues(alpha: 0.3),
-              width: 1,
-            ),
-          ),
-          child: Column(
-            children: [
-              // 상단 정보
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.shopping_cart_outlined,
-                        color: AppColors.warning,
-                        size: ResponsiveUtils.iconSize(context, 18),
-                      ),
-                      SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                      Text(
-                        '구매 진행률',
-                        style: AppTextStyles.listTitle(context).copyWith(
-                          color: AppColors.warning,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    '$percentage% ($completedItems/$totalItems)',
-                    style: AppTextStyles.inputLabel(context).copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.warning,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: ResponsiveUtils.spacing(context, 6)),
-              // 진행률 바
-              Container(
-                height: ResponsiveUtils.spacing(context, 8),
-                decoration: BoxDecoration(
-                  color: AppColors.warningLight,
-                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 4)),
-                ),
-                child: LinearProgressIndicator(
-                  value: percentage / 100,
-                  backgroundColor: Colors.transparent,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.warning),
-                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 4)),
-                ),
-              ),
-              SizedBox(height: ResponsiveUtils.spacing(context, 6)),
-              // 하단 상세 정보
-              Row(
-                children: [
-                  // 대기 중
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Container(
-                          width: ResponsiveUtils.spacing(context, 8),
-                          height: ResponsiveUtils.spacing(context, 8),
-                          decoration: const BoxDecoration(
-                            color: AppColors.warningLight,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        SizedBox(width: ResponsiveUtils.spacing(context, 6)),
-                        Text(
-                          '대기: $pendingItems건',
-                          style: AppTextStyles.tableHeader(context).copyWith(
-                            color: AppColors.gray700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // 완료
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Container(
-                          width: ResponsiveUtils.spacing(context, 8),
-                          height: ResponsiveUtils.spacing(context, 8),
-                          decoration: const BoxDecoration(
-                            color: AppColors.warning,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        SizedBox(width: ResponsiveUtils.spacing(context, 6)),
-                        Text(
-                          '완료: $completedItems건',
-                          style: AppTextStyles.tableHeader(context).copyWith(
-                            color: AppColors.gray700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        SizedBox(height: ResponsiveUtils.spacing(context, 6)),
-        // 전체구매완료 버튼
-        _buildCompleteAllButton(items),
-      ],
+    return FlatProgressRow(
+      label: '구매 진행률',
+      completed: completedItems,
+      total: totalItems,
+      percentage: percentage,
+      color: AppColors.warning,
     );
   }
 
@@ -717,9 +603,13 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                   value: dateFormat.format(DateTime.parse(firstItem['request_date'])),
                   valueColor: AppColors.primary,
                 ),
+                _buildProgressSection(items),
                 Padding(
-                  padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
-                  child: _buildProgressSection(items),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: ResponsiveUtils.spacing(context, 14),
+                    vertical: ResponsiveUtils.spacing(context, 8),
+                  ),
+                  child: _buildCompleteAllButton(items),
                 ),
                 // 품목 리스트 (확장 시)
                 if (isExpanded)

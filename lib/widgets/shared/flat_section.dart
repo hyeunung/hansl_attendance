@@ -229,6 +229,80 @@ class FlatInfoRow extends StatelessWidget {
   }
 }
 
+// ─── Progress Row ───
+
+/// 진행률 행 (Enterprise Neutral: 얇은 트랙 + 채움 바)
+/// 라벨 / 완료·전체·퍼센트 / 4px 진행 바
+class FlatProgressRow extends StatelessWidget {
+  final String label;
+  final int completed;
+  final int total;
+  final int percentage;
+  final Color color;
+
+  const FlatProgressRow({
+    super.key,
+    required this.label,
+    required this.completed,
+    required this.total,
+    required this.percentage,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ratio = total > 0 ? completed / total : 0.0;
+    final isDone = total > 0 && completed >= total;
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsiveUtils.spacing(context, 14),
+        vertical: ResponsiveUtils.spacing(context, 8),
+      ),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(label, style: AppTextStyles.listSubtitle(context)),
+              ),
+              Text(
+                '$completed / $total',
+                style: AppTextStyles.tableCell(context),
+              ),
+              SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+              Text(
+                '$percentage%',
+                style: AppTextStyles.tableCell(context).copyWith(
+                  color: isDone ? AppColors.success : color,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: ResponsiveUtils.spacing(context, 5)),
+          // 전체 트랙(회색) 위에 진행분(색상)을 얹어 비율이 보이도록 구성
+          ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value: ratio,
+              minHeight: 4,
+              backgroundColor: AppColors.border,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                isDone ? AppColors.success : color,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ─── Table Column Header ───
 
 /// 테이블 컬럼 헤더 (연한 배경)

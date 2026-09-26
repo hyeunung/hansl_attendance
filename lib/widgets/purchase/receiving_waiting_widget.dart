@@ -1262,9 +1262,13 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                       : '미정',
                   valueColor: AppColors.primary,
                 ),
+                _buildProgressSection(items),
                 Padding(
-                  padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
-                  child: _buildProgressSection(items),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: ResponsiveUtils.spacing(context, 14),
+                    vertical: ResponsiveUtils.spacing(context, 8),
+                  ),
+                  child: _buildCompleteAllButton(items),
                 ),
                 // 품목 리스트 (확장 시)
                 if (isExpanded)
@@ -1441,125 +1445,13 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
   Widget _buildProgressSection(List<Map<String, dynamic>> items) {
     final receivedItems = items.where((item) => item['is_received'] == true).length;
     final totalItems = items.length;
-    final pendingItems = totalItems - receivedItems;
     final percentage = totalItems > 0 ? (receivedItems / totalItems * 100).round() : 0;
-
-    return Column(
-      children: [
-        // 진행률 바와 정보
-        Container(
-          padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
-          decoration: BoxDecoration(
-            color: AppColors.infoLight,
-            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
-            border: Border.all(
-              color: AppColors.primary.withValues(alpha: 0.3),
-              width: 1,
-            ),
-          ),
-          child: Column(
-            children: [
-              // 상단 정보
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.local_shipping_outlined,
-                        color: AppColors.primary,
-                        size: ResponsiveUtils.iconSize(context, 18),
-                      ),
-                      SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                      Text(
-                        '입고 진행률',
-                        style: AppTextStyles.listTitle(context).copyWith(
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    '$percentage% ($receivedItems/$totalItems)',
-                    style: AppTextStyles.inputLabel(context).copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: ResponsiveUtils.spacing(context, 6)),
-              // 진행률 바
-              Container(
-                height: ResponsiveUtils.spacing(context, 8),
-                decoration: BoxDecoration(
-                  color: AppColors.infoLight,
-                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 4)),
-                ),
-                child: LinearProgressIndicator(
-                  value: percentage / 100,
-                  backgroundColor: Colors.transparent,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 4)),
-                ),
-              ),
-              SizedBox(height: ResponsiveUtils.spacing(context, 6)),
-              // 하단 상세 정보
-              Row(
-                children: [
-                  // 대기 중
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Container(
-                          width: ResponsiveUtils.spacing(context, 8),
-                          height: ResponsiveUtils.spacing(context, 8),
-                          decoration: const BoxDecoration(
-                            color: AppColors.infoLight,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        SizedBox(width: ResponsiveUtils.spacing(context, 6)),
-                        Text(
-                          '대기: $pendingItems건',
-                          style: AppTextStyles.tableHeader(context).copyWith(
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // 완료
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Container(
-                          width: ResponsiveUtils.spacing(context, 8),
-                          height: ResponsiveUtils.spacing(context, 8),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        SizedBox(width: ResponsiveUtils.spacing(context, 6)),
-                        Text(
-                          '완료: $receivedItems건',
-                          style: AppTextStyles.tableHeader(context).copyWith(
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        SizedBox(height: ResponsiveUtils.spacing(context, 6)),
-        // 전체입고완료 버튼
-        _buildCompleteAllButton(items),
-      ],
+    return FlatProgressRow(
+      label: '입고 진행률',
+      completed: receivedItems,
+      total: totalItems,
+      percentage: percentage,
+      color: AppColors.primary,
     );
   }
 
