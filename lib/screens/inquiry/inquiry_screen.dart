@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
 import '../../services/inquiry_service.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_shadows.dart';
 import '../../theme/app_text_theme.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/responsive_utils.dart';
@@ -1074,7 +1073,6 @@ class _InquiryScreenState extends State<InquiryScreen>
               borderRadius: BorderRadius.circular(
                 ResponsiveUtils.spacing(context, 12),
               ),
-              boxShadow: AppShadows.mdShadow,
               border: Border.all(color: AppColors.borderLight, width: 0.5),
             ),
             child: Padding(
@@ -1109,14 +1107,7 @@ class _InquiryScreenState extends State<InquiryScreen>
                       vertical: ResponsiveUtils.spacing(context, 4),
                     ),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.backgroundSecondary,
-                          AppColors.gray150,
-                        ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
+                      color: AppColors.backgroundSecondary,
                       borderRadius: BorderRadius.circular(
                         ResponsiveUtils.spacing(context, 12),
                       ),

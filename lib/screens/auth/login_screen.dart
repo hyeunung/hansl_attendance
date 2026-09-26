@@ -12,7 +12,6 @@ import '../../utils/error_translator.dart';
 import '../../utils/responsive_utils.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
-import '../../theme/app_shadows.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -301,7 +300,6 @@ setState(
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: boxRadius,
-                    boxShadow: AppShadows.smShadow,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -642,7 +640,6 @@ class _SignupScreenState extends State<SignupScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: boxRadius,
-                    boxShadow: AppShadows.smShadow,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,

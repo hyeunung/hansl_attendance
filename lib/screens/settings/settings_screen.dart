@@ -289,7 +289,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   decoration: BoxDecoration(
                     color: AppColors.error,
                     borderRadius: BorderRadius.circular(
-                      ResponsiveUtils.spacing(context, 9),
+                      ResponsiveUtils.spacing(context, 6),
                     ),
                   ),
                   child: Center(

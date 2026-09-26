@@ -10,7 +10,6 @@ import 'package:intl/intl.dart';
 import '../../providers/leave_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
-import '../../theme/app_shadows.dart';
 import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
 import '../../widgets/common/notification_banner_widget.dart';
@@ -305,7 +304,6 @@ class _CardReceiptUploadScreenState extends State<CardReceiptUploadScreen> {
               width: double.infinity,
               child: Container(
                 decoration: BoxDecoration(
-                  boxShadow: [AppShadows.button],
                   borderRadius: BorderRadius.circular(
                     ResponsiveUtils.spacing(context, 10),
                   ),

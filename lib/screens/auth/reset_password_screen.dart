@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../utils/error_translator.dart';
 import '../../utils/responsive_utils.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_shadows.dart';
 import '../../theme/app_text_theme.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import 'login_screen.dart';
@@ -132,7 +131,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: boxRadius,
-                    boxShadow: AppShadows.mdShadow,
                   ),
                   child: _isSuccess
                       ? Column(

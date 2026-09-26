@@ -125,11 +125,69 @@ class AppTheme {
       ),
     ),
 
-    // ─── Dialog ───
+    // ─── Dialog (AlertDialog 전역: 제목 18 / 본문 12, 여백 축소) ───
     dialogTheme: DialogThemeData(
       backgroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
+      ),
+      titleTextStyle: const TextStyle(
+        fontFamily: 'NotoSans',
+        fontSize: 18,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textPrimary,
+      ),
+      contentTextStyle: const TextStyle(
+        fontFamily: 'NotoSans',
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        color: AppColors.textPrimary,
+        height: 1.5,
+      ),
+      actionsPadding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+    ),
+
+    // ─── Bottom Sheet (전역: 흰 배경, 상단 radius 10, 틴트 없음) ───
+    bottomSheetTheme: const BottomSheetThemeData(
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      modalBackgroundColor: Colors.white,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+      ),
+    ),
+
+    // ─── FilledButton (ElevatedButton과 동일 규격) ───
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        minimumSize: const Size(0, 36),
+        visualDensity: VisualDensity.compact,
+      ),
+    ),
+
+    // ─── IconButton (기본 48pt 터치영역 → 36pt, 아이콘 20) ───
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(
+        foregroundColor: AppColors.textPrimary,
+        padding: const EdgeInsets.all(8),
+        minimumSize: const Size(36, 36),
+        iconSize: 20,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: VisualDensity.compact,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
       ),
     ),
 
@@ -202,6 +260,31 @@ class AppTheme {
         return null;
       }),
       dividerColor: AppColors.borderLight,
+      // 기간 선택(showDateRangePicker) 규격
+      rangePickerBackgroundColor: Colors.white,
+      rangePickerSurfaceTintColor: Colors.transparent,
+      rangePickerElevation: 2,
+      rangePickerShape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      rangePickerHeaderBackgroundColor: Colors.white,
+      rangePickerHeaderForegroundColor: AppColors.textPrimary,
+      rangePickerHeaderHelpStyle: const TextStyle(
+        fontFamily: 'NotoSans',
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
+        color: AppColors.textSecondary,
+      ),
+      rangePickerHeaderHeadlineStyle: const TextStyle(
+        fontFamily: 'NotoSans',
+        fontSize: 18,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textPrimary,
+      ),
+      rangeSelectionBackgroundColor: AppColors.primary.withValues(alpha: 0.12),
+      rangeSelectionOverlayColor: WidgetStateProperty.all(
+        AppColors.primary.withValues(alpha: 0.08),
+      ),
       cancelButtonStyle: TextButton.styleFrom(
         foregroundColor: AppColors.textSecondary,
         textStyle: const TextStyle(

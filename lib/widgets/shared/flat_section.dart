@@ -505,7 +505,8 @@ class StatusChip extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
+        // 배지는 높이가 17pt 정도라 radius 8이면 알약처럼 보여 6을 쓴다
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         label,

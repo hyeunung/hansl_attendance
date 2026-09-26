@@ -6,7 +6,6 @@ import '../../models/purchase_request.dart';
 import '../../providers/purchase_provider.dart';
 import '../../providers/user_provider.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_shadows.dart';
 import '../../theme/app_text_theme.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/responsive_utils.dart';
@@ -732,8 +731,7 @@ return;
           child: ListView.builder(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: EdgeInsets.symmetric(
-
-              vertical: ResponsiveUtils.spacing(context, 20),
+              vertical: ResponsiveUtils.spacing(context, 12),
             ),
             itemCount: orders.length,
             itemBuilder: (context, index) {
@@ -1010,146 +1008,161 @@ return;
 
     // 선진행 여부에 따른 카드 배경색 설정
     final bool isPreProgress = group.progressType == '선진행';
-    final Color cardBackgroundColor = isPreProgress 
-        ? AppColors.errorLight  // 연붉은색
+    final Color cardBackgroundColor = isPreProgress
+        ? AppColors.errorLight // 연붉은색
         : Colors.white;
-    
-    return Container(
-      decoration: BoxDecoration(
-        color: cardBackgroundColor,  // 선진행이면 연붉은색
-        border: Border(
-          bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
-          left: isPreProgress ? BorderSide(color: AppColors.error, width: 3) : BorderSide.none,
+
+    // 승인 권한/단계
+    final bool canMiddle = canApproveMiddle(purchaseRoles) &&
+        group.middleManagerStatus == 'pending';
+    final bool canFinal = canApproveFinal(purchaseRoles, group.paymentCategory) &&
+        group.middleManagerStatus == 'approved' &&
+        group.finalManagerStatus == 'pending';
+
+    // 규격 · 수량 한 줄 요약
+    final String itemSummary = [
+      if (headerItem.specification.isNotEmpty) headerItem.specification,
+      '${headerItem.quantity}개',
+    ].join(' · ');
+
+    return FlatCard(
+      child: Container(
+        decoration: BoxDecoration(
+          color: cardBackgroundColor,
+          border: isPreProgress
+              ? const Border(left: BorderSide(color: AppColors.error, width: 3))
+              : null,
         ),
-      ),
-      child: InkWell(
-        onTap: () => _showOrderDetails(context, group),
-        child: Padding(
-            padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 18)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 상단: 발주번호, 카테고리, 상태
-                Row(
+        child: InkWell(
+          onTap: () => _showOrderDetails(context, group),
+          child: Column(
+            children: [
+              FlatCardHeader(
+                title: group.purchaseOrderNumber,
+                icon: Icons.receipt_long_outlined,
+                iconColor: AppColors.primary,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.receipt,
-                      color: AppColors.primary,
-                      size: ResponsiveUtils.iconSize(context, 22),
-                    ),
-                    SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                    Expanded(
-                      child: Text(
-                        group.purchaseOrderNumber,
-                        style: AppTextStyles.sectionSubtitle(context),
-                      ),
-                    ),
+                    if (isPreProgress) ...[
+                      const StatusChip(label: '선진행', color: AppColors.error),
+                      SizedBox(width: ResponsiveUtils.spacing(context, 4)),
+                    ],
                     StatusChip(
                       label: group.paymentCategory ?? '',
                       color: categoryTextColor,
                     ),
-                    SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                    StatusChip(
-                      label: statusLabel,
-                      color: statusTextColor,
-                    ),
-                ],
-              ),
-
-              SizedBox(height: ResponsiveUtils.spacing(context, 16)),
-
-              // 요청자 & 업체 정보
-              Row(
-                children: [
-                  Icon(
-                    Icons.person_outline,
-                    size: ResponsiveUtils.iconSize(context, 16),
-                    color: AppColors.textTertiary,
-                  ),
-                  SizedBox(width: ResponsiveUtils.spacing(context, 4)),
-                  Text(
-                    group.requesterName,
-                    style: AppTextStyles.tableCellSub(context),
-                  ),
-                  SizedBox(width: ResponsiveUtils.spacing(context, 16)),
-                  Icon(
-                    Icons.business,
-                    size: ResponsiveUtils.iconSize(context, 16),
-                    color: AppColors.textTertiary,
-                  ),
-                  SizedBox(width: ResponsiveUtils.spacing(context, 4)),
-                  Expanded(
-                    child: Text(
-                      group.vendorName,
-                      style: AppTextStyles.tableCellSub(context),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-
-              // 품목 정보
-              Container(
-                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 10)),
-                decoration: BoxDecoration(
-                  color: AppColors.backgroundSecondary,
-                  borderRadius: BorderRadius.circular(
-                    ResponsiveUtils.spacing(context, 8),
-                  ),
+                    SizedBox(width: ResponsiveUtils.spacing(context, 4)),
+                    StatusChip(label: statusLabel, color: statusTextColor),
+                  ],
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              ),
+              FlatInfoRow(label: '요청자', value: group.requesterName),
+              FlatInfoRow(label: '업체', value: group.vendorName),
+              FlatInfoRow(
+                label: '품목',
+                value: headerItem.itemName.isNotEmpty
+                    ? headerItem.itemName
+                    : '품목명 없음',
+                trailing: group.additionalItemCount > 0
+                    ? StatusChip(
+                        label: '외 ${group.additionalItemCount}개',
+                        color: AppColors.primary,
+                      )
+                    : null,
+              ),
+              FlatInfoRow(label: '규격/수량', value: itemSummary),
+              // 하단: 총 금액 + 승인/반려 버튼
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: ResponsiveUtils.spacing(context, 14),
+                  vertical: ResponsiveUtils.spacing(context, 8),
+                ),
+                child: Row(
                   children: [
-                    // 품명
-                    Text(
-                      headerItem.itemName.isNotEmpty
-                          ? headerItem.itemName
-                          : '품목명 없음',
-                      style: AppTextStyles.listTitle(context),
-                    ),
-                    SizedBox(height: ResponsiveUtils.spacing(context, 4)),
-                    // 규격과 수량을 한 줄에 표시
-                    Row(
-                      children: [
-                        if (headerItem.specification.isNotEmpty) ...[
-                          Expanded(
-                            child: Text(
-                              '규격: ${headerItem.specification}',
-                              style: AppTextStyles.tableHeader(context),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                        ],
-                        Text(
-                          '수량: ${headerItem.quantity}',
-                          style: AppTextStyles.tableHeader(context).copyWith(
-                            fontWeight: FontWeight.w500,
-                          ),
+                    Text('총 금액', style: AppTextStyles.listSubtitle(context)),
+                    SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+                    Expanded(
+                      child: Text(
+                        CurrencyFormatter.format(
+                          group.totalAmount,
+                          group.currency,
                         ),
-                      ],
-                    ),
-                    // 추가 품목 표시
-                    if (group.additionalItemCount > 0) ...[
-                      SizedBox(height: ResponsiveUtils.spacing(context, 6)),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: ResponsiveUtils.spacing(context, 8),
-                          vertical: ResponsiveUtils.spacing(context, 2),
+                        style: AppTextStyles.tableCell(
+                          context,
+                          color: AppColors.primary,
                         ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.051),
-                          borderRadius: BorderRadius.circular(
-                            ResponsiveUtils.spacing(context, 4),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (canMiddle)
+                      ElevatedButton(
+                        onPressed: () => _runApproval(
+                          context: context,
+                          group: group,
+                          userProvider: userProvider,
+                          purchaseProvider: purchaseProvider,
+                          isFinal: false,
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.success,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: ResponsiveUtils.spacing(context, 12),
                           ),
                         ),
                         child: Text(
-                          '외 ${group.additionalItemCount}개 품목',
-                          style: AppTextStyles.tableHeader(context).copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
+                          '1차 승인',
+                          style: AppTextStyles.inputLabel(context).copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    if (canFinal)
+                      ElevatedButton(
+                        onPressed: () => _runApproval(
+                          context: context,
+                          group: group,
+                          userProvider: userProvider,
+                          purchaseProvider: purchaseProvider,
+                          isFinal: true,
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: ResponsiveUtils.spacing(context, 12),
+                          ),
+                        ),
+                        child: Text(
+                          '최종 승인',
+                          style: AppTextStyles.inputLabel(context).copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    if (canMiddle || canFinal) ...[
+                      SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+                      OutlinedButton(
+                        onPressed: () => _showRejectDialog(
+                          context,
+                          group,
+                          purchaseRoles,
+                          userProvider,
+                          purchaseProvider,
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.error,
+                          side: const BorderSide(color: AppColors.error),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: ResponsiveUtils.spacing(context, 12),
+                          ),
+                        ),
+                        child: Text(
+                          '반려',
+                          style: AppTextStyles.inputLabel(context).copyWith(
+                            color: AppColors.error,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
@@ -1157,815 +1170,153 @@ return;
                   ],
                 ),
               ),
-
-              SizedBox(height: ResponsiveUtils.spacing(context, 16)),
-
-              // 하단: 금액 & 승인 버튼
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '총 금액',
-                        style: AppTextStyles.tableHeader(context),
-                      ),
-                      Text(
-                        CurrencyFormatter.format(group.totalAmount, group.currency),
-                        style: AppTextStyles.cardTitle(context).copyWith(
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      // 1차 승인 버튼
-                      if (canApproveMiddle(purchaseRoles) &&
-                          group.middleManagerStatus == 'pending')
-                        ElevatedButton(
-                          onPressed: () async {
-                            // 승인 확인 다이얼로그
-                            final confirmed = await showDialog<bool>(
-                              context: context,
-                              barrierDismissible: false,
-                              builder: (context) => Dialog(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    ResponsiveUtils.spacing(context, 20),
-                                  ),
-                                ),
-                                child: Container(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.85,
-                                  padding: EdgeInsets.all(
-                                    ResponsiveUtils.spacing(context, 24),
-                                  ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      // 아이콘
-                                      Container(
-                                        width: ResponsiveUtils.spacing(
-                                          context,
-                                          60,
-                                        ),
-                                        height: ResponsiveUtils.spacing(
-                                          context,
-                                          60,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.success.withValues(alpha: 0.102),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Icon(
-                                          Icons.check_circle_outline,
-                                          color: AppColors.success,
-                                          size: ResponsiveUtils.iconSize(
-                                            context,
-                                            32,
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height: ResponsiveUtils.spacing(
-                                          context,
-                                          20,
-                                        ),
-                                      ),
-
-                                      // 제목
-                                      Text(
-                                        '1차 승인',
-                                        style: AppTextStyles.sectionTitle(context),
-                                      ),
-                                      SizedBox(
-                                        height: ResponsiveUtils.spacing(
-                                          context,
-                                          8,
-                                        ),
-                                      ),
-
-                                      // 설명
-                                      Text(
-                                        '발주를 승인하시겠습니까?',
-                                        style: AppTextStyles.emptyState(context),
-                                      ),
-                                      SizedBox(
-                                        height: ResponsiveUtils.spacing(
-                                          context,
-                                          20,
-                                        ),
-                                      ),
-
-                                      // 정보 카드
-                                      Container(
-                                        width: double.infinity,
-                                        padding: EdgeInsets.all(
-                                          ResponsiveUtils.spacing(context, 16),
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.backgroundSecondary,
-                                          borderRadius: BorderRadius.circular(
-                                            ResponsiveUtils.spacing(
-                                              context,
-                                              12,
-                                            ),
-                                          ),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            _buildDialogInfoRow(
-                                              context,
-                                              '발주번호',
-                                              group.purchaseOrderNumber,
-                                            ),
-                                            SizedBox(
-                                              height: ResponsiveUtils.spacing(
-                                                context,
-                                                8,
-                                              ),
-                                            ),
-                                            _buildDialogInfoRow(
-                                              context,
-                                              '요청자',
-                                              group.requesterName,
-                                            ),
-                                            SizedBox(
-                                              height: ResponsiveUtils.spacing(
-                                                context,
-                                                8,
-                                              ),
-                                            ),
-                                            _buildDialogInfoRow(
-                                              context,
-                                              '업체',
-                                              group.vendorName,
-                                            ),
-                                            SizedBox(
-                                              height: ResponsiveUtils.spacing(
-                                                context,
-                                                8,
-                                              ),
-                                            ),
-                                            _buildDialogInfoRow(
-                                              context,
-                                              '총 금액',
-                                              CurrencyFormatter.format(group.totalAmount, group.currency),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height: ResponsiveUtils.spacing(
-                                          context,
-                                          24,
-                                        ),
-                                      ),
-
-                                      // 버튼
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: TextButton(
-                                              onPressed: () => Navigator.of(
-                                                context,
-                                              ).pop(false),
-                                              style: TextButton.styleFrom(
-                                                padding: EdgeInsets.symmetric(
-                                                  vertical:
-                                                      ResponsiveUtils.spacing(
-                                                        context,
-                                                        14,
-                                                      ),
-                                                ),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                        ResponsiveUtils.spacing(
-                                                          context,
-                                                          12,
-                                                        ),
-                                                      ),
-                                                  side: const BorderSide(
-                                                    color: AppColors.border,
-                                                  ),
-                                                ),
-                                              ),
-                                              child: Text(
-                                                '취소',
-                                                style:
-                                                    AppTextStyles.sectionSubtitle(context).copyWith(
-                                                      color: AppColors.textTertiary,
-                                                    ),
-                                              ),
-                                            ),
-                                          ),
-                                          SizedBox(
-                                            width: ResponsiveUtils.spacing(
-                                              context,
-                                              12,
-                                            ),
-                                          ),
-                                          Expanded(
-                                            child: ElevatedButton(
-                                              onPressed: () => Navigator.of(
-                                                context,
-                                              ).pop(true),
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: AppColors.success,
-                                                padding: EdgeInsets.symmetric(
-                                                  vertical:
-                                                      ResponsiveUtils.spacing(
-                                                        context,
-                                                        14,
-                                                      ),
-                                                ),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                        ResponsiveUtils.spacing(
-                                                          context,
-                                                          12,
-                                                        ),
-                                                      ),
-                                                ),
-                                              ),
-                                              child: Text(
-                                                '승인',
-                                                style:
-                                                    AppTextStyles.sectionSubtitle(context).copyWith(
-                                                      color: Colors.white,
-                                                    ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-
-                            if (confirmed == true && context.mounted) {
-                              // BuildContext 저장
-                              final scaffoldContext = context;
-                              BuildContext? loadingContext;
-                              
-                              // 로딩 다이얼로그 표시
-                              showDialog(
-                                context: scaffoldContext,
-                                barrierDismissible: false,
-                                builder: (dialogContext) {
-                                  loadingContext = dialogContext;
-                                  return const Center(
-                                    child: CircularProgressIndicator(),
-                                  );
-                                },
-                              );
-                              
-                              bool success = false;
-                              try {
-                                success = await purchaseProvider
-                                    .approveMiddle(group.purchaseOrderNumber);
-                              } finally {
-                                // 로딩 다이얼로그 닫기
-                                if (loadingContext != null && loadingContext!.mounted) {
-                                  Navigator.of(loadingContext!).pop();
-                                }
-                              }
-                              
-                              if (scaffoldContext.mounted) {
-                                if (success) {
-                                  // 성공 모달 표시
-                                  showDialog(
-                                    context: scaffoldContext,
-                                    barrierDismissible: false,
-                                    builder: (dialogContext) => Dialog(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Container(
-                                        padding: const EdgeInsets.all(24),
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Container(
-                                              width: 60,
-                                              height: 60,
-                                              decoration: BoxDecoration(
-                                                color: AppColors.success.withValues(alpha: 0.1),
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                              child: const Icon(
-                                                Icons.check_circle,
-                                                color: AppColors.success,
-                                                size: 40,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 16),
-                                            Text(
-                                              '1차 승인 완료',
-                                              style: AppTextStyles.cardTitle(context),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              '발주번호: ${group.purchaseOrderNumber}',
-                                              style: AppTextStyles.emptyState(context).copyWith(
-                                                color: AppColors.textSecondary,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 20),
-                                            ElevatedButton(
-                                              onPressed: () {
-                                                Navigator.of(dialogContext).pop();
-                                              },
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: AppColors.success,
-                                                padding: const EdgeInsets.symmetric(
-                                                  horizontal: 32,
-                                                  vertical: 12,
-                                                ),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(8),
-                                                ),
-                                              ),
-                                              child: Text(
-                                                '확인',
-                                                style: AppTextStyles.sectionSubtitle(context).copyWith(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                  
-                                  // 실시간 데이터 업데이트
-                                  await purchaseProvider.fetchPendingPurchases(
-                                    employee: userProvider.employee,
-                                  );
-                                } else {
-                                  AppBanner.show(scaffoldContext, '1차 승인 실패: ${purchaseProvider.error ?? "알 수 없는 오류"}', type: BannerType.error);
-                                }
-                              }
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.success,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                ResponsiveUtils.spacing(context, 8),
-                              ),
-                            ),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: ResponsiveUtils.spacing(context, 16),
-                              vertical: ResponsiveUtils.spacing(context, 8),
-                            ),
-                          ),
-                          child: Text(
-                            '1차 승인',
-                            style: AppTextStyles.inputLabel(context).copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-
-                      if (canApproveMiddle(purchaseRoles) &&
-                          group.middleManagerStatus == 'pending')
-                        SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-
-                      // 최종 승인 버튼
-                      if (canApproveFinal(
-                            purchaseRoles,
-                            group.paymentCategory,
-                          ) &&
-                          group.middleManagerStatus == 'approved' &&
-                          group.finalManagerStatus == 'pending')
-                        ElevatedButton(
-                          onPressed: () async {
-                            // 승인 확인 다이얼로그
-                            final confirmed = await showDialog<bool>(
-                              context: context,
-                              barrierDismissible: false,
-                              builder: (context) => Dialog(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    ResponsiveUtils.spacing(context, 20),
-                                  ),
-                                ),
-                                child: Container(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.85,
-                                  padding: EdgeInsets.all(
-                                    ResponsiveUtils.spacing(context, 24),
-                                  ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      // 아이콘
-                                      Container(
-                                        width: ResponsiveUtils.spacing(
-                                          context,
-                                          60,
-                                        ),
-                                        height: ResponsiveUtils.spacing(
-                                          context,
-                                          60,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                            colors: [
-                                              AppColors.primary.withValues(
-                                                alpha: 0.153,
-                                              ),
-                                              AppColors.primary.withValues(
-                                                alpha: 0.051,
-                                              ),
-                                            ],
-                                          ),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Icon(
-                                          Icons.verified_outlined,
-                                          color: AppColors.primary,
-                                          size: ResponsiveUtils.iconSize(
-                                            context,
-                                            32,
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height: ResponsiveUtils.spacing(
-                                          context,
-                                          20,
-                                        ),
-                                      ),
-
-                                      // 제목
-                                      Text(
-                                        '최종 승인',
-                                        style: AppTextStyles.sectionTitle(context),
-                                      ),
-                                      SizedBox(
-                                        height: ResponsiveUtils.spacing(
-                                          context,
-                                          8,
-                                        ),
-                                      ),
-
-                                      // 설명
-                                      Text(
-                                        '발주를 최종 승인하시겠습니까?',
-                                        style: AppTextStyles.emptyState(context),
-                                      ),
-                                      SizedBox(
-                                        height: ResponsiveUtils.spacing(
-                                          context,
-                                          20,
-                                        ),
-                                      ),
-
-                                      // 정보 카드
-                                      Container(
-                                        width: double.infinity,
-                                        padding: EdgeInsets.all(
-                                          ResponsiveUtils.spacing(context, 16),
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.backgroundSecondary,
-                                          borderRadius: BorderRadius.circular(
-                                            ResponsiveUtils.spacing(
-                                              context,
-                                              12,
-                                            ),
-                                          ),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            _buildDialogInfoRow(
-                                              context,
-                                              '발주번호',
-                                              group.purchaseOrderNumber,
-                                            ),
-                                            SizedBox(
-                                              height: ResponsiveUtils.spacing(
-                                                context,
-                                                8,
-                                              ),
-                                            ),
-                                            _buildDialogInfoRow(
-                                              context,
-                                              '요청자',
-                                              group.requesterName,
-                                            ),
-                                            SizedBox(
-                                              height: ResponsiveUtils.spacing(
-                                                context,
-                                                8,
-                                              ),
-                                            ),
-                                            _buildDialogInfoRow(
-                                              context,
-                                              '업체',
-                                              group.vendorName,
-                                            ),
-                                            SizedBox(
-                                              height: ResponsiveUtils.spacing(
-                                                context,
-                                                8,
-                                              ),
-                                            ),
-                                            _buildDialogInfoRow(
-                                              context,
-                                              '총 금액',
-                                              CurrencyFormatter.format(group.totalAmount, group.currency),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height: ResponsiveUtils.spacing(
-                                          context,
-                                          24,
-                                        ),
-                                      ),
-
-                                      // 버튼
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: TextButton(
-                                              onPressed: () => Navigator.of(
-                                                context,
-                                              ).pop(false),
-                                              style: TextButton.styleFrom(
-                                                padding: EdgeInsets.symmetric(
-                                                  vertical:
-                                                      ResponsiveUtils.spacing(
-                                                        context,
-                                                        14,
-                                                      ),
-                                                ),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                        ResponsiveUtils.spacing(
-                                                          context,
-                                                          12,
-                                                        ),
-                                                      ),
-                                                  side: const BorderSide(
-                                                    color: AppColors.border,
-                                                  ),
-                                                ),
-                                              ),
-                                              child: Text(
-                                                '취소',
-                                                style:
-                                                    AppTextStyles.sectionSubtitle(context).copyWith(
-                                                      color: AppColors.textTertiary,
-                                                    ),
-                                              ),
-                                            ),
-                                          ),
-                                          SizedBox(
-                                            width: ResponsiveUtils.spacing(
-                                              context,
-                                              12,
-                                            ),
-                                          ),
-                                          Expanded(
-                                            child: ElevatedButton(
-                                              onPressed: () => Navigator.of(
-                                                context,
-                                              ).pop(true),
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor:
-                                                    AppColors.primary,
-                                                padding: EdgeInsets.symmetric(
-                                                  vertical:
-                                                      ResponsiveUtils.spacing(
-                                                        context,
-                                                        14,
-                                                      ),
-                                                ),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                        ResponsiveUtils.spacing(
-                                                          context,
-                                                          12,
-                                                        ),
-                                                      ),
-                                                ),
-                                              ),
-                                              child: Text(
-                                                '최종 승인',
-                                                style:
-                                                    AppTextStyles.sectionSubtitle(context).copyWith(
-                                                      color: Colors.white,
-                                                    ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-
-                            if (confirmed == true && context.mounted) {
-                              // BuildContext 저장
-                              final scaffoldContext = context;
-                              BuildContext? loadingContext;
-                              
-                              // 로딩 다이얼로그 표시
-                              showDialog(
-                                context: scaffoldContext,
-                                barrierDismissible: false,
-                                builder: (dialogContext) {
-                                  loadingContext = dialogContext;
-                                  return const Center(
-                                    child: CircularProgressIndicator(),
-                                  );
-                                },
-                              );
-                              
-                              bool success = false;
-                              try {
-                                success = await purchaseProvider
-                                    .approveFinal(group.purchaseOrderNumber);
-                              } finally {
-                                // 로딩 다이얼로그 닫기
-                                if (loadingContext != null && loadingContext!.mounted) {
-                                  Navigator.of(loadingContext!).pop();
-                                }
-                              }
-                              
-                              if (scaffoldContext.mounted) {
-                                if (success) {
-                                  // 성공 모달 표시
-                                  showDialog(
-                                    context: scaffoldContext,
-                                    barrierDismissible: false,
-                                    builder: (dialogContext) => Dialog(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Container(
-                                        padding: const EdgeInsets.all(24),
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Container(
-                                              width: 60,
-                                              height: 60,
-                                              decoration: BoxDecoration(
-                                                color: AppColors.primary.withValues(alpha: 0.1),
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                              child: Icon(
-                                                Icons.check_circle,
-                                                color: AppColors.primary,
-                                                size: 40,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 16),
-                                            Text(
-                                              '최종 승인 완료',
-                                              style: AppTextStyles.cardTitle(context),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              '발주번호: ${group.purchaseOrderNumber}',
-                                              style: AppTextStyles.emptyState(context).copyWith(
-                                                color: AppColors.textSecondary,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 20),
-                                            ElevatedButton(
-                                              onPressed: () {
-                                                Navigator.of(dialogContext).pop();
-                                              },
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: AppColors.primary,
-                                                padding: const EdgeInsets.symmetric(
-                                                  horizontal: 32,
-                                                  vertical: 12,
-                                                ),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(8),
-                                                ),
-                                              ),
-                                              child: Text(
-                                                '확인',
-                                                style: AppTextStyles.sectionSubtitle(context).copyWith(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                  
-                                  // 실시간 데이터 업데이트
-                                  await purchaseProvider.fetchPendingPurchases(
-                                    employee: userProvider.employee,
-                                  );
-                                } else {
-                                  AppBanner.show(scaffoldContext, '최종 승인 실패: ${purchaseProvider.error ?? "알 수 없는 오류"}', type: BannerType.error);
-                                }
-                              }
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                ResponsiveUtils.spacing(context, 8),
-                              ),
-                            ),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: ResponsiveUtils.spacing(context, 16),
-                              vertical: ResponsiveUtils.spacing(context, 8),
-                            ),
-                          ),
-                          child: Text(
-                            '최종 승인',
-                            style: AppTextStyles.inputLabel(context).copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-
-                      // 반려 버튼
-                      if ((canApproveMiddle(purchaseRoles) &&
-                              group.middleManagerStatus == 'pending') ||
-                          (canApproveFinal(
-                                purchaseRoles,
-                                group.paymentCategory,
-                              ) &&
-                              group.middleManagerStatus == 'approved' &&
-                              group.finalManagerStatus == 'pending')) ...[
-                        SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                        OutlinedButton(
-                          onPressed: () {
-                            // 반려 사유 입력 다이얼로그
-                            _showRejectDialog(
-                              context,
-                              group,
-                              purchaseRoles,
-                              userProvider,
-                              purchaseProvider,
-                            );
-                          },
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: AppColors.error),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                ResponsiveUtils.spacing(context, 8),
-                              ),
-                            ),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: ResponsiveUtils.spacing(context, 16),
-                              vertical: ResponsiveUtils.spacing(context, 8),
-                            ),
-                          ),
-                          child: Text(
-                            '반려',
-                            style: AppTextStyles.inputLabel(context).copyWith(
-                              color: AppColors.error,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  /// 1차/최종 승인 공통 흐름: 확인 다이얼로그 → 로딩 → 결과 안내 → 목록 갱신
+  Future<void> _runApproval({
+    required BuildContext context,
+    required PurchaseOrderGroup group,
+    required UserProvider userProvider,
+    required PurchaseProvider purchaseProvider,
+    required bool isFinal,
+  }) async {
+    final title = isFinal ? '최종 승인' : '1차 승인';
+    final color = isFinal ? AppColors.primary : AppColors.success;
+    final icon = isFinal ? Icons.verified_outlined : Icons.check_circle_outline;
+
+    // 승인 확인 다이얼로그
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+        contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+        title: Row(
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(width: 8),
+            Text(title),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              isFinal ? '발주를 최종 승인하시겠습니까?' : '발주를 승인하시겠습니까?',
+              style: AppTextStyles.cardBody(context),
+            ),
+            const SizedBox(height: 10),
+            Container(
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: AppColors.backgroundSecondary,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.borderLight),
+              ),
+              child: Column(
+                children: [
+                  FlatInfoRow(label: '발주번호', value: group.purchaseOrderNumber),
+                  FlatInfoRow(label: '요청자', value: group.requesterName),
+                  FlatInfoRow(label: '업체', value: group.vendorName),
+                  FlatInfoRow(
+                    label: '총 금액',
+                    value: CurrencyFormatter.format(
+                      group.totalAmount,
+                      group.currency,
+                    ),
+                    valueColor: AppColors.primary,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: color),
+            child: Text(isFinal ? '최종 승인' : '승인'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    // BuildContext 저장
+    final scaffoldContext = context;
+    BuildContext? loadingContext;
+    // 로딩 다이얼로그 표시
+    showDialog(
+      context: scaffoldContext,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        loadingContext = dialogContext;
+        return const Center(child: CircularProgressIndicator());
+      },
+    );
+    bool success = false;
+    try {
+      success = isFinal
+          ? await purchaseProvider.approveFinal(group.purchaseOrderNumber)
+          : await purchaseProvider.approveMiddle(group.purchaseOrderNumber);
+    } finally {
+      // 로딩 다이얼로그 닫기
+      if (loadingContext != null && loadingContext!.mounted) {
+        Navigator.of(loadingContext!).pop();
+      }
+    }
+    if (!scaffoldContext.mounted) return;
+
+    if (success) {
+      // 성공 안내
+      showDialog(
+        context: scaffoldContext,
+        barrierDismissible: false,
+        builder: (dialogContext) => AlertDialog(
+          titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+          contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+          title: Row(
+            children: [
+              Icon(Icons.check_circle, size: 18, color: color),
+              const SizedBox(width: 8),
+              Text('$title 완료'),
+            ],
+          ),
+          content: Text(
+            '발주번호: ${group.purchaseOrderNumber}',
+            style: AppTextStyles.cardBody(context),
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              style: FilledButton.styleFrom(backgroundColor: color),
+              child: const Text('확인'),
+            ),
+          ],
+        ),
+      );
+      // 실시간 데이터 업데이트
+      await purchaseProvider.fetchPendingPurchases(
+        employee: userProvider.employee,
+      );
+    } else {
+      AppBanner.show(
+        scaffoldContext,
+        '$title 실패: ${purchaseProvider.error ?? "알 수 없는 오류"}',
+        type: BannerType.error,
+      );
+    }
   }
 
   Widget _buildCompletedCard(BuildContext context, PurchaseOrderGroup group) {
@@ -2292,242 +1643,227 @@ return;
   }
   
   // 커스텀 기간 선택 다이얼로그
+  // 기간 선택 다이얼로그 (Enterprise Neutral: 흰 헤더, 카드 행, 컴팩트 버튼)
   void _showDateRangePicker() async {
     DateTime? tempStartDate = _startDate;
     DateTime? tempEndDate = _endDate;
-    
+
     final result = await showDialog<bool>(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
+            final hasRange = tempStartDate != null && tempEndDate != null;
+            final rangeText = hasRange
+                ? '${DateFormat('yyyy.MM.dd').format(tempStartDate!)} ~ '
+                    '${DateFormat('yyyy.MM.dd').format(tempEndDate!)}'
+                : '기간을 선택하세요';
+
+            void setRange(DateTime start, DateTime end) {
+              setDialogState(() {
+                tempStartDate = start;
+                tempEndDate = end;
+              });
+            }
+
             return Dialog(
-              backgroundColor: Colors.transparent,
-              child: Container(
-                width: ResponsiveUtils.getScreenWidth(context) * 0.9,
-                constraints: BoxConstraints(
-                  maxHeight: ResponsiveUtils.getScreenHeight(context) * 0.7,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.borderLight, width: 0.5),
-                  boxShadow: AppShadows.strongShadow,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // 커스텀 헤더
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppColors.primary,
-                            AppColors.primary.withValues(alpha: 0.8),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(10),
-                        ),
+              clipBehavior: Clip.antiAlias,
+              insetPadding: EdgeInsets.symmetric(
+                horizontal: ResponsiveUtils.spacing(context, 16),
+                vertical: ResponsiveUtils.spacing(context, 40),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 헤더
+                  Container(
+                    padding: EdgeInsets.fromLTRB(
+                      ResponsiveUtils.spacing(context, 14),
+                      ResponsiveUtils.spacing(context, 10),
+                      ResponsiveUtils.spacing(context, 10),
+                      ResponsiveUtils.spacing(context, 10),
+                    ),
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(color: AppColors.border, width: 0.5),
                       ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.calendar_month,
-                            color: Colors.white,
-                            size: ResponsiveUtils.iconSize(context, 24),
-                          ),
-                          SizedBox(width: ResponsiveUtils.spacing(context, 12)),
-                          Text(
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
                             '기간 선택',
-                            style: AppTextStyles.cardTitle(context).copyWith(
-                              color: Colors.white,
+                            style: AppTextStyles.appBarTitle(context),
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () => Navigator.of(dialogContext).pop(false),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: AppColors.backgroundSecondary,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.close_rounded,
+                              size: 18,
+                              color: AppColors.textSecondary,
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    
-                    // 날짜 선택 영역
-                    Flexible(
-                      child: Padding(
-                        padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
+                  ),
+                  // 본문
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      ResponsiveUtils.spacing(context, 14),
+                      ResponsiveUtils.spacing(context, 12),
+                      ResponsiveUtils.spacing(context, 14),
+                      ResponsiveUtils.spacing(context, 4),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 선택된 기간
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: ResponsiveUtils.spacing(context, 12),
+                            vertical: ResponsiveUtils.spacing(context, 8),
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.backgroundSecondary,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.borderLight),
+                          ),
+                          child: Row(
+                            children: [
+                              Text(
+                                '선택된 기간',
+                                style: AppTextStyles.listSubtitle(context),
+                              ),
+                              const Spacer(),
+                              Text(
+                                rangeText,
+                                style: AppTextStyles.tableCell(
+                                  context,
+                                  color: hasRange
+                                      ? AppColors.primary
+                                      : AppColors.textDisabled,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+                        // 시작일 / 종료일 (한 행)
+                        Row(
                           children: [
-                            // 현재 선택된 기간 표시
-                            Container(
-                              width: double.infinity,
-                              padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
-                              decoration: BoxDecoration(
-                                color: AppColors.backgroundSecondary,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: AppColors.border),
-                              ),
-                              child: Column(
-                                children: [
-                                  Text(
-                                    '선택된 기간',
-                                    style: AppTextStyles.inputLabel(context),
-                                  ),
-                                  SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-                                  Text(
-                                    tempStartDate != null && tempEndDate != null
-                                        ? '${DateFormat('yyyy년 M월 d일').format(tempStartDate!)} - ${DateFormat('yyyy년 M월 d일').format(tempEndDate!)}'
-                                        : '기간을 선택해주세요',
-                                    style: AppTextStyles.sectionSubtitle(context).copyWith(
-                                      color: AppColors.primary,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            
-                            SizedBox(height: ResponsiveUtils.spacing(context, 20)),
-                            
-                            // 시작일 선택
-                            _buildDateSelector(
-                              context,
-                              '시작일',
-                              tempStartDate,
-                              (date) {
-                                setDialogState(() {
-                                  tempStartDate = date;
-                                  // 시작일이 종료일보다 늦으면 종료일을 시작일로 설정
-                                  if (tempEndDate != null && date.isAfter(tempEndDate!)) {
-                                    tempEndDate = date;
-                                  }
-                                });
-                              },
-                            ),
-                            
-                            SizedBox(height: ResponsiveUtils.spacing(context, 16)),
-                            
-                            // 종료일 선택
-                            _buildDateSelector(
-                              context,
-                              '종료일',
-                              tempEndDate,
-                              (date) {
-                                setDialogState(() {
-                                  tempEndDate = date;
-                                  // 종료일이 시작일보다 이르면 시작일을 종료일로 설정
-                                  if (tempStartDate != null && date.isBefore(tempStartDate!)) {
+                            Expanded(
+                              child: _buildDateSelector(
+                                context,
+                                '시작일',
+                                tempStartDate,
+                                (date) {
+                                  setDialogState(() {
                                     tempStartDate = date;
-                                  }
-                                });
-                              },
+                                    if (tempEndDate != null &&
+                                        date.isAfter(tempEndDate!)) {
+                                      tempEndDate = date;
+                                    }
+                                  });
+                                },
+                              ),
                             ),
-                            
-                            SizedBox(height: ResponsiveUtils.spacing(context, 24)),
-                            
-                            // 빠른 선택 버튼들
-                            Wrap(
-                              spacing: ResponsiveUtils.spacing(context, 8),
-                              runSpacing: ResponsiveUtils.spacing(context, 8),
-                              children: [
-                                _buildQuickSelectButton(context, '오늘', () {
-                                  final today = DateTime.now();
+                            SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                            Expanded(
+                              child: _buildDateSelector(
+                                context,
+                                '종료일',
+                                tempEndDate,
+                                (date) {
                                   setDialogState(() {
-                                    tempStartDate = today;
-                                    tempEndDate = today;
+                                    tempEndDate = date;
+                                    if (tempStartDate != null &&
+                                        date.isBefore(tempStartDate!)) {
+                                      tempStartDate = date;
+                                    }
                                   });
-                                }),
-                                _buildQuickSelectButton(context, '1주일', () {
-                                  final today = DateTime.now();
-                                  setDialogState(() {
-                                    tempStartDate = today.subtract(const Duration(days: 7));
-                                    tempEndDate = today;
-                                  });
-                                }),
-                                _buildQuickSelectButton(context, '1개월', () {
-                                  final today = DateTime.now();
-                                  setDialogState(() {
-                                    tempStartDate = DateTime(today.year, today.month - 1, today.day);
-                                    tempEndDate = today;
-                                  });
-                                }),
-                                _buildQuickSelectButton(context, '3개월', () {
-                                  final today = DateTime.now();
-                                  setDialogState(() {
-                                    tempStartDate = DateTime(today.year, today.month - 3, today.day);
-                                    tempEndDate = today;
-                                  });
-                                }),
-                              ],
+                                },
+                              ),
                             ),
                           ],
                         ),
-                      ),
-                    ),
-                    
-                    // 버튼 영역
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 20)),
-                      decoration: const BoxDecoration(
-                        border: Border(
-                          top: BorderSide(color: AppColors.border),
+                        SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+                        // 빠른 선택
+                        Text('빠른 선택', style: AppTextStyles.listSubtitle(context)),
+                        SizedBox(height: ResponsiveUtils.spacing(context, 6)),
+                        Wrap(
+                          spacing: ResponsiveUtils.spacing(context, 6),
+                          runSpacing: ResponsiveUtils.spacing(context, 6),
+                          children: [
+                            _buildQuickSelectButton(context, '오늘', () {
+                              final today = DateTime.now();
+                              setRange(today, today);
+                            }),
+                            _buildQuickSelectButton(context, '1주일', () {
+                              final today = DateTime.now();
+                              setRange(
+                                today.subtract(const Duration(days: 7)),
+                                today,
+                              );
+                            }),
+                            _buildQuickSelectButton(context, '1개월', () {
+                              final today = DateTime.now();
+                              setRange(
+                                DateTime(today.year, today.month - 1, today.day),
+                                today,
+                              );
+                            }),
+                            _buildQuickSelectButton(context, '3개월', () {
+                              final today = DateTime.now();
+                              setRange(
+                                DateTime(today.year, today.month - 3, today.day),
+                                today,
+                              );
+                            }),
+                          ],
                         ),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextButton(
-                              onPressed: () => Navigator.of(context).pop(false),
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.symmetric(
-                                  vertical: ResponsiveUtils.spacing(context, 10),
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  side: const BorderSide(color: AppColors.border),
-                                ),
-                              ),
-                              child: Text(
-                                '취소',
-                                style: AppTextStyles.sectionSubtitle(context).copyWith(
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: ResponsiveUtils.spacing(context, 12)),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: tempStartDate != null && tempEndDate != null
-                                  ? () => Navigator.of(context).pop(true)
-                                  : null,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: Colors.white,
-                                padding: EdgeInsets.symmetric(
-                                  vertical: ResponsiveUtils.spacing(context, 10),
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                elevation: 2,
-                              ),
-                              child: Text(
-                                '적용',
-                                style: AppTextStyles.sectionSubtitle(context).copyWith(
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  // 버튼
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      ResponsiveUtils.spacing(context, 12),
+                      ResponsiveUtils.spacing(context, 4),
+                      ResponsiveUtils.spacing(context, 12),
+                      ResponsiveUtils.spacing(context, 8),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.of(dialogContext).pop(false),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.textSecondary,
+                          ),
+                          child: const Text('취소'),
+                        ),
+                        TextButton(
+                          onPressed: hasRange
+                              ? () => Navigator.of(dialogContext).pop(true)
+                              : null,
+                          child: const Text('적용'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             );
           },
@@ -2542,9 +1878,10 @@ return;
       });
 
       // 새로운 기간으로 데이터 다시 로드
+      if (!mounted) return;
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
-      
+
       if (userProvider.employee != null) {
         await purchaseProvider.fetchCompletedPurchases(
           employee: userProvider.employee,
@@ -2555,7 +1892,7 @@ return;
     }
   }
 
-  // 날짜 선택 위젯 생성
+  /// 기간 선택 다이얼로그의 날짜 필드 (높이 40, radius 8)
   Widget _buildDateSelector(
     BuildContext context,
     String label,
@@ -2565,16 +1902,12 @@ return;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: AppTextStyles.inputLabel(context).copyWith(
-            fontWeight: FontWeight.w600,
-            color: AppColors.gray800,
-          ),
-        ),
-        SizedBox(height: ResponsiveUtils.spacing(context, 8)),
-        GestureDetector(
+        Text(label, style: AppTextStyles.listSubtitle(context)),
+        SizedBox(height: ResponsiveUtils.spacing(context, 4)),
+        InkWell(
+          borderRadius: BorderRadius.circular(8),
           onTap: () async {
+            // 전역 datePickerTheme을 그대로 사용 (개별 테마 덮어쓰기 금지)
             final picked = await showDatePicker(
               initialEntryMode: DatePickerEntryMode.calendarOnly,
               context: context,
@@ -2582,49 +1915,44 @@ return;
               firstDate: DateTime(2020),
               lastDate: DateTime.now(),
               locale: const Locale('ko', 'KR'),
-              builder: (context, child) {
-                return Theme(
-                  data: Theme.of(context).copyWith(
-                    colorScheme: ColorScheme.fromSeed(
-                      seedColor: AppColors.primary,
-                    ),
-                  ),
-                  child: child!,
-                );
-              },
             );
-            if (picked != null) {
-              onDateSelected(picked);
-            }
+            if (picked != null) onDateSelected(picked);
           },
           child: Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
+            height: 40,
+            padding: EdgeInsets.symmetric(
+              horizontal: ResponsiveUtils.spacing(context, 10),
+            ),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: selectedDate != null ? AppColors.primary : AppColors.border,
-                width: selectedDate != null ? 2 : 1,
               ),
             ),
             child: Row(
               children: [
                 Icon(
                   Icons.calendar_today,
-                  color: selectedDate != null ? AppColors.primary : AppColors.gray400,
-                  size: ResponsiveUtils.iconSize(context, 20),
+                  color: selectedDate != null
+                      ? AppColors.primary
+                      : AppColors.textTertiary,
+                  size: ResponsiveUtils.iconSize(context, 14),
                 ),
-                SizedBox(width: ResponsiveUtils.spacing(context, 12)),
-                Text(
-                  selectedDate != null
-                      ? DateFormat('yyyy년 M월 d일 (E)', 'ko_KR').format(selectedDate)
-                      : '날짜를 선택해주세요',
-                  style: AppTextStyles.sectionSubtitle(context).copyWith(
-                    fontWeight: FontWeight.w500,
-                    color: selectedDate != null
-                        ? AppColors.textPrimary
-                        : AppColors.gray400,
+                SizedBox(width: ResponsiveUtils.spacing(context, 6)),
+                Expanded(
+                  child: Text(
+                    selectedDate != null
+                        ? DateFormat('yyyy.MM.dd (E)', 'ko_KR').format(selectedDate)
+                        : '날짜 선택',
+                    style: AppTextStyles.tableCell(
+                      context,
+                      color: selectedDate != null
+                          ? AppColors.textPrimary
+                          : AppColors.textDisabled,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -2635,29 +1963,26 @@ return;
     );
   }
 
-  // 빠른 선택 버튼 생성
+  /// 기간 빠른 선택 칩 (높이 28, radius 8)
   Widget _buildQuickSelectButton(
     BuildContext context,
     String label,
     VoidCallback onPressed,
   ) {
-    return TextButton(
+    return OutlinedButton(
       onPressed: onPressed,
-      style: TextButton.styleFrom(
-        backgroundColor: AppColors.backgroundSecondary,
-        foregroundColor: AppColors.primary,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+      style: OutlinedButton.styleFrom(
         padding: EdgeInsets.symmetric(
-          horizontal: ResponsiveUtils.spacing(context, 16),
-          vertical: ResponsiveUtils.spacing(context, 8),
+          horizontal: ResponsiveUtils.spacing(context, 10),
+          vertical: 0,
         ),
+        minimumSize: const Size(0, 28),
       ),
       child: Text(
         label,
-        style: AppTextStyles.inputLabel(context).copyWith(
+        style: AppTextStyles.compactLabel(context).copyWith(
           color: AppColors.primary,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
@@ -2840,7 +2165,6 @@ return;
             color: Colors.white,
             borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
             border: Border.all(color: AppColors.borderLight, width: 0.5),
-            boxShadow: AppShadows.strongShadow,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -3050,7 +2374,6 @@ return;
                             decoration: BoxDecoration(
                               color: AppColors.error,
                               borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                              boxShadow: AppShadows.smShadow,
                             ),
                             child: ElevatedButton(
                               onPressed: () async {
@@ -3113,7 +2436,6 @@ return;
             color: Colors.white,
             borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
             border: Border.all(color: AppColors.borderLight, width: 0.5),
-            boxShadow: AppShadows.strongShadow,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -3321,7 +2643,6 @@ return;
                             decoration: BoxDecoration(
                               color: AppColors.error,
                               borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                              boxShadow: AppShadows.smShadow,
                             ),
                             child: ElevatedButton(
                               onPressed: () async {

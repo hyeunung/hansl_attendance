@@ -19,7 +19,9 @@ class NotificationBellButton extends StatelessWidget {
           padding: EdgeInsets.only(
             right: ResponsiveUtils.spacing(context, 16),
           ),
+          // IconButton이 36pt로 줄어 배지를 버튼 바깥 모서리에 걸치게 배치
           child: Stack(
+            clipBehavior: Clip.none,
             children: [
               IconButton(
                 icon: const Icon(
@@ -40,14 +42,14 @@ class NotificationBellButton extends StatelessWidget {
               ),
               if (unreadCount > 0)
                 Positioned(
-                  right: 8,
-                  top: 8,
+                  right: -4,
+                  top: -4,
                   child: IgnorePointer(
                     child: Container(
                       padding: const EdgeInsets.all(2),
                       decoration: BoxDecoration(
                         color: AppColors.error,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(6),
                       ),
                       constraints: const BoxConstraints(
                         minWidth: 18,

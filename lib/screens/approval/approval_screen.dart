@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../../providers/leave_provider.dart';
 import '../../providers/purchase_provider.dart';
 import 'package:intl/intl.dart';
-import '../../theme/app_shadows.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
@@ -725,7 +724,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                         decoration: BoxDecoration(
                                           color: AppColors.error,
                                           borderRadius: BorderRadius.circular(
-                                            ResponsiveUtils.spacing(context, 8),
+                                            ResponsiveUtils.spacing(context, 6),
                                           ),
                                           border: Border.all(
                                             color: _mainTabController.index == 0
@@ -819,7 +818,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                           decoration: BoxDecoration(
                                             color: AppColors.error,
                                             borderRadius: BorderRadius.circular(
-                                              ResponsiveUtils.spacing(context, 8),
+                                              ResponsiveUtils.spacing(context, 6),
                                             ),
                                             border: Border.all(
                                               color: _mainTabController.index == 1
@@ -919,7 +918,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                             decoration: BoxDecoration(
                                               color: AppColors.error,
                                               borderRadius: BorderRadius.circular(
-                                                ResponsiveUtils.spacing(context, 8),
+                                                ResponsiveUtils.spacing(context, 6),
                                               ),
                                               border: Border.all(
                                                 color: _mainTabController.index == 2
@@ -1023,7 +1022,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                             decoration: BoxDecoration(
                                               color: AppColors.error,
                                               borderRadius: BorderRadius.circular(
-                                                ResponsiveUtils.spacing(context, 8),
+                                                ResponsiveUtils.spacing(context, 6),
                                               ),
                                               border: Border.all(
                                                 color: _mainTabController.index == 3
@@ -1732,7 +1731,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      boxShadow: [AppShadows.button],
                       borderRadius: BorderRadius.circular(
                         ResponsiveUtils.spacing(context, 8),
                       ),
@@ -1801,7 +1799,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      boxShadow: [AppShadows.button],
                       borderRadius: BorderRadius.circular(
                         ResponsiveUtils.spacing(context, 8),
                       ),
@@ -2100,7 +2097,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      boxShadow: [AppShadows.button],
                       borderRadius: BorderRadius.circular(
                         ResponsiveUtils.spacing(context, 8),
                       ),
@@ -2131,7 +2127,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      boxShadow: [AppShadows.button],
                       borderRadius: BorderRadius.circular(
                         ResponsiveUtils.spacing(context, 8),
                       ),
@@ -2912,13 +2907,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(10),
                                 color: AppColors.primary,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.primary.withValues(alpha:0.15),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
                               ),
                               child: TextButton(
                                 style: TextButton.styleFrom(
@@ -3076,7 +3064,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(10),
-              boxShadow: AppShadows.lgShadow,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -3140,7 +3127,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                       Expanded(
                         child: Container(
                           decoration: BoxDecoration(
-                            boxShadow: AppShadows.xsShadow,
                           ),
                           child: TextButton(
                             style: TextButton.styleFrom(
@@ -3163,13 +3149,6 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                       Expanded(
                         child: Container(
                           decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: confirmColor.withValues(alpha:0.15),
-                                blurRadius: 4,
-                                offset: const Offset(0, 1),
-                              ),
-                            ],
                           ),
                           child: TextButton(
                             style: TextButton.styleFrom(

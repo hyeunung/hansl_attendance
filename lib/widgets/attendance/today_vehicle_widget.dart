@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
-import '../../theme/app_shadows.dart';
 import '../../utils/responsive_utils.dart';
 import '../../utils/user_role_helper.dart';
 import '../../providers/user_provider.dart';
@@ -327,7 +326,6 @@ class TodayVehicleWidgetState extends State<TodayVehicleWidget> {
       color: Colors.white,
       child: Container(
         decoration: BoxDecoration(
-          boxShadow: [AppShadows.button],
           borderRadius: BorderRadius.circular(
             ResponsiveUtils.spacing(context, 8),
           ),
