@@ -6,6 +6,7 @@ import '../../providers/leave_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
+import '../shared/flat_section.dart';
 
 /// 연차 신청 화면의 캘린더 위젯
 /// 날짜 선택 및 표시를 담당하는 재사용 가능한 컴포넌트
@@ -28,51 +29,40 @@ class LeaveCalendarWidget extends StatelessWidget {
     final now = DateTime.now();
     final Set<DateTime> disabledDates = _getDisabledDates();
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: AppColors.borderLight, width: 0.5)),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    return FlatCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(context),
-          const SizedBox(height: 8),
-          _buildCalendar(context, now, disabledDates),
+          FlatCardHeader(
+            title: '날짜 *',
+            icon: Icons.calendar_today,
+            iconColor: AppColors.primary,
+            trailing: StatusChip(
+              label: '선택 ${_selectedDaysLabel()}일',
+              color: AppColors.primary,
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: ResponsiveUtils.spacing(context, 8),
+              vertical: ResponsiveUtils.spacing(context, 4),
+            ),
+            child: _buildCalendar(context, now, disabledDates),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    double usedDaysSum = 0;
+  /// 선택된 총 일수 (반차 0.5일 반영)
+  String _selectedDaysLabel() {
+    double sum = 0;
     for (final type in LeaveType.values) {
       if (selectedDatesMap.containsKey(type)) {
-        usedDaysSum += selectedDatesMap[type]!.length * type.days;
+        sum += selectedDatesMap[type]!.length * type.days;
       }
     }
-
-    return Row(
-      children: [
-        Text(
-          '날짜',
-          style: AppTextStyles.sectionSubtitle(context),
-        ),
-        Text(
-          '  *',
-          style: AppTextStyles.sectionSubtitle(context).copyWith(color: AppColors.error),
-        ),
-        const SizedBox(width: 12),
-        Text(
-          '선택된 일수: ${usedDaysSum % 1 == 0 ? usedDaysSum.toInt() : usedDaysSum}일',
-          style: AppTextStyles.inputLabel(context).copyWith(
-            color: AppColors.primary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
+    return sum % 1 == 0 ? sum.toInt().toString() : sum.toString();
   }
 
   Widget _buildCalendar(
@@ -101,10 +91,27 @@ class LeaveCalendarWidget extends StatelessWidget {
           fontSize: ResponsiveUtils.fontSize(context, 13),
         ),
       ),
-      daysOfWeekHeight: 28,
+      daysOfWeekHeight: 24,
+      rowHeight: 40,
       headerStyle: HeaderStyle(
         formatButtonVisible: false,
         titleCentered: true,
+        headerPadding: EdgeInsets.symmetric(
+          vertical: ResponsiveUtils.spacing(context, 4),
+        ),
+        titleTextStyle: AppTextStyles.sectionHeader(context),
+        leftChevronIcon: const Icon(
+          Icons.chevron_left,
+          size: 20,
+          color: AppColors.textSecondary,
+        ),
+        rightChevronIcon: const Icon(
+          Icons.chevron_right,
+          size: 20,
+          color: AppColors.textSecondary,
+        ),
+        leftChevronPadding: EdgeInsets.zero,
+        rightChevronPadding: EdgeInsets.zero,
         titleTextFormatter: (date, locale) {
           const months = [
             '1월', '2월', '3월', '4월', '5월', '6월',
@@ -153,7 +160,7 @@ class LeaveCalendarWidget extends StatelessWidget {
 
         if (leaveProvider.isHoliday(day)) {
           return Container(
-            margin: const EdgeInsets.all(4),
+            margin: const EdgeInsets.all(2),
             alignment: Alignment.center,
             child: Text(
               '${day.day}',
@@ -167,7 +174,7 @@ class LeaveCalendarWidget extends StatelessWidget {
 
         if (day.weekday == DateTime.sunday) {
           return Container(
-            margin: const EdgeInsets.all(4),
+            margin: const EdgeInsets.all(2),
             alignment: Alignment.center,
             child: Text(
               '${day.day}',
@@ -181,7 +188,7 @@ class LeaveCalendarWidget extends StatelessWidget {
 
         if (day.weekday == DateTime.saturday) {
           return Container(
-            margin: const EdgeInsets.all(4),
+            margin: const EdgeInsets.all(2),
             alignment: Alignment.center,
             child: Text(
               '${day.day}',
@@ -200,7 +207,7 @@ class LeaveCalendarWidget extends StatelessWidget {
       disabledBuilder: (context, day, focusedDay) {
         if (leaveProvider.isHoliday(day)) {
           return Container(
-            margin: const EdgeInsets.all(4),
+            margin: const EdgeInsets.all(2),
             alignment: Alignment.center,
             child: Text(
               '${day.day}',
@@ -212,7 +219,7 @@ class LeaveCalendarWidget extends StatelessWidget {
           );
         } else if (day.weekday == DateTime.sunday) {
           return Container(
-            margin: const EdgeInsets.all(4),
+            margin: const EdgeInsets.all(2),
             alignment: Alignment.center,
             child: Text(
               '${day.day}',
@@ -225,7 +232,7 @@ class LeaveCalendarWidget extends StatelessWidget {
           );
         } else if (day.weekday == DateTime.saturday) {
           return Container(
-            margin: const EdgeInsets.all(4),
+            margin: const EdgeInsets.all(2),
             alignment: Alignment.center,
             child: Text(
               '${day.day}',
@@ -239,7 +246,7 @@ class LeaveCalendarWidget extends StatelessWidget {
         }
 
         return Container(
-          margin: const EdgeInsets.all(4),
+          margin: const EdgeInsets.all(2),
           alignment: Alignment.center,
           child: Text(
             '${day.day}',

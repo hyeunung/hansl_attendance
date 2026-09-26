@@ -5,7 +5,6 @@ import '../../providers/leave_provider.dart';
 import '../../providers/user_provider.dart';
 import '../../models/leave_request.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_shadows.dart';
 import '../../theme/app_text_theme.dart';
 import '../../widgets/leave/leave_calendar_widget.dart';
 import '../../widgets/leave/leave_type_selector_widget.dart';
@@ -456,17 +455,13 @@ class _AnnualLeaveRequestScreenOptimizedState
 
   Widget _buildBody() {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       children: [
         // 배너
-        buildBanner(),
-
-        // 연차 유형 선택
-        LeaveTypeSelectorWidget(
-          selectedType: _selectedType,
-          onTypeChanged: _onTypeChanged,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: buildBanner(),
         ),
-        const SizedBox(height: 18),
 
         Selector<LeaveProvider, Map<String, double>>(
           selector: (_, provider) => {
@@ -493,7 +488,12 @@ class _AnnualLeaveRequestScreenOptimizedState
             );
           },
         ),
-        const SizedBox(height: 20),
+
+        // 연차 유형 선택
+        LeaveTypeSelectorWidget(
+          selectedType: _selectedType,
+          onTypeChanged: _onTypeChanged,
+        ),
 
         Selector<LeaveProvider, List<Map<String, dynamic>>>(
           selector: (_, provider) => provider.myLeaves,
@@ -513,11 +513,13 @@ class _AnnualLeaveRequestScreenOptimizedState
         ),
 
         // 선택된 날짜 칩들
-        LeaveDateChipsWidget(
-          selectedDatesMap: _selectedDatesMap,
-          onDateRemoved: _onDateRemoved,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: LeaveDateChipsWidget(
+            selectedDatesMap: _selectedDatesMap,
+            onDateRemoved: _onDateRemoved,
+          ),
         ),
-        const SizedBox(height: 16),
 
         // 메모 입력
         LeaveMemoInputWidget(
@@ -553,8 +555,13 @@ class _AnnualLeaveRequestScreenOptimizedState
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOut,
         child: Container(
-          color: Colors.white,
-          padding: const EdgeInsets.all(16),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(
+              top: BorderSide(color: AppColors.borderLight, width: 0.5),
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(
             children: [
               if (MediaQuery.of(context).viewInsets.bottom > 0)
@@ -578,17 +585,16 @@ class _AnnualLeaveRequestScreenOptimizedState
       onTap: _canSubmit ? _submitLeaveRequest : null,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        height: 54,
+        height: 44,
         decoration: BoxDecoration(
           color: _canSubmit ? AppColors.primary : AppColors.border,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: _canSubmit ? AppShadows.smShadow : null,
+          borderRadius: BorderRadius.circular(8),
         ),
         alignment: Alignment.center,
         child: _isSubmitting
             ? const SizedBox(
-                width: 24,
-                height: 24,
+                width: 18,
+                height: 18,
                 child: CircularProgressIndicator(
                   color: Colors.white,
                   strokeWidth: 2,
@@ -597,8 +603,7 @@ class _AnnualLeaveRequestScreenOptimizedState
             : Text(
                 '신청하기',
                 style: AppTextStyles.buttonPrimary(context).copyWith(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w700,
                   color: _canSubmit ? Colors.white : AppColors.textDisabled,
                 ),
               ),

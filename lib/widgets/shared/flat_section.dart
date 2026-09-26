@@ -235,10 +235,13 @@ class FlatInfoRow extends StatelessWidget {
 /// 라벨 / 완료·전체·퍼센트 / 4px 진행 바
 class FlatProgressRow extends StatelessWidget {
   final String label;
-  final int completed;
-  final int total;
+  final num completed;
+  final num total;
   final int percentage;
   final Color color;
+
+  /// 기본 '완료 / 전체' 대신 표시할 문자열 (예: '1일 / 18일')
+  final String? valueText;
 
   const FlatProgressRow({
     super.key,
@@ -247,7 +250,12 @@ class FlatProgressRow extends StatelessWidget {
     required this.total,
     required this.percentage,
     required this.color,
+    this.valueText,
   });
+
+  /// 소수점이 없으면 정수로 표기 (1.0 → 1, 1.5 → 1.5)
+  static String formatCount(num v) =>
+      v % 1 == 0 ? v.toInt().toString() : v.toString();
 
   @override
   Widget build(BuildContext context) {
@@ -272,7 +280,8 @@ class FlatProgressRow extends StatelessWidget {
                 child: Text(label, style: AppTextStyles.listSubtitle(context)),
               ),
               Text(
-                '$completed / $total',
+                valueText ??
+                    '${formatCount(completed)} / ${formatCount(total)}',
                 style: AppTextStyles.tableCell(context),
               ),
               SizedBox(width: ResponsiveUtils.spacing(context, 6)),

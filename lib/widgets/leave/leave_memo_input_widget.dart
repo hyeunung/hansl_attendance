@@ -3,6 +3,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
 import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
+import '../shared/flat_section.dart';
 
 /// 사유 입력 위젯
 /// 휴가 신청 사유를 입력받는 재사용 가능한 컴포넌트
@@ -28,43 +29,36 @@ class LeaveMemoInputWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: AppColors.borderLight, width: 0.5)),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    return FlatCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(context),
-          const SizedBox(height: 8),
-          _buildInputField(context),
-          if (_shouldShowError()) _buildErrorMessage(context),
+          FlatCardHeader(
+            title: isRequired ? '사유 *' : '사유',
+            icon: Icons.edit_note,
+            iconColor: AppColors.primary,
+            trailing: controller.text.isNotEmpty
+                ? Text(
+                    '${controller.text.length}자',
+                    style: AppTextStyles.listSubtitle(context),
+                  )
+                : null,
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: ResponsiveUtils.spacing(context, 14),
+              vertical: ResponsiveUtils.spacing(context, 10),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildInputField(context),
+                if (_shouldShowError()) _buildErrorMessage(context),
+              ],
+            ),
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Row(
-      children: [
-        Text(
-          '사유',
-          style: AppTextStyles.sectionSubtitle(context),
-        ),
-        if (isRequired)
-          Text(
-            '  *',
-            style: AppTextStyles.sectionSubtitle(context).copyWith(color: AppColors.error),
-          ),
-        const Spacer(),
-        if (controller.text.isNotEmpty)
-          Text(
-            '${controller.text.length}자',
-            style: AppTextStyles.listSubtitle(context),
-          ),
-      ],
     );
   }
 
@@ -83,7 +77,11 @@ class LeaveMemoInputWidget extends StatelessWidget {
           hintStyle: AppTextStyles.cardBody(context).copyWith(
             color: AppColors.textDisabled,
           ),
+          // 바깥 Container가 테두리를 그리므로 전역 채움/테두리는 끈다
+          filled: false,
           border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
           isDense: true,
           contentPadding: EdgeInsets.zero,
         ),
