@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'utils/adaptive_layout.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthFlowType, FlutterAuthClientOptions, Supabase, AuthState, AuthChangeEvent;
 import 'package:firebase_core/firebase_core.dart';
@@ -32,7 +33,7 @@ final GlobalKey<NavigatorState> navigatorKey = NotificationService.navigatorKey;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // 화면 회전 비활성화 - 세로 모드만 허용
+  // 시작 시 세로 고정. 펼친 폴더블/태블릿은 AdaptiveOrientation이 런타임에 해제
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -390,6 +391,9 @@ class _HanslAppState extends State<HanslApp> with WidgetsBindingObserver {
         title: 'HANSL',
         theme: AppTheme.lightTheme,
         navigatorKey: navigatorKey, // 글로벌 네비게이터 키 추가
+        // 펼친 폴더블/태블릿에서만 가로 회전 허용 (폰은 세로 고정 유지)
+        builder: (context, child) =>
+            AdaptiveOrientation(child: child ?? const SizedBox.shrink()),
         locale: const Locale('ko', 'KR'),
         supportedLocales: const [Locale('ko', 'KR'), Locale('en', 'US')],
         localizationsDelegates: const [
