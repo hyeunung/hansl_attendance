@@ -860,25 +860,24 @@ class _SettingsScreenState extends State<SettingsScreen>
                   if (!_isAdmin) _buildInquiryTile(context),
                     ]),
                   ),
+
+                  // 앱 버전: 마지막 카드 바로 아래, 목록과 함께 스크롤
+                  // (로그아웃·계정 삭제는 프로필 → 계정 화면으로 이동)
+                  Padding(
+                    padding: EdgeInsets.only(
+                      top: ResponsiveUtils.spacing(context, 12),
+                      bottom: ResponsiveUtils.spacing(context, 20),
+                    ),
+                    child: Center(
+                      child: Text(
+                        _appVersion,
+                        style: AppTextStyles.listSubtitle(context),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
-      // 하단에는 앱 버전만 표시 (로그아웃·계정 삭제는 프로필 → 계정 화면으로 이동)
-      bottomNavigationBar: Padding(
-        padding: EdgeInsets.only(
-          bottom: ResponsiveUtils.spacing(context, 18),
-          top: ResponsiveUtils.spacing(context, 8),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              _appVersion,
-              style: AppTextStyles.listSubtitle(context),
-            ),
-          ],
-        ),
-      ),
     );
       },
     );
