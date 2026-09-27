@@ -19,6 +19,7 @@ import '../../widgets/common/notification_banner_widget.dart';
 import '../../widgets/common/notification_bell_button.dart';
 import '../../widgets/shared/flat_section.dart';
 import '../leave/card_receipt_upload_screen.dart';
+import '../../widgets/adaptive/pane_dialogs.dart';
 
 /// 영수증 전용 화면
 class ReceiptsScreen extends StatefulWidget {
@@ -329,12 +330,12 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
     bool isUploading = false;
     final selectedFiles = List<File>.from(imageFiles);
 
-    await showDialog(
-      context: DetailPane.hostContext(context),
-      useRootNavigator: DetailPane.useRootNavigator(context),
+    await DetailPane.dialog<void>(
+      context,
       barrierDismissible: false,
+      key: 'upload-preview',
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => Dialog(
+        builder: (context, setState) => PaneDialog(
           clipBehavior: Clip.antiAlias,
           insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
           child: Padding(

@@ -14,6 +14,7 @@ import '../../theme/app_text_theme.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import '../../widgets/shared/flat_section.dart';
 import '../adaptive/detail_pane.dart';
+import '../adaptive/pane_dialogs.dart';
 
 class BusinessTripModificationDialog extends StatefulWidget {
   final Map<String, dynamic> tripData;
@@ -29,8 +30,7 @@ class BusinessTripModificationDialog extends StatefulWidget {
         final todayMidnight = DateTime(today.year, today.month, today.day);
         if (endDate.isBefore(todayMidnight)) {
           showDialog(
-            context: DetailPane.hostContext(context),
-            useRootNavigator: DetailPane.useRootNavigator(context),
+            context: context,
             builder: (context) => AlertDialog(
               titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
               contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
@@ -59,12 +59,11 @@ class BusinessTripModificationDialog extends StatefulWidget {
     }
     }
 
-    // 펼친 폴더블: 오른쪽 패널 안에서 열린다 (폰은 기존과 동일)
-    DetailPane.clear(context);
-    return showDialog(
-      context: DetailPane.hostContext(context),
-      useRootNavigator: DetailPane.useRootNavigator(context),
+    // 펼친 폴더블: 오른쪽 패널을 채우는 화면으로 열린다 (폰은 기존 다이얼로그)
+    return DetailPane.dialog<void>(
+      context,
       barrierDismissible: true,
+      key: 'biztrip-${tripData['business_trip_id'] ?? tripData['id']}',
       builder: (context) => BusinessTripModificationDialog(tripData: tripData),
     );
   }
@@ -197,7 +196,7 @@ class _BusinessTripModificationDialogState extends State<BusinessTripModificatio
           child: child,
         );
 
-    return Dialog(
+    return PaneDialog(
       clipBehavior: Clip.antiAlias,
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
       child: Stack(

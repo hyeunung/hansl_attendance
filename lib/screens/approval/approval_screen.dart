@@ -19,6 +19,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import '../../widgets/common/notification_bell_button.dart';
 import '../../providers/attendance_provider.dart';
+import '../../widgets/adaptive/pane_dialogs.dart';
 
 class ApprovalScreen extends StatefulWidget {
   final int? initialMainTab; // 0: 연차/출장, 1: 발주승인, 2: 구매대기, 3: 입고대기
@@ -2558,12 +2559,10 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       'official': '공가',
     };
 
-    // 펼친 폴더블: 오른쪽 패널 안에서 열린다 (폰은 기존과 동일)
-    final hostContext = DetailPane.hostContext(context);
-    final useRoot = DetailPane.useRootNavigator(context);
-    await showDialog(
-      context: hostContext,
-      useRootNavigator: useRoot,
+    // 펼친 폴더블: 오른쪽 패널을 채우는 화면으로 열린다 (폰은 기존 다이얼로그)
+    await DetailPane.dialog<void>(
+      context,
+      key: 'leave-edit-${leave['id']}',
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setState) {
@@ -2626,7 +2625,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
               );
             }
 
-            return Dialog(
+            return PaneDialog(
               clipBehavior: Clip.antiAlias,
               insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
               child: ConstrainedBox(

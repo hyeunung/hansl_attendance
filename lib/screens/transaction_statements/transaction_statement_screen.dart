@@ -19,6 +19,7 @@ import '../../widgets/adaptive/upload_primary_pane.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import '../../widgets/common/notification_bell_button.dart';
 import '../../widgets/shared/flat_section.dart';
+import '../../widgets/adaptive/pane_dialogs.dart';
 
 // ── 업로드 종류 정의 ─────────────────────────────────────
 class _UploadType {
@@ -184,17 +185,17 @@ class _TransactionStatementScreenState
     String? selectedPoScope;
     DateTime? selectedDate;
 
-    await showDialog(
-      context: DetailPane.hostContext(context),
-      useRootNavigator: DetailPane.useRootNavigator(context),
+    await DetailPane.dialog<void>(
+      context,
       barrierDismissible: false,
+      key: 'upload-preview',
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) {
           final isMonthly = selectedType == 'monthly';
           final canUpload = isMonthly ||
               (selectedPoScope != null && selectedDate != null);
 
-          return Dialog(
+          return PaneDialog(
             clipBehavior: Clip.antiAlias,
             insetPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 40),

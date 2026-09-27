@@ -15,6 +15,8 @@ import '../../services/inquiry_service.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import 'package:intl/intl.dart';
 import '../adaptive/detail_pane.dart';
+import '../adaptive/pane_dialogs.dart';
+import '../adaptive/order_items_pane.dart';
 
 // 입고대기 위젯
 class ReceivingWaitingWidget extends StatefulWidget {
@@ -293,6 +295,7 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
   void dispose() {
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
+    _paneTick.dispose();
     super.dispose();
   }
 
@@ -1251,7 +1254,18 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
         itemBuilder: (context, index) {
           final orderNumber = itemsToShow.keys.elementAt(index);
           final items = itemsToShow[orderNumber]!;
-          final isExpanded = _expandedOrders[orderNumber] ?? false;
+          final split = DetailPaneScope.expandedOf(context) != null;
+          // 폰: 카드 안에서 펼침. 펼친 폴더블: 오른쪽 패널에 열린 발주를 강조
+          final isExpanded = split
+              ? _paneOrder == orderNumber
+              : (_expandedOrders[orderNumber] ?? false);
+          if (split && _paneOrder == null && _expandedOrders[orderNumber] == true) {
+            // 알림 등으로 미리 펼쳐져 있던 발주는 오른쪽 패널에 연다
+            _expandedOrders[orderNumber] = false;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _openItemsPane(orderNumber);
+            });
+          }
           final firstItem = items.first;
           final dateFormat = DateFormat('yyyy-MM-dd');
           
@@ -1279,6 +1293,10 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                   title: orderNumber,
                   icon: Icons.receipt_long,
                   onTap: () {
+                    if (split) {
+                      _openItemsPane(orderNumber);
+                      return;
+                    }
                     setState(() {
                       _expandedOrders[orderNumber] = !isExpanded;
                     });
@@ -1289,7 +1307,9 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                       _buildEditRequestButton(context, orderNumber, firstItem),
                       _buildAdminEditButton(context, orderNumber, items),
                       Icon(
-                        isExpanded ? Icons.expand_less : Icons.expand_more,
+                        split
+                            ? Icons.chevron_right
+                            : (isExpanded ? Icons.expand_less : Icons.expand_more),
                         size: 16,
                         color: AppColors.textTertiary,
                       ),
@@ -1328,171 +1348,229 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
                   ),
                   child: _buildCompleteAllButton(items),
                 ),
-                // 품목 리스트 (확장 시)
-                if (isExpanded)
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        top: BorderSide(
-                          color: AppColors.border.withValues(alpha: 0.5),
-                          width: 0.5,
-                        ),
-                      ),
-                    ),
-                    child: ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: items.length,
-                      separatorBuilder: (context, index) => const Divider(height: 1),
-                      itemBuilder: (context, itemIndex) {
-                        final item = items[itemIndex];
-                        final isReceived = item['is_received'] == true;
-                        final deliveryStatus = item['delivery_status']?.toString() ?? 'pending';
-                        final receivedQty = item['received_quantity'] as int?;
-                        final actualReceivedDateStr = item['actual_received_date']?.toString();
-
-                        return Container(
-                          padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
-                          decoration: BoxDecoration(
-                            color: isReceived ? AppColors.infoLight : Colors.transparent,
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // 완료 상태 표시
-                              Container(
-                                margin: EdgeInsets.only(right: ResponsiveUtils.spacing(context, 12)),
-                                width: ResponsiveUtils.spacing(context, 20),
-                                height: ResponsiveUtils.spacing(context, 20),
-                                decoration: BoxDecoration(
-                                  color: isReceived ? AppColors.primary : AppColors.border,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            '${itemIndex + 1}. ${item['item_name']}',
-                                            style: AppTextStyles.tableCell(context, color: isReceived ? AppColors.textTertiary : null).copyWith(
-                                              decoration: isReceived ? TextDecoration.lineThrough : null,
-                                            ),
-                                          ),
-                                        ),
-                                      if (deliveryStatus == 'partial')
-                                        StatusChip(
-                                          label: '부분입고',
-                                          color: AppColors.warning,
-                                        )
-                                      else if (isReceived)
-                                        StatusChip(
-                                          label: '완료됨',
-                                          color: AppColors.primary,
-                                        ),
-                                      ],
-                                    ),
-                                    if (item['specification'] != null)
-                                      Text(
-                                        '규격: ${item['specification']}',
-                                        style: AppTextStyles.tableCellSub(context),
-                                      ),
-                                    SizedBox(height: ResponsiveUtils.spacing(context, 4)),
-                                    Row(
-                                      children: [
-                                        Text(
-                                          '수량: ${item['quantity']}',
-                                          style: AppTextStyles.listSubtitle(context).copyWith(
-                                            color: AppColors.textSecondary,
-                                          ),
-                                        ),
-                                        SizedBox(width: ResponsiveUtils.spacing(context, 12)),
-                                        Text(
-                                          '단가: ${CurrencyFormatter.formatWon(item['unit_price_value'], CurrencyFormatter.fromRow(item))}',
-                                          style: AppTextStyles.listSubtitle(context).copyWith(
-                                            color: AppColors.textSecondary,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          '금액: ${CurrencyFormatter.formatWon(item['amount_value'], CurrencyFormatter.fromRow(item))}',
-                                          style: AppTextStyles.tableCellSub(context).copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.primary,
-                                          ),
-                                        ),
-                                        if (receivedQty != null)
-                                          Padding(
-                                            padding: EdgeInsets.only(top: ResponsiveUtils.spacing(context, 4)),
-                                            child: Text(
-                                              '실입고 수량: $receivedQty',
-                                              style: AppTextStyles.listSubtitle(context).copyWith(
-                                                color: AppColors.gray700,
-                                              ),
-                                            ),
-                                          ),
-                                        if (actualReceivedDateStr != null && actualReceivedDateStr.isNotEmpty)
-                                          Padding(
-                                            padding: EdgeInsets.only(top: ResponsiveUtils.spacing(context, 2)),
-                                            child: Text(
-                                              '실입고일: ${_dateFormat.format(DateTime.parse(actualReceivedDateStr))}',
-                                              style: AppTextStyles.cardCaption(context).copyWith(
-                                                color: AppColors.gray700,
-                                              ),
-                                            ),
-                                          ),
-                                        if ((item['delivery_notes']?.toString().trim().isNotEmpty ?? false))
-                                          Padding(
-                                            padding: EdgeInsets.only(top: ResponsiveUtils.spacing(context, 2)),
-                                            child: Text(
-                                              '비고: ${item['delivery_notes']}',
-                                              style: AppTextStyles.cardCaption(context).copyWith(
-                                                color: AppColors.gray700,
-                                              ),
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (canComplete && !isReceived) ...[
-                                SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                                ElevatedButton(
-                                  onPressed: () => _completeReceivingForItem(orderNumber, item['id']),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.info,
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: ResponsiveUtils.spacing(context, 12),
-                                      vertical: ResponsiveUtils.spacing(context, 6),
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    '입고완료',
-                                    style: AppTextStyles.chipSmall(context, color: Colors.white).copyWith(
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                // 품목 리스트 (확장 시) — 펼친 폴더블에서는 오른쪽 패널에 표시
+                if (isExpanded && !split)
+                  _buildItemsList(context, orderNumber, items, canComplete: canComplete),
               ],
             ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ── 펼친 폴더블 오른쪽 패널 연동 ─────────────────────────
+
+  /// 오른쪽 패널에 품목이 열려 있는 발주 번호
+  String? _paneOrder;
+
+  /// 목록 상태가 바뀔 때마다 오른쪽 패널을 다시 그리게 하는 신호
+  final ValueNotifier<int> _paneTick = ValueNotifier<int>(0);
+
+  @override
+  void setState(VoidCallback fn) {
+    super.setState(fn);
+    _paneTick.value++;
+  }
+
+  void _openItemsPane(String orderNumber) {
+    setState(() => _paneOrder = orderNumber);
+    DetailPane.show<void>(
+      context,
+      key: 'order-items-$orderNumber',
+      fallback: () async {},
+      builder: (_) => OrderItemsPane(
+        orderNumber: orderNumber,
+        listenable: _paneTick,
+        itemCount: () => _itemsByOrder[orderNumber]?.length,
+        itemsBuilder: (paneContext) {
+          final items = _itemsByOrder[orderNumber] ?? const [];
+          final employee =
+              Provider.of<UserProvider>(paneContext, listen: false).employee;
+          final purchaseRoles = UserRoleHelper.getRoles(employee);
+          final userName = employee?['name'] as String? ?? '';
+          return _buildItemsList(
+            paneContext,
+            orderNumber,
+            items,
+            canComplete: items.isNotEmpty &&
+                (UserRoleHelper.isAppAdmin(purchaseRoles) ||
+                    UserRoleHelper.isPureLeadBuyer(purchaseRoles) ||
+                    items.first['requester_name'] == userName),
+          );
+        },
+      ),
+    ).whenComplete(() {
+      if (mounted && _paneOrder == orderNumber) {
+        setState(() => _paneOrder = null);
+      }
+    });
+  }
+
+  /// 발주 한 건의 품목 목록 (폰: 카드 펼침 안, 폴더블: 오른쪽 패널)
+  Widget _buildItemsList(
+    BuildContext context,
+    String orderNumber,
+    List<Map<String, dynamic>> items, {
+    required bool canComplete,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: AppColors.border.withValues(alpha: 0.5),
+            width: 0.5,
+          ),
+        ),
+      ),
+      child: ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: items.length,
+        separatorBuilder: (context, index) => const Divider(height: 1),
+        itemBuilder: (context, itemIndex) {
+          final item = items[itemIndex];
+          final isReceived = item['is_received'] == true;
+          final deliveryStatus = item['delivery_status']?.toString() ?? 'pending';
+          final receivedQty = item['received_quantity'] as int?;
+          final actualReceivedDateStr = item['actual_received_date']?.toString();
+
+          return Container(
+            padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
+            decoration: BoxDecoration(
+              color: isReceived ? AppColors.infoLight : Colors.transparent,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 완료 상태 표시
+                Container(
+                  margin: EdgeInsets.only(right: ResponsiveUtils.spacing(context, 12)),
+                  width: ResponsiveUtils.spacing(context, 20),
+                  height: ResponsiveUtils.spacing(context, 20),
+                  decoration: BoxDecoration(
+                    color: isReceived ? AppColors.primary : AppColors.border,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${itemIndex + 1}. ${item['item_name']}',
+                              style: AppTextStyles.tableCell(context, color: isReceived ? AppColors.textTertiary : null).copyWith(
+                                decoration: isReceived ? TextDecoration.lineThrough : null,
+                              ),
+                            ),
+                          ),
+                        if (deliveryStatus == 'partial')
+                          StatusChip(
+                            label: '부분입고',
+                            color: AppColors.warning,
+                          )
+                        else if (isReceived)
+                          StatusChip(
+                            label: '완료됨',
+                            color: AppColors.primary,
+                          ),
+                        ],
+                      ),
+                      if (item['specification'] != null)
+                        Text(
+                          '규격: ${item['specification']}',
+                          style: AppTextStyles.tableCellSub(context),
+                        ),
+                      SizedBox(height: ResponsiveUtils.spacing(context, 4)),
+                      Row(
+                        children: [
+                          Text(
+                            '수량: ${item['quantity']}',
+                            style: AppTextStyles.listSubtitle(context).copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          SizedBox(width: ResponsiveUtils.spacing(context, 12)),
+                          Text(
+                            '단가: ${CurrencyFormatter.formatWon(item['unit_price_value'], CurrencyFormatter.fromRow(item))}',
+                            style: AppTextStyles.listSubtitle(context).copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '금액: ${CurrencyFormatter.formatWon(item['amount_value'], CurrencyFormatter.fromRow(item))}',
+                            style: AppTextStyles.tableCellSub(context).copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          if (receivedQty != null)
+                            Padding(
+                              padding: EdgeInsets.only(top: ResponsiveUtils.spacing(context, 4)),
+                              child: Text(
+                                '실입고 수량: $receivedQty',
+                                style: AppTextStyles.listSubtitle(context).copyWith(
+                                  color: AppColors.gray700,
+                                ),
+                              ),
+                            ),
+                          if (actualReceivedDateStr != null && actualReceivedDateStr.isNotEmpty)
+                            Padding(
+                              padding: EdgeInsets.only(top: ResponsiveUtils.spacing(context, 2)),
+                              child: Text(
+                                '실입고일: ${_dateFormat.format(DateTime.parse(actualReceivedDateStr))}',
+                                style: AppTextStyles.cardCaption(context).copyWith(
+                                  color: AppColors.gray700,
+                                ),
+                              ),
+                            ),
+                          if ((item['delivery_notes']?.toString().trim().isNotEmpty ?? false))
+                            Padding(
+                              padding: EdgeInsets.only(top: ResponsiveUtils.spacing(context, 2)),
+                              child: Text(
+                                '비고: ${item['delivery_notes']}',
+                                style: AppTextStyles.cardCaption(context).copyWith(
+                                  color: AppColors.gray700,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                if (canComplete && !isReceived) ...[
+                  SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                  ElevatedButton(
+                    onPressed: () => _completeReceivingForItem(orderNumber, item['id']),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.info,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: ResponsiveUtils.spacing(context, 12),
+                        vertical: ResponsiveUtils.spacing(context, 6),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+                      ),
+                    ),
+                    child: Text(
+                      '입고완료',
+                      style: AppTextStyles.chipSmall(context, color: Colors.white).copyWith(
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           );
         },
@@ -1643,12 +1721,11 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
     final int? purchaseId = (firstItem['purchase_id'] ?? firstItem['purchaseId']) as int?;
     final itemsForOrder = _itemsByOrder[orderNumber] ?? [];
     final currentDeliveryDate = firstItem['delivery_request_date']?.toString();
-    // 펼친 폴더블: 오른쪽 패널 안에서 열린다 (폰은 기존과 동일)
-    DetailPane.clear(context);
-    await showDialog<void>(
-      context: DetailPane.hostContext(context),
-      useRootNavigator: DetailPane.useRootNavigator(context),
+    // 펼친 폴더블: 오른쪽 패널을 채우는 화면으로 열린다 (폰은 기존 다이얼로그)
+    await DetailPane.dialog<void>(
+      context,
       barrierDismissible: false,
+      key: 'modify-request-$orderNumber',
       builder: (dialogContext) {
         return _ModifyRequestDialog(
           orderNumber: orderNumber,
@@ -2299,7 +2376,7 @@ class _ModifyRequestDialogState extends State<_ModifyRequestDialog> {
     final requestDateLabel = _formatDateText(widget.requestDate ?? widget.createdAt);
     final maxHeight = MediaQuery.of(context).size.height * 0.7;
 
-    return AlertDialog(
+    return PaneAlertDialog(
       title: Container(
         padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
         decoration: BoxDecoration(

@@ -14,6 +14,7 @@ import 'purchase_edit_sheets.dart';
 import '../../utils/user_role_helper.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import '../adaptive/detail_pane.dart';
+import '../adaptive/pane_dialogs.dart';
 
 class PurchaseApprovalWidget extends StatefulWidget {
   const PurchaseApprovalWidget({super.key, this.initialSearchQuery});
@@ -139,12 +140,11 @@ return;
     final sortedItems = group.items.toList()
       ..sort((a, b) => a.lineNumber.compareTo(b.lineNumber));
 
-    // 펼친 폴더블: 오른쪽 패널 안에서 열린다 (폰은 기존과 동일)
-    DetailPane.clear(context);
-    showDialog(
-      context: DetailPane.hostContext(context),
-      useRootNavigator: DetailPane.useRootNavigator(context),
-      builder: (dialogContext) => Dialog(
+    // 펼친 폴더블: 오른쪽 패널을 채우는 화면으로 열린다 (폰은 기존 다이얼로그)
+    DetailPane.dialog<void>(
+      context,
+      key: 'po-detail-${group.purchaseOrderNumber}',
+      builder: (dialogContext) => PaneDialog(
         clipBehavior: Clip.antiAlias,
         insetPadding: EdgeInsets.symmetric(
           horizontal: ResponsiveUtils.spacing(context, 16),

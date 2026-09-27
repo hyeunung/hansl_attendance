@@ -25,6 +25,7 @@ import '../../utils/user_role_helper.dart';
 import '../admin/admin_attendance_screen.dart';
 import '../../widgets/common/notification_bell_button.dart';
 import 'notification_settings_screen.dart';
+import '../../widgets/adaptive/pane_dialogs.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -137,14 +138,13 @@ class _SettingsScreenState extends State<SettingsScreen>
     final originalSize = fontProvider.fontSize;
     bool confirmed = false;
 
-    DetailPane.clear(context);
-    showDialog(
-      context: DetailPane.hostContext(context),
-      useRootNavigator: DetailPane.useRootNavigator(context),
+    DetailPane.dialog<void>(
+      context,
+      key: 'font-size',
       builder: (BuildContext dialogContext) {
         return Consumer<FontProvider>(
           builder: (context, provider, _) {
-            return AlertDialog(
+            return PaneAlertDialog(
               titlePadding: EdgeInsets.fromLTRB(
                 ResponsiveUtils.spacing(context, 16),
                 ResponsiveUtils.spacing(context, 16),
@@ -336,6 +336,89 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
+
+  /// 프로필을 누르면 계정 화면(로그아웃·계정 삭제)을 연다.
+  /// 펼친 폴더블에서는 오른쪽 패널에, 폰에서는 전체 화면으로 열린다.
+  void _openAccount() {
+    final employee =
+        Provider.of<UserProvider>(context, listen: false).employee;
+    final name = (employee?['name'] ?? '').toString();
+    final department = (employee?['department'] ?? '').toString();
+    final position = (employee?['position'] ?? '').toString();
+    final email = (employee?['email'] ?? '').toString();
+    DetailPane.push<void>(
+      context,
+      key: 'account',
+      builder: (_) => _AccountPage(
+        name: name,
+        affiliation:
+            '${department.isNotEmpty ? department : '-'} / ${position.isNotEmpty ? position : '-'}',
+        email: email,
+        onLogout: _logout,
+        onDeleteAccount: _showAccountDeletionDialog,
+        onRestoreCache: kDebugMode ? _restoreCache : null,
+      ),
+    );
+  }
+
+  Future<void> _restoreCache() async {
+    final ok = await _confirm(
+      title: '캐시 복원',
+      message: '기기에 남은 연차 캐시를 DB로 복원합니다. 진행하시겠습니까?',
+      confirmText: '복원',
+      icon: Icons.restore,
+    );
+    if (!ok) return;
+
+    // 캐시 내용 확인
+    await CacheRecoveryService.printCacheContents();
+
+    // 캐시에서 DB로 복원
+    await CacheRecoveryService.recoverLeaveDataFromCache();
+
+    // 성공 메시지
+    if (!mounted) return;
+    AppBanner.show(context, '캐시 데이터 복원 완료! 디버그 콘솔을 확인하세요.', type: BannerType.info);
+  }
+
+  Future<void> _logout() async {
+    final ok = await _confirm(
+      title: '로그아웃',
+      message: '로그아웃하시겠습니까?\n자동 로그인 정보도 함께 해제됩니다.',
+      confirmText: '로그아웃',
+      icon: Icons.logout,
+      color: AppColors.error,
+    );
+    if (!ok) return;
+
+    // Supabase 세션 종료
+    final supabase = Supabase.instance.client;
+    await supabase.auth.signOut();
+
+    // 배지 제거
+    await BadgeCountService.updateBadgeCount();
+    BadgeCountService.removeSubscriptions();
+
+    // SharedPreferences 초기화
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('autoLogin', false);
+    await prefs.remove('autoLoginEmail');
+    await prefs.remove('autoLoginPassword');
+
+    // 알림 Provider 초기화
+    if (mounted) {
+      Provider.of<NotificationProvider>(
+        context,
+        listen: false,
+      ).clear();
+    }
+
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => LoginScreen()),
+      (route) => false,
+    );
+  }
 
   void _showInquiryDialog() async {
     // 문의하기 화면으로 이동
@@ -601,7 +684,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                     child: Column(children: [
                   FlatSectionHeader(title: '프로필'),
-                  Padding(
+                  InkWell(
+                    onTap: _openAccount,
+                    child: Padding(
                     padding: EdgeInsets.symmetric(
                       horizontal: ResponsiveUtils.spacing(context, 14),
                       vertical: ResponsiveUtils.spacing(context, 10),
@@ -649,8 +734,14 @@ class _SettingsScreenState extends State<SettingsScreen>
                             ],
                           ),
                         ),
+                        Icon(
+                          Icons.chevron_right,
+                          size: ResponsiveUtils.iconSize(context, 18),
+                          color: AppColors.textTertiary,
+                        ),
                       ],
                     ),
+                  ),
                   ),
                     ]),
                   ),
@@ -772,6 +863,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 ],
               ),
             ),
+      // 하단에는 앱 버전만 표시 (로그아웃·계정 삭제는 프로필 → 계정 화면으로 이동)
       bottomNavigationBar: Padding(
         padding: EdgeInsets.only(
           bottom: ResponsiveUtils.spacing(context, 18),
@@ -780,159 +872,6 @@ class _SettingsScreenState extends State<SettingsScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 개발자 전용 캐시 복원 버튼
-            if (kDebugMode) ...[
-              Padding(
-                padding: EdgeInsets.only(
-                  bottom: ResponsiveUtils.spacing(context, 16),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: ResponsiveUtils.spacing(context, 150),
-                      height: ResponsiveUtils.spacing(context, 36),
-                      child: TextButton.icon(
-                        icon: Icon(
-                          Icons.restore,
-                          color: AppColors.info,
-                          size: ResponsiveUtils.iconSize(context, 18),
-                        ),
-                        label: Text(
-                          '캐시 복원',
-                          style: AppTextStyles.tableCellSub(context).copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.info,
-                          ),
-                        ),
-                        style: TextButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          elevation: 0,
-                          shape: null,
-                          padding: EdgeInsets.zero,
-                        ),
-                        onPressed: () async {
-                          final ok = await _confirm(
-                            title: '캐시 복원',
-                            message: '기기에 남은 연차 캐시를 DB로 복원합니다. 진행하시겠습니까?',
-                            confirmText: '복원',
-                            icon: Icons.restore,
-                          );
-                          if (!ok) return;
-
-                          // 캐시 내용 확인
-                          await CacheRecoveryService.printCacheContents();
-
-                          // 캐시에서 DB로 복원
-                          await CacheRecoveryService.recoverLeaveDataFromCache();
-
-                          // 성공 메시지
-                          if (mounted) {
-                            if (!mounted) return;
-                            AppBanner.show(context, '캐시 데이터 복원 완료! 디버그 콘솔을 확인하세요.', type: BannerType.info);
-                          }
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: ResponsiveUtils.spacing(context, 120),
-                  height: ResponsiveUtils.spacing(context, 36),
-                  child: TextButton.icon(
-                    icon: Icon(
-                      Icons.delete_forever,
-                      color: AppColors.error,
-                      size: ResponsiveUtils.iconSize(context, 18),
-                    ),
-                    label: Text(
-                      '계정 삭제',
-                      style: AppTextStyles.tableCellSub(context).copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.error,
-                      ),
-                    ),
-                    style: TextButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      elevation: 0,
-                      shape: null,
-                      padding: EdgeInsets.zero,
-                    ),
-                    onPressed: _showAccountDeletionDialog,
-                  ),
-                ),
-                SizedBox(width: ResponsiveUtils.spacing(context, 20)),
-                SizedBox(
-                  width: ResponsiveUtils.spacing(context, 120),
-                  height: ResponsiveUtils.spacing(context, 36),
-                  child: TextButton.icon(
-                    icon: Icon(
-                      Icons.logout,
-                      color: AppColors.error,
-                      size: ResponsiveUtils.iconSize(context, 18),
-                    ),
-                    label: Text(
-                      '로그아웃',
-                      style: AppTextStyles.tableCellSub(context).copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.error,
-                      ),
-                    ),
-                    style: TextButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      elevation: 0,
-                      shape: null,
-                      padding: EdgeInsets.zero,
-                    ),
-                    onPressed: () async {
-                      final ok = await _confirm(
-                        title: '로그아웃',
-                        message: '로그아웃하시겠습니까?\n자동 로그인 정보도 함께 해제됩니다.',
-                        confirmText: '로그아웃',
-                        icon: Icons.logout,
-                        color: AppColors.error,
-                      );
-                      if (!ok) return;
-
-                      // Supabase 세션 종료
-                      final supabase = Supabase.instance.client;
-                      await supabase.auth.signOut();
-
-                      // 배지 제거
-                      await BadgeCountService.updateBadgeCount();
-                      BadgeCountService.removeSubscriptions();
-
-                      // SharedPreferences 초기화
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.setBool('autoLogin', false);
-                      await prefs.remove('autoLoginEmail');
-                      await prefs.remove('autoLoginPassword');
-
-                      // 알림 Provider 초기화
-                      if (mounted) {
-                        Provider.of<NotificationProvider>(
-                          context,
-                          listen: false,
-                        ).clear();
-                      }
-
-                      if (!mounted) return;
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (context) => LoginScreen()),
-                        (route) => false,
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: ResponsiveUtils.spacing(context, 6)),
             Text(
               _appVersion,
               style: AppTextStyles.listSubtitle(context),
@@ -942,6 +881,101 @@ class _SettingsScreenState extends State<SettingsScreen>
       ),
     );
       },
+    );
+  }
+}
+
+/// 프로필을 눌렀을 때 열리는 계정 화면: 내 정보 + 로그아웃 · 계정 삭제.
+class _AccountPage extends StatelessWidget {
+  const _AccountPage({
+    required this.name,
+    required this.affiliation,
+    required this.email,
+    required this.onLogout,
+    required this.onDeleteAccount,
+    this.onRestoreCache,
+  });
+
+  final String name;
+  final String affiliation;
+  final String email;
+  final VoidCallback onLogout;
+  final VoidCallback onDeleteAccount;
+  final VoidCallback? onRestoreCache;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.backgroundPrimary,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        title: AppBarTitle('계정'),
+      ),
+      body: ListView(
+        padding: EdgeInsets.only(
+          top: ResponsiveUtils.spacing(context, 10),
+          bottom: ResponsiveUtils.spacing(context, 20),
+        ),
+        children: [
+          FlatCard(
+            child: Column(
+              children: [
+                const FlatSectionHeader(title: '내 정보'),
+                FlatInfoRow(label: '이름', value: name.isNotEmpty ? name : '-'),
+                FlatInfoRow(label: '소속', value: affiliation),
+                FlatInfoRow(label: '이메일', value: email.isNotEmpty ? email : '-'),
+              ],
+            ),
+          ),
+          FlatCard(
+            child: Column(
+              children: [
+                const FlatSectionHeader(title: '계정 관리'),
+                FlatListTile(
+                  title: '로그아웃',
+                  leading: Icon(
+                    Icons.logout,
+                    size: ResponsiveUtils.iconSize(context, 20),
+                    color: AppColors.textSecondary,
+                  ),
+                  onTap: onLogout,
+                ),
+                FlatListTile(
+                  title: '계정 삭제',
+                  titleColor: AppColors.error,
+                  leading: Icon(
+                    Icons.delete_forever,
+                    size: ResponsiveUtils.iconSize(context, 20),
+                    color: AppColors.error,
+                  ),
+                  onTap: onDeleteAccount,
+                ),
+              ],
+            ),
+          ),
+          if (onRestoreCache != null)
+            FlatCard(
+              child: Column(
+                children: [
+                  const FlatSectionHeader(title: '개발자'),
+                  FlatListTile(
+                    title: '캐시 복원',
+                    leading: Icon(
+                      Icons.restore,
+                      size: ResponsiveUtils.iconSize(context, 20),
+                      color: AppColors.info,
+                    ),
+                    onTap: onRestoreCache!,
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

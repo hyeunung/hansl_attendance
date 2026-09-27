@@ -156,6 +156,64 @@ class DetailPane {
     return controller.showDetail<T>(builder, key: key);
   }
 
+  /// 다이얼로그를 띄운다.
+  /// 폰: 기존과 같은 `showDialog`. 펼친 폴더블: 떠 있는 팝업 대신 오른쪽 패널을
+  /// 채우는 화면으로 연다([PaneDialog]/[PaneAlertDialog]가 화면 모양으로 그린다).
+  static Future<T?> dialog<T>(
+    BuildContext context, {
+    required WidgetBuilder builder,
+    bool barrierDismissible = true,
+    Object? key,
+  }) {
+    final controller = _expanded(context);
+    if (controller == null) {
+      return showDialog<T>(
+        context: context,
+        barrierDismissible: barrierDismissible,
+        builder: builder,
+      );
+    }
+    return controller.showDetail<T>(
+      (ctx) => PanePage(child: Builder(builder: builder)),
+      key: key,
+    );
+  }
+
+  /// 바텀시트를 띄운다. 폰: 기존과 같은 `showModalBottomSheet`.
+  /// 펼친 폴더블: 오른쪽 패널을 채우는 화면으로 연다.
+  static Future<T?> sheet<T>(
+    BuildContext context, {
+    required WidgetBuilder builder,
+    bool isScrollControlled = false,
+    bool enableDrag = true,
+    bool useSafeArea = false,
+    Color? backgroundColor,
+    ShapeBorder? shape,
+    Object? key,
+  }) {
+    final controller = _expanded(context);
+    if (controller == null) {
+      return showModalBottomSheet<T>(
+        context: context,
+        isScrollControlled: isScrollControlled,
+        enableDrag: enableDrag,
+        useSafeArea: useSafeArea,
+        backgroundColor: backgroundColor,
+        shape: shape,
+        builder: builder,
+      );
+    }
+    return controller.showDetail<T>(
+      (ctx) => PanePage(child: Builder(builder: builder)),
+      key: key,
+    );
+  }
+
+  /// 오른쪽 패널을 채우는 "화면 모드"로 그려지는 중인지.
+  /// (패널에 화면으로 열린 다이얼로그/시트의 본문에서만 true)
+  static bool isPage(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<PanePage>() != null;
+
   /// 다이얼로그/시트를 띄울 context.
   /// 분할(펼침) 상태면 오른쪽 패널의 Navigator context를, 아니면 받은 context를 돌려준다.
   /// `showDialog(context: DetailPane.hostContext(context), useRootNavigator: DetailPane.useRootNavigator(context))`
@@ -197,6 +255,21 @@ class DetailPane {
     if (scope == null || !scope.split) return null;
     return scope.notifier;
   }
+}
+
+/// 패널에 "화면"으로 열린 다이얼로그/시트 본문 위에 심는 표식 + 바탕.
+class PanePage extends InheritedWidget {
+  PanePage({super.key, required Widget child})
+      : super(
+          child: Material(
+            color: Colors.white,
+            // 상태바 영역과 겹치지 않게 (아래쪽은 각 화면이 직접 처리)
+            child: SafeArea(bottom: false, child: child),
+          ),
+        );
+
+  @override
+  bool updateShouldNotify(PanePage oldWidget) => false;
 }
 
 /// [DetailPaneView]가 자식 위에 심는 표식. 화면이 "패널 안"인지 판별하는 데 쓴다.

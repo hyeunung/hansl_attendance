@@ -10,6 +10,8 @@ import '../shared/flat_section.dart';
 import '../../utils/user_role_helper.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import 'package:intl/intl.dart';
+import '../adaptive/detail_pane.dart';
+import '../adaptive/order_items_pane.dart';
 
 // 구매대기 위젯
 class PurchaseWaitingWidget extends StatefulWidget {
@@ -48,6 +50,7 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
   @override
   void dispose() {
     _searchController.dispose();
+    _paneTick.dispose();
     super.dispose();
   }
 
@@ -214,6 +217,176 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
   }
 
   // 진행률 섹션 빌드
+  // ── 펼친 폴더블 오른쪽 패널 연동 ─────────────────────────
+
+  /// 오른쪽 패널에 품목이 열려 있는 발주 번호
+  String? _paneOrder;
+
+  /// 목록 상태가 바뀔 때마다 오른쪽 패널을 다시 그리게 하는 신호
+  final ValueNotifier<int> _paneTick = ValueNotifier<int>(0);
+
+  @override
+  void setState(VoidCallback fn) {
+    super.setState(fn);
+    _paneTick.value++;
+  }
+
+  void _openItemsPane(String orderNumber) {
+    setState(() => _paneOrder = orderNumber);
+    DetailPane.show<void>(
+      context,
+      key: 'order-items-$orderNumber',
+      fallback: () async {},
+      builder: (_) => OrderItemsPane(
+        orderNumber: orderNumber,
+        listenable: _paneTick,
+        itemCount: () => _itemsByOrder[orderNumber]?.length,
+        itemsBuilder: (paneContext) {
+          final items = _itemsByOrder[orderNumber] ?? const [];
+          return _buildItemsList(
+            paneContext,
+            orderNumber,
+            items,
+          );
+        },
+      ),
+    ).whenComplete(() {
+      if (mounted && _paneOrder == orderNumber) {
+        setState(() => _paneOrder = null);
+      }
+    });
+  }
+
+  /// 발주 한 건의 품목 목록 (폰: 카드 펼침 안, 폴더블: 오른쪽 패널)
+  Widget _buildItemsList(
+    BuildContext context,
+    String orderNumber,
+    List<Map<String, dynamic>> items,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: AppColors.border.withValues(alpha: 0.5),
+            width: 0.5,
+          ),
+        ),
+      ),
+      child: ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: items.length,
+        separatorBuilder: (context, index) => const Divider(height: 1),
+        itemBuilder: (context, itemIndex) {
+          final item = items[itemIndex];
+
+          final isCompleted = item['is_payment_completed'] == true;
+          
+          return Container(
+            padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
+            decoration: BoxDecoration(
+              color: isCompleted ? AppColors.infoLight : Colors.transparent,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 완료 상태 표시
+                Container(
+                  margin: EdgeInsets.only(right: ResponsiveUtils.spacing(context, 12)),
+                  width: ResponsiveUtils.spacing(context, 20),
+                  height: ResponsiveUtils.spacing(context, 20),
+                  decoration: BoxDecoration(
+                    color: isCompleted ? AppColors.warning : AppColors.border,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${itemIndex + 1}. ${item['item_name']}',
+                        style: AppTextStyles.tableCell(context, color: isCompleted ? AppColors.textSecondary : null).copyWith(
+                          decoration: isCompleted ? TextDecoration.lineThrough : null,
+                        ),
+                      ),
+                      if (item['specification'] != null)
+                        Text(
+                          '규격: ${item['specification']}',
+                          style: AppTextStyles.tableCellSub(context).copyWith(
+                            color: isCompleted ? AppColors.textTertiary : null,
+                            decoration: isCompleted ? TextDecoration.lineThrough : null,
+                          ),
+                        ),
+                      SizedBox(height: ResponsiveUtils.spacing(context, 4)),
+                      Row(
+                        children: [
+                          Text(
+                            '수량: ${item['quantity']}',
+                            style: AppTextStyles.listSubtitle(context).copyWith(
+                              color: isCompleted ? AppColors.textTertiary : AppColors.textSecondary,
+                              decoration: isCompleted ? TextDecoration.lineThrough : null,
+                            ),
+                          ),
+                          SizedBox(width: ResponsiveUtils.spacing(context, 12)),
+                          Text(
+                            '단가: ${CurrencyFormatter.formatWon(item['unit_price_value'], CurrencyFormatter.fromRow(item))}',
+                            style: AppTextStyles.listSubtitle(context).copyWith(
+                              color: isCompleted ? AppColors.textTertiary : AppColors.textSecondary,
+                              decoration: isCompleted ? TextDecoration.lineThrough : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        '금액: ${CurrencyFormatter.formatWon(item['amount_value'], CurrencyFormatter.fromRow(item))}',
+                        style: AppTextStyles.tableCellSub(context).copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: isCompleted ? AppColors.textTertiary : AppColors.warning,
+                        ).copyWith(
+                          decoration: isCompleted ? TextDecoration.lineThrough : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                // 구매완료 버튼 (완료되지 않은 경우만)
+                if (!isCompleted)
+                  ElevatedButton(
+                    onPressed: () => _completePaymentForItem(orderNumber, item['id']),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.info,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: ResponsiveUtils.spacing(context, 12),
+                        vertical: ResponsiveUtils.spacing(context, 6),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
+                      ),
+                    ),
+                    child: Text(
+                      '구매완료',
+                      style: AppTextStyles.tableHeader(context).copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  )
+                else
+                  // 완료 배지
+                  StatusChip(
+                    label: '완료됨',
+                    color: AppColors.success,
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildProgressSection(List<Map<String, dynamic>> items) {
     final completedItems = items.where((item) => item['is_payment_completed'] == true).length;
     final totalItems = items.length;
@@ -570,7 +743,18 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
         itemBuilder: (context, index) {
           final orderNumber = itemsToShow.keys.elementAt(index);
           final items = itemsToShow[orderNumber]!;
-          final isExpanded = _expandedOrders[orderNumber] ?? false;
+          final split = DetailPaneScope.expandedOf(context) != null;
+          // 폰: 카드 안에서 펼침. 펼친 폴더블: 오른쪽 패널에 열린 발주를 강조
+          final isExpanded = split
+              ? _paneOrder == orderNumber
+              : (_expandedOrders[orderNumber] ?? false);
+          if (split && _paneOrder == null && _expandedOrders[orderNumber] == true) {
+            // 알림 등으로 미리 펼쳐져 있던 발주는 오른쪽 패널에 연다
+            _expandedOrders[orderNumber] = false;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _openItemsPane(orderNumber);
+            });
+          }
           final firstItem = items.first;
           final dateFormat = DateFormat('yyyy-MM-dd');
 
@@ -588,12 +772,18 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                   title: orderNumber,
                   icon: Icons.shopping_cart,
                   onTap: () {
+                    if (split) {
+                      _openItemsPane(orderNumber);
+                      return;
+                    }
                     setState(() {
                       _expandedOrders[orderNumber] = !isExpanded;
                     });
                   },
                   trailing: Icon(
-                    isExpanded ? Icons.expand_less : Icons.expand_more,
+                    split
+                            ? Icons.chevron_right
+                            : (isExpanded ? Icons.expand_less : Icons.expand_more),
                     size: 16,
                     color: AppColors.textTertiary,
                   ),
@@ -619,130 +809,9 @@ class _PurchaseWaitingWidgetState extends State<PurchaseWaitingWidget> {
                   ),
                   child: _buildCompleteAllButton(items),
                 ),
-                // 품목 리스트 (확장 시)
-                if (isExpanded)
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        top: BorderSide(
-                          color: AppColors.border.withValues(alpha: 0.5),
-                          width: 0.5,
-                        ),
-                      ),
-                    ),
-                    child: ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: items.length,
-                      separatorBuilder: (context, index) => const Divider(height: 1),
-                      itemBuilder: (context, itemIndex) {
-                        final item = items[itemIndex];
-
-                        final isCompleted = item['is_payment_completed'] == true;
-                        
-                        return Container(
-                          padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
-                          decoration: BoxDecoration(
-                            color: isCompleted ? AppColors.infoLight : Colors.transparent,
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // 완료 상태 표시
-                              Container(
-                                margin: EdgeInsets.only(right: ResponsiveUtils.spacing(context, 12)),
-                                width: ResponsiveUtils.spacing(context, 20),
-                                height: ResponsiveUtils.spacing(context, 20),
-                                decoration: BoxDecoration(
-                                  color: isCompleted ? AppColors.warning : AppColors.border,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '${itemIndex + 1}. ${item['item_name']}',
-                                      style: AppTextStyles.tableCell(context, color: isCompleted ? AppColors.textSecondary : null).copyWith(
-                                        decoration: isCompleted ? TextDecoration.lineThrough : null,
-                                      ),
-                                    ),
-                                    if (item['specification'] != null)
-                                      Text(
-                                        '규격: ${item['specification']}',
-                                        style: AppTextStyles.tableCellSub(context).copyWith(
-                                          color: isCompleted ? AppColors.textTertiary : null,
-                                          decoration: isCompleted ? TextDecoration.lineThrough : null,
-                                        ),
-                                      ),
-                                    SizedBox(height: ResponsiveUtils.spacing(context, 4)),
-                                    Row(
-                                      children: [
-                                        Text(
-                                          '수량: ${item['quantity']}',
-                                          style: AppTextStyles.listSubtitle(context).copyWith(
-                                            color: isCompleted ? AppColors.textTertiary : AppColors.textSecondary,
-                                            decoration: isCompleted ? TextDecoration.lineThrough : null,
-                                          ),
-                                        ),
-                                        SizedBox(width: ResponsiveUtils.spacing(context, 12)),
-                                        Text(
-                                          '단가: ${CurrencyFormatter.formatWon(item['unit_price_value'], CurrencyFormatter.fromRow(item))}',
-                                          style: AppTextStyles.listSubtitle(context).copyWith(
-                                            color: isCompleted ? AppColors.textTertiary : AppColors.textSecondary,
-                                            decoration: isCompleted ? TextDecoration.lineThrough : null,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Text(
-                                      '금액: ${CurrencyFormatter.formatWon(item['amount_value'], CurrencyFormatter.fromRow(item))}',
-                                      style: AppTextStyles.tableCellSub(context).copyWith(
-                                        fontWeight: FontWeight.w600,
-                                        color: isCompleted ? AppColors.textTertiary : AppColors.warning,
-                                      ).copyWith(
-                                        decoration: isCompleted ? TextDecoration.lineThrough : null,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              SizedBox(width: ResponsiveUtils.spacing(context, 8)),
-                              // 구매완료 버튼 (완료되지 않은 경우만)
-                              if (!isCompleted)
-                                ElevatedButton(
-                                  onPressed: () => _completePaymentForItem(orderNumber, item['id']),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.info,
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: ResponsiveUtils.spacing(context, 12),
-                                      vertical: ResponsiveUtils.spacing(context, 6),
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 8)),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    '구매완료',
-                                    style: AppTextStyles.tableHeader(context).copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                )
-                              else
-                                // 완료 배지
-                                StatusChip(
-                                  label: '완료됨',
-                                  color: AppColors.success,
-                                ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                // 품목 리스트 (확장 시) — 펼친 폴더블에서는 오른쪽 패널에 표시
+                if (isExpanded && !split)
+                  _buildItemsList(context, orderNumber, items),
               ],
             ),
             ),

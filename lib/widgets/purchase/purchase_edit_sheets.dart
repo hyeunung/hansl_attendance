@@ -28,10 +28,9 @@ Future<void> showPurchaseItemEditSheet({
     required double unitPrice,
   }) onSave,
 }) {
-  // 펼친 폴더블: 오른쪽 패널 안에서 열린다 (폰은 기존과 동일)
-  DetailPane.clear(context);
-  return showModalBottomSheet<void>(
-    context: DetailPane.hostContext(context),
+  // 펼친 폴더블: 오른쪽 패널을 채우는 화면으로 열린다 (폰은 기존 바텀시트)
+  return DetailPane.sheet<void>(
+    context,
     isScrollControlled: true,
     enableDrag: false,
     backgroundColor: Colors.transparent,
@@ -45,10 +44,9 @@ Future<void> showOrderEditSheet({
   required List<Map<String, dynamic>> items,
   required VoidCallback onSaved,
 }) {
-  // 펼친 폴더블: 오른쪽 패널 안에서 열린다 (폰은 기존과 동일)
-  DetailPane.clear(context);
-  return showModalBottomSheet<void>(
-    context: DetailPane.hostContext(context),
+  // 펼친 폴더블: 오른쪽 패널을 채우는 화면으로 열린다 (폰은 기존 바텀시트)
+  return DetailPane.sheet<void>(
+    context,
     isScrollControlled: true,
     enableDrag: false,
     backgroundColor: Colors.transparent,
@@ -116,6 +114,8 @@ class _EditSheetFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
+    // 펼친 폴더블 오른쪽 패널에서는 시트가 아니라 패널 전체를 채우는 화면
+    final isPage = DetailPane.isPage(context);
 
     return PopScope(
       canPop: !hasChanges && !saving,
@@ -125,13 +125,17 @@ class _EditSheetFrame extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
         child: Container(
-          constraints: BoxConstraints(maxHeight: media.size.height * 0.9),
-          decoration: const BoxDecoration(
+          constraints: isPage
+              ? const BoxConstraints.expand()
+              : BoxConstraints(maxHeight: media.size.height * 0.9),
+          decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+            borderRadius: isPage
+                ? BorderRadius.zero
+                : const BorderRadius.vertical(top: Radius.circular(10)),
           ),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: isPage ? MainAxisSize.max : MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // 헤더
@@ -168,6 +172,7 @@ class _EditSheetFrame extends StatelessWidget {
 
               // 본문
               Flexible(
+                fit: isPage ? FlexFit.tight : FlexFit.loose,
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
                   child: body,
