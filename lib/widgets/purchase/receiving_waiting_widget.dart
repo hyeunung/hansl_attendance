@@ -14,6 +14,7 @@ import '../../utils/user_role_helper.dart';
 import '../../services/inquiry_service.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import 'package:intl/intl.dart';
+import '../adaptive/detail_pane.dart';
 
 // 입고대기 위젯
 class ReceivingWaitingWidget extends StatefulWidget {
@@ -1642,8 +1643,11 @@ class _ReceivingWaitingWidgetState extends State<ReceivingWaitingWidget> {
     final int? purchaseId = (firstItem['purchase_id'] ?? firstItem['purchaseId']) as int?;
     final itemsForOrder = _itemsByOrder[orderNumber] ?? [];
     final currentDeliveryDate = firstItem['delivery_request_date']?.toString();
+    // 펼친 폴더블: 오른쪽 패널 안에서 열린다 (폰은 기존과 동일)
+    DetailPane.clear(context);
     await showDialog<void>(
-      context: context,
+      context: DetailPane.hostContext(context),
+      useRootNavigator: DetailPane.useRootNavigator(context),
       barrierDismissible: false,
       builder: (dialogContext) {
         return _ModifyRequestDialog(

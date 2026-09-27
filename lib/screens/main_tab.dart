@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'attendance/attendance_screen_router.dart';
+import 'attendance/attendance_detail_pane.dart';
 import 'leave/leave_status_screen.dart';
 import 'leave/leave_screen_router.dart';
 import 'leave/card_receipt_upload_screen.dart';
@@ -108,6 +109,10 @@ class _MainTabState extends State<MainTab>
     _detailPane.registerPrimary(
       LeaveStatusScreen,
       (_) => const LeaveScreenRouter(),
+    );
+    _detailPane.registerPrimary(
+      AttendanceScreenRouter,
+      (_) => const AttendanceDetailPane(),
     );
     _detailPane.registerPrimary(
       SettingsScreen,

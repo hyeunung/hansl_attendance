@@ -14,6 +14,8 @@ import '../../services/transaction_statement_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
+import '../../widgets/adaptive/detail_pane.dart';
+import '../../widgets/adaptive/upload_primary_pane.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import '../../widgets/common/notification_bell_button.dart';
 import '../../widgets/shared/flat_section.dart';
@@ -183,7 +185,8 @@ class _TransactionStatementScreenState
     DateTime? selectedDate;
 
     await showDialog(
-      context: context,
+      context: DetailPane.hostContext(context),
+      useRootNavigator: DetailPane.useRootNavigator(context),
       barrierDismissible: false,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) {
@@ -888,6 +891,20 @@ class _TransactionStatementScreenState
   // ── 메인 빌드 ─────────────────────────────────────────
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    DetailPaneScope.maybeOf(context)?.registerPrimary(
+      TransactionStatementScreen,
+      (_) => UploadPrimaryPane(
+        title: '명세서 업로드',
+        description: '거래명세서를 촬영하거나 보관함에서 선택해 업로드합니다.',
+        onCamera: () => _startUploadFlow(ImageSource.camera),
+        onGallery: () => _startUploadFlow(ImageSource.gallery),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -944,7 +961,10 @@ class _TransactionStatementScreenState
                     },
                   ),
                 ),
-      floatingActionButton: FloatingActionButton.small(
+      // 펼친 폴더블: 업로드는 오른쪽 패널에 상시 표시되므로 FAB는 숨긴다
+      floatingActionButton: DetailPaneScope.expandedOf(context) != null
+          ? null
+          : FloatingActionButton.small(
         key: _uploadFabKey,
         onPressed: _showUploadOptionsMenu,
         backgroundColor: AppColors.primary,
@@ -967,11 +987,10 @@ class _TransactionStatementScreenState
 
   void _viewStatement(TransactionStatementSummary statement) {
     if (statement.imageUrl.isEmpty) return;
-    Navigator.push(
+    DetailPane.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => _StatementImageViewer(statement: statement),
-      ),
+      builder: (context) => _StatementImageViewer(statement: statement),
+      key: 'statement-${statement.id}',
     );
   }
 

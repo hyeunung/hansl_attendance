@@ -13,6 +13,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import '../../widgets/shared/flat_section.dart';
+import '../adaptive/detail_pane.dart';
 
 class BusinessTripModificationDialog extends StatefulWidget {
   final Map<String, dynamic> tripData;
@@ -28,7 +29,8 @@ class BusinessTripModificationDialog extends StatefulWidget {
         final todayMidnight = DateTime(today.year, today.month, today.day);
         if (endDate.isBefore(todayMidnight)) {
           showDialog(
-            context: context,
+            context: DetailPane.hostContext(context),
+            useRootNavigator: DetailPane.useRootNavigator(context),
             builder: (context) => AlertDialog(
               titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
               contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
@@ -57,8 +59,11 @@ class BusinessTripModificationDialog extends StatefulWidget {
     }
     }
 
+    // 펼친 폴더블: 오른쪽 패널 안에서 열린다 (폰은 기존과 동일)
+    DetailPane.clear(context);
     return showDialog(
-      context: context,
+      context: DetailPane.hostContext(context),
+      useRootNavigator: DetailPane.useRootNavigator(context),
       barrierDismissible: true,
       builder: (context) => BusinessTripModificationDialog(tripData: tripData),
     );

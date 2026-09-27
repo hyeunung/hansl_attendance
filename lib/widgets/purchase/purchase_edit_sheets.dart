@@ -8,6 +8,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
 import '../../utils/currency_formatter.dart';
 import '../common/notification_banner_widget.dart';
+import '../adaptive/detail_pane.dart';
 
 /// 구매/입고 수정 바텀시트 (Enterprise Neutral)
 ///
@@ -27,8 +28,10 @@ Future<void> showPurchaseItemEditSheet({
     required double unitPrice,
   }) onSave,
 }) {
+  // 펼친 폴더블: 오른쪽 패널 안에서 열린다 (폰은 기존과 동일)
+  DetailPane.clear(context);
   return showModalBottomSheet<void>(
-    context: context,
+    context: DetailPane.hostContext(context),
     isScrollControlled: true,
     enableDrag: false,
     backgroundColor: Colors.transparent,
@@ -42,8 +45,10 @@ Future<void> showOrderEditSheet({
   required List<Map<String, dynamic>> items,
   required VoidCallback onSaved,
 }) {
+  // 펼친 폴더블: 오른쪽 패널 안에서 열린다 (폰은 기존과 동일)
+  DetailPane.clear(context);
   return showModalBottomSheet<void>(
-    context: context,
+    context: DetailPane.hostContext(context),
     isScrollControlled: true,
     enableDrag: false,
     backgroundColor: Colors.transparent,

@@ -7,6 +7,7 @@ import '../../utils/responsive_utils.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import '../../widgets/shared/flat_section.dart';
 import '../../services/notification_navigator.dart';
+import '../../widgets/adaptive/detail_pane.dart';
 
 class NotificationCenterScreen extends StatefulWidget {
   const NotificationCenterScreen({super.key});
@@ -469,7 +470,8 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
     final type = NotificationNavigator.resolveType(notification);
     final data = notification['data'];
     await NotificationNavigator.open(
-      Navigator.of(context),
+      // 펼친 폴더블 오른쪽 패널 안에서 열렸다면 패널이 아닌 앱 전체 Navigator로 이동
+      Navigator.of(context, rootNavigator: DetailPane.isInside(context)),
       type,
       data: data is Map ? Map<String, dynamic>.from(data) : null,
       body: notification['body']?.toString(),

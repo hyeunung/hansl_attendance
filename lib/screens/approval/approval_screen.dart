@@ -8,6 +8,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
 import '../../providers/user_provider.dart';
+import '../../widgets/adaptive/detail_pane.dart';
 import '../../widgets/shared/flat_section.dart';
 import '../../widgets/purchase/purchase_approval_widget.dart';
 import '../../widgets/purchase/purchase_waiting_widget.dart';
@@ -69,12 +70,8 @@ class _ApprovalScreenState extends State<ApprovalScreen>
     _subTabController = TabController(length: 2, vsync: this);
 
     // TabController 리스너 추가 - 탭 변경시 UI 업데이트
-    _mainTabController.addListener(() {
-      if (mounted) setState(() {});
-    });
-    _subTabController.addListener(() {
-      if (mounted) setState(() {});
-    });
+    _mainTabController.addListener(_onApprovalTabChanged);
+    _subTabController.addListener(_onApprovalTabChanged);
 
     // 로컬 캐시에서 배지 카운트 즉시 로드
     _loadCachedBadgeCounts();
@@ -357,9 +354,7 @@ class _ApprovalScreenState extends State<ApprovalScreen>
               vsync: this,
               initialIndex: targetIndex,
             );
-            _mainTabController.addListener(() {
-              if (mounted) setState(() {});
-            });
+            _mainTabController.addListener(_onApprovalTabChanged);
           });
           // 발주 데이터 로드 (setState 밖에서 실행)
           if (hasPurchaseApproval) {
@@ -637,6 +632,14 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                 date.month == thisMonth &&
                 l['status'] != 'pending';
           }).toList();
+
+          // 펼친 폴더블 오른쪽 패널이 같은 목록·권한으로 카드를 다시 그릴 수 있게 보관
+          _panePending = pending;
+          _paneDone = thisMonthDone;
+          _paneCanApproveVehicleCard = canApproveVehicleCard;
+          _paneHasApprovalRole = hasApprovalRole;
+          _paneIsSuperAdmin = isSuperAdmin;
+          _refreshPaneAfterBuild();
 
           // 이번 달 처리된 차량/카드 건 병합
           final vehicleCardThisMonthDone = vehicleCardAll.where((r) {
@@ -1297,39 +1300,15 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                         itemCount: pending.length,
                                         itemBuilder: (context, index) {
                                           final l = pending[index];
-                                          // 차량/카드 독립 요청 카드
-                                          if (l['kind'] == 'vehicle' ||
-                                              l['kind'] == 'card') {
-                                            return _vehicleCardApprovalCard(
+                                          return _tappableForPane(
+                                            context,
+                                            l,
+                                            _buildApprovalItem(
                                               context,
                                               l,
                                               provider,
-                                              canApprove:
-                                                  canApproveVehicleCard,
-                                            );
-                                          }
-                                          // superadmin의 연차는 superadmin만 승인 가능
-                                          final emp = l['employees'];
-                                          final leaveRoles = UserRoleHelper.getRoles(
-                                              emp is Map<String, dynamic> ? emp : null);
-                                          final isLeaveSuperAdmin =
-                                              UserRoleHelper.isSuperAdmin(leaveRoles);
-
-                                          // 승인 가능 여부 판단
-                                          bool canApprove = false;
-                                          if (isLeaveSuperAdmin) {
-                                            // superadmin의 연차는 superadmin만 승인 가능
-                                            canApprove = isSuperAdmin;
-                                          } else {
-                                            // 그 외의 경우 기존 규칙 적용
-                                            canApprove = hasApprovalRole;
-                                          }
-
-                                          return _approvalCard(
-                                            context,
-                                            l,
-                                            provider,
-                                            canApprove: canApprove,
+                                              pending: true,
+                                            ),
                                           );
                                         },
                                       ),
@@ -1401,25 +1380,15 @@ class _ApprovalScreenState extends State<ApprovalScreen>
                                         itemCount: thisMonthDone.length,
                                         itemBuilder: (context, index) {
                                           final l = thisMonthDone[index];
-                                          // 차량/카드 독립 요청 카드 (처리완료)
-                                          if (l['kind'] == 'vehicle' ||
-                                              l['kind'] == 'card') {
-                                            return _vehicleCardApprovalCard(
+                                          return _tappableForPane(
+                                            context,
+                                            l,
+                                            _buildApprovalItem(
                                               context,
                                               l,
                                               provider,
-                                              showButtons: false,
-                                              canApprove: false,
-                                            );
-                                          }
-                                          return _approvalCard(
-                                            context,
-                                            l,
-                                            provider,
-                                            showButtons: false,
-                                            canApprove: false,
-                                            showDeleteButton:
-                                                hasApprovalRole, // 승인 권한이 있으면 삭제 버튼 표시
+                                              pending: false,
+                                            ),
                                           );
                                         },
                                       ),
@@ -1445,6 +1414,121 @@ class _ApprovalScreenState extends State<ApprovalScreen>
           );
         },
       ),
+    );
+  }
+
+  // ── 펼친 폴더블 오른쪽 패널 연동 ─────────────────────────
+
+  /// 서브탭(연차/출장·발주승인·구매대기·입고대기, 대기중·처리완료) 전환 시
+  /// UI를 갱신하고, 오른쪽 패널에 남아 있던 이전 탭의 상세는 닫는다.
+  void _onApprovalTabChanged() {
+    if (!mounted) return;
+    setState(() {});
+    if (_mainTabController.indexIsChanging || _subTabController.indexIsChanging) {
+      DetailPaneScope.read(context)?.closeDetail();
+    }
+  }
+
+  List<Map<String, dynamic>> _panePending = const [];
+  List<Map<String, dynamic>> _paneDone = const [];
+  bool _paneCanApproveVehicleCard = false;
+  bool _paneHasApprovalRole = false;
+  bool _paneIsSuperAdmin = false;
+
+  String _paneKey(Map<String, dynamic> l) =>
+      'approval-${l['kind'] ?? 'leave'}-${l['id']}';
+
+  /// 목록이 바뀌면(승인/반려/삭제 후) 오른쪽 패널의 상세도 다시 그린다.
+  void _refreshPaneAfterBuild() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final controller = DetailPaneScope.read(context);
+      if (controller != null && controller.hasDetail) controller.refresh();
+    });
+  }
+
+  /// 오른쪽 패널이 키로 최신 항목을 찾는다. (항목, 대기중 여부)
+  (Map<String, dynamic>, bool)? _findPaneItem(String key) {
+    for (final l in _panePending) {
+      if (_paneKey(l) == key) return (l, true);
+    }
+    for (final l in _paneDone) {
+      if (_paneKey(l) == key) return (l, false);
+    }
+    return null;
+  }
+
+  /// 대기중/처리완료 목록의 카드 한 장. 목록과 오른쪽 패널이 같이 쓴다.
+  Widget _buildApprovalItem(
+    BuildContext context,
+    Map<String, dynamic> l,
+    LeaveProvider provider, {
+    required bool pending,
+  }) {
+    final isVehicleCard = l['kind'] == 'vehicle' || l['kind'] == 'card';
+    if (!pending) {
+      // 처리완료
+      if (isVehicleCard) {
+        return _vehicleCardApprovalCard(
+          context,
+          l,
+          provider,
+          showButtons: false,
+          canApprove: false,
+        );
+      }
+      return _approvalCard(
+        context,
+        l,
+        provider,
+        showButtons: false,
+        canApprove: false,
+        showDeleteButton: _paneHasApprovalRole, // 승인 권한이 있으면 삭제 버튼 표시
+      );
+    }
+
+    // 차량/카드 독립 요청 카드
+    if (isVehicleCard) {
+      return _vehicleCardApprovalCard(
+        context,
+        l,
+        provider,
+        canApprove: _paneCanApproveVehicleCard,
+      );
+    }
+    // superadmin의 연차는 superadmin만 승인 가능
+    final emp = l['employees'];
+    final leaveRoles =
+        UserRoleHelper.getRoles(emp is Map<String, dynamic> ? emp : null);
+    final isLeaveSuperAdmin = UserRoleHelper.isSuperAdmin(leaveRoles);
+    final canApprove =
+        isLeaveSuperAdmin ? _paneIsSuperAdmin : _paneHasApprovalRole;
+
+    return _approvalCard(
+      context,
+      l,
+      provider,
+      canApprove: canApprove,
+    );
+  }
+
+  /// 펼침에서는 카드를 탭하면 오른쪽 패널에 상세로 띄운다. 폰에서는 카드 그대로.
+  Widget _tappableForPane(
+    BuildContext context,
+    Map<String, dynamic> l,
+    Widget card,
+  ) {
+    if (DetailPaneScope.expandedOf(context) == null) return card;
+    final key = _paneKey(l);
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () => DetailPane.show<void>(
+        context,
+        key: key,
+        fallback: () async {},
+        builder: (_) => _ApprovalPaneDetail(state: this, itemKey: key),
+      ),
+      child: card,
     );
   }
 
@@ -2474,8 +2558,12 @@ class _ApprovalScreenState extends State<ApprovalScreen>
       'official': '공가',
     };
 
+    // 펼친 폴더블: 오른쪽 패널 안에서 열린다 (폰은 기존과 동일)
+    final hostContext = DetailPane.hostContext(context);
+    final useRoot = DetailPane.useRootNavigator(context);
     await showDialog(
-      context: context,
+      context: hostContext,
+      useRootNavigator: useRoot,
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setState) {
@@ -2865,6 +2953,62 @@ class _ApprovalScreenState extends State<ApprovalScreen>
             child: Text(confirmText),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 펼친 폴더블 오른쪽 패널: 결재 항목 상세.
+/// 왼쪽 목록과 같은 카드를 그리되, 목록이 바뀌면(승인/반려 후) 최신 상태로 다시 그린다.
+class _ApprovalPaneDetail extends StatelessWidget {
+  const _ApprovalPaneDetail({required this.state, required this.itemKey});
+
+  final _ApprovalScreenState state;
+  final String itemKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = DetailPaneScope.maybeOf(context);
+    return Scaffold(
+      backgroundColor: AppColors.backgroundPrimary,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        title: AppBarTitle('신청 상세'),
+      ),
+      body: Consumer<LeaveProvider>(
+        builder: (context, provider, _) {
+          // controller는 목록 갱신 신호용 (의존 등록)
+          controller?.detailKey;
+          if (!state.mounted) {
+            return const SizedBox.shrink();
+          }
+          final found = state._findPaneItem(itemKey);
+          if (found == null) {
+            return const Center(
+              child: FlatEmptyState(
+                icon: Icons.check_circle_outline,
+                message: '목록에서 사라진 항목입니다',
+              ),
+            );
+          }
+          return ListView(
+            padding: EdgeInsets.symmetric(
+              vertical: ResponsiveUtils.spacing(context, 8),
+            ),
+            children: [
+              state._buildApprovalItem(
+                context,
+                found.$1,
+                provider,
+                pending: found.$2,
+              ),
+            ],
+          );
+        },
       ),
     );
   }

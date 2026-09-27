@@ -7,6 +7,7 @@ import '../../utils/responsive_utils.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import '../../widgets/optimized_widgets.dart';
 import '../../widgets/shared/flat_section.dart';
+import '../../widgets/adaptive/detail_pane.dart';
 import '../../widgets/common/notification_bell_button.dart';
 import '../../widgets/leave/business_trip_modification_dialog.dart';
 
@@ -252,6 +253,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                                           setState(() {
                                             _selectedDay = day;
                                           });
+                                          // 펼침: 오른쪽 패널의 일정도 갱신
+                                          DetailPaneScope.read(context)?.refresh();
                                         },
                                         child: Container(
                                           margin: EdgeInsets.all(
@@ -413,8 +416,24 @@ class _CalendarScreenState extends State<CalendarScreen>
                           ],
                         ),
                       ),
-                      // 상세내역 (카드)
-                      FlatCard(
+                      // 상세내역 (카드) — 펼친 폴더블에서는 오른쪽 패널에 표시
+                      if (DetailPaneScope.expandedOf(context) == null)
+                        _buildDayDetailCard(provider, allLeaves),
+                      SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+                    ],
+                  ),
+                ),
+        );
+      },
+    );
+  }
+
+  /// 선택한 날짜의 연차/출장 목록 카드
+  Widget _buildDayDetailCard(
+    LeaveProvider provider,
+    List<Map<String, dynamic>> allLeaves,
+  ) {
+    return FlatCard(
                         child: Column(children: [
                       FlatCardHeader(
                         title: _selectedDay != null
@@ -451,14 +470,37 @@ class _CalendarScreenState extends State<CalendarScreen>
                           ],
                         ),
                         ]),
-                      ),
-                      SizedBox(height: ResponsiveUtils.spacing(context, 12)),
-                    ],
-                  ),
-                ),
-        );
-      },
+                      );
+  }
+
+  /// 펼친 폴더블 오른쪽 패널: 선택 날짜 일정
+  Widget _buildDayPane(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.backgroundPrimary,
+      appBar: AppBar(
+        title: AppBarTitle('일정'),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        automaticallyImplyLeading: false,
+      ),
+      body: Consumer<LeaveProvider>(
+        builder: (context, provider, _) => ListView(
+          padding: EdgeInsets.only(top: ResponsiveUtils.spacing(context, 10)),
+          children: [
+            _buildDayDetailCard(provider, provider.approvedLeavesForCalendar),
+          ],
+        ),
+      ),
     );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    DetailPaneScope.maybeOf(context)
+        ?.registerPrimary(CalendarScreen, _buildDayPane);
   }
 
   /// 카드 헤더의 월 이동 화살표 (28x28, radius 8)

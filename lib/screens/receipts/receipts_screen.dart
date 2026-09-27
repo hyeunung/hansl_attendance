@@ -13,6 +13,8 @@ import '../../utils/responsive_utils.dart';
 import '../../utils/user_role_helper.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
+import '../../widgets/adaptive/detail_pane.dart';
+import '../../widgets/adaptive/upload_primary_pane.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import '../../widgets/common/notification_bell_button.dart';
 import '../../widgets/shared/flat_section.dart';
@@ -328,7 +330,8 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
     final selectedFiles = List<File>.from(imageFiles);
 
     await showDialog(
-      context: context,
+      context: DetailPane.hostContext(context),
+      useRootNavigator: DetailPane.useRootNavigator(context),
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => Dialog(
@@ -674,17 +677,30 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
 
   /// 영수증 상세 보기
   void _viewReceipt(Map<String, dynamic> receipt) async {
-    final result = await Navigator.push(
+    final result = await DetailPane.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => _ReceiptDetailScreen(receipt: receipt),
-      ),
+      builder: (context) => _ReceiptDetailScreen(receipt: receipt),
+      key: 'receipt-${receipt['id']}',
     );
     
     // 상세 화면에서 돌아온 후 데이터 새로고침
     if (result == true) {
       _loadReceipts();
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    DetailPaneScope.maybeOf(context)?.registerPrimary(
+      ReceiptsScreen,
+      (_) => UploadPrimaryPane(
+        title: '영수증 업로드',
+        description: '영수증을 촬영하거나 보관함에서 선택해 업로드합니다.',
+        onCamera: () => _startUploadFlow(ImageSource.camera),
+        onGallery: () => _startUploadFlow(ImageSource.gallery),
+      ),
+    );
   }
 
   @override
@@ -701,9 +717,10 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
           IconButton(
             icon: const Icon(Icons.credit_card),
             tooltip: '내 카드 영수증 업로드',
-            onPressed: () => Navigator.push(
+            onPressed: () => DetailPane.push(
               context,
-              MaterialPageRoute(builder: (_) => const CardReceiptUploadScreen()),
+              builder: (_) => const CardReceiptUploadScreen(),
+              key: 'card-receipt-upload',
             ),
           ),
           const NotificationBellButton(),
@@ -762,7 +779,10 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                     },
                   ),
                 ),
-      floatingActionButton: FloatingActionButton.small(
+      // 펼친 폴더블: 업로드는 오른쪽 패널에 상시 표시되므로 FAB는 숨긴다
+      floatingActionButton: DetailPaneScope.expandedOf(context) != null
+          ? null
+          : FloatingActionButton.small(
         key: _uploadFabKey,
         onPressed: _showUploadOptionsMenu,
         backgroundColor: AppColors.primary,

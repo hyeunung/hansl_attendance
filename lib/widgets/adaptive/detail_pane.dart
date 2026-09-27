@@ -52,10 +52,11 @@ class DetailPaneController extends ChangeNotifier {
   }
 
   /// 상세를 패널에 띄운다. 이미 떠 있던 상세는 교체한다.
-  void showDetail(WidgetBuilder builder, {Object? key}) {
+  /// 반환값은 그 상세가 닫힐 때의 결과(`Navigator.pop(context, result)`)다.
+  Future<T?> showDetail<T>(WidgetBuilder builder, {Object? key}) {
     final nav = navigatorKey.currentState;
-    if (nav == null) return;
-    final route = MaterialPageRoute<void>(builder: builder);
+    if (nav == null) return Future<T?>.value(null);
+    final route = MaterialPageRoute<T>(builder: builder);
     _activeRoute = route;
     _activeBuilder = builder;
     _activeKey = key;
@@ -67,8 +68,9 @@ class DetailPaneController extends ChangeNotifier {
         notifyListeners();
       }
     });
-    nav.pushAndRemoveUntil(route, (r) => r.isFirst);
+    final result = nav.pushAndRemoveUntil<T>(route, (r) => r.isFirst);
     notifyListeners();
+    return result;
   }
 
   void closeDetail() {
@@ -114,6 +116,9 @@ class DetailPaneScope extends InheritedNotifier<DetailPaneController> {
   static DetailPaneController? _read(BuildContext context) =>
       _scope(context)?.notifier;
 
+  /// 콜백(onTap 등) 안에서 컨트롤러가 필요할 때. 의존을 등록하지 않는다.
+  static DetailPaneController? read(BuildContext context) => _read(context);
+
   /// 분할(펼침) 상태면 컨트롤러, 아니면 null. build에서 쓰면 상태 변화에 다시 그려진다.
   static DetailPaneController? expandedOf(BuildContext context) {
     final scope =
@@ -135,8 +140,7 @@ class DetailPane {
   }) {
     final controller = _expanded(context);
     if (controller == null) return fallback();
-    controller.showDetail(builder, key: key);
-    return Future<T?>.value(null);
+    return controller.showDetail<T>(builder, key: key);
   }
 
   /// 화면 이동. 펼침이면 오른쪽 패널에, 아니면 기존처럼 전체 화면으로 push.
@@ -149,8 +153,7 @@ class DetailPane {
     if (controller == null) {
       return Navigator.push<T>(context, MaterialPageRoute<T>(builder: builder));
     }
-    controller.showDetail(builder, key: key);
-    return Future<T?>.value(null);
+    return controller.showDetail<T>(builder, key: key);
   }
 
   /// 다이얼로그/시트를 띄울 context.
@@ -264,11 +267,14 @@ class _PrimaryHost extends StatelessWidget {
         }
         return const Scaffold(
           backgroundColor: AppColors.backgroundPrimary,
-          body: Center(
-            child: FlatEmptyState(
-              icon: Icons.touch_app_outlined,
-              message: '왼쪽에서 항목을 선택하면 여기에 표시됩니다',
-            ),
+          body: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              FlatEmptyState(
+                icon: Icons.touch_app_outlined,
+                message: '왼쪽에서 항목을 선택하면 여기에 표시됩니다',
+              ),
+            ],
           ),
         );
       },
