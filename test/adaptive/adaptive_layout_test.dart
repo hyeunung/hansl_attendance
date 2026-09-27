@@ -55,6 +55,33 @@ void main() {
       expect(await classAt(tester, 475), LayoutClass.compact); // Fold8 접힘
     });
 
+    Future<bool> coverAt(WidgetTester tester, Size size) async {
+      late bool result;
+      await tester.pumpWidget(
+        MediaQuery(
+          data: MediaQueryData(size: size),
+          child: Builder(
+            builder: (context) {
+              result = AdaptiveLayout.isFoldableCover(context);
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      );
+      return result;
+    }
+
+    testWidgets('접힌 폴더블 커버 화면만 커버로 판정', (tester) async {
+      expect(await coverAt(tester, const Size(475, 751)), isTrue); // Fold8 접힘
+      expect(await coverAt(tester, const Size(466, 678)), isTrue); // iPhone Duo 외부
+      expect(await coverAt(tester, const Size(402, 874)), isFalse); // iPhone 17 Pro
+      expect(await coverAt(tester, const Size(440, 956)), isFalse); // iPhone 17 Pro Max
+      expect(await coverAt(tester, const Size(411, 914)), isFalse); // 일반 Android
+      expect(await coverAt(tester, const Size(375, 667)), isFalse); // iPhone SE
+      expect(await coverAt(tester, const Size(933, 704)), isFalse); // Fold8 펼침
+      expect(await coverAt(tester, const Size(951, 669)), isFalse); // iPhone Duo 펼침
+    });
+
     testWidgets('펼친 폴더블은 expanded', (tester) async {
       expect(await classAt(tester, 933), LayoutClass.expanded); // Fold8 펼침
       expect(await classAt(tester, 951), LayoutClass.expanded); // iPhone Duo 펼침

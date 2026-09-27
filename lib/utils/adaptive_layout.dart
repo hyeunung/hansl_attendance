@@ -23,6 +23,20 @@ class AdaptiveLayout {
 
   static bool isExpanded(BuildContext context) =>
       classOf(context) == LayoutClass.expanded;
+
+  /// 접힌 폴더블의 커버 화면인지 (Fold8 475×751dp, iPhone Duo 466×678pt).
+  ///
+  /// 커버 화면은 일반 폰보다 넓고 짧다(가로÷세로 0.63~0.69, 일반 폰은 0.45~0.47).
+  /// 세로 공간이 부족하므로 네비게이션 바를 하단 대신 오른쪽 세로로 둔다.
+  static const double coverMinWidth = 440;
+  static const double coverMinAspect = 0.58;
+
+  static bool isFoldableCover(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    if (size.width >= 600 || size.height <= size.width) return false;
+    return size.width >= coverMinWidth &&
+        size.width / size.height >= coverMinAspect;
+  }
 }
 
 /// 화면 크기에 따라 회전 허용을 바꾼다.

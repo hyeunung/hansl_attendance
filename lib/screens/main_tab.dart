@@ -874,6 +874,8 @@ final roles = UserRoleHelper.getRoles(employee);
 
     // 펼친 폴더블: 하단 탭 대신 화면 오른쪽 끝의 세로 바를 쓴다
     final isSplit = AdaptiveLayout.isExpanded(context);
+    // 펼친 폴더블과 접힌 폴더블(커버 화면)은 하단 탭 대신 오른쪽 세로 네비게이션 바 사용
+    final useSideRail = isSplit || AdaptiveLayout.isFoldableCover(context);
 
     final scaffold = Scaffold(
       body: PageView(
@@ -895,7 +897,7 @@ final roles = UserRoleHelper.getRoles(employee);
           );
         }).toList(),
       ),
-      bottomNavigationBar: isSplit ? null : RepaintBoundary(
+      bottomNavigationBar: useSideRail ? null : RepaintBoundary(
         child: Container(
           decoration: AppDecorations.bottomNavBar,
           child: BottomNavigationBar(
@@ -950,6 +952,8 @@ final roles = UserRoleHelper.getRoles(employee);
     }
     _wasSplit = isSplit;
 
+    final mq = MediaQuery.of(context);
+
     if (!isSplit) {
       final pending = _detailPane.takeDetail();
       if (pending != null) {
@@ -961,11 +965,12 @@ final roles = UserRoleHelper.getRoles(employee);
       return DetailPaneScope(
         controller: _detailPane,
         split: false,
-        child: scaffold,
+        child: AdaptiveLayout.isFoldableCover(context)
+            ? _withCoverSideRail(scaffold, items, mq)
+            : scaffold,
       );
     }
 
-    final mq = MediaQuery.of(context);
     // 반 나누는 선은 힌지(화면 정중앙)에 둔다. 세로 네비게이션 바는 오른쪽 끝에 붙고,
     // 그 폭만큼 오른쪽 패널이 좁아진다.
     final halfWidth = (mq.size.width - 1) / 2;
@@ -1017,6 +1022,43 @@ final roles = UserRoleHelper.getRoles(employee);
   }
 
   static const double _sideRailWidth = 68;
+
+  /// 접힌 폴더블(커버 화면): 본문 오른쪽에 세로 네비게이션 바를 붙인다.
+  /// 본문은 줄어든 폭을 화면 폭으로 인식하게 해 기존 폰 레이아웃·스케일이 그대로 적용된다.
+  Widget _withCoverSideRail(
+    Widget scaffold,
+    List<BottomNavigationBarItem> items,
+    MediaQueryData mq,
+  ) {
+    final railWidth = _sideRailWidth + mq.padding.right;
+    final theme = Theme.of(context);
+    return Material(
+      color: AppColors.backgroundPrimary,
+      child: Row(
+        children: [
+          Expanded(
+            child: MediaQuery(
+              data: mq.copyWith(
+                size: Size(mq.size.width - railWidth, mq.size.height),
+                padding: mq.padding.copyWith(right: 0),
+                viewPadding: mq.viewPadding.copyWith(right: 0),
+              ),
+              // 카메라 구멍은 네비게이션 바 쪽에 있으므로 AppBar 버튼을 안쪽으로 밀 필요가 없다
+              child: Theme(
+                data: theme.copyWith(
+                  appBarTheme: theme.appBarTheme.copyWith(
+                    actionsPadding: EdgeInsets.zero,
+                  ),
+                ),
+                child: scaffold,
+              ),
+            ),
+          ),
+          _buildSideRail(items, mq),
+        ],
+      ),
+    );
+  }
 
   /// 펼친 폴더블 오른쪽 끝의 세로 네비게이션 바 (하단 탭과 같은 항목·배지)
   Widget _buildSideRail(List<BottomNavigationBarItem> items, MediaQueryData mq) {
