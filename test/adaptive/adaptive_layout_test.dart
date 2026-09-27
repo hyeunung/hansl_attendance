@@ -227,5 +227,21 @@ void main() {
       expect(built, greaterThan(before));
       expect(find.text('주 작업'), findsOneWidget);
     });
+
+    testWidgets('펼침: 시스템 뒤로가기는 앱을 나가지 않고 패널 상세부터 닫음', (tester) async {
+      final controller = DetailPaneController();
+      await tester.pumpWidget(app(split: true, controller: controller));
+      await tester.tap(find.text('열기'));
+      await tester.pumpAndSettle();
+      expect(find.text('상세 화면'), findsOneWidget);
+
+      // Android 뒤로가기와 같은 경로
+      final handled = await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(handled, isTrue);
+      expect(find.text('상세 화면'), findsNothing);
+      expect(find.text('열기'), findsOneWidget);
+    });
   });
 }

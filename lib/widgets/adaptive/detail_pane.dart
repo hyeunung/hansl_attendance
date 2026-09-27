@@ -234,13 +234,19 @@ class DetailPaneView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DetailPaneHost(
-      child: Navigator(
-        key: controller.navigatorKey,
-        onGenerateInitialRoutes: (_, __) => [
-          MaterialPageRoute<void>(
-            builder: (_) => _PrimaryHost(controller: controller),
-          ),
-        ],
+      // 시스템 뒤로가기(Android 버튼/제스처)는 앱을 나가기 전에
+      // 패널에 열린 상세·시트·다이얼로그부터 닫는다.
+      child: NavigatorPopHandler(
+        onPopWithResult: (_) =>
+            controller.navigatorKey.currentState?.maybePop(),
+        child: Navigator(
+          key: controller.navigatorKey,
+          onGenerateInitialRoutes: (_, __) => [
+            MaterialPageRoute<void>(
+              builder: (_) => _PrimaryHost(controller: controller),
+            ),
+          ],
+        ),
       ),
     );
   }

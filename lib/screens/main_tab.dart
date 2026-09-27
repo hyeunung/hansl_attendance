@@ -95,6 +95,11 @@ class _MainTabState extends State<MainTab>
   // 펼친 폴더블 오른쪽 상세 패널 상태
   final DetailPaneController _detailPane = DetailPaneController();
 
+  // 접힘↔펼침 전환 시 탭 화면들이 트리 위치만 옮겨지고 상태(현재 페이지, 스크롤,
+  // 입력값)는 그대로 유지되도록 하는 키
+  final GlobalKey _mainContentKey = GlobalKey(debugLabel: 'main-tab-content');
+  bool? _wasSplit;
+
   @override
   void initState() {
     super.initState();
@@ -919,13 +924,26 @@ final roles = UserRoleHelper.getRoles(employee);
 
   /// 펼친 폴더블(폭 ≥ 840): 왼쪽 절반 = 기존 폰 화면 그대로, 오른쪽 절반 = 상세 패널.
   /// 그 외: 기존 화면 그대로. 접히는 순간 오른쪽에 열려 있던 상세는 시트로 이어 보여준다.
-  Widget _wrapWithDetailPane(Widget scaffold, List<Widget> screens) {
+  Widget _wrapWithDetailPane(Widget content, List<Widget> screens) {
     final current = _currentIndex < screens.length
         ? screens[_currentIndex].runtimeType
         : null;
     if (current != null) _detailPane.setCurrentScreen(current);
 
-    if (!AdaptiveLayout.isExpanded(context)) {
+    final scaffold = KeyedSubtree(key: _mainContentKey, child: content);
+    final isSplit = AdaptiveLayout.isExpanded(context);
+    if (_wasSplit != null && _wasSplit != isSplit) {
+      // 전환 직후 PageView가 현재 탭을 가리키는지 한 번 더 맞춘다
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_pageController.hasClients) return;
+        if (_pageController.page?.round() != _currentIndex) {
+          _pageController.jumpToPage(_currentIndex);
+        }
+      });
+    }
+    _wasSplit = isSplit;
+
+    if (!isSplit) {
       final pending = _detailPane.takeDetail();
       if (pending != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
