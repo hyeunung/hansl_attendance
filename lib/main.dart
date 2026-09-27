@@ -33,11 +33,15 @@ final GlobalKey<NavigatorState> navigatorKey = NotificationService.navigatorKey;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // 시작 시 세로 고정. 펼친 폴더블/태블릿은 AdaptiveOrientation이 런타임에 해제
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
+  // 시작 시 세로 고정. 펼친 폴더블/태블릿은 AdaptiveOrientation이 런타임에 해제.
+  // iOS는 AppDelegate가 화면 크기에 따라 허용 방향을 시스템에 직접 알려주므로 제외
+  // (펼친 iPhone Duo에서는 앱이 방향을 프로그램으로 바꿀 수 없음).
+  if (AdaptiveOrientation.controlsOrientation) {
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+  }
   // FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding); // 비활성화 - Flutter SplashScreen 사용
 
   // Initialize date formatting for Korean locale

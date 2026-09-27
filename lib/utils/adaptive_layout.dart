@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -32,6 +33,11 @@ class AdaptiveOrientation extends StatefulWidget {
 
   final Widget child;
 
+  /// Dart에서 화면 방향을 직접 제어하는 플랫폼인지.
+  /// iOS는 AppDelegate(`supportedInterfaceOrientationsFor`)가 담당한다.
+  static bool get controlsOrientation =>
+      kIsWeb || defaultTargetPlatform != TargetPlatform.iOS;
+
   @override
   State<AdaptiveOrientation> createState() => _AdaptiveOrientationState();
 }
@@ -57,6 +63,7 @@ class _AdaptiveOrientationState extends State<AdaptiveOrientation>
   void didChangeMetrics() => _apply();
 
   void _apply() {
+    if (!AdaptiveOrientation.controlsOrientation) return;
     final views = WidgetsBinding.instance.platformDispatcher.views;
     if (views.isEmpty) return;
     final view = views.first;
