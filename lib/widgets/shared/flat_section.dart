@@ -420,6 +420,10 @@ class FlatToggleSection extends StatelessWidget {
   final VoidCallback onTap;
   final List<Widget> children;
 
+  /// 지정하면 펼침 화살표(∧/∨) 대신 이 아이콘을 보여준다.
+  /// (펼친 폴더블에서 "누르면 오른쪽 패널에 열림"을 뜻하는 › 등)
+  final IconData? trailingIcon;
+
   const FlatToggleSection({
     super.key,
     required this.title,
@@ -428,6 +432,7 @@ class FlatToggleSection extends StatelessWidget {
     required this.isExpanded,
     required this.onTap,
     required this.children,
+    this.trailingIcon,
   });
 
   @override
@@ -464,9 +469,10 @@ class FlatToggleSection extends StatelessWidget {
                     ),
                   ),
                   Icon(
-                    isExpanded
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
+                    trailingIcon ??
+                        (isExpanded
+                            ? Icons.keyboard_arrow_up
+                            : Icons.keyboard_arrow_down),
                     size: 18,
                     color: AppColors.textTertiary,
                   ),

@@ -872,6 +872,9 @@ final roles = UserRoleHelper.getRoles(employee);
     }
     // 알바, 계약직인 경우는 위에서 이미 처리됨
 
+    // 펼친 폴더블: 하단 탭 대신 화면 오른쪽 끝의 세로 바를 쓴다
+    final isSplit = AdaptiveLayout.isExpanded(context);
+
     final scaffold = Scaffold(
       body: PageView(
         controller: _pageController,
@@ -892,7 +895,7 @@ final roles = UserRoleHelper.getRoles(employee);
           );
         }).toList(),
       ),
-      bottomNavigationBar: RepaintBoundary(
+      bottomNavigationBar: isSplit ? null : RepaintBoundary(
         child: Container(
           decoration: AppDecorations.bottomNavBar,
           child: BottomNavigationBar(
@@ -919,12 +922,16 @@ final roles = UserRoleHelper.getRoles(employee);
       ),
     );
 
-    return _wrapWithDetailPane(scaffold, screens);
+    return _wrapWithDetailPane(scaffold, screens, items);
   }
 
   /// 펼친 폴더블(폭 ≥ 840): 왼쪽 절반 = 기존 폰 화면 그대로, 오른쪽 절반 = 상세 패널.
   /// 그 외: 기존 화면 그대로. 접히는 순간 오른쪽에 열려 있던 상세는 시트로 이어 보여준다.
-  Widget _wrapWithDetailPane(Widget content, List<Widget> screens) {
+  Widget _wrapWithDetailPane(
+    Widget content,
+    List<Widget> screens,
+    List<BottomNavigationBarItem> items,
+  ) {
     final current = _currentIndex < screens.length
         ? screens[_currentIndex].runtimeType
         : null;
@@ -959,17 +966,23 @@ final roles = UserRoleHelper.getRoles(employee);
     }
 
     final mq = MediaQuery.of(context);
+    // 반 나누는 선은 힌지(화면 정중앙)에 둔다. 세로 네비게이션 바는 오른쪽 끝에 붙고,
+    // 그 폭만큼 오른쪽 패널이 좁아진다.
     final halfWidth = (mq.size.width - 1) / 2;
+    final railWidth = _sideRailWidth + mq.padding.right;
     // 좌우 각각을 "접힌 폰 화면" 크기로 인식시켜 기존 레이아웃/스케일이 그대로 적용되게 한다.
     MediaQueryData half({required bool left}) => mq.copyWith(
-          size: Size(halfWidth, mq.size.height),
+          size: Size(
+            left ? halfWidth : halfWidth - railWidth,
+            mq.size.height,
+          ),
           padding: mq.padding.copyWith(
             left: left ? mq.padding.left : 0,
-            right: left ? 0 : mq.padding.right,
+            right: 0,
           ),
           viewPadding: mq.viewPadding.copyWith(
             left: left ? mq.viewPadding.left : 0,
-            right: left ? 0 : mq.viewPadding.right,
+            right: 0,
           ),
         );
 
@@ -985,9 +998,74 @@ final roles = UserRoleHelper.getRoles(employee);
             ),
             const VerticalDivider(width: 1, thickness: 1, color: AppColors.border),
             Expanded(
-              child: MediaQuery(
-                data: half(left: false),
-                child: DetailPaneView(controller: _detailPane),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: MediaQuery(
+                      data: half(left: false),
+                      child: DetailPaneView(controller: _detailPane),
+                    ),
+                  ),
+                  _buildSideRail(items, mq),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static const double _sideRailWidth = 68;
+
+  /// 펼친 폴더블 오른쪽 끝의 세로 네비게이션 바 (하단 탭과 같은 항목·배지)
+  Widget _buildSideRail(List<BottomNavigationBarItem> items, MediaQueryData mq) {
+    return Container(
+      width: _sideRailWidth + mq.padding.right,
+      padding: EdgeInsets.only(
+        top: mq.padding.top,
+        right: mq.padding.right,
+        bottom: mq.padding.bottom,
+      ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(left: BorderSide(color: AppColors.border)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          for (var i = 0; i < items.length; i++)
+            _buildSideRailItem(items[i], i),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSideRailItem(BottomNavigationBarItem item, int index) {
+    final selected = index == _currentIndex;
+    final color = selected ? AppColors.primary : AppColors.textSecondary;
+    return InkWell(
+      onTap: () => _onTabTapped(index),
+      child: SizedBox(
+        width: _sideRailWidth,
+        height: 62,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            IconTheme(
+              data: IconThemeData(size: 23, color: color),
+              child: item.icon,
+            ),
+            const SizedBox(height: 3),
+            Text(
+              item.label ?? '',
+              maxLines: 1,
+              overflow: TextOverflow.clip,
+              style: AppTextStyles.compactLabel(context).copyWith(
+                fontSize: 10,
+                letterSpacing: -0.3,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                color: color,
               ),
             ),
           ],

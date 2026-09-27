@@ -319,20 +319,16 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  Widget _buildStatTableRow(BuildContext context, String label, String value, Color valueColor) {
-    return FlatTableRow(
-      cells: [
-        Text(label, style: AppTextStyles.cardBody(context)),
-        Text(
-          value,
-          textAlign: TextAlign.end,
-          style: AppTextStyles.cardBody(context).copyWith(
-            fontWeight: FontWeight.w600,
-            color: valueColor,
-          ),
-        ),
-      ],
-      flexValues: const [1, 1],
+  Widget _buildStatTableRow(BuildContext context, String label, String value, Color valueColor) =>
+      _statTableRow(context, label, value, valueColor);
+
+  /// 펼친 폴더블: 연차/지각 현황을 오른쪽 패널에 연다.
+  void _openStatPane(_SettingsStat stat) {
+    DetailPane.show<void>(
+      context,
+      key: 'settings-stat-${stat.name}',
+      fallback: () async {},
+      builder: (_) => _SettingsStatPane(stat: stat),
     );
   }
 
@@ -591,6 +587,8 @@ class _SettingsScreenState extends State<SettingsScreen>
     final name = employee?['name'] ?? '-';
     final department = employee?['department'] ?? '-';
     final position = employee?['position'] ?? '-';
+    // 펼친 폴더블(좌/우 분할) 여부
+    final split = DetailPaneScope.expandedOf(context) != null;
     final totalAnnual = leaveProvider.currentGrantedAnnual;
     final usedAnnual = leaveProvider.usedAnnual;
     final remainAnnual = leaveProvider.remainAnnual;
@@ -753,8 +751,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                     title: '연차 현황',
                     icon: Icons.event_available,
                     color: AppColors.primary,
-                    isExpanded: _isLeaveExpanded,
-                    onTap: () => setState(() => _isLeaveExpanded = !_isLeaveExpanded),
+                    // 펼친 폴더블: 카드 안에서 펼치지 않고 오른쪽 패널에 표시
+                    isExpanded: !split && _isLeaveExpanded,
+                    trailingIcon: split ? Icons.chevron_right : null,
+                    onTap: () => split
+                        ? _openStatPane(_SettingsStat.leave)
+                        : setState(() => _isLeaveExpanded = !_isLeaveExpanded),
                     children: [
                       FlatTableColumnHeader(
                         columns: const [
@@ -778,8 +780,11 @@ class _SettingsScreenState extends State<SettingsScreen>
                         title: '지각 현황',
                         icon: Icons.warning_amber_rounded,
                         color: AppColors.error,
-                        isExpanded: _isLateExpanded,
-                        onTap: () => setState(() => _isLateExpanded = !_isLateExpanded),
+                        isExpanded: !split && _isLateExpanded,
+                        trailingIcon: split ? Icons.chevron_right : null,
+                        onTap: () => split
+                            ? _openStatPane(_SettingsStat.late)
+                            : setState(() => _isLateExpanded = !_isLateExpanded),
                         children: [
                           FlatTableColumnHeader(
                             columns: const [
@@ -975,6 +980,129 @@ class _AccountPage extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// 설정 화면의 통계 표 한 줄 (항목 · 값)
+Widget _statTableRow(
+  BuildContext context,
+  String label,
+  String value,
+  Color valueColor,
+) {
+  return FlatTableRow(
+    cells: [
+      Text(label, style: AppTextStyles.cardBody(context)),
+      Text(
+        value,
+        textAlign: TextAlign.end,
+        style: AppTextStyles.cardBody(context).copyWith(
+          fontWeight: FontWeight.w600,
+          color: valueColor,
+        ),
+      ),
+    ],
+    flexValues: const [1, 1],
+  );
+}
+
+enum _SettingsStat { leave, late }
+
+/// 펼친 폴더블 오른쪽 패널: 연차 현황 / 지각 현황.
+/// 폰에서 카드 안에 펼쳐지던 표와 같은 내용을 보여준다.
+class _SettingsStatPane extends StatelessWidget {
+  const _SettingsStatPane({required this.stat});
+
+  final _SettingsStat stat;
+
+  @override
+  Widget build(BuildContext context) {
+    final isLeave = stat == _SettingsStat.leave;
+    return Scaffold(
+      backgroundColor: AppColors.backgroundPrimary,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        title: AppBarTitle(isLeave ? '연차 현황' : '지각 현황'),
+      ),
+      body: ListView(
+        padding: EdgeInsets.only(
+          top: ResponsiveUtils.spacing(context, 10),
+          bottom: ResponsiveUtils.spacing(context, 20),
+        ),
+        children: [
+          FlatCard(
+            child: isLeave ? _leaveTable(context) : _lateTable(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _leaveTable(BuildContext context) {
+    final leave = Provider.of<LeaveProvider>(context);
+    final total = leave.currentGrantedAnnual;
+    final used = leave.usedAnnual;
+    final remain = leave.remainAnnual;
+    return Column(
+      children: [
+        const FlatCardHeader(
+          title: '연차 현황',
+          icon: Icons.event_available,
+          iconColor: AppColors.primary,
+        ),
+        FlatTableColumnHeader(
+          columns: const [
+            FlatColumn(label: '항목', flex: 1),
+            FlatColumn(label: '일수', flex: 1, align: TextAlign.end),
+          ],
+        ),
+        _statTableRow(context, '총 연차', '$total일', AppColors.textPrimary),
+        _statTableRow(context, '소모 연차', '$used일', AppColors.textPrimary),
+        _statTableRow(
+          context,
+          '잔여 연차',
+          '$remain일',
+          remain <= 0 ? AppColors.error : AppColors.primary,
+        ),
+      ],
+    );
+  }
+
+  Widget _lateTable(BuildContext context) {
+    final attendance = Provider.of<AttendanceProvider>(context);
+    final monthly = attendance.monthlyLateCount;
+    final yearly = attendance.yearlyLateCount;
+    return Column(
+      children: [
+        const FlatCardHeader(
+          title: '지각 현황',
+          icon: Icons.warning_amber_rounded,
+          iconColor: AppColors.error,
+        ),
+        FlatTableColumnHeader(
+          columns: const [
+            FlatColumn(label: '기간', flex: 1),
+            FlatColumn(label: '횟수', flex: 1, align: TextAlign.end),
+          ],
+        ),
+        _statTableRow(
+          context,
+          '이번 달',
+          '$monthly회',
+          monthly > 0 ? AppColors.error : AppColors.textPrimary,
+        ),
+        _statTableRow(
+          context,
+          '올해',
+          '$yearly회',
+          yearly > 0 ? AppColors.error : AppColors.textPrimary,
+        ),
+      ],
     );
   }
 }
