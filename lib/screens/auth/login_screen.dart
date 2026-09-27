@@ -265,15 +265,21 @@ setState(
     final fieldRadius = BorderRadius.circular(8);
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        elevation: 0,
-        leading: kIsWeb
-            ? null
-            : (Platform.isAndroid ? BackButton(color: AppColors.textPrimary) : null),
-      ),
+      // Android 뒤로가기 전용. iOS/웹은 AppBar 없이 본문이 상단까지 이어짐
+      // (Duo 외부 화면처럼 상태바가 얇은 기기에서 흰 띠가 드러나던 문제)
+      appBar: (!kIsWeb && Platform.isAndroid)
+          ? AppBar(
+              backgroundColor: AppColors.backgroundPrimary,
+              surfaceTintColor: AppColors.backgroundPrimary,
+              elevation: 0,
+              leading: BackButton(color: AppColors.textPrimary),
+            )
+          : null,
+      // 좌우 인셋은 무시: 펀치홀이 우측 세로 띠 전체를 안전영역에서 빼는 기기(iPhone Duo 외부 화면)에서
+      // 콘텐츠가 한쪽으로 쏠리지 않도록 전체 폭 기준으로 가운데 정렬한다. 카메라 위치(우상단)와 겹치는 콘텐츠는 없음.
       body: SafeArea(
+        left: false,
+        right: false,
         child: Center(
           child: SingleChildScrollView(
             child: Column(

@@ -3,7 +3,7 @@ import UIKit
 import flutter_local_notifications
 
 @main
-@objc class AppDelegate: FlutterAppDelegate {
+@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -18,7 +18,11 @@ import flutter_local_notifications
       UNUserNotificationCenter.current().delegate = self as UNUserNotificationCenterDelegate
     }
     
-    GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  // iOS 27+ UIScene 라이프사이클: 플러그인 등록은 엔진 초기화 콜백에서 수행
+  func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+    GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
   }
 }
