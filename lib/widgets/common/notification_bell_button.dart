@@ -5,6 +5,7 @@ import '../../screens/notification/notification_center_screen.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
+import '../adaptive/detail_pane.dart';
 
 /// AppBar 우측 알림 아이콘 + 미확인 배지 (모든 메인 탭 공용)
 class NotificationBellButton extends StatelessWidget {
@@ -29,11 +30,10 @@ class NotificationBellButton extends StatelessWidget {
                   color: AppColors.textPrimary,
                 ),
                 onPressed: () {
-                  Navigator.push(
+                  DetailPane.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => const NotificationCenterScreen(),
-                    ),
+                    builder: (context) => const NotificationCenterScreen(),
+                    key: 'notification-center',
                   ).then((_) {
                     // 알림 센터에서 돌아오면 알림 개수 새로고침
                     notificationProvider.loadNotifications();

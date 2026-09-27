@@ -7,6 +7,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
 import '../../services/ui_optimization_service.dart';
+import '../../widgets/adaptive/detail_pane.dart';
 import '../../widgets/shared/flat_section.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import '../../widgets/common/notification_bell_button.dart';
@@ -64,8 +65,10 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    // 펼친 폴더블: 연차 신청이 오른쪽 패널에 상시 표시되므로 FAB는 숨긴다
+    final showFab = DetailPaneScope.expandedOf(context) == null;
     return Scaffold(
-      floatingActionButton: SizedBox(
+      floatingActionButton: !showFab ? null : SizedBox(
         height: ResponsiveUtils.spacing(context, 40),
         child: FloatingActionButton.extended(
           onPressed: () => Navigator.push(

@@ -18,6 +18,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../services/cache_recovery_service.dart';
 import '../../providers/attendance_provider.dart';
 import '../../services/badge_count_service.dart';
+import '../../widgets/adaptive/detail_pane.dart';
 import '../../widgets/shared/flat_section.dart';
 import '../../widgets/common/notification_banner_widget.dart';
 import '../../utils/user_role_helper.dart';
@@ -136,8 +137,10 @@ class _SettingsScreenState extends State<SettingsScreen>
     final originalSize = fontProvider.fontSize;
     bool confirmed = false;
 
+    DetailPane.clear(context);
     showDialog(
-      context: context,
+      context: DetailPane.hostContext(context),
+      useRootNavigator: DetailPane.useRootNavigator(context),
       builder: (BuildContext dialogContext) {
         return Consumer<FontProvider>(
           builder: (context, provider, _) {
@@ -336,9 +339,10 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   void _showInquiryDialog() async {
     // 문의하기 화면으로 이동
-    await Navigator.push(
+    await DetailPane.push(
       context,
-      MaterialPageRoute(builder: (context) => const InquiryScreen()),
+      builder: (context) => const InquiryScreen(),
+      key: 'inquiry',
     );
     // 돌아올 때 뱃지 카운트 재로드
     _loadInquiryBadgeCount();
@@ -716,10 +720,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                         color: AppColors.primary,
                       ),
                       onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const AdminAttendanceScreen(),
-                          ),
+                        DetailPane.push(
+                          context,
+                          builder: (_) => const AdminAttendanceScreen(),
+                          key: 'admin-attendance',
                         );
                       },
                     ),
@@ -740,6 +744,11 @@ class _SettingsScreenState extends State<SettingsScreen>
                       color: AppColors.warning,
                     ),
                     onTap: () {
+                      // 펼침에서는 푸시 알림이 오른쪽 패널의 기본 화면이므로 상세만 닫는다
+                      if (DetailPaneScope.expandedOf(context) != null) {
+                        DetailPane.close(context);
+                        return;
+                      }
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) => const NotificationSettingsScreen(),

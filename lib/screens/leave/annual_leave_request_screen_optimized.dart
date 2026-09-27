@@ -6,6 +6,7 @@ import '../../providers/user_provider.dart';
 import '../../models/leave_request.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
+import '../../widgets/adaptive/detail_pane.dart';
 import '../../widgets/leave/leave_calendar_widget.dart';
 import '../../widgets/leave/leave_type_selector_widget.dart';
 import '../../widgets/leave/leave_info_card_widget.dart';
@@ -410,7 +411,7 @@ class _AnnualLeaveRequestScreenOptimizedState
         );
 
         if (mounted) {
-          Navigator.pop(context);
+          DetailPane.popOrClose(context);
         }
       } else {
         showBanner(
@@ -538,10 +539,14 @@ class _AnnualLeaveRequestScreenOptimizedState
       surfaceTintColor: Colors.white,
       elevation: 0,
       centerTitle: true,
-      leading: IconButton(
-        icon: Icon(Icons.arrow_back, color: AppColors.textPrimary),
-        onPressed: () => Navigator.pop(context),
-      ),
+      // 펼친 폴더블 오른쪽 패널 안에서는 돌아갈 화면이 없으므로 뒤로가기 숨김
+      automaticallyImplyLeading: false,
+      leading: !Navigator.canPop(context)
+          ? null
+          : IconButton(
+              icon: Icon(Icons.arrow_back, color: AppColors.textPrimary),
+              onPressed: () => Navigator.pop(context),
+            ),
       title: AppBarTitle('연차 신청'),
     );
   }

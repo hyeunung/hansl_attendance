@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'attendance/attendance_screen_router.dart';
 import 'leave/leave_status_screen.dart';
+import 'leave/leave_screen_router.dart';
 import 'leave/card_receipt_upload_screen.dart';
 import 'approval/approval_screen.dart';
 // import 'purchase/purchase_management_screen.dart'; // 제거됨
@@ -8,6 +9,7 @@ import 'receipts/receipts_screen.dart';
 import 'transaction_statements/transaction_statement_screen.dart';
 import 'calendar/calendar_screen.dart';
 import 'settings/settings_screen.dart';
+import 'settings/notification_settings_screen.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_decorations.dart';
 import '../theme/app_text_theme.dart';
@@ -24,6 +26,8 @@ import '../services/notification_service.dart';
 import '../services/badge_count_service.dart';
 import '../services/inquiry_service.dart';
 import '../widgets/common/notification_banner_widget.dart';
+import '../widgets/adaptive/detail_pane.dart';
+import '../utils/adaptive_layout.dart';
 
 // KeepAlive 위젯 정의
 class KeepAlive extends StatefulWidget {
@@ -87,6 +91,9 @@ class _MainTabState extends State<MainTab>
   // 일반 직원 카드 영수증 탭 표시 여부 (직전 빌드 기준, 탭 인덱스 보정용)
   bool _cardReceiptTabShown = false;
 
+  // 펼친 폴더블 오른쪽 상세 패널 상태
+  final DetailPaneController _detailPane = DetailPaneController();
+
   @override
   void initState() {
     super.initState();
@@ -95,6 +102,16 @@ class _MainTabState extends State<MainTab>
     _pageController = PageController(
       initialPage: 0,
       keepPage: true,
+    );
+
+    // 펼친 폴더블 오른쪽 패널의 탭별 주 작업
+    _detailPane.registerPrimary(
+      LeaveStatusScreen,
+      (_) => const LeaveScreenRouter(),
+    );
+    _detailPane.registerPrimary(
+      SettingsScreen,
+      (_) => const NotificationSettingsScreen(),
     );
 
     // 빌드 완료 후에 초기화(Provider notifyDuringBuild 방지)
@@ -381,6 +398,7 @@ class _MainTabState extends State<MainTab>
 
   @override
   void dispose() {
+    _detailPane.dispose();
     WidgetsBinding.instance.removeObserver(this);
     if (_inquiryBadgeChannel != null) {
       _inquiryService.unsubscribe(_inquiryBadgeChannel);
@@ -844,7 +862,7 @@ final roles = UserRoleHelper.getRoles(employee);
     }
     // 알바, 계약직인 경우는 위에서 이미 처리됨
 
-    return Scaffold(
+    final scaffold = Scaffold(
       body: PageView(
         controller: _pageController,
         onPageChanged: (index) {
@@ -887,6 +905,69 @@ final roles = UserRoleHelper.getRoles(employee);
             items: items,
             elevation: 0, // 그림자 제거로 성능 향상
           ),
+        ),
+      ),
+    );
+
+    return _wrapWithDetailPane(scaffold, screens);
+  }
+
+  /// 펼친 폴더블(폭 ≥ 840): 왼쪽 절반 = 기존 폰 화면 그대로, 오른쪽 절반 = 상세 패널.
+  /// 그 외: 기존 화면 그대로. 접히는 순간 오른쪽에 열려 있던 상세는 시트로 이어 보여준다.
+  Widget _wrapWithDetailPane(Widget scaffold, List<Widget> screens) {
+    final current = _currentIndex < screens.length
+        ? screens[_currentIndex].runtimeType
+        : null;
+    if (current != null) _detailPane.setCurrentScreen(current);
+
+    if (!AdaptiveLayout.isExpanded(context)) {
+      final pending = _detailPane.takeDetail();
+      if (pending != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          Navigator.push(context, MaterialPageRoute(builder: pending));
+        });
+      }
+      return DetailPaneScope(
+        controller: _detailPane,
+        split: false,
+        child: scaffold,
+      );
+    }
+
+    final mq = MediaQuery.of(context);
+    final halfWidth = (mq.size.width - 1) / 2;
+    // 좌우 각각을 "접힌 폰 화면" 크기로 인식시켜 기존 레이아웃/스케일이 그대로 적용되게 한다.
+    MediaQueryData half({required bool left}) => mq.copyWith(
+          size: Size(halfWidth, mq.size.height),
+          padding: mq.padding.copyWith(
+            left: left ? mq.padding.left : 0,
+            right: left ? 0 : mq.padding.right,
+          ),
+          viewPadding: mq.viewPadding.copyWith(
+            left: left ? mq.viewPadding.left : 0,
+            right: left ? 0 : mq.viewPadding.right,
+          ),
+        );
+
+    return DetailPaneScope(
+      controller: _detailPane,
+      split: true,
+      child: Scaffold(
+        backgroundColor: AppColors.backgroundPrimary,
+        body: Row(
+          children: [
+            Expanded(
+              child: MediaQuery(data: half(left: true), child: scaffold),
+            ),
+            const VerticalDivider(width: 1, thickness: 1, color: AppColors.border),
+            Expanded(
+              child: MediaQuery(
+                data: half(left: false),
+                child: DetailPaneView(controller: _detailPane),
+              ),
+            ),
+          ],
         ),
       ),
     );
