@@ -73,5 +73,52 @@ class _AdaptiveOrientationState extends State<AdaptiveOrientation>
   }
 
   @override
-  Widget build(BuildContext context) => widget.child;
+  Widget build(BuildContext context) => _SideCutoutFix(child: widget.child);
+}
+
+/// 세로로 든 폰에서 카메라 구멍이 "옆 안전영역"으로 보고되는 기기 보정
+/// (iPhone Duo 외부 화면: top 0 / right 84).
+///
+/// 그대로 두면 SafeArea·AppBar·하단 탭이 전부 한쪽으로 밀려 화면이 쏠려 보인다.
+/// 카메라는 우상단 모서리에만 있으므로:
+/// - 좌우 인셋은 0으로 (본문·하단 탭은 전체 폭 사용)
+/// - 위 인셋은 최소 [_minTop]으로 (본문 첫 줄이 카메라 아래에서 시작)
+/// - AppBar의 actions만 카메라 폭만큼 안쪽으로 (제목은 화면 중앙 유지)
+class _SideCutoutFix extends StatelessWidget {
+  const _SideCutoutFix({required this.child});
+
+  final Widget child;
+
+  static const double _minSideInset = 40;
+  static const double _minTop = 10;
+
+  @override
+  Widget build(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    final left = mq.padding.left;
+    final right = mq.padding.right;
+    final isPortraitPhone = mq.size.height > mq.size.width &&
+        mq.size.shortestSide < AdaptiveLayout.rotatableShortestSide;
+    final hasSideCutout = left >= _minSideInset || right >= _minSideInset;
+    if (!isPortraitPhone || !hasSideCutout || mq.padding.top >= 20) {
+      return child;
+    }
+
+    final top = mq.padding.top < _minTop ? _minTop : mq.padding.top;
+    final theme = Theme.of(context);
+    return MediaQuery(
+      data: mq.copyWith(
+        padding: mq.padding.copyWith(left: 0, right: 0, top: top),
+        viewPadding: mq.viewPadding.copyWith(left: 0, right: 0, top: top),
+      ),
+      child: Theme(
+        data: theme.copyWith(
+          appBarTheme: theme.appBarTheme.copyWith(
+            actionsPadding: EdgeInsets.only(left: left, right: right),
+          ),
+        ),
+        child: child,
+      ),
+    );
+  }
 }
