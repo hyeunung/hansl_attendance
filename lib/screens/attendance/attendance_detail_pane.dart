@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/attendance.dart';
 import '../../providers/attendance_provider.dart';
+import '../../services/async_operation_manager.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
@@ -17,15 +18,18 @@ class AttendanceDetailPane extends StatefulWidget {
 }
 
 class _AttendanceDetailPaneState extends State<AttendanceDetailPane> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final provider = context.read<AttendanceProvider>();
-      provider.fetchRecentHistory();
-      provider.fetchLateStatistics();
-    });
+  // 데이터는 AttendanceProvider가 초기화·출퇴근 시점에 직접 불러온다.
+  // 여기서 화면이 열릴 때 다시 요청하면 진행 중이던 초기화 요청이 취소되므로
+  // (cancelPrevious) 새로고침은 사용자가 당겼을 때만 한다.
+  Future<void> _refresh(AttendanceProvider provider) async {
+    try {
+      await Future.wait([
+        provider.fetchRecentHistory(),
+        provider.fetchLateStatistics(),
+      ]);
+    } on OperationCancelledException {
+      // 더 새로운 요청이 이어받은 경우 — 그 결과가 화면에 반영된다
+    }
   }
 
   static String _time(DateTime? dt) {
@@ -58,12 +62,7 @@ class _AttendanceDetailPaneState extends State<AttendanceDetailPane> {
         builder: (context, provider, _) {
           final history = provider.recentHistory;
           return RefreshIndicator(
-            onRefresh: () async {
-              await Future.wait([
-                provider.fetchRecentHistory(),
-                provider.fetchLateStatistics(),
-              ]);
-            },
+            onRefresh: () => _refresh(provider),
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.only(
