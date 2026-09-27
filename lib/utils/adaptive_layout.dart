@@ -127,19 +127,40 @@ class _SideCutoutFix extends StatelessWidget {
 
     final top = mq.padding.top < _minTop ? _minTop : mq.padding.top;
     final theme = Theme.of(context);
-    return MediaQuery(
-      data: mq.copyWith(
-        padding: mq.padding.copyWith(left: 0, right: 0, top: top),
-        viewPadding: mq.viewPadding.copyWith(left: 0, right: 0, top: top),
-      ),
-      child: Theme(
-        data: theme.copyWith(
-          appBarTheme: theme.appBarTheme.copyWith(
-            actionsPadding: EdgeInsets.only(left: left, right: right),
-          ),
+    return SideCutout(
+      insets: EdgeInsets.only(left: left, right: right),
+      child: MediaQuery(
+        data: mq.copyWith(
+          padding: mq.padding.copyWith(left: 0, right: 0, top: top),
+          viewPadding: mq.viewPadding.copyWith(left: 0, right: 0, top: top),
         ),
-        child: child,
+        child: Theme(
+          data: theme.copyWith(
+            appBarTheme: theme.appBarTheme.copyWith(
+              actionsPadding: EdgeInsets.only(left: left, right: right),
+            ),
+          ),
+          child: child,
+        ),
       ),
     );
   }
+}
+
+/// [_SideCutoutFix]가 0으로 덮기 전의 "옆 안전영역" 원래 값.
+///
+/// 시스템은 이 폭만큼을 카메라가 있는 세로 열로 쓴다(iPhone Duo 홈 화면의 독이 이 열에 놓임).
+/// 세로 네비게이션 바를 같은 열에 맞추려면 이 값을 써야 한다.
+class SideCutout extends InheritedWidget {
+  const SideCutout({super.key, required this.insets, required super.child});
+
+  final EdgeInsets insets;
+
+  /// 옆 카메라 구멍이 없는 기기에서는 [EdgeInsets.zero].
+  static EdgeInsets of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<SideCutout>()?.insets ??
+      EdgeInsets.zero;
+
+  @override
+  bool updateShouldNotify(SideCutout oldWidget) => insets != oldWidget.insets;
 }

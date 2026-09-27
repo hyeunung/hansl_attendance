@@ -974,7 +974,7 @@ final roles = UserRoleHelper.getRoles(employee);
     // 반 나누는 선은 힌지(화면 정중앙)에 둔다. 세로 네비게이션 바는 오른쪽 끝에 붙고,
     // 그 폭만큼 오른쪽 패널이 좁아진다.
     final halfWidth = (mq.size.width - 1) / 2;
-    final railWidth = _sideRailWidth + mq.padding.right;
+    final railWidth = _railWidth(mq);
     // 좌우 각각을 "접힌 폰 화면" 크기로 인식시켜 기존 레이아웃/스케일이 그대로 적용되게 한다.
     MediaQueryData half({required bool left}) => mq.copyWith(
           size: Size(
@@ -1023,6 +1023,22 @@ final roles = UserRoleHelper.getRoles(employee);
 
   static const double _sideRailWidth = 68;
 
+  /// 옆 카메라 구멍이 있는 커버 화면(iPhone Duo)에서 시스템 독이 쓰는 아이콘 열의 폭.
+  /// 독은 오른쪽 안전영역(84) 안에서 바깥 여백 12 + 열 72로 놓이고, 카메라가 그 열의 가운데에 있다.
+  static const double _cutoutColumnWidth = 72;
+
+  /// 세로 네비게이션 바가 카메라 열에 맞춰야 하는 폭. 옆 카메라 구멍이 없으면 0.
+  double _cutoutRailWidth(MediaQueryData mq) {
+    if (mq.padding.right > 0) return 0;
+    final cutout = SideCutout.of(context).right;
+    return cutout >= _cutoutColumnWidth ? cutout : 0;
+  }
+
+  double _railWidth(MediaQueryData mq) {
+    final cutout = _cutoutRailWidth(mq);
+    return cutout > 0 ? cutout : _sideRailWidth + mq.padding.right;
+  }
+
   /// 접힌 폴더블(커버 화면): 본문 오른쪽에 세로 네비게이션 바를 붙인다.
   /// 본문은 줄어든 폭을 화면 폭으로 인식하게 해 기존 폰 레이아웃·스케일이 그대로 적용된다.
   Widget _withCoverSideRail(
@@ -1030,7 +1046,7 @@ final roles = UserRoleHelper.getRoles(employee);
     List<BottomNavigationBarItem> items,
     MediaQueryData mq,
   ) {
-    final railWidth = _sideRailWidth + mq.padding.right;
+    final railWidth = _railWidth(mq);
     final theme = Theme.of(context);
     return Material(
       color: AppColors.backgroundPrimary,
@@ -1062,11 +1078,14 @@ final roles = UserRoleHelper.getRoles(employee);
 
   /// 펼친 폴더블 오른쪽 끝의 세로 네비게이션 바 (하단 탭과 같은 항목·배지)
   Widget _buildSideRail(List<BottomNavigationBarItem> items, MediaQueryData mq) {
+    // 카메라 열이 있으면 바 폭을 그 열에 맞추고, 아이콘을 카메라와 같은 세로선에 둔다
+    final cutout = _cutoutRailWidth(mq);
+    final itemWidth = cutout > 0 ? _cutoutColumnWidth : _sideRailWidth;
     return Container(
-      width: _sideRailWidth + mq.padding.right,
+      width: _railWidth(mq),
       padding: EdgeInsets.only(
         top: mq.padding.top,
-        right: mq.padding.right,
+        right: cutout > 0 ? cutout - _cutoutColumnWidth : mq.padding.right,
         bottom: mq.padding.bottom,
       ),
       decoration: const BoxDecoration(
@@ -1077,19 +1096,23 @@ final roles = UserRoleHelper.getRoles(employee);
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           for (var i = 0; i < items.length; i++)
-            _buildSideRailItem(items[i], i),
+            _buildSideRailItem(items[i], i, itemWidth),
         ],
       ),
     );
   }
 
-  Widget _buildSideRailItem(BottomNavigationBarItem item, int index) {
+  Widget _buildSideRailItem(
+    BottomNavigationBarItem item,
+    int index,
+    double width,
+  ) {
     final selected = index == _currentIndex;
     final color = selected ? AppColors.primary : AppColors.textSecondary;
     return InkWell(
       onTap: () => _onTabTapped(index),
       child: SizedBox(
-        width: _sideRailWidth,
+        width: width,
         height: 62,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

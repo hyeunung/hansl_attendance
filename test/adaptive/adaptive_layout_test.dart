@@ -118,6 +118,59 @@ void main() {
       expect(r.actionsPadding, isNull);
     });
 
+    testWidgets('원래 옆 인셋은 SideCutout으로 전달 (세로 바를 카메라 열에 맞추는 데 사용)', (
+      tester,
+    ) async {
+      Future<EdgeInsets> read(MediaQueryData data) async {
+        late EdgeInsets cutout;
+        await tester.pumpWidget(
+          MaterialApp(
+            builder: (context, child) => MediaQuery(
+              data: data,
+              child: AdaptiveOrientation(child: child!),
+            ),
+            home: Builder(
+              builder: (context) {
+                cutout = SideCutout.of(context);
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+        );
+        return cutout;
+      }
+
+      expect(
+        await read(
+          const MediaQueryData(
+            size: Size(466, 678),
+            padding: EdgeInsets.only(right: 84, bottom: 34),
+            viewPadding: EdgeInsets.only(right: 84, bottom: 34),
+          ),
+        ),
+        const EdgeInsets.only(right: 84),
+      );
+      // 일반 아이폰 · Fold8 커버 화면: 옆 카메라 구멍 없음
+      expect(
+        await read(
+          const MediaQueryData(
+            size: Size(402, 874),
+            padding: EdgeInsets.only(top: 62, bottom: 34),
+          ),
+        ),
+        EdgeInsets.zero,
+      );
+      expect(
+        await read(
+          const MediaQueryData(
+            size: Size(475, 751),
+            padding: EdgeInsets.only(top: 32),
+          ),
+        ),
+        EdgeInsets.zero,
+      );
+    });
+
     testWidgets('펼친 가로 화면은 보정하지 않음', (tester) async {
       const data = MediaQueryData(
         size: Size(951, 669),
