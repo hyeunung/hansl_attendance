@@ -899,9 +899,6 @@ class AttendanceProvider extends ChangeNotifier
     // Start midnight reset timer (single long-running timer)
     _scheduleMidnightReset();
 
-    // Start auto clock-out timer (single long-running timer)
-    _scheduleAutoClockOut();
-
     // Start periodic maintenance timer (every 30 minutes)
     createScopedPeriodicTimer(
       key: 'maintenance',
@@ -923,9 +920,6 @@ class AttendanceProvider extends ChangeNotifier
         executeScopedOperation(
           key: 'midnight_reset_operation',
           operation: (token) async {
-            // 자정이 되면 먼저 전날 퇴근 안 찍은 사람들 처리
-            await _processYesterdayMissingClockOuts();
-            token.throwIfCancelled();
             await _invalidateAttendanceCaches();
             token.throwIfCancelled();
             await _initToday();
@@ -946,149 +940,12 @@ class AttendanceProvider extends ChangeNotifier
     
   }
 
-  void _scheduleAutoClockOut() {
-    final now = DateTime.now();
-    final todaySix = DateTime(now.year, now.month, now.day, 18, 0);
-    Duration duration;
-
-    if (now.isBefore(todaySix)) {
-      duration = todaySix.difference(now);
-    } else {
-      // Already past 6 PM, schedule for tomorrow 6 PM
-      final tomorrowSix = todaySix.add(const Duration(days: 1));
-      duration = tomorrowSix.difference(now);
-    }
-
-    createScopedTimer(
-      key: 'auto_clock_out',
-      delay: duration,
-      callback: () {
-        // Execute auto clock-out with error handling
-        executeScopedOperation(
-          key: 'auto_clock_out_operation',
-          operation: (token) async {
-            await _autoClockOut();
-          },
-          timeout: const Duration(seconds: 15),
-          description: 'Auto clock-out operation',
-        ).catchError((e) {
-        });
-
-        // Schedule next auto clock-out
-        _scheduleAutoClockOut();
-      },
-    );
-    
-  }
-
   void _performMaintenance() {
     // Clean up expired cache entries
     _cache.getStats();
 
     // Log timer statistics in debug mode
     
-  }
-
-  Future<void> _autoClockOut() async {
-    if (clockInTime != null && clockOutTime == null) {
-      // 퇴근 미처리 시 18:00 자동 퇴근
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-      final autoOut = DateTime(now.year, now.month, now.day, 18, 0);
-      final todayStr =
-          "${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-
-      try {
-        // DB에 자동 퇴근 기록 저장
-        await Supabase.instance.client
-            .from('attendance_records')
-            .update({
-              'clock_out': '18:00:00',
-              'status': '퇴근',
-              'updated_at': now.toIso8601String(),
-            })
-            .eq('employee_id', userId)
-            .eq('date', todayStr);
-
-        
-
-        // DB 저장 성공 후 프론트엔드 상태 업데이트
-        _batchUpdate(() {
-          clockOutTime = autoOut;
-          status = AttendanceStatus.offWork;
-          final idx = history.indexWhere((r) => _isSameDay(r.date, today));
-          if (idx != -1) {
-            history[idx] = AttendanceRecord(
-              date: today,
-              employeeId: userId,
-              employeeName: userName,
-              status: '퇴근',
-              clockIn: clockInTime,
-              clockOut: autoOut,
-              isLate: isLate,
-            );
-          } else {
-            history.insert(
-              0,
-              AttendanceRecord(
-                date: today,
-                employeeId: userId,
-                employeeName: userName,
-                status: '퇴근',
-                clockIn: clockInTime,
-                clockOut: autoOut,
-                isLate: isLate,
-              ),
-            );
-          }
-        });
-      } catch (e) {
-        // 오류 발생 시 무시
-      }
-    }
-  }
-
-  // 자정이 되면 전날 퇴근 안 찍은 기록들을 18:00 퇴근으로 처리
-  Future<void> _processYesterdayMissingClockOuts() async {
-    final now = DateTime.now();
-    final yesterday = now.subtract(const Duration(days: 1));
-    final yesterdayStr =
-        "${yesterday.year.toString().padLeft(4, '0')}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}";
-
-    try {
-      // 전날 출근했지만 퇴근 안 찍은 모든 기록 찾기
-      final allRecords = await Supabase.instance.client
-          .from('attendance_records')
-          .select()
-          .eq('date', yesterdayStr);
-
-      // clock_in은 있지만 clock_out이 없는 기록 필터링
-      final missingClockOuts = allRecords
-          .where(
-            (record) =>
-                record['clock_in'] != null && record['clock_out'] == null,
-          )
-          .toList();
-
-      if (missingClockOuts.isNotEmpty) {
-        
-
-        // 각 기록에 대해 18:00 퇴근 처리
-        for (final record in missingClockOuts) {
-          await Supabase.instance.client
-              .from('attendance_records')
-              .update({
-                'clock_out': '18:00:00',
-                'status': '퇴근',
-                'updated_at': now.toIso8601String(),
-              })
-              .eq('id', record['id']);
-          
-        }
-      }
-    } catch (e) {
-      // 전날 퇴근 처리 실패 시 무시
-    }
   }
 
   static bool _isSameDay(DateTime a, DateTime b) {
