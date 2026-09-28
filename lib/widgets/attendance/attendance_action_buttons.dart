@@ -4,6 +4,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_theme.dart';
 import '../../utils/responsive_utils.dart';
 import '../../providers/attendance_provider.dart';
+import '../shared/flat_section.dart';
 
 class AttendanceActionButtons extends StatelessWidget {
   final Function(String msg, {bool error}) onShowBanner;
@@ -28,182 +29,136 @@ class AttendanceActionButtons extends StatelessWidget {
         final isLateNow = isBeforeWork && _isLateTime();
         final isLateStatus = provider.status == AttendanceStatus.late;
 
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.border, width: 0.5),
-          ),
-          child: IntrinsicHeight(
-            child: Row(
-              children: [
-                // 출근 영역
-                Expanded(
-                  child: canTapClockIn
-                      ? _buildButtonMode(
-                          context,
-                          label: isLateNow ? '지각 출근' : '출근하기',
-                          isLoading: provider.isClockInLoading,
-                          color: isLateNow ? AppColors.error : AppColors.primary,
-                          isLeft: true,
-                          onTap: () async {
+        final isClockInAction = canTapClockIn;
+        final hasAction = canTapClockIn || canTapClockOut;
+
+        return FlatCard(
+          child: Column(
+            children: [
+              FlatCardHeader(
+                title: '오늘 근무',
+                icon: Icons.today,
+                iconColor: AppColors.primary,
+                trailing: StatusChip(
+                  label: provider.statusText,
+                  color: provider.statusColor,
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: ResponsiveUtils.spacing(context, 14),
+                  vertical: ResponsiveUtils.spacing(context, 8),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildTime(
+                        context,
+                        label: isLateStatus ? '출근 (지각)' : '출근',
+                        value: hasClockIn || hasClockOut
+                            ? _hm(provider.clockInTime)
+                            : '--:--',
+                        color: isLateStatus ? AppColors.error : null,
+                      ),
+                    ),
+                    Expanded(
+                      child: _buildTime(
+                        context,
+                        label: '퇴근',
+                        value: hasClockOut
+                            ? _hm(provider.clockOutTime)
+                            : '--:--',
+                      ),
+                    ),
+                    if (hasAction) ...[
+                      SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+                      _buildActionButton(
+                        context,
+                        label: isClockInAction
+                            ? (isLateNow ? '지각 출근' : '출근하기')
+                            : '퇴근하기',
+                        color: isClockInAction && isLateNow
+                            ? AppColors.error
+                            : AppColors.primary,
+                        isLoading: isClockInAction
+                            ? provider.isClockInLoading
+                            : provider.isClockOutLoading,
+                        onTap: () async {
+                          if (isClockInAction) {
                             await provider.tryClockIn();
-                            if (provider.errorMessage != null) {
-                              onShowBanner(provider.errorMessage!, error: true);
-                              provider.clearError();
-                            } else {
-                              onShowBanner('출근 처리되었습니다');
-                            }
-                          },
-                        )
-                      : _buildStatusMode(
-                          context,
-                          title: isLateStatus ? '출근 (지각)' : '출근',
-                          time: hasClockIn ? provider.clockInStr : '--:--',
-                          statusText: isLateStatus ? '지각' : (hasClockIn ? '기록됨' : '미기록'),
-                          isActive: hasClockIn,
-                          accentColor: hasClockIn
-                              ? (isLateStatus ? AppColors.late_ : AppColors.success)
-                              : null,
-                        ),
-                ),
-
-                Container(width: 0.5, color: AppColors.border),
-
-                // 퇴근 영역
-                Expanded(
-                  child: canTapClockOut
-                      ? _buildButtonMode(
-                          context,
-                          label: '퇴근하기',
-                          isLoading: provider.isClockOutLoading,
-                          color: AppColors.primary,
-                          isLeft: false,
-                          onTap: () async {
+                          } else {
                             await provider.tryClockOut();
-                            if (provider.errorMessage != null) {
-                              onShowBanner(provider.errorMessage!, error: true);
-                              provider.clearError();
-                            } else {
-                              onShowBanner('퇴근 처리되었습니다');
-                            }
-                          },
-                        )
-                      : _buildStatusMode(
-                          context,
-                          title: '퇴근',
-                          time: hasClockOut ? '완료' : '--:--',
-                          statusText: hasClockOut ? '기록됨' : '미기록',
-                          isActive: hasClockOut,
-                          accentColor: hasClockOut ? AppColors.primary : null,
-                        ),
+                          }
+                          if (provider.errorMessage != null) {
+                            onShowBanner(provider.errorMessage!, error: true);
+                            provider.clearError();
+                          } else {
+                            onShowBanner(
+                              isClockInAction ? '출근 처리되었습니다' : '퇴근 처리되었습니다',
+                            );
+                          }
+                        },
+                      ),
+                    ],
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },
     );
   }
 
-  /// 탭 가능 상태 — 버튼 느낌
-  Widget _buildButtonMode(
+  static String _hm(DateTime? dt) {
+    if (dt == null) return '--:--';
+    final local = dt.toLocal();
+    return '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+  }
+
+  /// 시각 + 라벨 (FlatStatGrid 항목과 같은 규격)
+  Widget _buildTime(
     BuildContext context, {
     required String label,
-    required bool isLoading,
-    required Color color,
-    required bool isLeft,
-    required VoidCallback onTap,
+    required String value,
+    Color? color,
   }) {
-    return Material(
-      color: color,
-      borderRadius: BorderRadius.only(
-        topLeft: Radius.circular(isLeft ? 10 : 0),
-        bottomLeft: Radius.circular(isLeft ? 10 : 0),
-        topRight: Radius.circular(isLeft ? 0 : 10),
-        bottomRight: Radius.circular(isLeft ? 0 : 10),
-      ),
-      child: InkWell(
-        onTap: isLoading ? null : onTap,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(isLeft ? 10 : 0),
-          bottomLeft: Radius.circular(isLeft ? 10 : 0),
-          topRight: Radius.circular(isLeft ? 0 : 10),
-          bottomRight: Radius.circular(isLeft ? 0 : 10),
-        ),
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            vertical: ResponsiveUtils.spacing(context, 12),
-          ),
-          alignment: Alignment.center,
-          child: isLoading
-              ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : Text(
-                  label,
-                  style: AppTextStyles.buttonPrimary(context),
-                ),
-        ),
-      ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(value, style: AppTextStyles.compactValue(context, color: color)),
+        const SizedBox(height: 2),
+        Text(label, style: AppTextStyles.compactLabel(context)),
+      ],
     );
   }
 
-  /// 기록 완료 — 상태 표시
-  Widget _buildStatusMode(
+  /// 출근/퇴근 버튼 (앱 표준 버튼 규격: 높이 36, 모서리 8)
+  Widget _buildActionButton(
     BuildContext context, {
-    required String title,
-    required String time,
-    required String statusText,
-    required bool isActive,
-    Color? accentColor,
+    required String label,
+    required Color color,
+    required bool isLoading,
+    required VoidCallback onTap,
   }) {
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: ResponsiveUtils.spacing(context, 16),
-        vertical: ResponsiveUtils.spacing(context, 14),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  title,
-                  style: AppTextStyles.sectionSubtitle(context),
+    return SizedBox(
+      height: 36,
+      child: FilledButton(
+        style: FilledButton.styleFrom(
+          backgroundColor: color,
+          disabledBackgroundColor: color,
+        ),
+        onPressed: isLoading ? null : onTap,
+        child: isLoading
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
                 ),
-                SizedBox(height: ResponsiveUtils.spacing(context, 2)),
-                Text(
-                  '$time $statusText',
-                  style: AppTextStyles.statLabel(context),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isActive
-                  ? (accentColor ?? AppColors.textPrimary)
-                  : Colors.transparent,
-              border: Border.all(
-                color: isActive
-                    ? (accentColor ?? AppColors.textPrimary)
-                    : AppColors.gray300,
-                width: 1.5,
-              ),
-            ),
-          ),
-        ],
+              )
+            : Text(label, style: AppTextStyles.buttonPrimary(context)),
       ),
     );
   }

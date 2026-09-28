@@ -183,13 +183,7 @@ class _AttendanceScreenOptimizedState extends State<AttendanceScreenOptimized>
                     children: [
                       // 출근/퇴근 버튼 - 휴일/공휴일에 숨김
                       if (!_isNonWorkingDay)
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: ResponsiveUtils.spacing(context, 16),
-                            vertical: ResponsiveUtils.spacing(context, 12),
-                          ),
-                          child: AttendanceActionButtons(onShowBanner: _showBanner),
-                        ),
+                        AttendanceActionButtons(onShowBanner: _showBanner),
 
                       // 나의 지각 현황 (이번 달/올해) — 지각이 있을 때만 표시
                       PersonalLateStatistics(key: _myLateKey),
